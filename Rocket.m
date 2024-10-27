@@ -3,23 +3,19 @@ classdef Rocket
     %   Detailed explanation goes here
 
     properties (SetAccess = private)
-        wetMass;
-        dryMass;
-        currentMass;
-        wetInertias;
-        dryInertias;
-        currentInertias;
-        initialCG; %distance from nosecone to CG with loaded motor
-        finalCG; %distance from nosecone to CG with empty motor
-        currentCG;
-        CP;
-        length;
-        diameter;
-        radius;
+        wetMass; % kg
+        dryMass; % kg
+        wetInertias;%3x3, (kgm^2)
+        dryInertias; %3x3, (kgm^2)
+        initialCG; %distance from nosecone to CG with loaded motor (m)
+        finalCG; %distance from nosecone to CG with empty motor (m)
+        CP; % distance from nosecone to CP, doesn't change (m)
+        length; % nosecone to bottom of motor (m)
+        diameter; % tube diameter (m)
+        radius; % tube diameter/2 (m)
 
-
-        burnTime;
-        thrustCurve;
+        burnTime; % (s)
+        thrustCurve; % time history of thrust (s, N)
     end
 
     methods
@@ -28,10 +24,105 @@ classdef Rocket
             %   Detailed explanation goes here
         end
 
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+        function obj= set_wet_mass(obj, wet_mass)
+            if (~isdouble(wet_mass) || wet_mass < 0)
+                error('Wet mass value must be a positive double.')
+            else
+                obj.wetMass = wet_mass;
+            end  
         end
+
+        function obj= set_dry_mass(obj, dry_mass)
+            if (~isdouble(wet_mass) || wet_mass < 0)
+                error('Dry mass value must be a positive double.')
+            else
+                obj.dryMass = dry_mass;
+            end  
+        end
+
+        function obj= set_dry_inertias(obj, dry_inertias)
+            [r,c] = size(dry_inertias);
+            if all((~isdouble(dry_inertias) || dry_inertias < 0)) && (r==c)
+                error('Dry intertia values must be positive doubles.')
+            else
+                obj.dryInertias = dry_inertias;
+            end  
+        end
+
+        function obj= set_wet_inertias(obj, wet_inertias)
+            [r,c] = size(wet_inertias);
+            if all((~isdouble(wet_inertias) || wet_inertias < 0)) && (r==c)
+                error('Wet inertia values must be positive doubles, and the inertia matrix must be square.')
+            else
+                obj.wetInertias = wet_inertias;
+            end  
+        end
+
+        function obj= set_initial_CG(obj, initial_CG)
+            if (~isdouble(initial_CG) || initial_CG < 0)
+                error('CG value must be a positive double.')
+            else
+                obj.initialCG = initial_CG;
+            end
+        end
+
+        function obj= set_final_CG(obj, final_CG)
+            if (~isdouble(final_CG) || final_CG < 0)
+                error('CG value must be a positive double.')
+            else
+                obj.finalCG = final_CG;
+            end
+        end
+
+        function obj= set_CP(obj, CP)
+            if (~isdouble(CP) || final_CP < 0)
+                error('CP value must be a positive double.')
+            else
+                obj.CP = CP;
+            end
+        end
+
+        function obj= set_length(obj, length)
+            if (~isdouble(length) || length < 0)
+                error('Rocket length value must be a positive double.')
+            else
+                obj.length = length;
+            end
+        end
+
+        function obj= set_diameter(obj, diameter)
+            if (~isdouble(diameter) || diameter < 0)
+                error('Rocket diameter value must be a positive double.')
+            else
+                obj.diameter = diameter;
+            end
+        end
+
+        function obj= set_radius(obj, radius)
+            if (~isdouble(radius) || radius < 0)
+                error('Rocket radius value must be a positive double.')
+            else
+                obj.radius = radius;
+            end
+        end
+
+        function obj= set_burn_time(obj, burn_time_value)
+            if (~isdouble(burn_time_value) || burn_time_value < 0)
+                error('Burn time value must be a positive double.')
+            else
+                obj.burnTime = burn_time_value;
+            end
+        end
+
+        function obj= set_thrust_curve(obj, thrust_arr)
+            [~,c] = size(thrust_arr);
+            if c ~= 2 || (thrust_arr(1, 1) == 0 && thrust_arr(1,2) == 0)
+                error(['Error in dimensions of thrust array values. ' ...
+                    'Time must be first column, and thrust must be second column.'])
+            else
+                obj.thrustCurve = thrust_arr;
+            end
+        end        
+
     end
 end
