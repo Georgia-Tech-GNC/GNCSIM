@@ -1,13 +1,15 @@
 close all; clear; clc;
 
-changed()
+%changed()
 
 file_path = 'Flight Profile\flight_2.csv';
 time_arr = linspace(0, 2, 5);
 points = 10;
 
-trim_point = TrimPoint(file_path, time_arr, points);
+trim_point = TrimPoint(file_path);
 
+trim_point.find_event_time("LIFTOFF")
+trim_point.find_event_time("BURNOUT")
 
 
 function changed()
