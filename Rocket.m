@@ -23,7 +23,8 @@ classdef Rocket
             %Construct an instance of this class
             %   Detailed explanation goes here
         end
-
+        
+        % Start Setter Functions
         function obj= set_wet_mass(obj, wet_mass)
             if (~isdouble(wet_mass) || wet_mass < 0)
                 error('Wet mass value must be a positive double.')
@@ -113,7 +114,58 @@ classdef Rocket
                 obj.burnTime = burn_time_value;
             end
         end
+        % End Setter Functions
 
+        % Start Getter Functions
+        function wetMass = get_wet_mass(obj)
+            wetMass = obj.wetMass;
+        end
+            
+        function dryMass = get_dry_mass(obj)
+            dryMass = obj.wetMass;
+        end
+
+        function dryInertias = get_dry_inertias(obj)
+            dryInertias = obj.dryInertias;
+        end
+
+        function wetInertias = get_wet_inertias(obj)
+            wetInertias = obj.wetInertias;
+        end
+
+        function initialCG = get_initial_CG(obj)
+            initialCG = obj.initialCG;
+        end
+
+        function finalCG = get_final_CG(obj)
+            finalCG = obj.finalCG;
+        end
+
+        function CP = get_CP(obj)
+            CP = obj.CP;
+        end
+
+        function length = get_length(obj)
+            length = obj.length;
+        end
+
+        function diameter = get_diameter(obj)
+            diameter = obj.diameter;
+        end
+
+        function radius = get_radius(obj)
+            radius = obj.radius;
+        end
+
+        function burnTime = get_burn_time(obj)
+            burnTime = obj.burnTime;
+        end
+
+        function thrustCurve = get_thrust_curve(obj)
+            thrustCurve = obj.thrustCurve;
+        end
+        % End Getter Functions
+        
         function obj= set_thrust_curve(obj, thrust_arr)
             [~,c] = size(thrust_arr);
             if c ~= 2 || (thrust_arr(1, 1) == 0 && thrust_arr(1,2) == 0)
