@@ -3,13 +3,24 @@ classdef Flight
     %   Detailed explanation goes here
 
     properties (SetAccess = private)
-        simTime;
-        tStep;
-        t;
-
+        tStep; % seconds (double)
+        t; % seconds (double)
+        runClosedLoop; % boolean
+        calcXDots; % boolean
+        runLinearModel; % boolean
+        applyWind; % boolean
+        useLatingHyperCubeSampling; % boolean
+        numRuns; % integer (double)
+        numStates = 13; 
+        numInputs = 3;
+        localSimTime; % seconds (double)
+        simTime; % seconds (double)
+        tSpan; % Vector of doubles
+        gravity = 9.81 % m/(s^2)
+        uSpan; % length of t span by 3 array of double
+        
         initState;
         currentState;
-        stateHistory;
     end
 
     methods
@@ -23,5 +34,27 @@ classdef Flight
             %   Detailed explanation goes here
             outputArg = obj.Property1 + inputArg;
         end
+
+        function data = runFlight(obj, Rocket, Environment)
+            data(obj.numRuns) = struct();
+            for runIndex = 1:obj.numRuns
+                fprintf('Iterative LQR Monte Carlo Run %d out of %d...\n',runIndex,obj.numRuns)
+                % Number of LQR intervals to simulate
+                % currently each LQR interval is 1 second
+                % NOTE: FSW will be switching LQR gains at a much faster rate (10 Hz)
+                numIntervals = obj.simTime / obj.localSimTime;
+                % Allocate log memory for current MC run
+                tempMClog(numIntervals) = struct();
+
+                if obj.runLinearModel
+                    tempMClinLog(numIntervals) = struct();
+                end
+
+                for lqrIndex =  
+
+                end
+            end
+        end
+
     end
 end
