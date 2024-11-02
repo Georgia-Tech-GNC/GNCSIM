@@ -1,4 +1,4 @@
-classdef TrimPoint
+classdef TrimPoint < handle
 
     properties (SetAccess = private)
         file_path
@@ -10,6 +10,11 @@ classdef TrimPoint
         flight_data_num
 
         burn_time
+
+        batches
+        num_batches
+
+        column_positions_csv
     end
 
     methods
@@ -37,17 +42,70 @@ classdef TrimPoint
             [obj.num_rows, obj.num_cols] = size(obj.flight_data);
 
             %
-            positions = look_for_data_types(obj, required_vars);
+            obj.column_positions_csv = look_for_data_types(obj, required_vars);
 
             % Throw an error if the required variables are not found
-            if any(positions == -1)
+            if any(obj.column_positions_csv == -1)
                 missingVarsString = strjoin(required_vars, ', ');
                 error("Unable to find the required variables: %s", missingVarsString);
             end
         end
 
-        function generate_trim_points(obj, time_arr, num_trim_points_per_time)
-            disp("X")
+        function generate_trim_batches(obj, time_arr)
+            obj.num_batches = length(time_arr);
+            obj.batches = TrimBatch.empty(obj.num_batches, 0);
+            for ii=1:obj.num_batches
+                time = time_arr(ii);
+                base_state = obj.get_vertical_state();
+                [u, thrust] = obj.get_info(time);
+                base_state(1) = u;
+                base_state(13) = thrust;
+                batch = TrimBatch(base_state, time, ii);
+                obj.batches(ii) = batch;
+            end
+        end
+
+        function add_u_variations(obj, time_arr, num_trim_points_per_time, trim_spacing)
+            % add check if obj.num_batches == length(time_arr) 
+            for ii=1:length(time_arr)
+                u_vars = obj.generate_trim_points_from_u_var(time_arr, num_trim_points_per_time, trim_spacing);
+                obj.batches(ii).add_variation("speed", "u", u_vars.')
+            end
+        end
+
+        function add_custom_variations(obj, batch_indexes, name, var, data)
+            for ii=1:length(batch_indexes)
+                batch = obj.batches(batch_indexes(ii));
+                batch.add_variation(name, var, data)
+            end
+        end
+
+        function generate_trim_points(obj)
+            for ii=1:obj.num_batches
+                obj.batches(ii).generate_trim_batch()
+            end
+        end
+
+        function u_vars = generate_trim_points_from_u_var(obj, time_arr, num_trim_points_per_time, trim_spacing)
+            for ii=1:length(time_arr)
+                [u, ~] = obj.get_info(time_arr(ii));
+
+                lower_bound = u * (1 - trim_spacing);
+                upper_bound = u * (1 + trim_spacing);
+    
+                exp_space = linspace(log(lower_bound), log(upper_bound), num_trim_points_per_time);
+                
+                u_vars = exp(exp_space);
+            end
+        end
+
+        function [u, thrust] = get_info(obj, time)
+            time_data = obj.flight_data_num(:, obj.column_positions_csv(1));
+            speed_data = obj.flight_data_num(:, obj.column_positions_csv(2));
+            thrust_data = obj.flight_data_num(:, obj.column_positions_csv(3));
+
+            u = interp1(time_data, speed_data, time, 'linear');
+            thrust = interp1(time_data, thrust_data, time, 'linear');
         end
         
         function event_time = find_event_time(obj, event_name)
@@ -97,6 +155,19 @@ classdef TrimPoint
                     end
                 end
             end
+        end
+    end
+
+    methods (Static)
+        function full_state = get_vertical_state()
+            % state = [u; v; w; p; q; r; q0; q1; q2; q3]
+            state = [0; 0; 0; 0; 0; 0; 1; 0; 0; 0];
+
+            % contol = [Roll; Yaw; Thrust]
+            control = [0; 0; 0];
+            
+            % full state = [u; v; w; p; q; r; q0; q1; q2; q3; Roll; Yaw; Thrust]
+            full_state = [state; control];
         end
     end
 end
