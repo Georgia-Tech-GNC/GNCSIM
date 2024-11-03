@@ -1,35 +1,62 @@
 close all; clear; clc;
 
+% Define the file path to the flight data CSV file
 file_path = 'Flight Profile\flight_2.csv';
 
+% Create a TrimPoint object by initializing it with the specified flight data file
 trim_point = TrimPoint(file_path);
 
+% Find the time of the "LIFTOFF" event in the flight data
 liftoff_time = trim_point.find_event_time("LIFTOFF");
+
+% Find the time of the "BURNOUT" event in the flight data
 burnout_time = trim_point.find_event_time("BURNOUT");
 
+% Generate an array of 6 evenly spaced time points between liftoff_time and burnout_time
 time_arr = linspace(liftoff_time, burnout_time, 6);
 
+% Retrieve the default vertical state vector
 base_state = trim_point.get_vertical_state();
 
+% Generate trim batches for each time point in time_arr
+% Each batch corresponds to a specific time instance and contains variations based on the base_state
+trim_point.generate_trim_batches(time_arr);
 
-trim_point.generate_trim_batches(time_arr)
+% Define the number of trim points to generate per time instance for 'u' variations
+num_trim_points_per_time = 12;
 
-num_trim_points_per_time = 15;
-trim_spacing = .2;
+% Define the spacing factor for 'u' variations (e.g., 20% variation around the base 'u' value)
+trim_spacing = 0.15;
 
-trim_point.add_u_variations(time_arr, num_trim_points_per_time, trim_spacing)
+% Add 'u' (velocity) variations to each trim batch based on the specified parameters
+% This creates different trim points by varying the 'u' component within the defined spacing
+trim_point.add_u_variations(time_arr, num_trim_points_per_time, trim_spacing);
 
-batch_index = [2,3,4];
+% Define the indices of batches to which custom variations will be added
+batch_index = [2, 3, 4];
+
+% Define the name of the custom variation to add
 var_name = "turn";
+
+% Define the variables involved in the custom variation
+% In this case, the variation affects the quaternion components q0, q1, q2, and q3
 varables = ["q0", "q1", "q2", "q3"];
+
+% Define the variation data matrix for the custom variation
+% Each row represents a different state for the variation
 data = [0.9962, 0, 0, 0.0872;
-        1, 0, 0, 0];
+        1,      0, 0, 0];
 
+% Add the custom "turn" variation to the specified batches (2, 3, and 4)
+% This will create additional trim points by varying the specified quaternion components
 trim_point.add_custom_variations(batch_index, var_name, varables, data);
-trim_point.generate_trim_points()
 
+% Generate all trim points by combining variations from all batches
+% This consolidates all trim points into the obj.trim_points property for further use
+trim_point.generate_trim_points();
 
-%trim_point.generate_trim_points_from_u_var(time_arr, num_trim_points_per_time, trim_spacing)
+% Export csv
+%trim_point.export_trim_points_to_csv('trim_points.csv');
 
-%trim_point.draw_u_vars()
-
+% % Visualize 'u' variations (assuming a draw_u_vars method exists)
+trim_point.draw_u_trim_points(0, burnout_time)
