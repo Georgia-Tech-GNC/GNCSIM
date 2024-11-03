@@ -15,9 +15,6 @@ burnout_time = trim_point.find_event_time("BURNOUT");
 % Generate an array of 6 evenly spaced time points between liftoff_time and burnout_time
 time_arr = linspace(liftoff_time, burnout_time, 6);
 
-% Retrieve the default vertical state vector
-base_state = trim_point.get_vertical_state();
-
 % Generate trim batches for each time point in time_arr
 % Each batch corresponds to a specific time instance and contains variations based on the base_state
 trim_point.generate_trim_batches(time_arr);
@@ -32,31 +29,34 @@ trim_spacing = 0.15;
 % This creates different trim points by varying the 'u' component within the defined spacing
 trim_point.add_u_variations(time_arr, num_trim_points_per_time, trim_spacing);
 
-% Define the indices of batches to which custom variations will be added
-batch_index = [2, 3, 4];
-
-% Define the name of the custom variation to add
-var_name = "turn";
+batch_index = [2, 3, 4];  % Define the indices of batches to which custom variations will be added
+turn_variation_name = "turn";  % Define the name of the custom variation to add
 
 % Define the variables involved in the custom variation
 % In this case, the variation affects the quaternion components q0, q1, q2, and q3
-varables = ["q0", "q1", "q2", "q3"];
+turn_varables = ["q0", "q1", "q2", "q3"];
 
 % Define the variation data matrix for the custom variation
 % Each row represents a different state for the variation
-data = [0.9962, 0, 0, 0.0872;
+turn_data = [0.9962, 0, 0, 0.0872;
         1,      0, 0, 0];
 
 % Add the custom "turn" variation to the specified batches (2, 3, and 4)
 % This will create additional trim points by varying the specified quaternion components
-trim_point.add_custom_variations(batch_index, var_name, varables, data);
+trim_point.add_custom_variations(batch_index, turn_variation_name, turn_varables, turn_data);
+
+yaw_variation_name = "yaw";
+yaw_varables = ["Yaw"];
+yaw_data = [0;70];
+
+trim_point.add_custom_variations(batch_index, yaw_variation_name, yaw_varables, yaw_data)
 
 % Generate all trim points by combining variations from all batches
 % This consolidates all trim points into the obj.trim_points property for further use
 trim_point.generate_trim_points();
 
 % Export csv
-%trim_point.export_trim_points_to_csv('trim_points.csv');
+trim_point.export_trim_points_to_csv('examples/trim_points.csv');
 
 % % Visualize 'u' variations (assuming a draw_u_vars method exists)
 trim_point.draw_u_trim_points(0, burnout_time)
