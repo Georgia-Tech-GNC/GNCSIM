@@ -3,7 +3,18 @@ classdef TrimPoint < handle
     % This class reads flight data from a CSV file, processes it, and generates trim points
     % based on specified times and variations. It manages batches of trim points and provides
     % methods to add custom variations and retrieve specific flight information.
-    
+
+    properties (Constant)
+        % State Names
+        % A constant cell array containing the names of all possible states.
+        state_names = {"u", "v", "w", "p", "q", "r", ...
+                      "q0", "q1", "q2", "q3", "Roll", "Yaw", "Thrust"};
+        
+        % State Indices
+        % A constant array representing the indices corresponding to each state name.
+        state_index_con = 1:length(TrimBatch.state_names);
+    end
+
     properties (SetAccess = private)
         % The path to the CSV file containing the flight data.
         file_path
@@ -19,9 +30,6 @@ classdef TrimPoint < handle
         % with NaN rows removed.
         flight_data_num
         
-        % The time when the burn event occurs, extracted from the flight data.
-        burn_time
-        
         % An array of TrimBatch objects, each representing a batch of trim points
         % generated for specific times.
         batches
@@ -34,6 +42,10 @@ classdef TrimPoint < handle
         
         % An array indicating the column indices of required variables in the flight data.
         column_positions_csv
+
+        % State Dictionary
+        % A containers.Map object mapping state names (as strings) to their corresponding indices.
+        state_dict    
     end
 
     methods
@@ -76,6 +88,13 @@ classdef TrimPoint < handle
                 missingVarsString = strjoin(required_vars(obj.column_positions_csv == -1), ', ');
                 error("Unable to find the required variables: %s", missingVarsString);
             end
+
+            % Convert state names to character arrays for compatibility with containers.Map
+            state_keys = cellfun(@char, TrimBatch.state_names, 'UniformOutput', false);
+            state_values = num2cell(TrimBatch.state_index_con);
+            
+            % Create a dictionary (Map) with state names as keys and their indices as values
+            obj.state_dict = containers.Map(state_keys, state_values);  
         end
 
         function generate_trim_batches(obj, time_arr)
@@ -138,23 +157,46 @@ classdef TrimPoint < handle
             end
         end
 
-        function add_custom_variations(obj, batch_indexes, name, var, data)
+        function add_custom_variations(obj, batch_indexes, name, var, data, include_base_state)
             % Adds Custom Variations to Specified Batches
             % This method allows adding user-defined variations to selected batches.
             %
             % Inputs:
             %   batch_indexes - Array of batch indices to which the variation will be added.
             %   name          - Name of the variation.
-            %   var           - Variable name(s) involved in the variation (as a string or cell array).
+            %   var           - Variable name(s) involved in the variation (as a string or array).
             %   data          - Variation data matrix corresponding to 'var'.
-            
+            %   include_base_state - Logical flag (true/false) to include base state in the variation.
+
+            if nargin < 6
+                include_base_state = false;
+            end
+
             % Loop over each specified batch index
             for ii = 1:length(batch_indexes)
                 % Get the batch at the current index
                 batch = obj.batches(batch_indexes(ii));
                 
+                % copy data into new variable
+                new_data = data;
+                
+                % If include_base_state is true, add base state to the variation data
+                if include_base_state
+                    % Initialize an array to store base state values for each variable in 'var'
+                    base_state_values = zeros(1, length(var));
+        
+                    % Populate base_state_values by looking up each variable in the base state
+                    for jj = 1:length(var)
+                        var_name = var(jj);
+                        var_index = batch.state_dict(var_name);  % Get the index of the variable
+                        base_state_values(jj) = batch.base_state(var_index);  % Get the base state value
+                    end
+                    % Prepend base_state_values to the data matrix
+                    new_data = [base_state_values; data];
+                end
+
                 % Add the custom variation to the batch
-                batch.add_variation(name, var, data);
+                batch.add_variation(name, var, new_data);
             end
         end
 
@@ -199,6 +241,36 @@ classdef TrimPoint < handle
             end
         end
 
+        function batch_trim_points = get_trim_points(obj, target_time)
+            % Finds the closest trim point in time to the specified target time
+            %
+            % Inputs:
+            %   target_time - The time value to find the closest trim point to (double)
+            %
+            % Outputs:
+            %   batch_trim_points - The trim points associated with the batch closest in time to target_time (structure or array)
+            
+            % Initialize an array to store the time values of each batch in obj.batches
+            batch_times = zeros(1, length(obj.batches));
+            
+            % Populate batch_times with the time values from each batch
+            for i = 1:length(obj.batches)
+                batch_times(i) = obj.batches(i).time;  % Extract and store the time of the current batch
+            end
+            
+            % Calculate the difference between each batch time and the target time
+            time_differences = batch_times - target_time;
+            
+            % Find the absolute differences to measure the closeness to target_time
+            abs_time_differences = abs(time_differences);
+            
+            % Identify the index of the batch with the smallest time difference (closest time)
+            [~, closest_index] = min(abs_time_differences);
+            
+            % Retrieve the trim points associated with the batch closest to the target time
+            batch_trim_points = obj.batches(closest_index).trim_points;
+        end
+
         function export_trim_points_to_csv(obj, output_file_path)
             % Exports the Generated Trim Points to a CSV File
             %
@@ -219,22 +291,22 @@ classdef TrimPoint < handle
             
             % Extract all state variable names from the first trim_point using state_dict
             % Assuming state_dict is a map with keys as variable names and values as indices
-            first_trim_point = obj.trim_points(1);
-            state_dict = obj.batches(1).state_dict;  % Assuming state_dict is the same across all batches
-            state_names = keys(state_dict);
+            %first_trim_point = obj.trim_points(1);
+            %state_dict = obj.batches(1).state_dict;  % Assuming state_dict is the same across all batches
+            %state_names = keys(obj.state_dict);
 
-			state_indices = values(state_dict, state_names);
+			state_indices = values(obj.state_dict, obj.state_names);
             state_indices = cell2mat(state_indices);
 
 			% Sort the state_names based on their indices to maintain consistent order
     		[~, sorted_order] = sort(state_indices);
-    		state_names_sorted = state_names(sorted_order);
+    		state_names_sorted = obj.state_names(sorted_order);
 
             % Number of state variables
-            num_states = length(state_names);
+            num_states = length(obj.state_names);
             
             % Create column headers: 'Name', 'ID', 'Time', followed by state variable names
-            headers = [{'Time', 'ID', 'Name'}, state_names_sorted];
+            headers = [{"Time", "ID", "Name"}, state_names_sorted];
             
             % Initialize a cell array to hold all data
             num_trim_points = length(obj.trim_points);
@@ -254,11 +326,14 @@ classdef TrimPoint < handle
                 states = trim_pt.states;
                 for j = 1:num_states
                     var_name = state_names_sorted{j};
-                    var_index = state_dict(var_name);
+                    var_index = obj.state_dict(var_name);
                     data_cell{i, 3 + j} = states(var_index);
                 end
             end
             
+            % Flatten the headers by extracting the contents of each nested cell
+            headers = cellfun(@(x) x{1}, headers, 'UniformOutput', false);
+
             % Convert cell array to table
             trim_table = cell2table(data_cell, 'VariableNames', headers);
             

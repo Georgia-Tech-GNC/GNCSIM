@@ -41,23 +41,31 @@ turn_varables = ["q0", "q1", "q2", "q3"];
 
 % Define the variation data matrix for the custom variation
 % Each row represents a different state for the variation
-turn_data = [0.9962, 0, 0, 0.0872;
-			 1,		 0, 0, 0];
+turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
+             0.0871557, 0, 0, 0.9961947;   % 10 deg
+             0.1305262, 0, 0, 0.9914449];  % 15 deg
+
+% include base state [0, 0, 0, 1] strait up flight
+turn_include_base = true;
 
 % Add the custom "turn" variation to the specified batches (2, 3, and 4)
 % This will create additional trim points by varying the specified quaternion components
-trim_point.add_custom_variations(turn_batch_index, turn_variation_name, turn_varables, turn_data);
+trim_point.add_custom_variations(turn_batch_index, turn_variation_name, turn_varables, turn_data, turn_include_base);
 
 yaw_batch_index = 4:num_batches;
 yaw_variation_name = "yaw";
 yaw_varables = "Yaw";
-yaw_data = [0; 70];
+yaw_data = [40; 80];
+include_base = true;
 
-trim_point.add_custom_variations(yaw_batch_index, yaw_variation_name, yaw_varables, yaw_data)
+trim_point.add_custom_variations(yaw_batch_index, yaw_variation_name, yaw_varables, yaw_data, include_base)
 
 % Generate all trim points by combining variations from all batches
 % This consolidates all trim points into the obj.trim_points property for further use
 trim_point.generate_trim_points();
+
+% Get trim points closest to 1 second
+one_s_trim_ponts = trim_point.get_trim_points(1);
 
 % Export csv
 trim_point.export_trim_points_to_csv('examples/trim_points.csv');
