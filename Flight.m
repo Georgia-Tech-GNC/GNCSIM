@@ -46,11 +46,30 @@ classdef Flight
                 % Allocate log memory for current MC run
                 tempMClog(numIntervals) = struct();
 
-                if obj.runLinearModel
+                if obj.get_runLinearModel()
                     tempMClinLog(numIntervals) = struct();
                 end
 
-                for lqrIndex =  
+                if obj.get_useLatinHyperCubeSampling()
+                    mcParams = getLatinHyperCubeSample(obj.get_MCxlsx(), runIndex);
+                else
+                    mcParams = getRandomSample(obj.get_MCxlsx(), runIndex);
+                end
+
+                for lqrIndex =  1:numIntervals
+                    fprintf('Current LQR config: %d \n', lqrIndex);
+
+                    % Add Monte Carlo Parameters to input configuration
+                    obj.set_windParam(mcParams.windParam);
+                    Rocket.set_wet_mass(mcParams.wetMass);
+                    Rocket.set_dry_mass(mcParams.dryMass);
+                    % peak thrust?? Where is this used? config.peakThrust =
+                    % mcParams.peakThrust
+                    Rocket.set_burn_time(mcParams.burnTime);
+                    Rocket.set_wet_inertias(mcParams.wetMOI);
+                    Rocket.set_dry_inertias(mcParams.dryMOI);
+
+                    % Get initial state for current LQR time interval
 
                 end
             end
