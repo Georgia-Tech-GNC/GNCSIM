@@ -1,0 +1,321 @@
+function [xDot, log] = rocketModel(t, x, RocketObj, AerodynamicsObj, FlightObj, TrimPointObj)
+% rocketModel: Open loop model for jet vanes rocket dynamics
+% t: current time
+% x: current state: [px py pz vx vy vz q0 q1 q2 q3 wx wy wz]
+% RocketObj:  object representing rocket
+% AerodynamicsObj: object representing aerodynamic forces on rocket
+% FlightObj: object representing flight of the rocket
+% TrimPointObj: object representing trim points
+
+% xDot = f(x, u)
+% log --> data that gets logged
+
+    %% Print time to secondary terminal
+    persistent terminalCounter resetTerminalCounter;
+    
+    if isempty(terminalCounter)
+        terminalCounter = 0;
+    end
+    
+    if isempty(resetTerminalCounter)
+        resetTerminalCounter = 0;
+    end
+    
+    terminalCounter = terminalCounter + 1;
+    resetTerminalCounter = resetTerminalCounter + 1;
+    
+    if resetTerminalCounter >= 3000
+         tprintf('rocketModel');
+         resetTerminalCounter = 0;
+    end
+    
+    if terminalCounter >= 100
+        tprintf('rocketModel',num2str(t));
+        terminalCounter = 0;
+    end
+
+    %% Extract config variables
+    tSpan = FlightObj.get_tSpan();
+    uSpan = FlightObj.get_uSpan();
+    wetMass = RocketObj.get_wet_mass();
+    dryMass = RocketObj.get_dry_mass();
+
+    % baseIb = config.baseIb;
+    % invBaseIb = config.invBaseIb;
+
+    radius = RocketObj.get_radius();
+    g = FlightObj.get_gravity();
+    burnTime = RocketObj.get_burn_time();
+    wetMOI = RocketObj.get_wet_inertias();
+    dryMOI = RocketObj.get_dry_inertias();
+    CG0 = RocketObj.get_initial_CG();
+    finalCG = RocketObj.get_final_CG();
+    runClosedLoop = FlightObj.get_runClosedLoop();
+    applyWind = FlightObj.get_applyWind();
+    applyPeriodicWindGusts = FlightObj.get_applyPeriodicWindGusts();
+    if runClosedLoop
+        trimpoint_struct_arr = TrimPointObj.get_trimpoint_struct_arr();
+    end
+
+    %% Extract states
+
+    % Position in flat Earth frame, "f" (m)
+    px = x(1);
+    py = x(2);
+    pz = x(3);
+    p_f = [px;py;pz];
+
+    % Velocity in body brame, "b" (m/s)
+    vx = real(x(4));
+    vy = real(x(5));
+    vz = real(x(6));
+    v_b = [vx;vy;vz];
+    
+    % Unit quaternion that rotates from "f" to "b" (unitless)
+    q0 = real(x(7));
+    q1 = real(x(8));
+    q2 = real(x(9));
+    q3 = real(x(10));
+    q_bf = quatnormalize([q0 q1 q2 q3]);
+    
+    % Angular velocity with respect to "f" expressed in "b" (rad/s)
+    wx = real(x(11));
+    wy = real(x(12));
+    wz = real(x(13));
+    wbf_b = [wx;wy;wz];
+
+    %% Get intermediate values
+    % getRho = @(h) 0.0023769 .* (1 - 6.877e-6 .* h).^4.25588;
+    rho = 0.0023769 .* (1 - 6.877e-6 .* px).^4.25588; % air density
+    rho = rho * 515.379;
+
+    T = RocketObj.get_thrust(t); % Get thrust at the instantaneous moment in time
+    if t < burnTime
+        m = wetMass - ((wetMass - dryMass)/burnTime) * t;
+        CG = CG0 - ((CG0 - finalCG)/burnTime) * t;
+        Ib = wetMOI - ((wetMOI - dryMOI)/burnTime) .* t;
+    else
+        m = dryMass;
+        CG = finalCG;
+        Ib = dryMOI;
+    end
+
+    %% Gravity
+
+    FG_v = -m*g*[1;0;0]; % gravity force in vehicle carried frame (aligned with flat earth frame)
+    FG_b = quat_rotate(q_bf,FG_v'); % parts(quatconj(q_obj)*quaternion([0;FG_v]')*q_obj);
+    FG_b = FG_b';
+
+    %% Thrust
+    
+    FT_b = [0.95.*T;0;0]; % Decimal preceding *T represents the thrust loss due to jet vanes
+    % Confirm actual thrust loss value due to static fires
+
+    %% Closed Loop Controls
+
+    % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
+    % issues. 
+    if runClosedLoop
+        % xRef = interp1(tSpan,xRefSpan,t);
+
+        lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
+        [~, ~, K, xDot0, x0, u0] = LQR_gain_selector_v2(lin_x,t,trimpoint_struct_arr);
+        % del_u = r' - K*del_x;
+
+        % Old bug: used to be x0'  instead. Quite a devious bug, bc it doesnt error and del_u is just
+        % a matrix that can still be referenced
+        del_x = lin_x - x0;
+        del_u = -K*del_x;
+
+        MT_bx = del_u(1) + u0(1); % M_roll
+
+        % Forcefully turning off pitch control in the FSW? In that case 
+        % M_pitch would be zero in the nonlinear (truth) model
+        % MT_by = del_u(2) + u0(2); % M_pitch
+        MT_by = 0;
+
+        MT_bz = del_u(3) + u0(3); % M_yaw
+
+        
+    else
+        MT_bx = 0;
+        MT_by = 0;
+        MT_bz = 0;    
+    end
+
+
+    %% Constrain MT_b
+    % This is based on static fire data. Needs to be updated to reflect
+    % real life!
+
+    if MT_bz > 80
+        MT_bz = 80;
+    end
+
+    if MT_bz < -80
+        MT_bz = -80;
+    end
+
+    % if MT_bz > 35 && t >= 10
+    %     MT_bz = 35;
+    % end
+    % 
+    % if MT_bz < -35 && t >= 10
+    %     MT_bz = -35;
+    % end
+    MT_b = [MT_bx;MT_by;MT_bz];
+
+    %% Aerodynamics. TODO: Consult Hridai on how this should work with wind/environment
+
+    if applyWind
+        if applyPeriodicWindGusts
+            % Gust Period
+            T = 2.5; % Seconds Between the Start of Each Gust
+
+            % Discrete Wind Gust Model (Adjusted to be symmetric)
+            WindGustMag = @(Vm,dm,x) (x < 0)*0 + (0 <= x && x < dm)*(Vm/2)*(1 - cos((pi*x)/dm)) + (dm <= x && x < 2*dm)*Vm + (2*dm <= x && x < 3*dm)*(Vm/2)*(1 - cos(((pi*x)/dm)+pi)) + (3*dm <= x )*0;
+            
+            windParam = Environment.get_windParam();
+            Vm = windParam(1);
+            dm = windParam(2);
+        
+            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
+            udir = [0 1 0];
+        
+            % Distance moved into gust (Assuming that rocket position does not affect )
+            normXu = Vm*mod(t,T);
+            
+            % Calculating Wind Speed with Discrete Gust Model
+            windspeed = WindGustMag(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
+        
+            % wind gust in y and z
+            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
+        
+            % Calculating to velocity to account for wind speed
+            va_x = v_a(1);
+            va_y = v_a(2);
+            va_z = v_a(3);
+        
+            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
+            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
+    
+            [FA_b, MA_b,l_p,n_a,n_r] =  AerodynamicsObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
+        else
+            % Discrete Wind Gust Model
+            WindGustMag = @(Vm,dm,x) (x < 0)*0 + (0 <= x && x < dm)*(Vm/2)*(1 - cos((pi*x)/dm)) + (dm <= x)*Vm;
+            
+            windParam = Environment.get_windParam();
+            Vm = windParam(1);
+            dm = windParam(2);
+        
+            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
+            udir = [0 1 0]; 
+        
+            % Distance moved into gust
+            normXu = norm(dot([px py pz],udir));
+            normXu = normXu + Vm*t; % Assuming wind gust moves at a speed Vm and starts at t = 0. starts at a distance dm away from rocket
+            
+            % Calculating Wind Speed with Discrete Gust Model
+            windspeed = WindGustMag(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
+        
+            % wind gust in y and z
+            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
+        
+            % Calculating to velocity to account for wind speed
+            va_x = v_a(1);
+            va_y = v_a(2);
+            va_z = v_a(3);
+        
+            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
+            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
+    
+            [FA_b, MA_b,l_p,n_a,n_r] =  AerodynamicsObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
+        end
+    else
+        [FA_b, MA_b,l_p,n_a,n_r] =  AerodynamicsObj.calcAeroBody3(alpha,norm(v_b),rho,CG,wbf_b);
+    end
+
+    %% External Moments
+    % Note: similar performance issues as controls
+    if uSpan == 0 % interp1 strong effect on sim perf
+        ME_bx = 0;
+        ME_by = 0;
+        ME_bz = 0;
+    else
+        ME_bx = interp1(tSpan,uSpan(:,1),t);
+        ME_by = interp1(tSpan,uSpan(:,2),t);
+        ME_bz = interp1(tSpan,uSpan(:,3),t);
+
+        % NOTE: for f(x,u) do this instead
+        % MT_bx = u(1);
+        % MT_by = u(2);
+        % MT_bz = u(3);
+    end
+    ME_b = [ME_bx;ME_by;ME_bz];
+
+    %% State Derivatives
+
+    % Currently we are unable to factor out m(t) from the MOI. Factoring
+    % out an m(t) is beneficial bc it allows the base MOI to be constant,
+    % which speeds up sims. If we ever are able to in the future, use 
+    % this trick vvv
+    % Ib = m.*baseIb;
+    % invIb = (1/m).*invBaseIb;
+    
+    % position qns of motion
+    p_f_dot = quat_rotate(quatconj(q_bf),v_b'); %  parts(q_obj*quaternion([0;V_b]')*quatconj(q_obj));
+    p_f_dot = p_f_dot'; % [3x1]
+    
+    % velocity eqns of motion
+    F_b = FG_b + FT_b + FA_b;
+    v_b_dot = (1/m)*F_b - cross(wbf_b, v_b);
+    
+    % quaternion eqns of motion
+    q0_dot = 0.5 * (-wx*q1 - wy*q2 - wz*q3);
+    q1_dot = 0.5 * (wx*q0 + wz*q2 - wy*q3);
+    q2_dot = 0.5 * (wy*q0 - wz*q1 + wx*q3);
+    q3_dot = 0.5 * (wz*q0 + wy*q1 - wx*q2);
+    q_bf_dot = [q0_dot;q1_dot;q2_dot;q3_dot];
+    
+    % angular rate eqns of motion
+    M_b = MT_b + MA_b + ME_b;
+    
+    %     wbf_b_dot = [0;0;0];
+    %     wbf_b_dot(1) = 0;
+    %     wbf_b_dot(2) = 0;
+    %     wbf_b_dot(3) = M_b(3)/Ib(3,3);
+
+    wbf_b_dot = Ib\(M_b - cross(wbf_b, Ib*wbf_b)); % inv(A)*b == A\b
+%   wbf_b_dot = inv(Ib) * (M_b - cross(wbf_b, Ib*wbf_b)); % slower
+    %wbf_b_dot = inv(Ib) * (M_b - cross(wbf_b, Ib*wbf_b)); % slower
+    
+    % stack components
+    xDot = [p_f_dot; v_b_dot; q_bf_dot; wbf_b_dot];
+    
+    %% Logging
+
+    % add to log
+    log.alpha = alpha;
+    log.beta = beta;
+    % log.D0 = D0;
+    % log.L = L;
+    % log.Di = Di;
+    % log.M_ps = M_ps;
+    % log.MT_b = MT_b';
+    % log.MA_b = MA_b';
+    log.CG = CG;
+    % log.FT_b = FT_b';
+    % log.F_b = F_b';
+    log.MA_b = MA_b';
+    log.MT_b = MT_b';
+    log.ME_b = ME_b';
+    log.FG_b = FG_b';
+    log.FT_b = FT_b';
+    log.FA_b = FA_b';
+    log.velFlat = p_f_dot'; % should be [1x3]
+    log.accelFlat =quat_rotate(quatconj(q_bf),real(v_b_dot)');
+    log.l_p = l_p;
+    log.n_a = n_a;
+    log.n_r = n_r;
+    
+end
