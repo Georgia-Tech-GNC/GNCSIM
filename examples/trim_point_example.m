@@ -12,8 +12,10 @@ liftoff_time = trim_point.find_event_time("LIFTOFF");
 % Find the time of the "BURNOUT" event in the flight data
 burnout_time = trim_point.find_event_time("BURNOUT");
 
+num_batches = 10;
+
 % Generate an array of 6 evenly spaced time points between liftoff_time and burnout_time
-time_arr = linspace(liftoff_time, burnout_time, 6);
+time_arr = linspace(liftoff_time + 0.2, burnout_time, num_batches);
 
 % Generate trim batches for each time point in time_arr
 % Each batch corresponds to a specific time instance and contains variations based on the base_state
@@ -23,13 +25,13 @@ trim_point.generate_trim_batches(time_arr);
 num_trim_points_per_time = 12;
 
 % Define the spacing factor for 'u' variations (e.g., 20% variation around the base 'u' value)
-trim_spacing = 0.15;
+trim_spacing = 0.18;
 
 % Add 'u' (velocity) variations to each trim batch based on the specified parameters
 % This creates different trim points by varying the 'u' component within the defined spacing
 trim_point.add_u_variations(time_arr, num_trim_points_per_time, trim_spacing);
 
-batch_index = [2, 3, 4];  % Define the indices of batches to which custom variations will be added
+turn_batch_index = 3:num_batches;  % Define the indices of batches to which custom variations will be added
 turn_variation_name = "turn";  % Define the name of the custom variation to add
 
 % Define the variables involved in the custom variation
@@ -39,17 +41,18 @@ turn_varables = ["q0", "q1", "q2", "q3"];
 % Define the variation data matrix for the custom variation
 % Each row represents a different state for the variation
 turn_data = [0.9962, 0, 0, 0.0872;
-        1,      0, 0, 0];
+			 1,		 0, 0, 0];
 
 % Add the custom "turn" variation to the specified batches (2, 3, and 4)
 % This will create additional trim points by varying the specified quaternion components
-trim_point.add_custom_variations(batch_index, turn_variation_name, turn_varables, turn_data);
+trim_point.add_custom_variations(turn_batch_index, turn_variation_name, turn_varables, turn_data);
 
+yaw_batch_index = 4:num_batches;
 yaw_variation_name = "yaw";
-yaw_varables = ["Yaw"];
+yaw_varables = "Yaw";
 yaw_data = [0;70];
 
-trim_point.add_custom_variations(batch_index, yaw_variation_name, yaw_varables, yaw_data)
+trim_point.add_custom_variations(yaw_batch_index, yaw_variation_name, yaw_varables, yaw_data)
 
 % Generate all trim points by combining variations from all batches
 % This consolidates all trim points into the obj.trim_points property for further use

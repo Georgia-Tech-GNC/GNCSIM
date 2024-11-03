@@ -1,5 +1,5 @@
 classdef TrimPoint < handle
-    % TrimPoint Class for Processing Flight Data and Generating Trim Points
+    % TrimPoint Class for Generating Trim Points
     % This class reads flight data from a CSV file, processes it, and generates trim points
     % based on specified times and variations. It manages batches of trim points and provides
     % methods to add custom variations and retrieve specific flight information.
@@ -222,12 +222,19 @@ classdef TrimPoint < handle
             first_trim_point = obj.trim_points(1);
             state_dict = obj.batches(1).state_dict;  % Assuming state_dict is the same across all batches
             state_names = keys(state_dict);
-            
+
+			state_indices = values(state_dict, state_names);
+            state_indices = cell2mat(state_indices);
+
+			% Sort the state_names based on their indices to maintain consistent order
+    		[~, sorted_order] = sort(state_indices);
+    		state_names_sorted = state_names(sorted_order);
+
             % Number of state variables
             num_states = length(state_names);
             
             % Create column headers: 'Name', 'ID', 'Time', followed by state variable names
-            headers = [{'Time', 'ID', 'Name'}, state_names];
+            headers = [{'Time', 'ID', 'Name'}, state_names_sorted];
             
             % Initialize a cell array to hold all data
             num_trim_points = length(obj.trim_points);
@@ -246,7 +253,7 @@ classdef TrimPoint < handle
                 % Assuming 'states' is a vector corresponding to state_dict
                 states = trim_pt.states;
                 for j = 1:num_states
-                    var_name = state_names{j};
+                    var_name = state_names_sorted{j};
                     var_index = state_dict(var_name);
                     data_cell{i, 3 + j} = states(var_index);
                 end
