@@ -12,6 +12,7 @@ liftoff_time = trim_point.find_event_time("LIFTOFF");
 % Find the time of the "BURNOUT" event in the flight data
 burnout_time = trim_point.find_event_time("BURNOUT");
 
+% Number of batches of trim points to add
 num_batches = 10;
 
 % Generate an array of 6 evenly spaced time points between liftoff_time and burnout_time
@@ -50,7 +51,7 @@ trim_point.add_custom_variations(turn_batch_index, turn_variation_name, turn_var
 yaw_batch_index = 4:num_batches;
 yaw_variation_name = "yaw";
 yaw_varables = "Yaw";
-yaw_data = [0;70];
+yaw_data = [0; 70];
 
 trim_point.add_custom_variations(yaw_batch_index, yaw_variation_name, yaw_varables, yaw_data)
 
