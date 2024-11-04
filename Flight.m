@@ -230,7 +230,7 @@ classdef Flight
     
             gustAmplitude = random(makedist(xlsxFile{2*runIndex,4},'mu',xlsxFile{2*runIndex,5},'sigma',xlsxFile{2*runIndex,6}/3));
             gustLength = random(makedist(xlsxFile{1+2*runIndex,4},'mu',xlsxFile{1+2*runIndex,5},'sigma',xlsxFile{1+2*runIndex,6}/3));
-            windParam = [gustAmplitude gustLength];
+            windParameter = [gustAmplitude gustLength];
     
             % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
             wetMass = 38.87;% update to read from excel sheet
@@ -246,7 +246,7 @@ classdef Flight
             dryYawMOI = 18.988; % update to read from excel sheet
     
             % UPDATE OUTPUT STRUCT
-            mcParams.windParam = windParam;
+            mcParams.windParam = windParameter;
             mcParams.wetMass = wetMass;
             mcParams.dryMass = dryMass;
             mcParams.peakThrust = peakThrust;
@@ -260,8 +260,8 @@ classdef Flight
                                 0 0 dryYawMOI];
         end
 
-        function data = runFlight(obj, Rocket, Environment)
-            data(obj.numRuns) = struct();
+        function log = runFlight(obj, Rocket, Environment)
+            log(obj.numRuns) = struct();
             for runIndex = 1:obj.numRuns
                 fprintf('Iterative LQR Monte Carlo Run %d out of %d...\n',runIndex,obj.numRuns)
                 % Number of LQR intervals to simulate
