@@ -19,6 +19,7 @@ classdef Flight
         gravity = 9.81 % m/(s^2)
         uSpan; % length of t span by 3 array of double
         MCxlsx; % filename of Excel sheet with Monte Carlo information
+        windParam; % is set based on Monte Carlo data
         
         initState;
         currentState;
@@ -147,12 +148,16 @@ classdef Flight
             end
         end
 
-        function obj=set_MCxlsx(obj, fn)
+        function obj= set_MCxlsx(obj, fn)
             if ~ischar(fn)
                 error('MCxlsx must be a filename in the form of a char array')
             else
                 obj.MCxlsx = fn;
             end
+        end
+
+        function obj= set_windParam(obj, wp)
+            obj.windParam = wp; % No conditions check because this comes from Monte Carlo
         end
 
         function tstep= get_tStep(obj)
@@ -213,6 +218,10 @@ classdef Flight
 
         function is = get_initState(obj)
             is = obj.initState;
+        end
+
+        function mcexcel = get_MCxlsx(obj)
+            mcexcel = obj.MCxlsx;
         end
 
         function mcParams = getRandomSample(xlsxFile,runIndex)
