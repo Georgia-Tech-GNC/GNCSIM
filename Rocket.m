@@ -5,8 +5,8 @@ classdef Rocket
     properties (SetAccess = private)
         wetMass; % kg
         dryMass; % kg
-        wetInertias;%3x3, (kgm^2)
-        dryInertias; %3x3, (kgm^2)
+        wetMOI;%3x3, (kgm^2)
+        dryMOI; %3x3, (kgm^2)
         initialCG; %distance from nosecone to CG with loaded motor (m)
         finalCG; %distance from nosecone to CG with empty motor (m)
         CP; % distance from nosecone to CP, doesn't change (m)
@@ -25,7 +25,7 @@ classdef Rocket
         end
         
         % Start Setter Functions
-        function obj= set_wet_mass(obj, wet_mass)
+        function obj= set_wetMass(obj, wet_mass)
             if (~isdouble(wet_mass) || wet_mass < 0)
                 error('Wet mass value must be a positive double.')
             else
@@ -33,33 +33,33 @@ classdef Rocket
             end  
         end
 
-        function obj= set_dry_mass(obj, dry_mass)
-            if (~isdouble(wet_mass) || wet_mass < 0)
+        function obj= set_dryMass(obj, dry_mass)
+            if (~isdouble(dry_mass) || dry_mass < 0)
                 error('Dry mass value must be a positive double.')
             else
                 obj.dryMass = dry_mass;
             end  
         end
 
-        function obj= set_dry_inertias(obj, dry_inertias)
+        function obj= set_dryMOI(obj, dry_inertias)
             [r,c] = size(dry_inertias);
             if all((~isdouble(dry_inertias) || dry_inertias < 0)) && (r==c)
                 error('Dry intertia values must be positive doubles.')
             else
-                obj.dryInertias = dry_inertias;
+                obj.dryMOI = dry_inertias;
             end  
         end
 
-        function obj= set_wet_inertias(obj, wet_inertias)
+        function obj= set_wetMOI(obj, wet_inertias)
             [r,c] = size(wet_inertias);
             if all((~isdouble(wet_inertias) || wet_inertias < 0)) && (r==c)
                 error('Wet inertia values must be positive doubles, and the inertia matrix must be square.')
             else
-                obj.wetInertias = wet_inertias;
+                obj.wetMOI = wet_inertias;
             end  
         end
 
-        function obj= set_initial_CG(obj, initial_CG)
+        function obj= set_initialCG(obj, initial_CG)
             if (~isdouble(initial_CG) || initial_CG < 0)
                 error('CG value must be a positive double.')
             else
@@ -67,7 +67,7 @@ classdef Rocket
             end
         end
 
-        function obj= set_final_CG(obj, final_CG)
+        function obj= set_finalCG(obj, final_CG)
             if (~isdouble(final_CG) || final_CG < 0)
                 error('CG value must be a positive double.')
             else
@@ -107,7 +107,7 @@ classdef Rocket
             end
         end
 
-        function obj= set_burn_time(obj, burn_time_value)
+        function obj= set_burnTime(obj, burn_time_value)
             if (~isdouble(burn_time_value) || burn_time_value < 0)
                 error('Burn time value must be a positive double.')
             else
@@ -117,27 +117,27 @@ classdef Rocket
         % End Setter Functions
 
         % Start Getter Functions
-        function wetMass = get_wet_mass(obj)
+        function wetMass = get_wetMass(obj)
             wetMass = obj.wetMass;
         end
             
-        function dryMass = get_dry_mass(obj)
+        function dryMass = get_dryMass(obj)
             dryMass = obj.wetMass;
         end
 
-        function dryInertias = get_dry_inertias(obj)
-            dryInertias = obj.dryInertias;
+        function dryInertias = get_dryMOI(obj)
+            dryInertias = obj.dryMOI;
         end
 
-        function wetInertias = get_wet_inertias(obj)
-            wetInertias = obj.wetInertias;
+        function wetInertias = get_wetMOI(obj)
+            wetInertias = obj.wetMOI;
         end
 
-        function initialCG = get_initial_CG(obj)
+        function initialCG = get_initialCG(obj)
             initialCG = obj.initialCG;
         end
 
-        function finalCG = get_final_CG(obj)
+        function finalCG = get_finalCG(obj)
             finalCG = obj.finalCG;
         end
 
@@ -157,16 +157,16 @@ classdef Rocket
             radius = obj.radius;
         end
 
-        function burnTime = get_burn_time(obj)
+        function burnTime = get_burnTime(obj)
             burnTime = obj.burnTime;
         end
 
-        function thrustCurve = get_thrust_curve(obj)
+        function thrustCurve = get_thrustCurve(obj)
             thrustCurve = obj.thrustCurve;
         end
         % End Getter Functions
         
-        function obj= set_thrust_curve(obj, thrust_arr)
+        function obj= set_thrustCurve(obj, thrust_arr)
             [~,c] = size(thrust_arr);
             if c ~= 2 || (thrust_arr(1, 1) == 0 && thrust_arr(1,2) == 0)
                 error(['Error in dimensions of thrust array values. ' ...
