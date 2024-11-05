@@ -1,4 +1,4 @@
-function [xDot, log] = rocketModel(t, x, RocketObj, AerodynamicsObj, FlightObj, TrimPointObj)
+function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
 % rocketModel: Open loop model for jet vanes rocket dynamics
 % t: current time
 % x: current state: [px py pz vx vy vz q0 q1 q2 q3 wx wy wz]
@@ -199,7 +199,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, AerodynamicsObj, FlightObj, 
             alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
             beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
     
-            [FA_b, MA_b,l_p,n_a,n_r] =  AerodynamicsObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
+            [FA_b, MA_b,l_p,n_a,n_r] =  RocketObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
         else
             % Discrete Wind Gust Model
             WindGustMag = @(Vm,dm,x) (x < 0)*0 + (0 <= x && x < dm)*(Vm/2)*(1 - cos((pi*x)/dm)) + (dm <= x)*Vm;
@@ -229,10 +229,10 @@ function [xDot, log] = rocketModel(t, x, RocketObj, AerodynamicsObj, FlightObj, 
             alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
             beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
     
-            [FA_b, MA_b,l_p,n_a,n_r] =  AerodynamicsObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
+            [FA_b, MA_b,l_p,n_a,n_r] =  RocketObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
         end
     else
-        [FA_b, MA_b,l_p,n_a,n_r] =  AerodynamicsObj.calcAeroBody3(alpha,norm(v_b),rho,CG,wbf_b);
+        [FA_b, MA_b,l_p,n_a,n_r] =  RocketObj.calcAeroBody3(alpha,norm(v_b),rho,CG,wbf_b);
     end
 
     %% External Moments
