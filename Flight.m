@@ -301,5 +301,189 @@ classdef Flight
             end
         end
 
+        function []= plot_sim_dashboards(obj, log, mcParams)
+
+            for i = 1:obj.get_numRuns() % Plot each run in a different dashboard
+
+                figure;
+                
+                % 3D Trajectory Plot %
+                subplot(3,4,1)
+                plot3(0,0,0,'o','MarkerSize',10)
+                hold on
+                plot3(log(i).loggedData.posFlat(end,2),log(i).loggedData.posFlat(end,3),log(i).loggedData.posFlat(end,1),'x','MarkerSize',10)
+                hold on
+                plot3(log(i).loggedData.posFlat(:,2),log(i).loggedData.posFlat(:,3),log(i).loggedData.posFlat(:,1))
+                grid on
+                xlabel('x')
+                ylabel('y')
+                zlabel('z')
+                if obj.get_runClosedLoop()
+                    title('Closed Loop Trajectory')
+                else
+                    title('Open Loop Trajectory')
+                end
+                % % % % % % % % % % % %
+                % Body Velocity %
+                subplot(3,4,2)
+                plot(log(i).loggedData.time,log(i).loggedData.velBody)
+                legend('x','y','z')
+                title('Body Velocity')
+                ylabel('v_b (m/s)')
+                xlabel('Time (s)')
+                grid on
+
+                % % % % % % % % % % % %
+                % Body Angular Velocity %
+                subplot(3,4,3)
+                plot(log(i).loggedData.time,rad2deg(log(i).loggedData.angVel), ...
+                        'LineWidth', 1.5);
+                hold on
+                title('Body Angular Velocity')
+                ylabel('wbi_b (deg/s)','FontSize', 12)
+                xlabel('time (s)','FontSize', 12)
+                legend('Roll','Pitch','Yaw')
+                grid on
+                hold off
+                
+                % Enable minor tick marks
+                ax = gca; % Get current axis
+                ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+                ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+                
+                % Customize the spacing of minor ticks
+                ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+                ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+                ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+
+                % % % % % % % % % % % %
+                % Quaternion %
+                subplot(3,4,4)
+                plot(log(i).loggedData.time,log(i).loggedData.q_bf)
+                legend('q0','q1','q2','q3')
+                % % % % % % % % % % % %
+                % Monte Carlo Parameters %
+
+                % TODO
+
+                % % % % % % % % % % % %
+                % Angle of Attack %
+                subplot(3,4,6)
+                plot(log(i).loggedData.time,rad2deg(log(i).loggedData.angleOfAttack), ...
+                        'LineWidth', 1.5);
+                hold on
+                title('Angle of Attack Trajectory')
+                xlabel('Time (s)','FontSize', 12)
+                ylabel('Alpha (deg)','FontSize', 12)
+                % legend('1 deg','3 deg','6 deg', '9 deg')
+                grid on
+                hold off
+                
+                % Enable minor tick marks
+                ax = gca; % Get current axis
+                ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+                ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+                
+                % Customize the spacing of minor ticks
+                ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+                ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+                ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+                % % % % % % % % % % % %
+                % Angular Acceleration %
+                subplot(3,4,7)
+                plot(log(i).loggedData.time,rad2deg(log(i).loggedData.angAccel))
+                legend('x','y','z')
+                % % % % % % % % % % % %
+                % Euler Angles %
+                eul = quat2eul(log(i).loggedData.q_bf);
+                plot(log(i).loggedData.time,rad2deg(eul(:,3:-1:1)))
+                legend('x','y','z', 'Location', 'best')
+                title('Euler Angles')
+                ylabel('Angle (deg)')
+                xlabel('Time (s)')
+                grid on
+                title("Euler Angles over Time")
+                ax = gca;
+                ax.XMinorTick = 'on';
+                ax.YMinorTick = 'on';
+                ax.MinorGridLineStyle = ':';
+                ax.XMinorGrid = 'on';
+                ax.YMinorGrid = 'on';
+                % % % % % % % % % % % %
+                % Linearization Body Velocity Error %
+
+                if obj.get_runLinearModel()
+                    subplot(3,4,9)
+                        plot(log(i).loggedData.time,log(i).loggedData.velBody(:,1), ...
+                            'LineWidth', 1.5);
+                        hold on
+                        plot(log(i).linLoggedData.time,log(i).linLoggedData.velBody(:,1), ...
+                                'LineWidth', 1.5);
+                        legend('Nonlinear','Linear Model')
+                        hold on
+
+                    if obj.get_runClosedLoop()
+                        title('Closed Loop Velocity, Linearization Comparison')
+                    else
+                        title('Open Loop Velocity, Linearization Comparison')
+                    end
+                    ylabel('Velocity (m/s)','FontSize', 12)
+                    xlabel('Time (s)','FontSize', 12)
+                    grid on
+                    hold off
+                    
+                    % Enable minor tick marks
+                    ax = gca; % Get current axis
+                    ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+                    ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+                    
+                    % Customize the spacing of minor ticks
+                    ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+                    ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+                    ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+                    
+                end
+
+                % % % % % % % % % % % %
+                % External Input Moments %
+                subplot(3,4,9)
+                plot(log(i).loggedData.time,log(i).loggedData.ME_b, ...
+                        'LineWidth', 1.5);
+                hold on
+                title('External Moment')
+                ylabel('ME_b (m/s)','FontSize', 12)
+                xlabel('time (s)','FontSize', 12)
+                grid on
+                hold off
+                % % % % % % % % % % % %
+                % Controller Response Moments %
+                subplot(3,4,11)
+                plot(log(i).loggedData.time, log(i).loggedData.MT_b)
+                legend('Roll', 'Pitch', 'Yaw')
+                title('Controller Response Moment')
+                ylabel('Controller Moment (Nm)')
+                xlabel('Time (s)')
+                grid on
+                % % % % % % % % % % % %
+                % Aerodynamic Moments %
+                subplot(3,4,12)
+
+                plot(log(i).loggedData.time,log(i).loggedData.l_p, ...
+                    'LineWidth', 1.5);
+                hold on
+                plot(log(i).loggedData.time,log(i).loggedData.n_a, ...
+                    'LineWidth', 1.5);
+                hold on
+                plot(log(i).loggedData.time,log(i).loggedData.n_r, ...
+                    'LineWidth', 1.5);
+                hold on     
+                title('Aerodynamic Moments')
+                ylabel('Moment (Nm)','FontSize', 12)
+                xlabel('Time (s)','FontSize', 12)
+                grid on
+                legend('l_p','n_a','n_r','MA_b')
+            end
+        end
+
     end
 end
