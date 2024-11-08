@@ -1,4 +1,4 @@
-classdef TrimPoint < handle
+classdef TrimPoints < handle
     % TrimPoint Class for Generating Trim Points
     % This class reads flight data from a CSV file, processes it, and generates trim points
     % based on specified times and variations. It manages batches of trim points and provides
@@ -49,7 +49,7 @@ classdef TrimPoint < handle
     end
 
     methods
-        function obj = TrimPoint(file_path)
+        function obj = TrimPoints(file_path)
             % Constructor for TrimPoint Class
             % Initializes the TrimPoint object by reading and processing the flight data.
             %
@@ -239,6 +239,7 @@ classdef TrimPoint < handle
                 % Update the current_index for the next iteration
                 current_index = current_index + num_points_in_batch;
             end
+            obj.trim_rocket_model()
         end
 
         function batch_trim_points = get_trim_points(obj, target_time)
@@ -291,9 +292,6 @@ classdef TrimPoint < handle
             
             % Extract all state variable names from the first trim_point using state_dict
             % Assuming state_dict is a map with keys as variable names and values as indices
-            %first_trim_point = obj.trim_points(1);
-            %state_dict = obj.batches(1).state_dict;  % Assuming state_dict is the same across all batches
-            %state_names = keys(obj.state_dict);
 
 			state_indices = values(obj.state_dict, obj.state_names);
             state_indices = cell2mat(state_indices);
@@ -460,6 +458,24 @@ classdef TrimPoint < handle
             end
         end
 
+        function trim_rocket_model(obj)
+            rocket = Rocket();
+            flight = Flight();
+
+            t = 1;
+            
+            trim_point = obj.trim_points(1).states;
+
+            %[xDot, log] = rocketModel(t, x, rocket, flight, -1);
+
+            [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, flight), trim_point, ...
+            optimset('TolX',1e-10,'MaxFunEvals',10000,'MaxIter',10000));
+
+
+        end
+
+
+
         function draw_u_trim_points(obj, start_time, end_time)
             % Plots the Speed ("u") Trim Points as a Function of Time Alongside Real "u" Data
             %
@@ -563,5 +579,87 @@ classdef TrimPoint < handle
             % Combine state and control into the full state vector
             full_state = [state; control];
         end
+
+        function f0 = cost_rocket_model_turning(Z, trim_point, t, rocket, flight)
+            u = Z(1);   
+            v = Z(2);   
+            w = Z(3);   
+            p = Z(4);   
+            q = Z(5);   
+            r = Z(6);   
+            q0 = Z(7);  
+            q1 = Z(8);  
+            q2 = Z(9);  
+            q3 = Z(10); 
+
+            u_trim = trim_point(1);
+            v_trim = trim_point(2);
+            w_trim = trim_point(3);
+            p_trim = trim_point(4);
+            q_trim = trim_point(5);
+            r_trim = trim_point(6);
+            q0_trim = trim_point(7);
+            q1_trim = trim_point(8);
+            q2_trim = trim_point(9);
+            q3_trim = trim_point(10);
+            M_roll_trim = trim_point(11);
+            M_yaw_trim = trim_point(12);
+            T_trim = trim_point(13);
+            
+            M_roll = Z(11); 
+            M_yaw = Z(12);  
+            T = Z(13);
+
+            X = [0,0,0, Z(1:10)];  % State variables now start at Z(1)
+
+            U = Z(11:13);  % Control variables now start at Z(11)
+            
+
+            [xdot, ~] = rocketModel(t, X, rocket, flight, -1);
+
+            udot = xdot(1);
+            vdot = xdot(2);
+            wdot = xdot(3);
+            pdot = xdot(4);
+            qdot = xdot(5);
+            rdot = xdot(6);
+            q0dot = xdot(7);
+            q1dot = xdot(8);
+            q2dot = xdot(9);
+            q3dot = xdot(10);
+
+            num_constraints = 18; % Let the number of constraints happen here
+
+            Q = ones(num_constraints, 1);
+            Q(1) = u - u_trim;
+            Q(2) = 0; % v;
+            Q(3) = w - w_trim;
+            Q(4) = p - p_trim;
+            Q(5) = q - q_trim;
+            Q(6) = r - t_trim;
+            Q(7) = q0 - q0_trim;
+            Q(8) = q1 - q1_trim;
+            Q(9) = q2 - q2_trim;
+            Q(10) = q3 - q3_trim;
+            Q(11) = M_roll - M_roll_trim;
+            Q(12) = M_yaw - M_yaw_trim;
+            Q(13) = T - T_trim;
+            Q(14) = 0; % vdot;
+            Q(15) = wdot;
+            Q(16) = pdot;
+            Q(17) = qdot;
+            Q(18) = sqrt(q0^2 + q1^2 + q2^2 + q3^2) - 1;
+
+            one_vec = ones(1, num_constraints);
+            H = diag(one_vec); % Should be dimensions of the number of constraints
+            H(4,4) = 1000;
+            H(6,6) = 1000;
+            H(7,7) = 1000;
+            H(8,8) = 1000;
+            H(9,9) = 1000;
+            H(10,10) = 1000;
+
+            f0 = Q' * H * Q; % Compute the cost function
+        end 
     end
 end

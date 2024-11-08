@@ -4,7 +4,7 @@ close all; clear; clc;
 file_path = 'Flight Profile\flight_2.csv';
 
 % Create a TrimPoint object by initializing it with the specified flight data file
-trim_point = TrimPoint(file_path);
+trim_point = TrimPoints(file_path);
 
 % Find the time of the "LIFTOFF" event in the flight data
 liftoff_time = trim_point.find_event_time("LIFTOFF");
@@ -13,7 +13,7 @@ liftoff_time = trim_point.find_event_time("LIFTOFF");
 burnout_time = trim_point.find_event_time("BURNOUT");
 
 % Number of batches of trim points to add
-num_batches = 10;
+num_batches = 15;
 
 % Generate an array of 6 evenly spaced time points between liftoff_time and burnout_time
 time_arr = linspace(liftoff_time + 0.2, burnout_time, num_batches);
@@ -26,7 +26,7 @@ trim_point.generate_trim_batches(time_arr);
 num_trim_points_per_time = 12;
 
 % Define the spacing factor for 'u' variations (e.g., 20% variation around the base 'u' value)
-trim_spacing = 0.18;
+trim_spacing = 0.28;
 
 % Add 'u' (velocity) variations to each trim batch based on the specified parameters
 % This creates different trim points by varying the 'u' component within the defined spacing

@@ -37,22 +37,23 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     %% Extract config variables
     tSpan = FlightObj.get_tSpan();
     uSpan = FlightObj.get_uSpan();
-    wetMass = RocketObj.get_wet_mass();
-    dryMass = RocketObj.get_dry_mass();
+    wetMass = RocketObj.get_wetMass();
+    dryMass = RocketObj.get_dryMass();
 
     % baseIb = config.baseIb;
     % invBaseIb = config.invBaseIb;
 
     radius = RocketObj.get_radius();
     g = FlightObj.get_gravity();
-    burnTime = RocketObj.get_burn_time();
-    wetMOI = RocketObj.get_wet_inertias();
-    dryMOI = RocketObj.get_dry_inertias();
-    CG0 = RocketObj.get_initial_CG();
-    finalCG = RocketObj.get_final_CG();
+    burnTime = RocketObj.get_burnTime();
+    wetMOI = RocketObj.get_wetMOI();
+    dryMOI = RocketObj.get_dryMOI();
+    CG0 = RocketObj.get_initialCG();
+    finalCG = RocketObj.get_finalCG();
     runClosedLoop = FlightObj.get_runClosedLoop();
     applyWind = FlightObj.get_applyWind();
-    applyPeriodicWindGusts = FlightObj.get_applyPeriodicWindGusts();
+    %applyPeriodicWindGusts = FlightObj.get_applyPeriodicWindGusts();
+    applyPeriodicWindGusts = false;
     if runClosedLoop
         trimpoint_struct_arr = TrimPointObj.get_trimpoint_struct_arr();
     end
@@ -89,7 +90,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     rho = 0.0023769 .* (1 - 6.877e-6 .* px).^4.25588; % air density
     rho = rho * 515.379;
 
-    T = RocketObj.get_thrust(t); % Get thrust at the instantaneous moment in time
+    T = RocketObj.getThrust(t); % Get thrust at the instantaneous moment in time
     if t < burnTime
         m = wetMass - ((wetMass - dryMass)/burnTime) * t;
         CG = CG0 - ((CG0 - finalCG)/burnTime) * t;
