@@ -20,7 +20,7 @@ classdef Flight
         uSpan; % length of t span by 3 array of double
         MCxlsx; % filename of Excel sheet with Monte Carlo information
         windParam; % is set based on Monte Carlo data
-        
+        options = odeset('Events',@rocket_events);
         initState;
     end
 
@@ -223,6 +223,10 @@ classdef Flight
             mcexcel = obj.MCxlsx;
         end
 
+        function opts = get_options(obj)
+            opts = obj.options;
+        end
+
         function mcParams = getRandomSample(xlsxFile,runIndex)
             % getRandomSample
             xlsxFile = readcell(xlsxFile);
@@ -295,22 +299,142 @@ classdef Flight
 
                     % Get initial state for each LQR time interval
                     if lqrIndex == 1
-                        initState = Flight.get_initState();
-                        linInitState = initState([4 5 6 11 12 13 8 9 10]);
+                        initial_state = Flight.get_initState();
+                        lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
                     else
-                        initState =prevFinalState;
-                        linInitState = initState([4 5 6 11 12 13 8 9 10]);
+                        initial_state =prevFinalState;
+                        lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
                     end
 
                     % Solve linear and nonlinear systems for localSimTime
                     % seconds
-                    local_startTime = (lqrIndex-1) * flight.getLocalSimTime
+                    local_startTime = (lqrIndex-1) * obj.get_localSimTime();
+                    local_endTime = local_startTime + obj.get_localSimTime();
+                    local_tSpan = local_startTime:obj.get_tStep():local_endTime;
 
+                    % Solve nonlinear trajectory for the current time
+                    % interval
+                    ode_options = obj.get_options();
+                    [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, obj, TrimPointObj), ...
+                                             local_tSpan, ...
+                                             initial_state, ...
+                                             ode_options);
+                    prevFinalState = traj.x(end, :)';
+                 
+                    % Log nonlinear traj data for current LQR interval to
+                    % the log for the current run
+                    tempMClog(lqrIndex).time = traj.t;
+                    tempMClog(lqrIndex).posFlat = traj.x(:, 1:3);
+                    tempMClog(lqrIndex).velBody = traj.x(:, 4:6);
+                    tempMClog(lqrIndex).q_bf = traj.x(:, 7:10);
+                    tempMClog(lqrIndex).angVel = traj.x(:, 11:13);
 
-                    
+                    if config.calcXdots == 1
+                        tempMClog(lqrIndex).angleOfAttack = zeros([length(traj.t),1]); % alpha
+                        tempMClog(lqrIndex).sideslipAngle = zeros([length(traj.t),1]); % beta
+                        tempMClog(lqrIndex).CG = zeros([length(traj.t)],1);
+                        tempMClog(lqrIndex).angAccel = zeros(length(traj.t),3);
+                        tempMClog(lqrIndex).MA_b = zeros(length(traj.t),3);
+                        tempMClog(lqrIndex).MT_b = zeros(length(traj.t),3);
+                        tempMClog(lqrIndex).ME_b = zeros(length(traj.t),3);
+                        tempMClog(lqrIndex).l_p = zeros(length(traj.t),1);
+                        tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
+                        tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
+                        for i = 1:length(traj.t)
+                            [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,obj,TrimPointObj);
+                            tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
+                            tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
+                            tempMClog(lqrIndex).CG(i) = modelLog.CG;
+                            tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
+                            tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;
+                            tempMClog(lqrIndex).MT_b(i,:) = modelLog.MT_b;
+                            tempMClog(lqrIndex).ME_b(i,:) = modelLog.ME_b;
+                            tempMClog(lqrIndex).l_p(i,:) = modelLog.l_p;
+                            tempMClog(lqrIndex).n_a(i,:) = modelLog.n_a;
+                            tempMClog(lqrIndex).n_r(i,:) = modelLog.n_r;  
+                        end
+                    end
 
+                    if obj.get_runLinearModel()
+                    % Solve linear trajectory for current time interval
+                        [linTraj.t, linTraj.x] = ode45(@(t,x) linearRocketModel(t,x,Rocket,obj,TrimPointObj),...
+                                                    local_tSpan,...
+                                                    lin_initial_state);
+                        tempMClinLog(lqrIndex).time = linTraj.t;
+                        tempMClinLog(lqrIndex).velBody = linTraj.x(:,1:3);
+                        tempMClinLog(lqrIndex).q_bf = [ones(length(tempMClinLog(lqrIndex).time),1) linTraj.x(:,7:9)];
+                        tempMClinLog(lqrIndex).angVel = linTraj.x(:,4:6);
+
+                        if obj.get_calcXdots == 1
+                            tempMClinLog(lqrIndex).v_f = zeros(length(tempMClinLog(lqrIndex).time),3);
+                            tempMClinLog(lqrIndex).rollMoment = zeros(length(tempMClinLog(lqrIndex).time));
+                            tempMClinLog(lqrIndex).pitchMoment = zeros(length(tempMClinLog(lqrIndex).time));
+                            tempMClinLog(lqrIndex).yawMoment = zeros(length(tempMClinLog(lqrIndex).time));
+                            tempMClinLog(lqrIndex).thrust = zeros(length(tempMClinLog(lqrIndex).time));
+        
+                            for i = 1:length(linTraj.t)
+                                [xdot,modelLog] = linearRocketModel(linTraj.t(i),linTraj.x(i,:)',linConfig);
+                                tempMClinLog(lqrIndex).v_f(i,:) = modelLog.v_f;
+                                tempMClinLog(lqrIndex).rollMoment(i) = modelLog.rollMoment;
+                                tempMClinLog(lqrIndex).pitchMoment(i) = modelLog.pitchMoment;
+                                tempMClinLog(lqrIndex).yawMoment(i) = modelLog.yawMoment;
+                                tempMClinLog(lqrIndex).thrust(i) = modelLog.thrust;
+        
+                            end
+                        end
+                    end
                 end
+                
+                    % Integrate data from current MC log
+                    tempLoggedData.time = vertcat(tempMClog.time);
+                    tempLoggedData.posFlat = vertcat(tempMClog.posFlat);
+                    tempLoggedData.velBody = vertcat(tempMClog.velBody);
+                    tempLoggedData.q_bf = vertcat(tempMClog.q_bf);
+                    tempLoggedData.angVel = vertcat(tempMClog.angVel);
+            
+                    if config.calcXdots == 1
+                        tempLoggedData.angleOfAttack = vertcat(tempMClog.angleOfAttack);
+                        tempLoggedData.sideslipAngle = vertcat(tempMClog.sideslipAngle);
+                        tempLoggedData.CG = vertcat(tempMClog.CG);
+                        tempLoggedData.angAccel = vertcat(tempMClog.angAccel);
+                        tempLoggedData.MA_b = vertcat(tempMClog.MA_b);
+                        tempLoggedData.MT_b = vertcat(tempMClog.MT_b);
+                        tempLoggedData.ME_b = vertcat(tempMClog.ME_b);
+                        tempLoggedData.l_p = vertcat(tempMClog.l_p);
+                        tempLoggedData.n_a = vertcat(tempMClog.n_a);
+                        tempLoggedData.n_r = vertcat(tempMClog.n_r);
+                        
+                    end
+            
+                    if testConfig.runLinearModel
+                        tempLinLoggedData.time = vertcat(tempMClinLog.time);
+                        tempLinLoggedData.velBody = vertcat(tempMClinLog.velBody);
+                        tempLinLoggedData.q_bf = vertcat(tempMClinLog.q_bf);
+                        tempLinLoggedData.angVel = vertcat(tempMClinLog.angVel);
+            
+                        if config.calcXdots == 1
+                            tempLinLoggedData.v_f = vertcat(tempMClinLog.v_f);
+                            tempLinLoggedData.rollMoment = vertcat(tempMClinLog.rollMoment);
+                            tempLinLoggedData.pitchMoment = vertcat(tempMClinLog.pitchMoment);
+                            tempLinLoggedData.yawMoment = vertcat(tempMClinLog.yawMoment);
+                            tempLinLoggedData.thrust = vertcat(tempMClinLog.thrust);
+                        end
+                    end
+            
+            
+                    log(runIndex).loggedData = tempLoggedData;
+                    if testConfig.runLinearModel
+                        log(runIndex).linLoggedData = tempLinLoggedData;
+                    end
+            
+                    % End of current MC run (reset curr MC variables for safety)
+                    clear tempMClog % this may be horrible practice
+                    fprintf('--------------------------------------\n')
+
             end
+
+            fprintf("Finished LQR Monte Carlo runs!\n");
+            toc
         end
 
         function []= plot_sim_dashboards(obj, log, mcParams)
@@ -495,6 +619,14 @@ classdef Flight
                 grid on
                 legend('l_p','n_a','n_r','MA_b')
             end
+        end
+
+        function [value, isterminal, direction]= rocket_events(t,x)
+            %rocket_events - called by ode45 to determine various rocket
+            %events, i.e., rocket hitting ground
+            value = x(1); % Define event as px = 0
+            isterminal=1; %stop integration when event happens
+            direction = -1; %only stop is px is increasing (altitude is decreasing)
         end
 
     end
