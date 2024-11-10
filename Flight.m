@@ -22,7 +22,6 @@ classdef Flight
         windParam; % is set based on Monte Carlo data
         
         initState;
-        currentState;
     end
 
     methods
@@ -32,7 +31,7 @@ classdef Flight
         end
 
         function obj= set_tStep(obj, t_step)
-            if ~isdouble(t_step) || t_step < 0
+            if ~isnumeric(t_step) || t_step < 0
                 error('Time step must be a positive double.')
             else
                 obj.tStep = t_step;
@@ -80,7 +79,7 @@ classdef Flight
         end
 
         function obj= set_numRuns(obj, num_runs)
-            if ~isdouble(num_runs) || num_runs < 1
+            if ~isnumeric(num_runs) || num_runs < 1
                 error('numRuns must be a positive double greater than 1.')
             else
                 obj.numRuns = floor(num_runs);
@@ -88,7 +87,7 @@ classdef Flight
         end
 
         function obj= set_numStates(obj, num_states)
-            if ~isdouble(num_states) || num_states < 1
+            if ~isnumeric(num_states) || num_states < 1
                 error('numStates must be a positive double greater than 1.')
             else
                 obj.numRuns = floor(num_states);
@@ -96,7 +95,7 @@ classdef Flight
         end
 
         function obj= set_numInputs(obj, num_in)
-            if ~isdouble(num_in) || num_in < 1
+            if ~isnumeric(num_in) || num_in < 1
                 error('numInputs must be a positive double greater than 1.')
             else
                 obj.numInputs = floor(num_in);
@@ -104,7 +103,7 @@ classdef Flight
         end
 
         function obj= set_localSimTime(obj, lsimt)
-            if ~isdouble(lsimt) || lsimt < 0
+            if ~isnumeric(lsimt) || lsimt < 0
                 error('localSimTime must be a positive double.')
             else
                 obj.localSimTime = lsimt;
@@ -112,7 +111,7 @@ classdef Flight
         end
 
         function obj= set_simTime(obj, simt)
-            if ~isdouble(simt) || simt < 0
+            if ~isnumeric(simt) || simt < 0
                 error('simTime must be a positive double.')
             else
                 obj.simTime = simt;
@@ -120,7 +119,7 @@ classdef Flight
         end
 
         function obj= set_gravity(obj, g)
-            if ~isdouble(g) || g < 0
+            if ~isnumeric(g) || g < 0
                 error('gravity must be a positive double.')
             else
                 obj.gravity = g;
@@ -128,7 +127,7 @@ classdef Flight
         end
 
         function obj= set_initState(obj, x0)
-            if ~isdouble(x0) || len(x0 ~= obj.numStates)
+            if ~isnumeric(x0) || len(x0 ~= obj.numStates)
                 error('initState must be a vector of doubles of length numStates.')
             else
                 obj.initState = x0;
@@ -141,7 +140,7 @@ classdef Flight
 
         function obj= set_uSpan(obj, u_span)
             [r, c] = size(u_span);
-            if ~isdouble(u_span) || r ~= length(obj.tSpan) || c ~= 3
+            if ~isnumeric(u_span) || r ~= length(obj.tSpan) || c ~= 3
                 error('uSpan must be a tSpan x 3 array of values representing arbitrary external moments on the rocket');
             else
                 obj.uSpan = u_span;
@@ -294,8 +293,21 @@ classdef Flight
                     Rocket.set_wet_inertias(mcParams.wetMOI);
                     Rocket.set_dry_inertias(mcParams.dryMOI);
 
-                    % Get initial state for current LQR time interval
-                    % Pick up the work here %
+                    % Get initial state for each LQR time interval
+                    if lqrIndex == 1
+                        initState = Flight.get_initState();
+                        linInitState = initState([4 5 6 11 12 13 8 9 10]);
+                    else
+                        initState =prevFinalState;
+                        linInitState = initState([4 5 6 11 12 13 8 9 10]);
+                    end
+
+                    % Solve linear and nonlinear systems for localSimTime
+                    % seconds
+                    local_startTime = (lqrIndex-1) * flight.getLocalSimTime
+
+
+                    
 
                 end
             end
