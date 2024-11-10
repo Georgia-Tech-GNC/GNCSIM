@@ -26,7 +26,7 @@ classdef Rocket
         
         % Start Setter Functions
         function obj= set_wetMass(obj, wet_mass)
-            if (~isdouble(wet_mass) || wet_mass < 0)
+            if (~isnumeric(wet_mass) || wet_mass < 0)
                 error('Wet mass value must be a positive double.')
             else
                 obj.wetMass = wet_mass;
@@ -34,7 +34,7 @@ classdef Rocket
         end
 
         function obj= set_dryMass(obj, dry_mass)
-            if (~isdouble(dry_mass) || dry_mass < 0)
+            if (~isnumeric(dry_mass) || dry_mass < 0)
                 error('Dry mass value must be a positive double.')
             else
                 obj.dryMass = dry_mass;
@@ -43,7 +43,7 @@ classdef Rocket
 
         function obj= set_dryMOI(obj, dry_inertias)
             [r,c] = size(dry_inertias);
-            if all((~isdouble(dry_inertias) || dry_inertias < 0)) && (r==c)
+            if all((~isnumeric(dry_inertias) || dry_inertias < 0)) && (r==c)
                 error('Dry intertia values must be positive doubles.')
             else
                 obj.dryMOI = dry_inertias;
@@ -52,7 +52,7 @@ classdef Rocket
 
         function obj= set_wetMOI(obj, wet_inertias)
             [r,c] = size(wet_inertias);
-            if all((~isdouble(wet_inertias) || wet_inertias < 0)) && (r==c)
+            if all((~isnumeric(wet_inertias) || wet_inertias < 0)) && (r==c)
                 error('Wet inertia values must be positive doubles, and the inertia matrix must be square.')
             else
                 obj.wetMOI = wet_inertias;
@@ -60,7 +60,7 @@ classdef Rocket
         end
 
         function obj= set_initialCG(obj, initial_CG)
-            if (~isdouble(initial_CG) || initial_CG < 0)
+            if (~isnumeric(initial_CG) || initial_CG < 0)
                 error('CG value must be a positive double.')
             else
                 obj.initialCG = initial_CG;
@@ -68,7 +68,7 @@ classdef Rocket
         end
 
         function obj= set_finalCG(obj, final_CG)
-            if (~isdouble(final_CG) || final_CG < 0)
+            if (~isnumeric(final_CG) || final_CG < 0)
                 error('CG value must be a positive double.')
             else
                 obj.finalCG = final_CG;
@@ -76,7 +76,7 @@ classdef Rocket
         end
 
         function obj= set_CP(obj, CP)
-            if (~isdouble(CP) || final_CP < 0)
+            if (~isnumeric(CP) || final_CP < 0)
                 error('CP value must be a positive double.')
             else
                 obj.CP = CP;
@@ -84,7 +84,7 @@ classdef Rocket
         end
 
         function obj= set_length(obj, length)
-            if (~isdouble(length) || length < 0)
+            if (~isnumeric(length) || length < 0)
                 error('Rocket length value must be a positive double.')
             else
                 obj.length = length;
@@ -92,7 +92,7 @@ classdef Rocket
         end
 
         function obj= set_diameter(obj, diameter)
-            if (~isdouble(diameter) || diameter < 0)
+            if (~isnumeric(diameter) || diameter < 0)
                 error('Rocket diameter value must be a positive double.')
             else
                 obj.diameter = diameter;
@@ -100,7 +100,7 @@ classdef Rocket
         end
 
         function obj= set_radius(obj, radius)
-            if (~isdouble(radius) || radius < 0)
+            if (~isnumeric(radius) || radius < 0)
                 error('Rocket radius value must be a positive double.')
             else
                 obj.radius = radius;
@@ -108,7 +108,7 @@ classdef Rocket
         end
 
         function obj= set_burnTime(obj, burn_time_value)
-            if (~isdouble(burn_time_value) || burn_time_value < 0)
+            if (~isnumeric(burn_time_value) || burn_time_value < 0)
                 error('Burn time value must be a positive double.')
             else
                 obj.burnTime = burn_time_value;
@@ -179,7 +179,11 @@ classdef Rocket
         function currentThrust = getThrust(obj, t)
             [m,~] = size(obj.thrustCurve);
             % Errors for incompatible inputs
+<<<<<<< HEAD
+            if ~isnumeric(t)
+=======
             if ~isa(t, 'double')
+>>>>>>> 63407dd12f30b867412d37e9d625188447b08c3f
                 error('Error: Time must be a double')
             end
             % initialization for while loop
