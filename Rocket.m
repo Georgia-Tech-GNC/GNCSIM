@@ -179,11 +179,7 @@ classdef Rocket
         function currentThrust = getThrust(obj, t)
             [m,~] = size(obj.thrustCurve);
             % Errors for incompatible inputs
-<<<<<<< HEAD
             if ~isnumeric(t)
-=======
-            if ~isa(t, 'double')
->>>>>>> 63407dd12f30b867412d37e9d625188447b08c3f
                 error('Error: Time must be a double')
             end
             % initialization for while loop
