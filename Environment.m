@@ -4,20 +4,24 @@ classdef Environment
 
     properties (SetAccess = private)
         rho;
-        launchSiteAltitude;
-        windParameters;
+        launch_site_altitude;
+        wind_parameters;
     end
 
     methods
-        function obj = Environment()
-            %UNTITLED3 Construct an instance of this class
-            %   Detailed explanation goes here
-        end
+        function obj = Environment(launch_site_altitude_input)
+            %   Constructing Default Environment Class
+            %   Takes
+            %   Assumes Default Wind Parameters as defined in MonteCarlo
+            obj.launch_site_altitude = launch_site_altitude_input;
 
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+            currentDir = fileparts(mfilename('fullpath'));
+            filename = fullfile(currentDir, 'WindMonteCarlo', 'WindParameters.xlsx');
+            data = readcell(filename);
+
+            obj.wind_parameters = cell2mat(data(2:end,2:5));
+
+            obj.rho = 1.225; % kg / m^3
         end
 
         function wind_speed = wind_speed_change(V_m, d_m, x)
@@ -31,10 +35,10 @@ classdef Environment
             % gust, the windspeed remains at the maximum wind speed.
             if (x < 0)
                 wind_speed = 0;
-            elseif (0 <= x && x < dm)
-                wind_speed = (Vm/2)*(1 - cos((pi*x)/dm));
-            elseif (dm <= x)
-                wind_speed = Vm;
+            elseif (0 <= x && x < d_m)
+                wind_speed = (V_m/2)*(1 - cos((pi*x)/d_m));
+            elseif (d_m <= x)
+                wind_speed = V_m;
             end
         end
 
@@ -52,12 +56,43 @@ classdef Environment
             elseif (0 <= x && x < d_m)
                 wind_speed = (V_m/2)*(1 - cos((pi*x)/d_m));
             elseif (d_m <= x && x < 2*d_m)
-                wind_speed = Vm;
+                wind_speed = V_m;
             elseif (2*d_m <= x && x < 3*d_m)
                 wind_speed = (V_m/2)*(1 - cos(((pi*x)/d_m)+pi));
             elseif (3*d_m <= x)
                 wind_speed = 0;
             end
+        end
+
+        function [] = add_wind_parameter(obj, gust_speed_mean, gust_speed_3sigma, gust_length_mean, gust_length_3sigma)
+            % Adding a wind parameter (There should be 4 wind parameters added by default)
+            % Specify the object, the mean and 3 times the standard
+            % deviation of wind gust speed, and the mean ant he 3 times the
+            % standard deviation of the wind gust length.
+            % Updates object with new wind parameter
+            add = [gust_speed_mean, gust_speed_3sigma, gust_length_mean, gust_length_3sigma];
+            obj.wind_parameters = [obj.wind_parameters; add];
+        end
+
+        function [wind_parameters] = get_wind_parameter(obj, index)
+            % Deletes wind parameter at specified index
+            if index > size(obj.wind_parameters, 1)
+            end
+            wind_parameters = obj.wind_parameters(index,:);
+        end
+
+        function [] = remove_wind_parameter(obj, index)
+            obj.wind_parameters(index,:) = [];
+        end
+
+        function [V_m, d_m] = get_wind_aspects(obj, index)
+            params = obj.wind_parameters(index,:);
+
+            dist1 = makedist('Normal','mu',params(1),'sigma',params(2)/3);
+            dist2 = makedist('Normal','mu',params(3),'sigma',params(4)/3);
+
+            V_m = random(dist1);
+            d_m = random(dist2);
         end
     end
 end
