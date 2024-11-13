@@ -1,4 +1,4 @@
-classdef Flight
+classdef Flight < handle
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
 

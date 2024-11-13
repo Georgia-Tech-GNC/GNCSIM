@@ -25,12 +25,12 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     resetTerminalCounter = resetTerminalCounter + 1;
     
     if resetTerminalCounter >= 3000
-         tprintf('rocketModel');
+         %tprintf('rocketModel');
          resetTerminalCounter = 0;
     end
     
     if terminalCounter >= 100
-        tprintf('rocketModel',num2str(t));
+        %tprintf('rocketModel',num2str(t));
         terminalCounter = 0;
     end
 
@@ -167,7 +167,8 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     MT_b = [MT_bx;MT_by;MT_bz];
 
     %% Aerodynamics. TODO: Consult Hridai on how this should work with wind/environment
-
+    
+    alpha = 0;
     if applyWind
         if applyPeriodicWindGusts
             % Gust Period
@@ -230,10 +231,10 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
             alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
             beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
     
-            [FA_b, MA_b,l_p,n_a,n_r] =  RocketObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
+            [FA_b, MA_b,l_p,n_a,n_r] = RocketObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
         end
     else
-        [FA_b, MA_b,l_p,n_a,n_r] =  RocketObj.calcAeroBody3(alpha,norm(v_b),rho,CG,wbf_b);
+        [FA_b, MA_b,l_p,n_a,n_r] = RocketObj.calcAeroBody3(alpha,norm(v_b),rho,CG,wbf_b);
     end
 
     %% External Moments
@@ -297,7 +298,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
 
     % add to log
     log.alpha = alpha;
-    log.beta = beta;
+    %log.beta = beta;
     % log.D0 = D0;
     % log.L = L;
     % log.Di = Di;
@@ -319,4 +320,27 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     log.n_a = n_a;
     log.n_r = n_r;
     
+end
+
+function vB = quat_rotate(q,vI)
+%quat_rotate Rotates vec data set from inertial to body
+% q - quat data set that rotates from I to B - qBI (nx4)
+% vI - 3d vector in I frame (nx3)
+% vB - 3d vec in B frame (nx3)
+% n - # of data entries
+
+dims = size(vI);
+
+% normalize quat
+q_norm = (q(:,1).^2 + q(:,2).^2 + q(:,3).^2 + q(:,4).^2) .^ 0.5;
+q_u0 = q(:,1) ./ q_norm;
+q_u1 = q(:,2) ./ q_norm;
+q_u2 = q(:,3) ./ q_norm;
+q_u3 = q(:,4) ./ q_norm;
+q_u = [q_u0 q_u1 q_u2 q_u3];
+
+% quat rotation
+[~, vB1, vB2, vB3] = parts(quaternion(quatconj(q_u)) .* quaternion([zeros(dims(1),1) vI]) .* quaternion(q_u));
+vB = [vB1 vB2 vB3];
+
 end

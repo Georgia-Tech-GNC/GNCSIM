@@ -1,4 +1,4 @@
-classdef Rocket
+classdef Rocket < handle
     %Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -43,7 +43,7 @@ classdef Rocket
 
         function obj= set_dryMOI(obj, dry_inertias)
             [r,c] = size(dry_inertias);
-            if all((~isnumeric(dry_inertias) || dry_inertias < 0)) && (r==c)
+            if ~(isnumeric(dry_inertias) && all(diag(dry_inertias) > 0) && (r == c))
                 error('Dry intertia values must be positive doubles.')
             else
                 obj.dryMOI = dry_inertias;
@@ -52,7 +52,7 @@ classdef Rocket
 
         function obj= set_wetMOI(obj, wet_inertias)
             [r,c] = size(wet_inertias);
-            if all((~isnumeric(wet_inertias) || wet_inertias < 0)) && (r==c)
+            if ~(isnumeric(wet_inertias) && all(diag(wet_inertias) > 0) && (r == c))
                 error('Wet inertia values must be positive doubles, and the inertia matrix must be square.')
             else
                 obj.wetMOI = wet_inertias;
@@ -183,6 +183,7 @@ classdef Rocket
                 error('Error: Time must be a double')
             end
             % initialization for while loop
+            arr = obj.thrustCurve;
             lowerBoundTime = [];
             upperBoundTime = [];
             lowerBoundThrust = [];
@@ -216,7 +217,7 @@ classdef Rocket
             end
         end
 
-        function [FA_b,MA_b,l_p_curr,n_a_curr,n_r_curr] = calcAeroBody3(alpha,vel,rho,CG,angVel)
+        function [FA_b,MA_b,l_p_curr,n_a_curr,n_r_curr] = calcAeroBody3(obj,alpha,vel,rho,CG,angVel)
             %calcAeroBody3 Wrapper for aero model for calculating aero forces and 
             % moments for the nonlinear rocket model. Aero equations are only valid 
             % up to roughly 10 degrees angle of attack.

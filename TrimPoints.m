@@ -462,6 +462,80 @@ classdef TrimPoints < handle
             rocket = Rocket();
             flight = Flight();
 
+            flight.set_simTime(13);
+            flight.set_tStep(0.01);
+            flight.set_tSpan();
+
+            tSpan = flight.get_tSpan();
+            [~, len_tSpan] = size(tSpan);
+            uSpan = zeros(len_tSpan, 3);
+            flight.set_uSpan(uSpan);
+            
+            %% THIS SHOULD BE CHANGED!!!
+
+            % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
+            wetMass = 38.87;% update to read from excel sheet
+            dryMass = 30.96; % update to read from excel sheet
+            peakThrust = 2262; % update to read from excel sheet
+            burnTime = 13.1; % update to read from excel sheet
+            wetRollMOI = 0.2109; % update to read from excel sheet
+            wetPitchMOI = 21.1212; % update to read from excel sheet
+            wetYawMOI = 21.1202; % update to read from excel sheet
+            dryRollMOI = 0.2036; % update to read from excel sheet
+            dryPitchMOI = 18.99; % update to read from excel sheet
+            dryYawMOI = 18.988; % update to read from excel sheet
+
+            CG0 = 2.433; % initial CG from tip of nose (m)
+            finalCG = 2.34; % final CG from tip of nose (m)
+            length = 3.4; % length of rocket (m)
+            diameter = 0.203; % m
+
+            thrustCurve = [0.0, 0.457288;
+            0.152, 0.314574;
+            0.162, 40.2069;
+            0.164, 148.3954;
+            0.168, 598.904;
+            0.172, 890.058;
+            0.176, 995.096;
+            0.178, 1158.031;
+            0.182, 1342.306;
+            0.19, 1556.716;
+            0.222, 1959.8;
+            0.234, 2050.53;
+            0.254, 2111.01;
+            0.308, 2119.9;
+            0.356, 2073.29;
+            0.47, 2091.07;
+            0.528, 1989.543;
+            0.582, 1825.825;
+            0.648, 1733.526;
+            0.782, 1658.07;
+            0.892, 1701.725;
+            0.914, 1633.231;
+            0.966, 1669.558;
+            1.7839, 1594.076;
+            1.8239, 1551.156;
+            3.1999, 1533.43;
+            5.4538, 1378.986;
+            6.9577, 1170.933;
+            10.9216, 424.692;
+            13.5895, 106.0499;
+            14.6754, 12.60914;
+            16.1354, 0.0;];
+
+            rocket.set_wetMass(wetMass);
+            rocket.set_dryMass(dryMass);
+            rocket.set_wetMOI(diag([wetRollMOI, wetPitchMOI, wetYawMOI]));
+            rocket.set_dryMOI(diag([dryRollMOI, dryPitchMOI, dryYawMOI]));
+            rocket.set_initialCG(CG0);
+            rocket.set_finalCG(finalCG);
+            rocket.set_length(length)
+            rocket.set_diameter(diameter)
+            rocket.set_radius(diameter/2)
+
+            rocket.set_burnTime(burnTime);
+            rocket.set_thrustCurve(thrustCurve)
+
             t = 1;
             
             trim_point = obj.trim_points(1).states;
@@ -471,7 +545,8 @@ classdef TrimPoints < handle
             [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, flight), trim_point, ...
             optimset('TolX',1e-10,'MaxFunEvals',10000,'MaxIter',10000));
 
-
+            disp(1);
+            
         end
 
 
@@ -617,12 +692,12 @@ classdef TrimPoints < handle
 
             [xdot, ~] = rocketModel(t, X, rocket, flight, -1);
 
-            udot = xdot(1);
-            vdot = xdot(2);
-            wdot = xdot(3);
-            pdot = xdot(4);
-            qdot = xdot(5);
-            rdot = xdot(6);
+            udot = xdot(4);
+            vdot = xdot(5);
+            wdot = xdot(6);
+            pdot = xdot(11);
+            qdot = xdot(12);
+            rdot = xdot(13);
             q0dot = xdot(7);
             q1dot = xdot(8);
             q2dot = xdot(9);
@@ -636,7 +711,7 @@ classdef TrimPoints < handle
             Q(3) = w - w_trim;
             Q(4) = p - p_trim;
             Q(5) = q - q_trim;
-            Q(6) = r - t_trim;
+            Q(6) = r - r_trim;
             Q(7) = q0 - q0_trim;
             Q(8) = q1 - q1_trim;
             Q(9) = q2 - q2_trim;
