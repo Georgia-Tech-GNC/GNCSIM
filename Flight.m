@@ -9,7 +9,7 @@ classdef Flight < handle
         calcXDots; % boolean
         runLinearModel; % boolean
         applyWind; % boolean
-        useLatinHyperCubeSampling; % boolean
+        %useLatinHyperCubeSampling; % boolean
         numStates = 13; 
         numInputs = 3;
         localSimTime; % seconds (double)
@@ -17,7 +17,7 @@ classdef Flight < handle
         tSpan; % Vector of doubles
         gravity = 9.81 % m/(s^2)
         uSpan; % length of t span by 3 array of double
-        MCxlsx; % filename of Excel sheet with Monte Carlo information
+        %MCxlsx; % filename of Excel sheet with Monte Carlo information
         windParam; % is set based on Monte Carlo data
         options = odeset('Events',@rocket_events);
         initState;
@@ -69,13 +69,14 @@ classdef Flight < handle
             end
         end
 
-        function obj= set_useLatinHyperCubeSampling(obj, latin_sample)
-            if ~islogical(latin_sample)
-                error('useLatinHyperCubeSampling must be a logical value.')
-            else
-                obj.useLatinHyperCubeSampling = latin_sample;
-            end
-        end
+        % Should be refactored
+        % function obj= set_useLatinHyperCubeSampling(obj, latin_sample)
+        %     if ~islogical(latin_sample)
+        %         error('useLatinHyperCubeSampling must be a logical value.')
+        %     else
+        %         obj.useLatinHyperCubeSampling = latin_sample;
+        %     end
+        % end
 
         function obj= set_numStates(obj, num_states)
             if ~isnumeric(num_states) || num_states < 1
@@ -138,13 +139,14 @@ classdef Flight < handle
             end
         end
 
-        function obj= set_MCxlsx(obj, fn)
-            if ~ischar(fn)
-                error('MCxlsx must be a filename in the form of a char array')
-            else
-                obj.MCxlsx = fn;
-            end
-        end
+        % Should be refactored
+        % function obj= set_MCxlsx(obj, fn)
+        %     if ~ischar(fn)
+        %         error('MCxlsx must be a filename in the form of a char array')
+        %     else
+        %         obj.MCxlsx = fn;
+        %     end
+        % end
 
         function obj= set_windParam(obj, wp)
             obj.windParam = wp; % No conditions check because this comes from Monte Carlo
@@ -170,9 +172,10 @@ classdef Flight < handle
             aw = obj.applyWind;
         end
 
-        function ulhcs = get_useLatinHyperCubeSampling(obj)
-            ulhcs = obj.useLatinHyperCubeSampling;
-        end
+        % Should be refactored
+        % function ulhcs = get_useLatinHyperCubeSampling(obj)
+        %     ulhcs = obj.useLatinHyperCubeSampling;
+        % end
 
         function ns = get_numStates(obj)
             ns = obj.numStates;
@@ -205,10 +208,11 @@ classdef Flight < handle
         function is = get_initState(obj)
             is = obj.initState;
         end
-
-        function mcexcel = get_MCxlsx(obj)
-            mcexcel = obj.MCxlsx;
-        end
+    
+        % Should be refactored
+        % function mcexcel = get_MCxlsx(obj)
+        %     mcexcel = obj.MCxlsx;
+        % end
 
         function opts = get_options(obj)
             opts = obj.options;
