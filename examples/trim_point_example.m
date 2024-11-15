@@ -13,10 +13,10 @@ liftoff_time = trim_point.find_event_time("LIFTOFF");
 burnout_time = trim_point.find_event_time("BURNOUT");
 
 % Number of batches of trim points to add
-num_batches = 15;
+num_batches = 5;
 
 % Generate an array of 6 evenly spaced time points between liftoff_time and burnout_time
-time_arr = linspace(liftoff_time + 0.2, burnout_time, num_batches);
+time_arr = linspace(liftoff_time + 0.5, burnout_time, num_batches);
 
 % Generate trim batches for each time point in time_arr
 % Each batch corresponds to a specific time instance and contains variations based on the base_state
@@ -44,6 +44,7 @@ turn_varables = ["q0", "q1", "q2", "q3"];
 turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
              0.0871557, 0, 0, 0.9961947;   % 10 deg
              0.1305262, 0, 0, 0.9914449];  % 15 deg
+            %0.0436055, 0.0436055, 0, 0.9980967];
 
 % include base state [0, 0, 0, 1] strait up flight
 turn_include_base = true;

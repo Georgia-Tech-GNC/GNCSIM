@@ -262,8 +262,9 @@ classdef Rocket < handle
             Mo = @(a, v, rho) CM(a, v) .* 0.5 .* rho .* v.^2 .* 0.9375;
             D_a = @(a, v, rho) CD(a) .* 0.5 .* rho .* v.^2 .* 0.9375;
             L_a = @(a, v, rho) CL(a,v) .* 0.5 .* rho .* v.^2 .* 0.9375;
-            L_r = @(rho,v,r,CG) 0.5*rho*v^2*0.9375 * (2.61799)/(sqrt(1+0.797*(1-(v*1116.45)^2))) * asin(r*(10.0948-CG)/v);
-        
+            %L_r = @(rho,v,r,CG) 0.5*rho*v^2*0.9375 * (2.61799)/(sqrt(1+0.797*(1-(v*1116.45)^2))) * asin(r*(10.0948-CG)/v);
+            L_r = @(rho, v, r, CG) 0.5 * rho * v^2 * 0.9375 * (2.61799 / (1 + sqrt(1 + 0.797628 * (1 - (v / 1116.45)^2)))) * asin(r * (10.3264 - CG) / v);
+
             %% Aero force in body frame
             Lmag = L_a(alphaDeg,vel,rho) + L_r(rho,vel,angVel(1),CG);
             L_b = Lmag .* [sin(alphaRad);-cos(alphaRad);0];
@@ -274,8 +275,9 @@ classdef Rocket < handle
             %% Aero moment in body frame about current CG
         
             n_a = @(a, v, rho) CM(a, v) * 0.5 * rho * v.^2 * 0.9375; % corrective moment due to a (angle of attack)
-            n_r = @(rho,v,r,CG) 0.5*rho*v^2*0.9375 * (2.61799)/(sqrt(1+0.797*(1-(v*1116.45)^2))) * asin(r*(10.3264-CG)/v) * (10.3264-CG);
-        
+            %n_r = @(rho,v,r,CG) 0.5*rho*v^2*0.9375 * (2.61799)/(sqrt(1+0.797*(1-(v*1116.45)^2))) * asin(r*(10.3264-CG)/v) * (10.3264-CG);
+            n_r = @(rho, v, r, CG) 0.5 * rho * v^2 * 0.9375 * (2.61799 / (1 + sqrt(1 + 0.797628 * (1 - (v / 1116.45)^2)))) * asin(r * (10.3264 - CG) / v) * (10.3264 - CG);
+
             l_p = @(rho,v,p) (((4.*((2.*pi)./sqrt(1-(v./1116.4).^2)).*p)./(0.4688.*v)).*0.1897).*0.5.*rho.*v.^2.*0.4688;
         
             % Need to perform moment transfer

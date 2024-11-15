@@ -40,6 +40,9 @@ classdef TrimPoints < handle
         % An array of structs, each containing a trim point with its name, ID, and states.
         trim_points
         
+        % An array of structs, each containing a trimmed point with its name, ID, states and cost.
+        trimmed_points
+        
         % An array indicating the column indices of required variables in the flight data.
         column_positions_csv
 
@@ -536,17 +539,32 @@ classdef TrimPoints < handle
             rocket.set_burnTime(burnTime);
             rocket.set_thrustCurve(thrustCurve)
 
-            t = 1;
+            %timmed_struct = struct("time", [], "id", 0, "name", "", "states", [], "cost", 0);
+
+            obj.trimmed_points = obj.trim_points;
             
-            trim_point = obj.trim_points(1).states;
-
-            %[xDot, log] = rocketModel(t, x, rocket, flight, -1);
-
-            [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, flight), trim_point, ...
-            optimset('TolX',1e-10,'MaxFunEvals',10000,'MaxIter',10000));
-
-            disp(1);
+            total_points = numel(obj.trim_points);
+            last_percent = 0;  % Initialize the last printed percent
             
+            for ii = 1:total_points
+                trim_point = obj.trim_points(ii).states;
+                t = obj.trim_points(ii).time;
+            
+                % Calculate the current percentage
+                current_percent = floor((ii / total_points) * 100);
+            
+                % Display progress if the percent has increased
+                if current_percent > last_percent
+                    fprintf('Trimming Progress: %d%%\n', current_percent);
+                    last_percent = current_percent;
+                end
+            
+                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, flight), trim_point, ...
+                    optimset('TolX', 1e-10, 'MaxFunEvals', 100, 'MaxIter', 100, 'Display', 'off'));
+            
+                obj.trimmed_points(ii).cost = f0;
+                obj.trimmed_points(ii).states = ZStar;
+            end
         end
 
 
@@ -691,6 +709,7 @@ classdef TrimPoints < handle
             
 
             [xdot, ~] = rocketModel(t, X, rocket, flight, -1);
+            xdot = real(xdot);
 
             udot = xdot(4);
             vdot = xdot(5);
@@ -727,12 +746,12 @@ classdef TrimPoints < handle
 
             one_vec = ones(1, num_constraints);
             H = diag(one_vec); % Should be dimensions of the number of constraints
-            H(4,4) = 1000;
-            H(6,6) = 1000;
-            H(7,7) = 1000;
-            H(8,8) = 1000;
-            H(9,9) = 1000;
-            H(10,10) = 1000;
+            H(4,4) = 100;
+            H(6,6) = 100;
+            H(7,7) = 100;
+            H(8,8) = 100;
+            H(9,9) = 100;
+            H(10,10) = 100;
 
             f0 = Q' * H * Q; % Compute the cost function
         end 
