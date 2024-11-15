@@ -10,7 +10,6 @@ classdef Flight < handle
         runLinearModel; % boolean
         applyWind; % boolean
         useLatinHyperCubeSampling; % boolean
-        numRuns; % integer (double)
         numStates = 13; 
         numInputs = 3;
         localSimTime; % seconds (double)
@@ -78,19 +77,11 @@ classdef Flight < handle
             end
         end
 
-        function obj= set_numRuns(obj, num_runs)
-            if ~isnumeric(num_runs) || num_runs < 1
-                error('numRuns must be a positive double greater than 1.')
-            else
-                obj.numRuns = floor(num_runs);
-            end
-        end
-
         function obj= set_numStates(obj, num_states)
             if ~isnumeric(num_states) || num_states < 1
                 error('numStates must be a positive double greater than 1.')
             else
-                obj.numRuns = floor(num_states);
+                obj.numStates = floor(num_states);
             end
         end
 
@@ -183,10 +174,6 @@ classdef Flight < handle
             ulhcs = obj.useLatinHyperCubeSampling;
         end
 
-        function nr = get_numRuns(obj)
-            nr = obj.numRuns;
-        end
-
         function ns = get_numStates(obj)
             ns = obj.numStates;
         end
@@ -227,398 +214,388 @@ classdef Flight < handle
             opts = obj.options;
         end
 
-        function mcParams = getRandomSample(xlsxFile,runIndex)
-            % getRandomSample
-            xlsxFile = readcell(xlsxFile);
-    
-            gustAmplitude = random(makedist(xlsxFile{2*runIndex,4},'mu',xlsxFile{2*runIndex,5},'sigma',xlsxFile{2*runIndex,6}/3));
-            gustLength = random(makedist(xlsxFile{1+2*runIndex,4},'mu',xlsxFile{1+2*runIndex,5},'sigma',xlsxFile{1+2*runIndex,6}/3));
-            windParameter = [gustAmplitude gustLength];
-    
-            % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
-            wetMass = 38.87;% update to read from excel sheet
-            dryMass = 30.96; % update to read from excel sheet
-            peakThrust = 2262; % update to read from excel sheet
-            burnTime = 13.1; % update to read from excel sheet
-            % thrustCurve = generate_thrust_curve(peakThrust, burnTime);
-            wetRollMOI = 0.2109; % update to read from excel sheet
-            wetPitchMOI = 21.1212; % update to read from excel sheet
-            wetYawMOI = 21.1202; % update to read from excel sheet
-            dryRollMOI = 0.2036; % update to read from excel sheet
-            dryPitchMOI = 18.99; % update to read from excel sheet
-            dryYawMOI = 18.988; % update to read from excel sheet
-    
-            % UPDATE OUTPUT STRUCT
-            mcParams.windParam = windParameter;
-            mcParams.wetMass = wetMass;
-            mcParams.dryMass = dryMass;
-            mcParams.peakThrust = peakThrust;
-            mcParams.burnTime = burnTime;
-            mcParams.thrustCurve = thrustCurve;
-            mcParams.wetMOI = [wetRollMOI 0 0;
-                                0 wetPitchMOI 0;
-                                0 0 wetYawMOI];
-            mcParams.dryMOI = [dryRollMOI 0 0;
-                                0 dryPitchMOI 0;
-                                0 0 dryYawMOI];
-        end
+        % This function should be rolled into the Monte Carlo class and
+        % refactored
+        % function mcParams = getRandomSample(xlsxFile,runIndex)
+        %     % getRandomSample
+        %     xlsxFile = readcell(xlsxFile);
+        % 
+        %     gustAmplitude = random(makedist(xlsxFile{2*runIndex,4},'mu',xlsxFile{2*runIndex,5},'sigma',xlsxFile{2*runIndex,6}/3));
+        %     gustLength = random(makedist(xlsxFile{1+2*runIndex,4},'mu',xlsxFile{1+2*runIndex,5},'sigma',xlsxFile{1+2*runIndex,6}/3));
+        %     windParameter = [gustAmplitude gustLength];
+        % 
+        %     % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
+        %     wetMass = 38.87;% update to read from excel sheet
+        %     dryMass = 30.96; % update to read from excel sheet
+        %     peakThrust = 2262; % update to read from excel sheet
+        %     burnTime = 13.1; % update to read from excel sheet
+        %     % thrustCurve = generate_thrust_curve(peakThrust, burnTime);
+        %     wetRollMOI = 0.2109; % update to read from excel sheet
+        %     wetPitchMOI = 21.1212; % update to read from excel sheet
+        %     wetYawMOI = 21.1202; % update to read from excel sheet
+        %     dryRollMOI = 0.2036; % update to read from excel sheet
+        %     dryPitchMOI = 18.99; % update to read from excel sheet
+        %     dryYawMOI = 18.988; % update to read from excel sheet
+        % 
+        %     % UPDATE OUTPUT STRUCT
+        %     mcParams.windParam = windParameter;
+        %     mcParams.wetMass = wetMass;
+        %     mcParams.dryMass = dryMass;
+        %     mcParams.peakThrust = peakThrust;
+        %     mcParams.burnTime = burnTime;
+        %     mcParams.thrustCurve = thrustCurve;
+        %     mcParams.wetMOI = [wetRollMOI 0 0;
+        %                         0 wetPitchMOI 0;
+        %                         0 0 wetYawMOI];
+        %     mcParams.dryMOI = [dryRollMOI 0 0;
+        %                         0 dryPitchMOI 0;
+        %                         0 0 dryYawMOI];
+        % end
 
         function log = runFlight(obj, Rocket, Environment)
-            log(obj.numRuns) = struct();
-            for runIndex = 1:obj.numRuns
-                fprintf('Iterative LQR Monte Carlo Run %d out of %d...\n',runIndex,obj.numRuns)
-                % Number of LQR intervals to simulate
-                % currently each LQR interval is 1 second
-                % NOTE: FSW will be switching LQR gains at a much faster rate (10 Hz)
-                numIntervals = obj.simTime / obj.localSimTime;
-                % Allocate log memory for current MC run
-                tempMClog(numIntervals) = struct();
+            tic
+            log = struct();
+            fprintf('Running flight...\n')
+
+            % Number of LQR intervals to simulate
+            % currently each LQR interval is 1 second
+            % NOTE: FSW will be switching LQR gains at a much faster rate (10 Hz)
+            numIntervals = obj.simTime / obj.localSimTime;
+            % Allocate log memory for current MC run
+            tempMClog(numIntervals) = struct();
+
+            if obj.get_runLinearModel()
+                tempMClinLog(numIntervals) = struct();
+            end
+                
+            % The below will be rolled into the Monte Carlo class
+            % if obj.get_useLatinHyperCubeSampling()
+            %     mcParams = getLatinHyperCubeSample(obj.get_MCxlsx(), runIndex);
+            % else
+            %     mcParams = getRandomSample(obj.get_MCxlsx(), runIndex);
+            % end
+
+            for lqrIndex =  1:numIntervals
+                fprintf('Current LQR config: %d \n', lqrIndex);
+
+                % Get initial state for each LQR time interval
+                if lqrIndex == 1
+                    initial_state = Flight.get_initState();
+                    lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
+                else
+                    initial_state =prevFinalState;
+                    lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
+                end
+
+                % Solve linear and nonlinear systems for localSimTime
+                % seconds
+                local_startTime = (lqrIndex-1) * obj.get_localSimTime();
+                local_endTime = local_startTime + obj.get_localSimTime();
+                local_tSpan = local_startTime:obj.get_tStep():local_endTime;
+
+                % Solve nonlinear trajectory for the current time
+                % interval
+                ode_options = obj.get_options();
+                [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, obj, TrimPointObj), ...
+                                         local_tSpan, ...
+                                         initial_state, ...
+                                         ode_options);
+                prevFinalState = traj.x(end, :)';
+             
+                % Log nonlinear traj data for current LQR interval to
+                % the log for the current run
+                tempMClog(lqrIndex).time = traj.t;
+                tempMClog(lqrIndex).posFlat = traj.x(:, 1:3);
+                tempMClog(lqrIndex).velBody = traj.x(:, 4:6);
+                tempMClog(lqrIndex).q_bf = traj.x(:, 7:10);
+                tempMClog(lqrIndex).angVel = traj.x(:, 11:13);
+
+                if config.calcXdots == 1
+                    tempMClog(lqrIndex).angleOfAttack = zeros([length(traj.t),1]); % alpha
+                    tempMClog(lqrIndex).sideslipAngle = zeros([length(traj.t),1]); % beta
+                    tempMClog(lqrIndex).CG = zeros([length(traj.t)],1);
+                    tempMClog(lqrIndex).angAccel = zeros(length(traj.t),3);
+                    tempMClog(lqrIndex).MA_b = zeros(length(traj.t),3);
+                    tempMClog(lqrIndex).MT_b = zeros(length(traj.t),3);
+                    tempMClog(lqrIndex).ME_b = zeros(length(traj.t),3);
+                    tempMClog(lqrIndex).l_p = zeros(length(traj.t),1);
+                    tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
+                    tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
+                    for i = 1:length(traj.t)
+                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,obj,TrimPointObj);
+                        tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
+                        tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
+                        tempMClog(lqrIndex).CG(i) = modelLog.CG;
+                        tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
+                        tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;
+                        tempMClog(lqrIndex).MT_b(i,:) = modelLog.MT_b;
+                        tempMClog(lqrIndex).ME_b(i,:) = modelLog.ME_b;
+                        tempMClog(lqrIndex).l_p(i,:) = modelLog.l_p;
+                        tempMClog(lqrIndex).n_a(i,:) = modelLog.n_a;
+                        tempMClog(lqrIndex).n_r(i,:) = modelLog.n_r;  
+                    end
+                end
 
                 if obj.get_runLinearModel()
-                    tempMClinLog(numIntervals) = struct();
-                end
+                % Solve linear trajectory for current time interval
+                    [linTraj.t, linTraj.x] = ode45(@(t,x) linearRocketModel(t,x,Rocket,obj,TrimPointObj),...
+                                                local_tSpan,...
+                                                lin_initial_state);
+                    tempMClinLog(lqrIndex).time = linTraj.t;
+                    tempMClinLog(lqrIndex).velBody = linTraj.x(:,1:3);
+                    tempMClinLog(lqrIndex).q_bf = [ones(length(tempMClinLog(lqrIndex).time),1) linTraj.x(:,7:9)];
+                    tempMClinLog(lqrIndex).angVel = linTraj.x(:,4:6);
 
-                if obj.get_useLatinHyperCubeSampling()
-                    mcParams = getLatinHyperCubeSample(obj.get_MCxlsx(), runIndex);
-                else
-                    mcParams = getRandomSample(obj.get_MCxlsx(), runIndex);
-                end
-
-                for lqrIndex =  1:numIntervals
-                    fprintf('Current LQR config: %d \n', lqrIndex);
-
-                    % Add Monte Carlo Parameters to input configuration
-                    obj.set_windParam(mcParams.windParam);
-                    Rocket.set_wet_mass(mcParams.wetMass);
-                    Rocket.set_dry_mass(mcParams.dryMass);
-                    % peak thrust?? Where is this used? config.peakThrust =
-                    % mcParams.peakThrust
-                    Rocket.set_burn_time(mcParams.burnTime);
-                    Rocket.set_wet_inertias(mcParams.wetMOI);
-                    Rocket.set_dry_inertias(mcParams.dryMOI);
-
-                    % Get initial state for each LQR time interval
-                    if lqrIndex == 1
-                        initial_state = Flight.get_initState();
-                        lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
-                    else
-                        initial_state =prevFinalState;
-                        lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
-                    end
-
-                    % Solve linear and nonlinear systems for localSimTime
-                    % seconds
-                    local_startTime = (lqrIndex-1) * obj.get_localSimTime();
-                    local_endTime = local_startTime + obj.get_localSimTime();
-                    local_tSpan = local_startTime:obj.get_tStep():local_endTime;
-
-                    % Solve nonlinear trajectory for the current time
-                    % interval
-                    ode_options = obj.get_options();
-                    [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, obj, TrimPointObj), ...
-                                             local_tSpan, ...
-                                             initial_state, ...
-                                             ode_options);
-                    prevFinalState = traj.x(end, :)';
-                 
-                    % Log nonlinear traj data for current LQR interval to
-                    % the log for the current run
-                    tempMClog(lqrIndex).time = traj.t;
-                    tempMClog(lqrIndex).posFlat = traj.x(:, 1:3);
-                    tempMClog(lqrIndex).velBody = traj.x(:, 4:6);
-                    tempMClog(lqrIndex).q_bf = traj.x(:, 7:10);
-                    tempMClog(lqrIndex).angVel = traj.x(:, 11:13);
-
-                    if config.calcXdots == 1
-                        tempMClog(lqrIndex).angleOfAttack = zeros([length(traj.t),1]); % alpha
-                        tempMClog(lqrIndex).sideslipAngle = zeros([length(traj.t),1]); % beta
-                        tempMClog(lqrIndex).CG = zeros([length(traj.t)],1);
-                        tempMClog(lqrIndex).angAccel = zeros(length(traj.t),3);
-                        tempMClog(lqrIndex).MA_b = zeros(length(traj.t),3);
-                        tempMClog(lqrIndex).MT_b = zeros(length(traj.t),3);
-                        tempMClog(lqrIndex).ME_b = zeros(length(traj.t),3);
-                        tempMClog(lqrIndex).l_p = zeros(length(traj.t),1);
-                        tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
-                        tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
-                        for i = 1:length(traj.t)
-                            [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,obj,TrimPointObj);
-                            tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
-                            tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
-                            tempMClog(lqrIndex).CG(i) = modelLog.CG;
-                            tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
-                            tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;
-                            tempMClog(lqrIndex).MT_b(i,:) = modelLog.MT_b;
-                            tempMClog(lqrIndex).ME_b(i,:) = modelLog.ME_b;
-                            tempMClog(lqrIndex).l_p(i,:) = modelLog.l_p;
-                            tempMClog(lqrIndex).n_a(i,:) = modelLog.n_a;
-                            tempMClog(lqrIndex).n_r(i,:) = modelLog.n_r;  
-                        end
-                    end
-
-                    if obj.get_runLinearModel()
-                    % Solve linear trajectory for current time interval
-                        [linTraj.t, linTraj.x] = ode45(@(t,x) linearRocketModel(t,x,Rocket,obj,TrimPointObj),...
-                                                    local_tSpan,...
-                                                    lin_initial_state);
-                        tempMClinLog(lqrIndex).time = linTraj.t;
-                        tempMClinLog(lqrIndex).velBody = linTraj.x(:,1:3);
-                        tempMClinLog(lqrIndex).q_bf = [ones(length(tempMClinLog(lqrIndex).time),1) linTraj.x(:,7:9)];
-                        tempMClinLog(lqrIndex).angVel = linTraj.x(:,4:6);
-
-                        if obj.get_calcXdots == 1
-                            tempMClinLog(lqrIndex).v_f = zeros(length(tempMClinLog(lqrIndex).time),3);
-                            tempMClinLog(lqrIndex).rollMoment = zeros(length(tempMClinLog(lqrIndex).time));
-                            tempMClinLog(lqrIndex).pitchMoment = zeros(length(tempMClinLog(lqrIndex).time));
-                            tempMClinLog(lqrIndex).yawMoment = zeros(length(tempMClinLog(lqrIndex).time));
-                            tempMClinLog(lqrIndex).thrust = zeros(length(tempMClinLog(lqrIndex).time));
-        
-                            for i = 1:length(linTraj.t)
-                                [xdot,modelLog] = linearRocketModel(linTraj.t(i),linTraj.x(i,:)',linConfig);
-                                tempMClinLog(lqrIndex).v_f(i,:) = modelLog.v_f;
-                                tempMClinLog(lqrIndex).rollMoment(i) = modelLog.rollMoment;
-                                tempMClinLog(lqrIndex).pitchMoment(i) = modelLog.pitchMoment;
-                                tempMClinLog(lqrIndex).yawMoment(i) = modelLog.yawMoment;
-                                tempMClinLog(lqrIndex).thrust(i) = modelLog.thrust;
-        
-                            end
+                    if obj.get_calcXdots == 1
+                        tempMClinLog(lqrIndex).v_f = zeros(length(tempMClinLog(lqrIndex).time),3);
+                        tempMClinLog(lqrIndex).rollMoment = zeros(length(tempMClinLog(lqrIndex).time));
+                        tempMClinLog(lqrIndex).pitchMoment = zeros(length(tempMClinLog(lqrIndex).time));
+                        tempMClinLog(lqrIndex).yawMoment = zeros(length(tempMClinLog(lqrIndex).time));
+                        tempMClinLog(lqrIndex).thrust = zeros(length(tempMClinLog(lqrIndex).time));
+    
+                        for i = 1:length(linTraj.t)
+                            [xdot,modelLog] = linearRocketModel(linTraj.t(i),linTraj.x(i,:)',linConfig);
+                            tempMClinLog(lqrIndex).v_f(i,:) = modelLog.v_f;
+                            tempMClinLog(lqrIndex).rollMoment(i) = modelLog.rollMoment;
+                            tempMClinLog(lqrIndex).pitchMoment(i) = modelLog.pitchMoment;
+                            tempMClinLog(lqrIndex).yawMoment(i) = modelLog.yawMoment;
+                            tempMClinLog(lqrIndex).thrust(i) = modelLog.thrust;
+    
                         end
                     end
                 end
-                
-                    % Integrate data from current MC log
-                    tempLoggedData.time = vertcat(tempMClog.time);
-                    tempLoggedData.posFlat = vertcat(tempMClog.posFlat);
-                    tempLoggedData.velBody = vertcat(tempMClog.velBody);
-                    tempLoggedData.q_bf = vertcat(tempMClog.q_bf);
-                    tempLoggedData.angVel = vertcat(tempMClog.angVel);
-            
-                    if config.calcXdots == 1
-                        tempLoggedData.angleOfAttack = vertcat(tempMClog.angleOfAttack);
-                        tempLoggedData.sideslipAngle = vertcat(tempMClog.sideslipAngle);
-                        tempLoggedData.CG = vertcat(tempMClog.CG);
-                        tempLoggedData.angAccel = vertcat(tempMClog.angAccel);
-                        tempLoggedData.MA_b = vertcat(tempMClog.MA_b);
-                        tempLoggedData.MT_b = vertcat(tempMClog.MT_b);
-                        tempLoggedData.ME_b = vertcat(tempMClog.ME_b);
-                        tempLoggedData.l_p = vertcat(tempMClog.l_p);
-                        tempLoggedData.n_a = vertcat(tempMClog.n_a);
-                        tempLoggedData.n_r = vertcat(tempMClog.n_r);
-                        
-                    end
-            
-                    if testConfig.runLinearModel
-                        tempLinLoggedData.time = vertcat(tempMClinLog.time);
-                        tempLinLoggedData.velBody = vertcat(tempMClinLog.velBody);
-                        tempLinLoggedData.q_bf = vertcat(tempMClinLog.q_bf);
-                        tempLinLoggedData.angVel = vertcat(tempMClinLog.angVel);
-            
-                        if config.calcXdots == 1
-                            tempLinLoggedData.v_f = vertcat(tempMClinLog.v_f);
-                            tempLinLoggedData.rollMoment = vertcat(tempMClinLog.rollMoment);
-                            tempLinLoggedData.pitchMoment = vertcat(tempMClinLog.pitchMoment);
-                            tempLinLoggedData.yawMoment = vertcat(tempMClinLog.yawMoment);
-                            tempLinLoggedData.thrust = vertcat(tempMClinLog.thrust);
-                        end
-                    end
-            
-            
-                    log(runIndex).loggedData = tempLoggedData;
-                    if testConfig.runLinearModel
-                        log(runIndex).linLoggedData = tempLinLoggedData;
-                    end
-            
-                    % End of current MC run (reset curr MC variables for safety)
-                    clear tempMClog % this may be horrible practice
-                    fprintf('--------------------------------------\n')
-
             end
+            
+                % Integrate data from current MC log
+                tempLoggedData.time = vertcat(tempMClog.time);
+                tempLoggedData.posFlat = vertcat(tempMClog.posFlat);
+                tempLoggedData.velBody = vertcat(tempMClog.velBody);
+                tempLoggedData.q_bf = vertcat(tempMClog.q_bf);
+                tempLoggedData.angVel = vertcat(tempMClog.angVel);
+        
+                if config.calcXdots == 1
+                    tempLoggedData.angleOfAttack = vertcat(tempMClog.angleOfAttack);
+                    tempLoggedData.sideslipAngle = vertcat(tempMClog.sideslipAngle);
+                    tempLoggedData.CG = vertcat(tempMClog.CG);
+                    tempLoggedData.angAccel = vertcat(tempMClog.angAccel);
+                    tempLoggedData.MA_b = vertcat(tempMClog.MA_b);
+                    tempLoggedData.MT_b = vertcat(tempMClog.MT_b);
+                    tempLoggedData.ME_b = vertcat(tempMClog.ME_b);
+                    tempLoggedData.l_p = vertcat(tempMClog.l_p);
+                    tempLoggedData.n_a = vertcat(tempMClog.n_a);
+                    tempLoggedData.n_r = vertcat(tempMClog.n_r);
+                    
+                end
+        
+                if testConfig.runLinearModel
+                    tempLinLoggedData.time = vertcat(tempMClinLog.time);
+                    tempLinLoggedData.velBody = vertcat(tempMClinLog.velBody);
+                    tempLinLoggedData.q_bf = vertcat(tempMClinLog.q_bf);
+                    tempLinLoggedData.angVel = vertcat(tempMClinLog.angVel);
+        
+                    if config.calcXdots == 1
+                        tempLinLoggedData.v_f = vertcat(tempMClinLog.v_f);
+                        tempLinLoggedData.rollMoment = vertcat(tempMClinLog.rollMoment);
+                        tempLinLoggedData.pitchMoment = vertcat(tempMClinLog.pitchMoment);
+                        tempLinLoggedData.yawMoment = vertcat(tempMClinLog.yawMoment);
+                        tempLinLoggedData.thrust = vertcat(tempMClinLog.thrust);
+                    end
+                end
+                log.loggedData = tempLoggedData;
+                if testConfig.runLinearModel
+                    log.linLoggedData = tempLinLoggedData;
+                end
+        
+                % End of current run
+                clear tempMClog % this may be horrible practice
+                fprintf('--------------------------------------\n')
 
-            fprintf("Finished LQR Monte Carlo runs!\n");
+            fprintf("Finished run!\n");
             toc
         end
 
-        function []= plot_sim_dashboards(obj, log, mcParams)
+        function []= plot_sim_dashboard(obj, log, Rocket, Environment)
 
-            for i = 1:obj.get_numRuns() % Plot each run in a different dashboard
-
-                figure;
-                
-                % 3D Trajectory Plot %
-                subplot(3,4,1)
-                plot3(0,0,0,'o','MarkerSize',10)
-                hold on
-                plot3(log(i).loggedData.posFlat(end,2),log(i).loggedData.posFlat(end,3),log(i).loggedData.posFlat(end,1),'x','MarkerSize',10)
-                hold on
-                plot3(log(i).loggedData.posFlat(:,2),log(i).loggedData.posFlat(:,3),log(i).loggedData.posFlat(:,1))
-                grid on
-                xlabel('x')
-                ylabel('y')
-                zlabel('z')
-                if obj.get_runClosedLoop()
-                    title('Closed Loop Trajectory')
-                else
-                    title('Open Loop Trajectory')
-                end
-                % % % % % % % % % % % %
-                % Body Velocity %
-                subplot(3,4,2)
-                plot(log(i).loggedData.time,log(i).loggedData.velBody)
-                legend('x','y','z')
-                title('Body Velocity')
-                ylabel('v_b (m/s)')
-                xlabel('Time (s)')
-                grid on
-
-                % % % % % % % % % % % %
-                % Body Angular Velocity %
-                subplot(3,4,3)
-                plot(log(i).loggedData.time,rad2deg(log(i).loggedData.angVel), ...
-                        'LineWidth', 1.5);
-                hold on
-                title('Body Angular Velocity')
-                ylabel('wbi_b (deg/s)','FontSize', 12)
-                xlabel('time (s)','FontSize', 12)
-                legend('Roll','Pitch','Yaw')
-                grid on
-                hold off
-                
-                % Enable minor tick marks
-                ax = gca; % Get current axis
-                ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
-                ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
-                
-                % Customize the spacing of minor ticks
-                ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
-                ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
-                ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
-
-                % % % % % % % % % % % %
-                % Quaternion %
-                subplot(3,4,4)
-                plot(log(i).loggedData.time,log(i).loggedData.q_bf)
-                legend('q0','q1','q2','q3')
-                % % % % % % % % % % % %
-                % Monte Carlo Parameters %
-
-                % TODO
-
-                % % % % % % % % % % % %
-                % Angle of Attack %
-                subplot(3,4,6)
-                plot(log(i).loggedData.time,rad2deg(log(i).loggedData.angleOfAttack), ...
-                        'LineWidth', 1.5);
-                hold on
-                title('Angle of Attack Trajectory')
-                xlabel('Time (s)','FontSize', 12)
-                ylabel('Alpha (deg)','FontSize', 12)
-                % legend('1 deg','3 deg','6 deg', '9 deg')
-                grid on
-                hold off
-                
-                % Enable minor tick marks
-                ax = gca; % Get current axis
-                ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
-                ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
-                
-                % Customize the spacing of minor ticks
-                ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
-                ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
-                ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
-                % % % % % % % % % % % %
-                % Angular Acceleration %
-                subplot(3,4,7)
-                plot(log(i).loggedData.time,rad2deg(log(i).loggedData.angAccel))
-                legend('x','y','z')
-                % % % % % % % % % % % %
-                % Euler Angles %
-                eul = quat2eul(log(i).loggedData.q_bf);
-                plot(log(i).loggedData.time,rad2deg(eul(:,3:-1:1)))
-                legend('x','y','z', 'Location', 'best')
-                title('Euler Angles')
-                ylabel('Angle (deg)')
-                xlabel('Time (s)')
-                grid on
-                title("Euler Angles over Time")
-                ax = gca;
-                ax.XMinorTick = 'on';
-                ax.YMinorTick = 'on';
-                ax.MinorGridLineStyle = ':';
-                ax.XMinorGrid = 'on';
-                ax.YMinorGrid = 'on';
-                % % % % % % % % % % % %
-                % Linearization Body Velocity Error %
-
-                if obj.get_runLinearModel()
-                    subplot(3,4,9)
-                        plot(log(i).loggedData.time,log(i).loggedData.velBody(:,1), ...
-                            'LineWidth', 1.5);
-                        hold on
-                        plot(log(i).linLoggedData.time,log(i).linLoggedData.velBody(:,1), ...
-                                'LineWidth', 1.5);
-                        legend('Nonlinear','Linear Model')
-                        hold on
-
-                    if obj.get_runClosedLoop()
-                        title('Closed Loop Velocity, Linearization Comparison')
-                    else
-                        title('Open Loop Velocity, Linearization Comparison')
-                    end
-                    ylabel('Velocity (m/s)','FontSize', 12)
-                    xlabel('Time (s)','FontSize', 12)
-                    grid on
-                    hold off
-                    
-                    % Enable minor tick marks
-                    ax = gca; % Get current axis
-                    ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
-                    ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
-                    
-                    % Customize the spacing of minor ticks
-                    ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
-                    ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
-                    ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
-                    
-                end
-
-                % % % % % % % % % % % %
-                % External Input Moments %
-                subplot(3,4,9)
-                plot(log(i).loggedData.time,log(i).loggedData.ME_b, ...
-                        'LineWidth', 1.5);
-                hold on
-                title('External Moment')
-                ylabel('ME_b (m/s)','FontSize', 12)
-                xlabel('time (s)','FontSize', 12)
-                grid on
-                hold off
-                % % % % % % % % % % % %
-                % Controller Response Moments %
-                subplot(3,4,11)
-                plot(log(i).loggedData.time, log(i).loggedData.MT_b)
-                legend('Roll', 'Pitch', 'Yaw')
-                title('Controller Response Moment')
-                ylabel('Controller Moment (Nm)')
-                xlabel('Time (s)')
-                grid on
-                % % % % % % % % % % % %
-                % Aerodynamic Moments %
-                subplot(3,4,12)
-
-                plot(log(i).loggedData.time,log(i).loggedData.l_p, ...
-                    'LineWidth', 1.5);
-                hold on
-                plot(log(i).loggedData.time,log(i).loggedData.n_a, ...
-                    'LineWidth', 1.5);
-                hold on
-                plot(log(i).loggedData.time,log(i).loggedData.n_r, ...
-                    'LineWidth', 1.5);
-                hold on     
-                title('Aerodynamic Moments')
-                ylabel('Moment (Nm)','FontSize', 12)
-                xlabel('Time (s)','FontSize', 12)
-                grid on
-                legend('l_p','n_a','n_r','MA_b')
+            % Plot a flight in a dashboard
+            figure;
+            
+            % 3D Trajectory Plot %
+            subplot(3,4,1)
+            plot3(0,0,0,'o','MarkerSize',10)
+            hold on
+            plot3(log.loggedData.posFlat(end,2),log.loggedData.posFlat(end,3),log.loggedData.posFlat(end,1),'x','MarkerSize',10)
+            hold on
+            plot3(log.loggedData.posFlat(:,2),log.loggedData.posFlat(:,3),log.loggedData.posFlat(:,1))
+            grid on
+            xlabel('x')
+            ylabel('y')
+            zlabel('z')
+            if obj.get_runClosedLoop()
+                title('Closed Loop Trajectory')
+            else
+                title('Open Loop Trajectory')
             end
+            % % % % % % % % % % % %
+            % Body Velocity %
+            subplot(3,4,2)
+            plot(log.loggedData.time,log.loggedData.velBody)
+            legend('x','y','z')
+            title('Body Velocity')
+            ylabel('v_b (m/s)')
+            xlabel('Time (s)')
+            grid on
+
+            % % % % % % % % % % % %
+            % Body Angular Velocity %
+            subplot(3,4,3)
+            plot(log.loggedData.time,rad2deg(log.loggedData.angVel), ...
+                    'LineWidth', 1.5);
+            hold on
+            title('Body Angular Velocity')
+            ylabel('wbi_b (deg/s)','FontSize', 12)
+            xlabel('time (s)','FontSize', 12)
+            legend('Roll','Pitch','Yaw')
+            grid on
+            hold off
+            
+            % Enable minor tick marks
+            ax = gca; % Get current axis
+            ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+            ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+            
+            % Customize the spacing of minor ticks
+            ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+            ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+            ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+
+            % % % % % % % % % % % %
+            % Quaternion %
+            subplot(3,4,4)
+            plot(log.loggedData.time,log.loggedData.q_bf)
+            legend('q0','q1','q2','q3')
+            % % % % % % % % % % % %
+            % Monte Carlo Parameters %
+
+            % TODO
+            % Create a text display for Flight, Rocket, and Environment
+            % Parameters that are varied by the Monte Carlo analysis
+
+            % % % % % % % % % % % %
+            % Angle of Attack %
+            subplot(3,4,6)
+            plot(log.loggedData.time,rad2deg(log.loggedData.angleOfAttack), ...
+                    'LineWidth', 1.5);
+            hold on
+            title('Angle of Attack Trajectory')
+            xlabel('Time (s)','FontSize', 12)
+            ylabel('Alpha (deg)','FontSize', 12)
+            % legend('1 deg','3 deg','6 deg', '9 deg')
+            grid on
+            hold off
+            
+            % Enable minor tick marks
+            ax = gca; % Get current axis
+            ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+            ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+            
+            % Customize the spacing of minor ticks
+            ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+            ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+            ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+            % % % % % % % % % % % %
+            % Angular Acceleration %
+            subplot(3,4,7)
+            plot(log.loggedData.time,rad2deg(log.loggedData.angAccel))
+            legend('x','y','z')
+            % % % % % % % % % % % %
+            % Euler Angles %
+            eul = quat2eul(log.loggedData.q_bf);
+            plot(log.loggedData.time,rad2deg(eul(:,3:-1:1)))
+            legend('x','y','z', 'Location', 'best')
+            title('Euler Angles')
+            ylabel('Angle (deg)')
+            xlabel('Time (s)')
+            grid on
+            title("Euler Angles over Time")
+            ax = gca;
+            ax.XMinorTick = 'on';
+            ax.YMinorTick = 'on';
+            ax.MinorGridLineStyle = ':';
+            ax.XMinorGrid = 'on';
+            ax.YMinorGrid = 'on';
+            % % % % % % % % % % % %
+            % Linearization Body Velocity Error %
+
+            if obj.get_runLinearModel()
+                subplot(3,4,9)
+                    plot(log.loggedData.time,log.loggedData.velBody(:,1), ...
+                        'LineWidth', 1.5);
+                    hold on
+                    plot(log.linLoggedData.time,log.linLoggedData.velBody(:,1), ...
+                            'LineWidth', 1.5);
+                    legend('Nonlinear','Linear Model')
+                    hold on
+
+                if obj.get_runClosedLoop()
+                    title('Closed Loop Velocity, Linearization Comparison')
+                else
+                    title('Open Loop Velocity, Linearization Comparison')
+                end
+                ylabel('Velocity (m/s)','FontSize', 12)
+                xlabel('Time (s)','FontSize', 12)
+                grid on
+                hold off
+                
+                % Enable minor tick marks
+                ax = gca; % Get current axis
+                ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+                ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+                
+                % Customize the spacing of minor ticks
+                ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+                ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+                ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+                
+            end
+
+            % % % % % % % % % % % %
+            % External Input Moments %
+            subplot(3,4,9)
+            plot(log.loggedData.time,log.loggedData.ME_b, ...
+                    'LineWidth', 1.5);
+            hold on
+            title('External Moment')
+            ylabel('ME_b (m/s)','FontSize', 12)
+            xlabel('time (s)','FontSize', 12)
+            grid on
+            hold off
+            % % % % % % % % % % % %
+            % Controller Response Moments %
+            subplot(3,4,11)
+            plot(log.loggedData.time, log.loggedData.MT_b)
+            legend('Roll', 'Pitch', 'Yaw')
+            title('Controller Response Moment')
+            ylabel('Controller Moment (Nm)')
+            xlabel('Time (s)')
+            grid on
+            % % % % % % % % % % % %
+            % Aerodynamic Moments %
+            subplot(3,4,12)
+
+            plot(log.loggedData.time,log.loggedData.l_p, ...
+                'LineWidth', 1.5);
+            hold on
+            plot(log.loggedData.time,log.loggedData.n_a, ...
+                'LineWidth', 1.5);
+            hold on
+            plot(log.loggedData.time,log.loggedData.n_r, ...
+                'LineWidth', 1.5);
+            hold on     
+            title('Aerodynamic Moments')
+            ylabel('Moment (Nm)','FontSize', 12)
+            xlabel('Time (s)','FontSize', 12)
+            grid on
+            legend('l_p','n_a','n_r','MA_b')
         end
 
         function [value, isterminal, direction]= rocket_events(t,x)
