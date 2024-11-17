@@ -20,27 +20,27 @@ classdef Aerodynamics
 
         end
 
-        function obj= set_FAx_func(FAx_function)
+        function obj= set_FAx_func(obj, FAx_function)
             obj.FAx_func = FAx_function;
         end
 
-        function obj= set_FAy_func(FAy_function)
+        function obj= set_FAy_func(obj, FAy_function)
             obj.FAy_func = FAy_function;
         end
 
-        function obj= set_FAz_func(FAz_function)
+        function obj= set_FAz_func(obj, FAz_function)
             obj.FAz_func = FAz_function;
         end
 
-        function obj= set_n_a_func(na_function)
+        function obj= set_n_a_func(obj, na_function)
             obj.n_a_func = na_function;
         end
 
-        function obj= set_n_r_func(nr_function)
+        function obj= set_n_r_func(obj, nr_function)
             obj.n_r_func = nr_function;
         end
 
-        function obj= set_L_p_func(Lp_function)
+        function obj= set_L_p_func(obj, Lp_function)
             obj.L_p_func = Lp_function;
         end
 

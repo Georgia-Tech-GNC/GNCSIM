@@ -63,19 +63,19 @@ Doof.set_thrustCurve(tc);
 aero = Aerodynamics();
 
 syms u v w rho CG p r
-FAx = (0.231*((v/u)^2)*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (0.02563*rho*(u^2 + v^2 + w^2)*(v/u)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^2)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2);
-FAy = (-0.231*((v/u))*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (-0.02563*rho*(u^2 + v^2 + w^2)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^3)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2)*(v/u);
-FAz = 0.01*sin(u); % essentially a noise term
-n_a = (3.146*rho*(u^2 + v^2 + w^2))/(27.816 + 16.834*sqrt(1-(8.939*10^-6)*(u^2+v^2+w^2))) - (1.0679*10^-4)*rho*(u^2+v^2+w^2)*(v/u) + (1.695*10^-4)*rho*(u^2+v^2+w^2);
-n_r = ((0.0349*rho*(u^2+v^2+w^2))/(1+sqrt(1.798-(6.889*10^-6)*(u^2+v^2+w^2))))*asin((r/(u^2+v^2+w^2))*(3.1473-CG))*(10.3264 - 3.281*CG);
-L_p = (0.02064*p)/sqrt(1-(8.6372*10^-6)*(u^2+v^2+w^2));
+FAx_sym = (0.231*((v/u)^2)*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (0.02563*rho*(u^2 + v^2 + w^2)*(v/u)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^2)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2);
+FAy_sym = (-0.231*((v/u))*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (-0.02563*rho*(u^2 + v^2 + w^2)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^3)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2)*(v/u);
+FAz_sym = 0.01*sin(u); % essentially a noise term
+n_a_sym = (3.146*rho*(u^2 + v^2 + w^2))/(27.816 + 16.834*sqrt(1-(8.939*10^-6)*(u^2+v^2+w^2))) - (1.0679*10^-4)*rho*(u^2+v^2+w^2)*(v/u) + (1.695*10^-4)*rho*(u^2+v^2+w^2);
+n_r_sym = ((0.0349*rho*(u^2+v^2+w^2))/(1+sqrt(1.798-(6.889*10^-6)*(u^2+v^2+w^2))))*asin((r/(u^2+v^2+w^2))*(3.1473-CG))*(10.3264 - 3.281*CG);
+L_p_sym = (0.02064*p)/sqrt(1-(8.6372*10^-6)*(u^2+v^2+w^2));
 
-FAx_func = matlabFunction(FAx);
-FAy_func = matlabFunction(FAy);
-FAz_func = matlabFunction(FAz);
-n_a_func = matlabFunction(n_a);
-n_r_func = matlabFunction(n_r);
-L_p_func = matlabFunction(L_p);
+FAx_func = matlabFunction(FAx_sym);
+FAy_func = matlabFunction(FAy_sym);
+FAz_func = matlabFunction(FAz_sym);
+n_a_func = matlabFunction(n_a_sym);
+n_r_func = matlabFunction(n_r_sym);
+L_p_func = matlabFunction(L_p_sym);
 
 aero.set_FAx_func(FAx_func);
 aero.set_FAy_func(FAy_func);
@@ -129,6 +129,77 @@ flight.set_initState(initial_state);
 %flight.plot_sim_dashboard()
 
 %% Trim Point Parameters
+
+sympref("FloatingPointOutput",true);
+syms m g Ixx Iyy Izz rho CG
+syms u v w p q r q0 q1 q2 q3
+syms udot vdot wdot pdot qdot rdot q1dot q2dot q3dot
+syms u1 u2 u3 u4 % Thrust, roll moment, pitch moment, yaw moment
+
+EOM_no_aero = [(1/m)*(m*g*(1-2*(q0^2+q1^2)) + 0.95*u4) + r*v - q*w - udot,
+    -2*g*(q1*q2 + q0*q3) + p*w - r*u - vdot,
+    -2*g*(q1*q3 - q0*q2) + q*u - p*v - wdot,
+    (1/Ixx)*(u1 + q*r*(Iyy - Izz)) - pdot,
+    (1/Iyy)*(u2 + p*r*(Izz - Ixx)) - qdot,
+    (1/Izz)*(u3 + p*q*(Ixx - Iyy)) - rdot,
+     0.5*(p*q0 + r*q2 - q*q3) - q1dot,
+     0.5*(q*q0 - r*q1 + p*q3) - q2dot,
+     0.5*(r*q0 + q*q1 - p*q2) - q3dot];
+
+
+FAx = FAx_sym;
+FAy = FAy_sym;
+FAz = FAz_sym;
+MAx = L_p_sym;
+MAy = 0;
+MAz = n_a_sym + n_r_sym;
+
+EOM_only_aero = [(1/m)*FAx,
+                 (1/m)*FAy,
+                 (1/m)*FAz,
+                 (1/Ixx)*MAx,
+                 (1/Iyy)*MAy,
+                 (1/Izz)*MAz,
+                 0,
+                 0,
+                 0]; % This is the only thing that needs to be configured for a new vehicle
+
+
+%nonlinear_EOM = EOM_no_aero;
+nonlinear_EOM = EOM_no_aero + EOM_only_aero;
+
+F = nonlinear_EOM;
+xdot = [udot, vdot, wdot, pdot, qdot, rdot, q1dot, q2dot, q3dot];
+x = [u, v, w, p, q, r, q1, q2, q3];
+u = [u1, u2, u3, u4];
+
+% Find E, A', and B'
+
+E = jacobian(F, xdot);
+A_prime = jacobian(F, x);
+B_prime = jacobian(F, u);
+
+% Find A, B
+
+A = -1*inv(E)*A_prime % NOTE: The actual formula is -1*inv(E)*A_prime and same for B_prime, however, 
+% inv(E) was returning a diagonal matrix of negative infinities. In other
+% sections, it was not. This was weird, and because E is a diagonal with
+% all -1's, inv(E) = E, so it is just left as -1*E*A_prime
+B = -1*inv(E)*B_prime
+
+% Then delta_xdot = A*delta_x + B*delta_u
+% xdot_0, x_0, u_0 <--- trim point
+% xdot, x, u <--- current rocket state
+% delta_xdot = xdot - dxot_0, delta_x = x - x_0, delta_u = u - u0
+
+compute_A = matlabFunction(A)
+compute_B = matlabFunction(B)
+
+%A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
+%B_current_time_step = compute_B(1,10,10,33)
+% The above are function handles that can compute A, B given a current
+% rocket state
+
 
 
 %% Monte Carlo Parameters
