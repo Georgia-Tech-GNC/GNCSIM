@@ -22,7 +22,7 @@ wetRollMOI = 0.2109;  % Ixx
 wetPitchMOI = 21.1212;  % Iyy
 wetYawMOI = 21.1202;  % Izz
 dryRollMOI = 0.2036;
-dryPitchMOI = 18.99;  
+dryPitchMOI = 18.99;
 dryYawMOI = 18.988;
 
 burn_time = 13.1;
