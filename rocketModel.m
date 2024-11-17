@@ -1,4 +1,4 @@
-function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
+function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, TrimPointObj)
 % rocketModel: Open loop model for jet vanes rocket dynamics
 % t: current time
 % x: current state: [px py pz vx vy vz q0 q1 q2 q3 wx wy wz]
@@ -86,9 +86,6 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     wbf_b = [wx;wy;wz];
 
     %% Get intermediate values
-    % getRho = @(h) 0.0023769 .* (1 - 6.877e-6 .* h).^4.25588;
-    rho = 0.0023769 .* (1 - 6.877e-6 .* px).^4.25588; % air density
-    rho = rho * 515.379;
 
     T = RocketObj.getThrust(t); % Get thrust at the instantaneous moment in time
     if t < burnTime
@@ -116,6 +113,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
 
     % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
     % issues. 
+    % TODO: Add interface with trim points
     if runClosedLoop
         % xRef = interp1(tSpan,xRefSpan,t);
 
@@ -135,9 +133,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
         % MT_by = del_u(2) + u0(2); % M_pitch
         MT_by = 0;
 
-        MT_bz = del_u(3) + u0(3); % M_yaw
-
-        
+        MT_bz = del_u(3) + u0(3); % M_yaw     
     else
         MT_bx = 0;
         MT_by = 0;
@@ -166,76 +162,13 @@ function [xDot, log] = rocketModel(t, x, RocketObj, FlightObj, TrimPointObj)
     % end
     MT_b = [MT_bx;MT_by;MT_bz];
 
-    %% Aerodynamics. TODO: Consult Hridai on how this should work with wind/environment
+    %% Aerodynamics & Environment. TODO: Consult Hridai on how this should work with wind/environment
     
-    alpha = 0;
-    if applyWind
-        if applyPeriodicWindGusts
-            % Gust Period
-            T = 2.5; % Seconds Between the Start of Each Gust
+    % TODO: Get rho
+    
+    % To get aerodynamic forces, use 
+    % [FAb, MAb] = AerodynamicsObj.calcAeroBodyFrame_JV(obj, u, v, w, p, r, rho, CG)
 
-            % Discrete Wind Gust Model (Adjusted to be symmetric)
-            WindGustMag = @(Vm,dm,x) (x < 0)*0 + (0 <= x && x < dm)*(Vm/2)*(1 - cos((pi*x)/dm)) + (dm <= x && x < 2*dm)*Vm + (2*dm <= x && x < 3*dm)*(Vm/2)*(1 - cos(((pi*x)/dm)+pi)) + (3*dm <= x )*0;
-            
-            windParam = Environment.get_windParam();
-            Vm = windParam(1);
-            dm = windParam(2);
-        
-            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
-            udir = [0 1 0];
-        
-            % Distance moved into gust (Assuming that rocket position does not affect )
-            normXu = Vm*mod(t,T);
-            
-            % Calculating Wind Speed with Discrete Gust Model
-            windspeed = WindGustMag(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
-        
-            % wind gust in y and z
-            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
-        
-            % Calculating to velocity to account for wind speed
-            va_x = v_a(1);
-            va_y = v_a(2);
-            va_z = v_a(3);
-        
-            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
-            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
-    
-            [FA_b, MA_b,l_p,n_a,n_r] =  RocketObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
-        else
-            % Discrete Wind Gust Model
-            WindGustMag = @(Vm,dm,x) (x < 0)*0 + (0 <= x && x < dm)*(Vm/2)*(1 - cos((pi*x)/dm)) + (dm <= x)*Vm;
-            
-            windParam = Environment.get_windParam();
-            Vm = windParam(1);
-            dm = windParam(2);
-        
-            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
-            udir = [0 1 0]; 
-        
-            % Distance moved into gust
-            normXu = norm(dot([px py pz],udir));
-            normXu = normXu + Vm*t; % Assuming wind gust moves at a speed Vm and starts at t = 0. starts at a distance dm away from rocket
-            
-            % Calculating Wind Speed with Discrete Gust Model
-            windspeed = WindGustMag(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
-        
-            % wind gust in y and z
-            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
-        
-            % Calculating to velocity to account for wind speed
-            va_x = v_a(1);
-            va_y = v_a(2);
-            va_z = v_a(3);
-        
-            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
-            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
-    
-            [FA_b, MA_b,l_p,n_a,n_r] = RocketObj.calcAeroBody3(alpha,norm(v_a),rho,CG,wbf_b);
-        end
-    else
-        [FA_b, MA_b,l_p,n_a,n_r] = RocketObj.calcAeroBody3(alpha,norm(v_b),rho,CG,wbf_b);
-    end
 
     %% External Moments
     % Note: similar performance issues as controls

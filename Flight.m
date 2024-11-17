@@ -256,7 +256,7 @@ classdef Flight < handle
         %                         0 0 dryYawMOI];
         % end
 
-        function log = runFlight(obj, Rocket, Environment)
+        function log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj)
             tic
             log = struct();
             fprintf('Running flight...\n')
@@ -300,7 +300,7 @@ classdef Flight < handle
                 % Solve nonlinear trajectory for the current time
                 % interval
                 ode_options = obj.get_options();
-                [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, obj, TrimPointObj), ...
+                [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), ...
                                          local_tSpan, ...
                                          initial_state, ...
                                          ode_options);
@@ -326,7 +326,7 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
-                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,obj,TrimPointObj);
+                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
                         tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
                         tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;
@@ -342,7 +342,7 @@ classdef Flight < handle
 
                 if obj.get_runLinearModel()
                 % Solve linear trajectory for current time interval
-                    [linTraj.t, linTraj.x] = ode45(@(t,x) linearRocketModel(t,x,Rocket,obj,TrimPointObj),...
+                    [linTraj.t, linTraj.x] = ode45(@(t,x) linearRocketModelrocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj),...
                                                 local_tSpan,...
                                                 lin_initial_state);
                     tempMClinLog(lqrIndex).time = linTraj.t;
@@ -358,7 +358,7 @@ classdef Flight < handle
                         tempMClinLog(lqrIndex).thrust = zeros(length(tempMClinLog(lqrIndex).time));
     
                         for i = 1:length(linTraj.t)
-                            [xdot,modelLog] = linearRocketModel(linTraj.t(i),linTraj.x(i,:)',linConfig);
+                            [xdot,modelLog] = linearRocketModel(linTraj.t(i),linTraj.x(i,:)',linConfig); % TODO: Change for linear model
                             tempMClinLog(lqrIndex).v_f(i,:) = modelLog.v_f;
                             tempMClinLog(lqrIndex).rollMoment(i) = modelLog.rollMoment;
                             tempMClinLog(lqrIndex).pitchMoment(i) = modelLog.pitchMoment;
