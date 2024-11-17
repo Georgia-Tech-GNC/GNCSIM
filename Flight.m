@@ -119,7 +119,7 @@ classdef Flight < handle
         end
 
         function obj= set_initState(obj, x0)
-            if ~isnumeric(x0) || len(x0 ~= obj.numStates)
+            if ~isnumeric(x0) || ~any(x0 ~= obj.numStates, "all")
                 error('initState must be a vector of doubles of length numStates.')
             else
                 obj.initState = x0;

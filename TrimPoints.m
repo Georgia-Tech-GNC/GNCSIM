@@ -462,6 +462,7 @@ classdef TrimPoints < handle
         end
 
         function trim_rocket_model(obj)
+            %{
             rocket = Rocket();
             flight = Flight();
 
@@ -474,6 +475,7 @@ classdef TrimPoints < handle
             uSpan = zeros(len_tSpan, 3);
             flight.set_uSpan(uSpan);
             
+
             %% THIS SHOULD BE CHANGED!!!
 
             % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
@@ -538,8 +540,9 @@ classdef TrimPoints < handle
 
             rocket.set_burnTime(burnTime);
             rocket.set_thrustCurve(thrustCurve)
+            %}
 
-            %timmed_struct = struct("time", [], "id", 0, "name", "", "states", [], "cost", 0);
+            load("master_struct.mat")
 
             obj.trimmed_points = obj.trim_points;
             

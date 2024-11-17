@@ -1,26 +1,35 @@
 %% Master GNCSIM Simulation File for Jet Vanes Rocket
 
+clear; clc; close all;
+
 %% Rocket Parameters
 
+wet_mass = 38.87;
+dry_mass = 30.96;
+initial_CG = 2.433;
+final_CG = 2.34;
+
 Doof = Rocket();
-Doof.set_wetMass(38.87);
-Doof.set_dryMass(30.96);
+Doof.set_wetMass(wet_mass);
+Doof.set_dryMass(dry_mass);
 Doof.set_diameter(0.203); % rocket diameter (m)
 Doof.set_radius(Doof.get_diameter()/2);
 Doof.set_length(3.4); % length of rocket (m)
-Doof.set_initialCG(2.433); % initial CG from tip of nosecone (m)
-Doof.set_finalCG(2.34); % final CG from tip of nosecone (m)
+Doof.set_initialCG(initial_CG); % initial CG from tip of nosecone (m)
+Doof.set_finalCG(final_CG); % final CG from tip of nosecone (m)
 
-wetRollMOI = 0.2109;
-wetPitchMOI = 21.1212;
-wetYawMOI = 21.1202;
+wetRollMOI = 0.2109;  % Ixx
+wetPitchMOI = 21.1212;  % Iyy
+wetYawMOI = 21.1202;  % Izz
 dryRollMOI = 0.2036;
-dryPitchMOI = 18.99;
+dryPitchMOI = 18.99;  
 dryYawMOI = 18.988;
+
+burn_time = 13.1;
 
 Doof.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
 Doof.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
-Doof.set_burnTime(13.1);
+Doof.set_burnTime(burn_time);
 
 tc = [0.0, 0.457288;
 0.152, 0.314574;
@@ -87,10 +96,8 @@ aero.set_L_p_func(L_p_func);
 %% Environment Parameters
 
 env = Environment();
-env.set_launchSiteAltitude(177); % launch site altitude (m)
+%env.set_launchSiteAltitude(177); % launch site altitude (m) [not implemented]
 % TODO - other parameters
-
-
 
 
 %% Flight Parameters
@@ -105,9 +112,10 @@ flight.set_numStates(13);
 flight.set_numInputs(3);
 flight.set_simTime(12); % seconds
 flight.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
-flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
+flight.set_tSpan()
+%flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
 
-flight.set_uSpan(zeros(length(flight.get_tSpan(), flight.get_numInputs())));
+flight.set_uSpan(zeros(length(flight.get_tSpan()), flight.get_numInputs()));
 
 initial_state = [0; % px
                  0; % py
@@ -131,7 +139,7 @@ flight.set_initState(initial_state);
 %% Trim Point Parameters
 
 sympref("FloatingPointOutput",true);
-syms m g Ixx Iyy Izz rho CG
+syms m g Ixx Iyy Izz rho CG t
 syms u v w p q r q0 q1 q2 q3
 syms udot vdot wdot pdot qdot rdot q1dot q2dot q3dot
 syms u1 u2 u3 u4 % Thrust, roll moment, pitch moment, yaw moment
@@ -165,6 +173,21 @@ EOM_only_aero = [(1/m)*FAx,
                  0]; % This is the only thing that needs to be configured for a new vehicle
 
 
+%{
+wetRollMOI = 0.2109;  % Ixx
+wetPitchMOI = 21.1212;  % Iyy
+wetYawMOI = 21.1202;  % Izz
+dryRollMOI = 0.2036;
+dryPitchMOI = 18.99;  
+dryYawMOI = 18.988;
+%}
+
+CG_t = final_CG + (initial_CG - final_CG) * (burn_time - t) / burn_time;
+Ixx_t = dryRollMOI + (wetRollMOI - dryRollMOI) * (burn_time - t) / burn_time;
+Iyy_t = dryPitchMOI + (wetPitchMOI - dryPitchMOI) * (burn_time - t) / burn_time;
+Izz_t = dryYawMOI + (wetYawMOI - dryYawMOI) * (burn_time - t) / burn_time;
+m_t = dry_mass + (wet_mass - dry_mass) * (burn_time - t) / burn_time;
+
 %nonlinear_EOM = EOM_no_aero;
 nonlinear_EOM = EOM_no_aero + EOM_only_aero;
 
@@ -179,6 +202,9 @@ E = jacobian(F, xdot);
 A_prime = jacobian(F, x);
 B_prime = jacobian(F, u);
 
+A_prime = subs(A_prime, [rho, g, Ixx, Iyy, Izz, CG, m], [1.2, 9.8, Ixx_t, Iyy_t, Izz_t, CG_t, m_t]);
+B_prime = subs(B_prime, [rho, g, Ixx, Iyy, Izz, CG, m], [1.2, 9.8, Ixx_t, Iyy_t, Izz_t, CG_t, m_t]);
+
 % Find A, B
 
 A = -1*inv(E)*A_prime % NOTE: The actual formula is -1*inv(E)*A_prime and same for B_prime, however, 
@@ -192,8 +218,13 @@ B = -1*inv(E)*B_prime
 % xdot, x, u <--- current rocket state
 % delta_xdot = xdot - dxot_0, delta_x = x - x_0, delta_u = u - u0
 
-compute_A = matlabFunction(A)
-compute_B = matlabFunction(B)
+compute_A_fn = matlabFunction(A);
+
+compute_A = @(u, v, w, p, q, r, q0, q1, q2, q3, t)compute_A_fn(p,q,q0,q1,q2,q3,r,t,u,v,w);
+compute_B = matlabFunction(B);
+
+
+save("master_struct", "compute_B", "compute_A")
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
