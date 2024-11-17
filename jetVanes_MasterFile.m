@@ -172,16 +172,6 @@ EOM_only_aero = [(1/m)*FAx,
                  0,
                  0]; % This is the only thing that needs to be configured for a new vehicle
 
-
-%{
-wetRollMOI = 0.2109;  % Ixx
-wetPitchMOI = 21.1212;  % Iyy
-wetYawMOI = 21.1202;  % Izz
-dryRollMOI = 0.2036;
-dryPitchMOI = 18.99;  
-dryYawMOI = 18.988;
-%}
-
 CG_t = final_CG + (initial_CG - final_CG) * (burn_time - t) / burn_time;
 Ixx_t = dryRollMOI + (wetRollMOI - dryRollMOI) * (burn_time - t) / burn_time;
 Iyy_t = dryPitchMOI + (wetPitchMOI - dryPitchMOI) * (burn_time - t) / burn_time;
@@ -224,7 +214,7 @@ compute_A = @(u, v, w, p, q, r, q0, q1, q2, q3, t)compute_A_fn(p,q,q0,q1,q2,q3,r
 compute_B = matlabFunction(B);
 
 
-save("master_struct", "compute_B", "compute_A")
+save("master_struct", "compute_B", "compute_A", "Doof", "flight", "aero", "env")
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
