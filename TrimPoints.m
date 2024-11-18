@@ -62,11 +62,14 @@ classdef TrimPoints < handle
             % Set the file path property
             obj.file_path = file_path;
             
-            % Create import options for readtable to handle custom formats
-            opts = detectImportOptions(obj.file_path, 'ReadVariableNames', false);
+            % Create import options without relying on automatic detection
+            opts = detectImportOptions(obj.file_path, 'ReadVariableNames', false, 'PreserveVariableNames', true);
             
-            % Adjust import options to treat all columns as character arrays
-            opts = setvartype(opts, 'char');
+            % Set all variable types to character arrays to avoid interpretation issues
+            opts.VariableTypes(:) = {'char'};
+            
+            % Ensure no rows are automatically skipped
+            opts.DataLines = [1, Inf]; % Read all rows
             
             % Read the flight data from the CSV file into a table
             obj.flight_data = readtable(obj.file_path, opts);
@@ -203,7 +206,7 @@ classdef TrimPoints < handle
             end
         end
 
-        function generate_trim_points(obj)
+        function generate_trim_points(obj, rocket, env, flight, aero)
             % Generates Trim Points from All Batches and Combines Them
             % This method generates trim points for each batch and aggregates them into obj.trim_points.
             
@@ -242,7 +245,9 @@ classdef TrimPoints < handle
                 % Update the current_index for the next iteration
                 current_index = current_index + num_points_in_batch;
             end
-            obj.trim_rocket_model()
+
+            % perform trimming opimization
+            obj.trim_rocket_model(rocket, env, flight, aero)
         end
 
         function batch_trim_points = get_trim_points(obj, target_time)
@@ -440,8 +445,25 @@ classdef TrimPoints < handle
             %   positions - Array of column indices corresponding to the required variables.
             %               If a variable is not found, its position is set to -1.
             
-            % Row number where variable names are stored (e.g., row 4)
-            row_num = 4;
+            % row num is the row with all header information
+            row_num = 1;
+
+            % loop over all rows until a # is found
+            for row=1:obj.num_rows
+
+                % gets first column of every row
+                current_element = obj.flight_data{row, 1};
+
+                % perform string comparison
+                if strcmp(current_element, "#")
+
+                    % header information is after the single '#'
+                    row_num = row + 1;
+
+                    % break out of loop after header information is found
+                    break;
+                end
+            end
             
             % Initialize positions array with -1 for all required variables
             positions = -1 * ones(1, length(required_vars));
@@ -461,18 +483,18 @@ classdef TrimPoints < handle
             end
         end
 
-        function trim_rocket_model(obj)
+        function trim_rocket_model(obj, rocket, env, flight, aero)
             % trim_rocket_model Processes Trim Points to Optimize Rocket Model States
 
             % Load necessary structures from the master_struct.mat file
-            load("master_struct.mat")
+            %load("master_struct.mat")
 
             % Initialize trimmed_points by copying the existing trim_points
             obj.trimmed_points = obj.trim_points;
         
             % Determine the total number of trim points to process
             total_points = numel(obj.trim_points);
-            
+
             last_percent = 0;  % Initialize the last printed percent
             
             for ii = 1:total_points
@@ -492,7 +514,7 @@ classdef TrimPoints < handle
                 end
         
                 % Perform optimization to find the optimal state vector (ZStar) that minimizes the cost function
-                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, Doof, env, flight, aero), ...
+                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, env, flight, aero), ...
                                           trim_point, ...
                                           optimset('TolX', 1e-10, 'MaxFunEvals', 100, 'MaxIter', 100, 'Display', 'off'));
                 
@@ -500,24 +522,30 @@ classdef TrimPoints < handle
                 obj.trimmed_points(ii).cost = f0;     % Store the minimized cost value
                 obj.trimmed_points(ii).states = ZStar; % Store the optimized state vector
             end
+            fprintf("Finished Trimming %d Trim Points\n", total_points)
         end
 
-        function generate_K(obj, straight_up_Q, straight_up_R, maneuver_Q, maneuver_R)
+        function generate_K(obj, straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B)
             % generate_K Generates LQR Gain Matrices for Each Trimmed Point
             % Inputs:
             %   straight_up_Q   - State weighting matrix for straight-up flight
             %   straight_up_R   - Control weighting matrix for straight-up flight
             %   maneuver_Q      - State weighting matrix for maneuvering flight
             %   maneuver_R      - Control weighting matrix for maneuvering flight
+            %   compute_A       - System matrix function handel
+            %   compute_B       - Control matrix function handel
 
             % Load necessary structures from the master_struct.mat file
-            load("master_struct.mat")
+            %load("master_struct.mat")
             
             % Determine the total number of trim points to process
             total_points = numel(obj.trim_points);
 
             % Define a reference quaternion representing the "up" orientation
             up = [1, 0, 0, 0];  % Quaternion components (q0, q1, q2, q3)
+
+            % Print Statment
+            fprintf("Generating K Matrices\n")
 
             % Iterate over each trim point to compute and assign the LQR gain matrices
             for ii = 1:total_points

@@ -136,7 +136,7 @@ flight.set_initState(initial_state);
 %flight.run_Flight()
 %flight.plot_sim_dashboard()
 
-%% Trim Point Parameters
+%% Trim Point Parameters for A and B Matrices
 
 sympref("FloatingPointOutput",true);
 syms m g Ixx Iyy Izz rho CG t
@@ -197,11 +197,11 @@ B_prime = subs(B_prime, [rho, g, Ixx, Iyy, Izz, CG, m], [1.2, 9.8, Ixx_t, Iyy_t,
 
 % Find A, B
 
-A = -1*inv(E)*A_prime % NOTE: The actual formula is -1*inv(E)*A_prime and same for B_prime, however, 
+A = -1*inv(E)*A_prime; % NOTE: The actual formula is -1*inv(E)*A_prime and same for B_prime, however, 
 % inv(E) was returning a diagonal matrix of negative infinities. In other
 % sections, it was not. This was weird, and because E is a diagonal with
 % all -1's, inv(E) = E, so it is just left as -1*E*A_prime
-B = -1*inv(E)*B_prime
+B = -1*inv(E)*B_prime;
 
 % Then delta_xdot = A*delta_x + B*delta_u
 % xdot_0, x_0, u_0 <--- trim point
@@ -213,14 +213,116 @@ compute_A_fn = matlabFunction(A);
 compute_A = @(u, v, w, p, q, r, q0, q1, q2, q3, t)compute_A_fn(p,q,q0,q1,q2,q3,r,t,u,v,w);
 compute_B = matlabFunction(B);
 
+%% Trim Point Generation
 
-save("master_struct", "compute_B", "compute_A", "Doof", "flight", "aero", "env")
+% csv generated from open rocket
+flight_path = 'Flight Profile\JVR_sim.csv';
+
+% Create a TrimPoints object by initializing it with the specified flight data file
+trim_points = TrimPoints(flight_path);
+
+% Find the time of the "LIFTOFF" event in the flight data
+liftoff_time = trim_points.find_event_time("LIFTOFF");
+
+% Find the time of the burnout
+burnout_time = burn_time + liftoff_time;
+
+trim_switching_period = 1;
+
+time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_period;
+
+% Generate trim batches for each time point in time_arr
+trim_points.generate_trim_batches(time_arr);
+
+% Define the number of trim points to generate per time instance for 'u' variations
+num_trim_points_per_time = 10;
+
+% Define the spacing factor for 'u' variations (e.g., 20% variation around the base 'u' value)
+trim_spacing = 0.28;
+
+% Add 'u' (velocity) variations to each trim batch based on the specified parameters
+% This creates different trim points by varying the 'u' component within the defined spacing
+% THIS FUNCTION SHOULD BE CHANGED TO INCLUDE AERO MOMENTS
+trim_points.add_u_variations(time_arr, num_trim_points_per_time, trim_spacing);   
+
+turn_batch_index = 1:length(time_arr);  % Define the indices of batches to which custom variations will be added
+turn_variation_name = "turn";  % Define the name of the custom variation to add
+
+% Define the variables involved in the custom variation
+% In this case, the variation affects the quaternion components q0, q1, q2, and q3
+turn_varables = ["q0", "q1", "q2", "q3"];
+
+% Define the variation data matrix for the custom variation
+% Each row represents a different state for the variation
+turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
+             0.0871557, 0, 0, 0.9961947;   % 10 deg
+             0.1305262, 0, 0, 0.9914449];  % 15 deg
+
+% include base state [0, 0, 0, 1] strait up flight
+turn_include_base = true;
+
+% This will create additional trim points by varying the specified quaternion components
+trim_points.add_custom_variations(turn_batch_index, turn_variation_name, turn_varables, turn_data, turn_include_base);
+
+% This consolidates all trim points into the obj.trim_points property for further use
+trim_points.generate_trim_points(Doof, env, flight, aero);
+
+% straight up Q and R
+straight_up_Q_arr = ones(9, 1);
+straight_up_R_arr = ones(4, 1);
+
+straight_up_Q_arr(1) = 0.01; % u
+straight_up_Q_arr(2) = 0.01; % v
+straight_up_Q_arr(3) = 0.01; % w
+straight_up_Q_arr(4) = 1000; % p
+straight_up_Q_arr(5) = 0.01; % q
+straight_up_Q_arr(6) = 1000; % r
+straight_up_Q_arr(7) = 1000; % q1
+straight_up_Q_arr(8) = 0.01; % q2
+straight_up_Q_arr(9) = 1000; % q3
+
+straight_up_R_arr(1) = 0.01; % M_roll
+straight_up_R_arr(2) = 1000; % M_pitch
+straight_up_R_arr(3) = 0.01; % M_yaw
+straight_up_R_arr(4) = 100; % Thrust
+
+straight_up_Q = diag(straight_up_Q_arr);
+straight_up_R = diag(straight_up_R_arr);
+
+% maneuver Q and R
+maneuver_Q_arr = ones(9, 1);
+maneuver_R_arr = ones(4, 1);
+
+maneuver_Q_arr(1) = 0.01; % u
+maneuver_Q_arr(2) = 0.01; % v
+maneuver_Q_arr(3) = 0.01; % w
+maneuver_Q_arr(4) = 1000; % p
+maneuver_Q_arr(5) = 0.01; % q
+maneuver_Q_arr(6) = 1000; % r
+maneuver_Q_arr(7) = 1000; % q1
+maneuver_Q_arr(8) = 0.01; % q2
+maneuver_Q_arr(9) = 1000; % q3
+
+maneuver_R_arr(1) = 0.001; % M_roll
+maneuver_R_arr(2) = 1000; % M_pitch
+maneuver_R_arr(3) = 0.01; % M_yaw
+maneuver_R_arr(4) = 1000; % Thrust
+
+maneuver_Q = diag(maneuver_Q_arr);
+maneuver_R = diag(maneuver_R_arr);
+
+% Generate K matrix for all trim points given Q and R matrixes
+trim_points.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
+
+% Visualize 'u' variations
+trim_points.draw_u_trim_points(0, burnout_time)
+
+
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
 % The above are function handles that can compute A, B given a current
 % rocket state
-
 
 
 %% Monte Carlo Parameters
