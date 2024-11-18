@@ -462,108 +462,95 @@ classdef TrimPoints < handle
         end
 
         function trim_rocket_model(obj)
-            rocket = Rocket();
-            flight = Flight();
+            % trim_rocket_model Processes Trim Points to Optimize Rocket Model States
 
-            flight.set_simTime(13);
-            flight.set_tStep(0.01);
-            flight.set_tSpan();
+            % Load necessary structures from the master_struct.mat file
+            load("master_struct.mat")
 
-            tSpan = flight.get_tSpan();
-            [~, len_tSpan] = size(tSpan);
-            uSpan = zeros(len_tSpan, 3);
-            flight.set_uSpan(uSpan);
-            
-            %% THIS SHOULD BE CHANGED!!!
-
-            % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
-            wetMass = 38.87;% update to read from excel sheet
-            dryMass = 30.96; % update to read from excel sheet
-            peakThrust = 2262; % update to read from excel sheet
-            burnTime = 13.1; % update to read from excel sheet
-            wetRollMOI = 0.2109; % update to read from excel sheet
-            wetPitchMOI = 21.1212; % update to read from excel sheet
-            wetYawMOI = 21.1202; % update to read from excel sheet
-            dryRollMOI = 0.2036; % update to read from excel sheet
-            dryPitchMOI = 18.99; % update to read from excel sheet
-            dryYawMOI = 18.988; % update to read from excel sheet
-
-            CG0 = 2.433; % initial CG from tip of nose (m)
-            finalCG = 2.34; % final CG from tip of nose (m)
-            length = 3.4; % length of rocket (m)
-            diameter = 0.203; % m
-
-            thrustCurve = [0.0, 0.457288;
-            0.152, 0.314574;
-            0.162, 40.2069;
-            0.164, 148.3954;
-            0.168, 598.904;
-            0.172, 890.058;
-            0.176, 995.096;
-            0.178, 1158.031;
-            0.182, 1342.306;
-            0.19, 1556.716;
-            0.222, 1959.8;
-            0.234, 2050.53;
-            0.254, 2111.01;
-            0.308, 2119.9;
-            0.356, 2073.29;
-            0.47, 2091.07;
-            0.528, 1989.543;
-            0.582, 1825.825;
-            0.648, 1733.526;
-            0.782, 1658.07;
-            0.892, 1701.725;
-            0.914, 1633.231;
-            0.966, 1669.558;
-            1.7839, 1594.076;
-            1.8239, 1551.156;
-            3.1999, 1533.43;
-            5.4538, 1378.986;
-            6.9577, 1170.933;
-            10.9216, 424.692;
-            13.5895, 106.0499;
-            14.6754, 12.60914;
-            16.1354, 0.0;];
-
-            rocket.set_wetMass(wetMass);
-            rocket.set_dryMass(dryMass);
-            rocket.set_wetMOI(diag([wetRollMOI, wetPitchMOI, wetYawMOI]));
-            rocket.set_dryMOI(diag([dryRollMOI, dryPitchMOI, dryYawMOI]));
-            rocket.set_initialCG(CG0);
-            rocket.set_finalCG(finalCG);
-            rocket.set_length(length)
-            rocket.set_diameter(diameter)
-            rocket.set_radius(diameter/2)
-
-            rocket.set_burnTime(burnTime);
-            rocket.set_thrustCurve(thrustCurve)
-
-            %timmed_struct = struct("time", [], "id", 0, "name", "", "states", [], "cost", 0);
-
+            % Initialize trimmed_points by copying the existing trim_points
             obj.trimmed_points = obj.trim_points;
-            
+        
+            % Determine the total number of trim points to process
             total_points = numel(obj.trim_points);
+            
             last_percent = 0;  % Initialize the last printed percent
             
             for ii = 1:total_points
+                % Extract the current trim point's state vector
                 trim_point = obj.trim_points(ii).states;
+                
+                % Extract the time associated with the current trim point
                 t = obj.trim_points(ii).time;
-            
-                % Calculate the current percentage
+        
+                % Calculate the current progress percentage based on the iteration index
                 current_percent = floor((ii / total_points) * 100);
-            
-                % Display progress if the percent has increased
+        
+                % Display progress if the current percentage exceeds the last recorded percentage
                 if current_percent > last_percent
                     fprintf('Trimming Progress: %d%%\n', current_percent);
-                    last_percent = current_percent;
+                    last_percent = current_percent;  % Update the last_percent to the current_percent
                 end
+        
+                % Perform optimization to find the optimal state vector (ZStar) that minimizes the cost function
+                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, Doof, env, flight, aero), ...
+                                          trim_point, ...
+                                          optimset('TolX', 1e-10, 'MaxFunEvals', 100, 'MaxIter', 100, 'Display', 'off'));
+                
+                % Update the trimmed_points array with the optimized cost and state vector
+                obj.trimmed_points(ii).cost = f0;     % Store the minimized cost value
+                obj.trimmed_points(ii).states = ZStar; % Store the optimized state vector
+            end
+        end
+
+        function generate_K(obj, straight_up_Q, straight_up_R, maneuver_Q, maneuver_R)
+            % generate_K Generates LQR Gain Matrices for Each Trimmed Point
+            % Inputs:
+            %   straight_up_Q   - State weighting matrix for straight-up flight
+            %   straight_up_R   - Control weighting matrix for straight-up flight
+            %   maneuver_Q      - State weighting matrix for maneuvering flight
+            %   maneuver_R      - Control weighting matrix for maneuvering flight
+
+            % Load necessary structures from the master_struct.mat file
+            load("master_struct.mat")
             
-                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, flight), trim_point, ...
-                    optimset('TolX', 1e-10, 'MaxFunEvals', 100, 'MaxIter', 100, 'Display', 'off'));
-            
-                obj.trimmed_points(ii).cost = f0;
-                obj.trimmed_points(ii).states = ZStar;
+            % Determine the total number of trim points to process
+            total_points = numel(obj.trim_points);
+
+            % Define a reference quaternion representing the "up" orientation
+            up = [1, 0, 0, 0];  % Quaternion components (q0, q1, q2, q3)
+
+            % Iterate over each trim point to compute and assign the LQR gain matrices
+            for ii = 1:total_points
+                % Extract the time associated with the current trim point
+                t = obj.trim_points(ii).time;
+                
+                % Extract the optimized state vector from the trimmed points
+                ZStar = obj.trimmed_points(ii).states;
+        
+                % Compute the system matrix A and B based on the optimized state and time
+                A = compute_A(ZStar(1), ZStar(2), ZStar(3), ZStar(4), ZStar(5), ZStar(6), ...
+                             ZStar(7), ZStar(8), ZStar(9), ZStar(10), t);
+                         
+                B = compute_B(t);
+                
+                % Determine whether the current state corresponds to "straight up" flight
+                if isequal(ZStar(7:10), up)  % Compare the quaternion components to the "up" reference
+                    Q = straight_up_Q;
+                    R = straight_up_R;
+                else
+                    Q = maneuver_Q;
+                    R = maneuver_R;
+                end
+                
+                % Compute the LQR gain matrix K using the system matrices A and B, and weighting matrices Q and R
+                K = lqr(A, B, Q, R);
+
+                % Assign the computed matrices and gain to the corresponding trimmed point
+                obj.trimmed_points(ii).A = A;    % Store the system matrix A
+                obj.trimmed_points(ii).B = B;    % Store the input matrix B
+                obj.trimmed_points(ii).Q = Q;    % Store the state weighting matrix Q
+                obj.trimmed_points(ii).R = R;    % Store the control weighting matrix R
+                obj.trimmed_points(ii).K = K;    % Store the LQR gain matrix K
             end
         end
        
@@ -671,7 +658,7 @@ classdef TrimPoints < handle
             full_state = [state; control];
         end
 
-        function f0 = cost_rocket_model_turning(Z, trim_point, t, rocket, flight)
+        function f0 = cost_rocket_model_turning(Z, trim_point, t, rocket, environment, flight, aero)
             u = Z(1);   
             v = Z(2);   
             w = Z(3);   
@@ -706,7 +693,7 @@ classdef TrimPoints < handle
             U = Z(11:13);  % Control variables now start at Z(11)
             
 
-            [xdot, ~] = rocketModel(t, X, rocket, flight, -1);
+            [xdot, ~] = rocketModel(t, X, rocket, environment, flight, aero, -1);
             xdot = real(xdot);
 
             udot = xdot(4);

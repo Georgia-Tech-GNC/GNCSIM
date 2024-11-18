@@ -65,6 +65,52 @@ trim_point.add_custom_variations(yaw_batch_index, yaw_variation_name, yaw_varabl
 % This consolidates all trim points into the obj.trim_points property for further use
 trim_point.generate_trim_points();
 
+% straight up Q and R
+straight_up_Q_arr = ones(9, 1);
+straight_up_R_arr = ones(4, 1);
+
+straight_up_Q_arr(1) = 0.01; % u
+straight_up_Q_arr(2) = 0.01; % v
+straight_up_Q_arr(3) = 0.01; % w
+straight_up_Q_arr(4) = 1000; % p
+straight_up_Q_arr(5) = 0.01; % q
+straight_up_Q_arr(6) = 1000; % r
+straight_up_Q_arr(7) = 1000; % q1
+straight_up_Q_arr(8) = 0.01; % q2
+straight_up_Q_arr(9) = 1000; % q3
+
+straight_up_R_arr(1) = 0.01; % M_roll
+straight_up_R_arr(2) = 1000; % M_pitch
+straight_up_R_arr(3) = 0.01; % M_yaw
+straight_up_R_arr(4) = 100; % Thrust
+
+straight_up_Q = diag(straight_up_Q_arr);
+straight_up_R = diag(straight_up_R_arr);
+
+% maneuver Q and R
+maneuver_Q_arr = ones(9, 1);
+maneuver_R_arr = ones(4, 1);
+
+maneuver_Q_arr(1) = 0.01; % u
+maneuver_Q_arr(2) = 0.01; % v
+maneuver_Q_arr(3) = 0.01; % w
+maneuver_Q_arr(4) = 1000; % p
+maneuver_Q_arr(5) = 0.01; % q
+maneuver_Q_arr(6) = 1000; % r
+maneuver_Q_arr(7) = 1000; % q1
+maneuver_Q_arr(8) = 0.01; % q2
+maneuver_Q_arr(9) = 1000; % q3
+
+maneuver_R_arr(1) = 0.001; % M_roll
+maneuver_R_arr(2) = 1000; % M_pitch
+maneuver_R_arr(3) = 0.01; % M_yaw
+maneuver_R_arr(4) = 1000; % Thrust
+
+maneuver_Q = diag(maneuver_Q_arr);
+maneuver_R = diag(maneuver_R_arr);
+
+trim_point.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R);
+
 % Get trim points closest to 1 second
 one_s_trim_ponts = trim_point.get_trim_points(1);
 
