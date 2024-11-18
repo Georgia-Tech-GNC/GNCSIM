@@ -2,7 +2,7 @@ classdef Aerodynamics < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
-    properties
+    properties (Access = private)
         FAx_func;
         FAy_func;
         FAz_func;
@@ -17,9 +17,9 @@ classdef Aerodynamics < handle
 
             % TODO Future project: Define a default basic aerodynamic model for
             % concept vehicle development
-
         end
 
+        % Setters
         function obj= set_FAx_func(obj, FAx_function)
             obj.FAx_func = FAx_function;
         end
@@ -44,6 +44,7 @@ classdef Aerodynamics < handle
             obj.L_p_func = Lp_function;
         end
 
+        % Getters
         function FAx_function = get_FAx_func(obj)
             FAx = obj.FAx_func;
         end

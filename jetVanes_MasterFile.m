@@ -154,7 +154,6 @@ EOM_no_aero = [(1/m)*(m*g*(1-2*(q0^2+q1^2)) + 0.95*u4) + r*v - q*w - udot,
      0.5*(q*q0 - r*q1 + p*q3) - q2dot,
      0.5*(r*q0 + q*q1 - p*q2) - q3dot];
 
-
 FAx = FAx_sym;
 FAy = FAy_sym;
 FAz = FAz_sym;
@@ -319,6 +318,7 @@ trim_points.draw_u_trim_points(0, burnout_time)
 
 
 
+
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
 % The above are function handles that can compute A, B given a current
@@ -326,3 +326,4 @@ trim_points.draw_u_trim_points(0, burnout_time)
 
 
 %% Monte Carlo Parameters
+

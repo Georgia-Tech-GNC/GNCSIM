@@ -44,7 +44,7 @@ classdef Rocket < handle
         function obj= set_dryMOI(obj, dry_inertias)
             [r,c] = size(dry_inertias);
             if ~(isnumeric(dry_inertias) && all(diag(dry_inertias) > 0) && (r == c))
-                error('Dry intertia values must be positive doubles.')
+                error('Dry inertia values must be positive doubles.')
             else
                 obj.dryMOI = dry_inertias;
             end  
@@ -216,116 +216,5 @@ classdef Rocket < handle
                 currentThrust = (m * t) + b;
             end
         end
-
-        function [FA_b,MA_b,l_p_curr,n_a_curr,n_r_curr] = calcAeroBody3(obj,alpha,vel,rho,CG,angVel)
-            %calcAeroBody3 Wrapper for aero model for calculating aero forces and 
-            % moments for the nonlinear rocket model. Aero equations are only valid 
-            % up to roughly 10 degrees angle of attack.
-            %
-            % alpha - angle of attack (rad)
-            % vel - velocity (m/s)
-            % rho - air density (kg/m^3)
-            % CG - location of CG (m)
-            %
-            % FA_b - aero force in body frame (N)
-            % MA_b - aero moment in body frame about current CG (Nm)
-
-            %% Convert from metric to english for aero fittings
-            
-            alphaRad = alpha;
-            alphaDeg = alphaRad * (180/pi) ; % rad to deg
-            vel = vel * 3.281; % m/s to ft/s
-            rho = rho * 0.00194;% kg/m^3 to slug/ft^3
-            CG = CG * 3.281; % m to ft
-            % angVel = rad2deg(angVel); % rad to deg
-        
-            % The following code uses Rushil's aero inputs and nomenclature
-            % T = thrust (lb)
-            % a = angle of attack (deg)
-            % ad = time derivative of a
-            % add = second derivative of a
-            % rho = density (slug/ft^3)
-            % v = velocity (ft/s)
-            % CG = CG location from nosetip (ft)
-            % h = altitude (ft)
-            % _a = due to angle of attack
-            % _r = due to yaw
-            % _p = due to roll
-            % l, m, n - moments in x,y,z directions
-            % p, q, r - angular rates in x,y,z directions (rad/s)
-        
-            %% Aero fittings (in British units)
-            CM = @(a, v) a .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - (v./1097.40).^2))) + -0.00014 .* a + 0.01273);
-            CD = @(a) 0.00253 * a.^2 + 0.13932;
-            CL = @(a, v) 0.64181 .* a .* (0.64181 ./ (3.59306 + sqrt(1 - (v./1097.40).^2)));
-            
-            Mo = @(a, v, rho) CM(a, v) .* 0.5 .* rho .* v.^2 .* 0.9375;
-            D_a = @(a, v, rho) CD(a) .* 0.5 .* rho .* v.^2 .* 0.9375;
-            L_a = @(a, v, rho) CL(a,v) .* 0.5 .* rho .* v.^2 .* 0.9375;
-            %L_r = @(rho,v,r,CG) 0.5*rho*v^2*0.9375 * (2.61799)/(sqrt(1+0.797*(1-(v*1116.45)^2))) * asin(r*(10.0948-CG)/v);
-            L_r = @(rho, v, r, CG) 0.5 * rho * v^2 * 0.9375 * (2.61799 / (1 + sqrt(1 + 0.797628 * (1 - (v / 1116.45)^2)))) * asin(r * (10.3264 - CG) / v);
-
-            %% Aero force in body frame
-            Lmag = L_a(alphaDeg,vel,rho) + L_r(rho,vel,angVel(1),CG);
-            L_b = Lmag .* [sin(alphaRad);-cos(alphaRad);0];
-            D_b = D_a(alphaDeg,vel,rho) .* [-cos(alphaRad);-sin(alphaRad);0];
-            FA_b = L_b + D_b; % lbf
-            FA_b = FA_b .* (1/0.225); % lbf to N
-        
-            %% Aero moment in body frame about current CG
-        
-            n_a = @(a, v, rho) CM(a, v) * 0.5 * rho * v.^2 * 0.9375; % corrective moment due to a (angle of attack)
-            %n_r = @(rho,v,r,CG) 0.5*rho*v^2*0.9375 * (2.61799)/(sqrt(1+0.797*(1-(v*1116.45)^2))) * asin(r*(10.3264-CG)/v) * (10.3264-CG);
-            n_r = @(rho, v, r, CG) 0.5 * rho * v^2 * 0.9375 * (2.61799 / (1 + sqrt(1 + 0.797628 * (1 - (v / 1116.45)^2)))) * asin(r * (10.3264 - CG) / v) * (10.3264 - CG);
-
-            l_p = @(rho,v,p) (((4.*((2.*pi)./sqrt(1-(v./1116.4).^2)).*p)./(0.4688.*v)).*0.1897).*0.5.*rho.*v.^2.*0.4688;
-        
-            % Need to perform moment transfer
-            % Aero fittings for moment are taken about an OpenRocket CG0
-            % Need to perform a moment transfer to SolidWorks CG0 then to current
-            % CG0
-        
-            % Difference btw OpenRocket CG0 and SolidWorks CG0
-            % TODO assuming 0 for now will need to change later
-            CG0diff = 0; % ft
-        
-            % Moment about OpenRocket CG0
-            % MA_b_CG0 = [0;0;Mo(alphaDeg,vel,rho)];
-        
-            if vel == 0
-                MA_b_CG0_x = 0;
-            else
-                l_p_curr = l_p(rho,vel,angVel(1));
-                MA_b_CG0_x = l_p_curr;
-            end
-            MA_b_CG0_y = 0;
-            n_a_curr = n_a(alphaDeg,vel,rho);
-            n_r_curr = n_r(rho,vel,angVel(3),CG);
-            MA_b_CG0_z = n_a_curr + n_r_curr;
-        
-            MA_b_CG0 = [MA_b_CG0_x;
-                        MA_b_CG0_y;
-                        MA_b_CG0_z];
-            
-            % Moment about SolidWorks CG0
-            % r points from CG0_corr to CG0
-            %     MA_b_CG0_corr = MA_b_CG0 + cross(FA_b,-1.*[(CG+CG0diff);0;0]);
-        
-            % Moment about current CG (WE ARE NOT USING THIS ANYMORE)
-            MA_b_temp = MA_b_CG0 + cross(FA_b*0.225,-1*[CG;0;0]);
-            MA_b_temp = MA_b_temp .* 1.36;
-        
-            MA_b = MA_b_CG0 .* 1.36; % lbf-ft to Nm
-        
-            % get error from not assuming moment transfer
-            temp = MA_b_temp - MA_b;
-        
-        
-        
-        
-        
-        
-        end
-
     end
 end
