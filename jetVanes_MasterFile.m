@@ -212,7 +212,6 @@ compute_A_fn = matlabFunction(A);
 compute_A = @(u, v, w, p, q, r, q0, q1, q2, q3, t)compute_A_fn(p,q,q0,q1,q2,q3,r,t,u,v,w);
 compute_B = matlabFunction(B);
 
-
 save("master_struct", "compute_B", "compute_A", "Doof", "flight", "aero", "env")
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
