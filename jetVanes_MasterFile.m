@@ -146,7 +146,6 @@ EOM_no_aero = [(1/m)*(m*g*(1-2*(q0^2+q1^2)) + 0.95*u4) + r*v - q*w - udot,
      0.5*(q*q0 - r*q1 + p*q3) - q2dot,
      0.5*(r*q0 + q*q1 - p*q2) - q3dot];
 
-
 FAx = FAx_sym;
 FAy = FAy_sym;
 FAz = FAz_sym;
@@ -203,3 +202,4 @@ compute_B = matlabFunction(B)
 
 
 %% Monte Carlo Parameters
+

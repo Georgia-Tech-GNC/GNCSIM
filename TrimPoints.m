@@ -566,9 +566,7 @@ classdef TrimPoints < handle
                 obj.trimmed_points(ii).states = ZStar;
             end
         end
-
-
-
+       
         function draw_u_trim_points(obj, start_time, end_time)
             % Plots the Speed ("u") Trim Points as a Function of Time Alongside Real "u" Data
             %
