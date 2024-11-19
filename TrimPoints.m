@@ -139,7 +139,7 @@ classdef TrimPoints < handle
             end
         end
 
-        function add_u_variations(obj, time_arr, num_trim_points_per_time, trim_spacing)
+        function add_u_variations(obj, time_arr, num_trim_points_per_time, aero, CG_t_handle, rho_t_handle)
             % Adds 'u' Variations to Each Batch Based on Specified Parameters
             % This method generates variations in 'u' (velocity) for each batch and adds them.
             %
@@ -156,7 +156,7 @@ classdef TrimPoints < handle
             % Loop over each time to generate and add 'u' variations
             for ii = 1:length(time_arr)
                 % Generate 'u' variations for the current time
-                u_vars = obj.generate_trim_points_from_u_var(time_arr(ii), num_trim_points_per_time, trim_spacing);
+                u_vars = obj.generate_trim_points_from_u_var(time_arr(ii), num_trim_points_per_time, aero, CG_t_handle, rho_t_handle);
                 
                 % Add the 'u' variations to the corresponding batch
                 obj.batches(ii).add_variation("speed", "u", u_vars.');
@@ -352,28 +352,94 @@ classdef TrimPoints < handle
             end
         end
 
-        function u_vars = generate_trim_points_from_u_var(obj, time, num_trim_points_per_time, trim_spacing)
+        function u_vars = generate_trim_points_from_u_var(obj, time, num_trim_points_per_time, aero, CG_t_handle, rho_t_handle)
             % Generates Variations in 'u' (Velocity) Around a Base Value
-            % This method creates an array of 'u' values centered around the base 'u' at a given time.
+            % This method creates an array of 'u' values centered around
+            % the base 'u' at a given time. Each 'u' value successively varies the
+            % aerodynamic forces on the rocket by less than 8%.
             %
             % Inputs:
             %   time                     - The time at which to generate 'u' variations.
             %   num_trim_points_per_time - Number of 'u' variations to generate.
-            %   trim_spacing             - Fractional spacing around the base 'u' value.
+            %   aero                     - Aero object to access calcAeroBodyFrame_JV.
+            %   CG_t_handle              - CG(t) function for calcAeroBodyFrame_JV.
+            %   rho_t_handle             - rho(t) function for calcAeroBodyFrame_JV.
             %
             % Output:
             %   u_vars - Array of 'u' variation values.
             
             % Retrieve the base 'u' value at the specified time
             [u, ~] = obj.get_info(time);
+
+            % Initializing u_vars array
+            u_vars_temp = zeros(1, num_trim_points_per_time);
+
+            % Determine the middle index
+            if mod(num_trim_points_per_time, 2) == 0
+                middle = num_trim_points_per_time / 2; % Choose the lower middle for even n
+            else
+                middle = ceil(num_trim_points_per_time / 2); % Standard middle for odd n
+            end
             
-            % Calculate the lower and upper bounds for 'u' variations
-            lower_bound = u * (1 - trim_spacing);
-            upper_bound = u * (1 + trim_spacing);
+            % Assign a value to the middle element
+            u_vars_temp(middle) = u; % Assign a value to the chosen middle
+
+            % Get initial aero forces
+            [FAb, MAb]= aero.calcAeroBodyFrame_JV(u, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+
+            % Initializing u_iterative and u_step for loop
+            u_iterative = u;
+            u_step = 0.1;
             
-            % Generate logarithmically spaced 'u' values between the bounds
-            exp_space = linspace(log(lower_bound), log(upper_bound), num_trim_points_per_time);
-            u_vars = exp(exp_space);
+            % Loop forward from the middle to the end
+            for i = middle+1:num_trim_points_per_time
+                % Calculating initial magnitude of aero force and moment
+                FAb_initial_mag = norm(FAb);
+                MAb_initial_mag = norm(MAb);
+
+                % Initializing percent change in aero force and moment
+                percent_change_FAb = 0;
+                percent_change_MAb = 0;
+
+                % Increasing u until 8% change is reached
+                while (percent_change_FAb < 0.08 && percent_change_MAb < 0.08)
+                    u_iterative = u_iterative + u_step;
+                    [FAb, MAb]= aero.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
+                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
+                end
+                u_vars_temp(i) = u_iterative;
+            end
+
+            % Get initial aero forces
+            [FAb, MAb]= aero.calcAeroBodyFrame_JV(u, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+
+            % Initializing u_iterative and u_step for loop
+            u_iterative = u;
+            u_step = -0.1;
+            
+            % Loop backward from the middle to the beginning
+            for i = middle-1:-1:1
+                % Calculating initial magnitude of aero force and moment
+                FAb_initial_mag = norm(FAb);
+                MAb_initial_mag = norm(MAb);
+
+                % Initializing percent change in aero force and moment
+                percent_change_FAb = 0;
+                percent_change_MAb = 0;
+
+                % Increasing u until 8% change is reached
+                while (percent_change_FAb < 0.08 && percent_change_MAb < 0.08)
+                    u_iterative = u_iterative + u_step;
+                    [FAb, MAb]= aero.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
+                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
+                end
+                u_vars_temp(i) = u_iterative;
+            end
+
+            % Returning final u_vars for given batch
+            u_vars = u_vars_temp;
         end
 
         function [u, thrust] = get_info(obj, time)

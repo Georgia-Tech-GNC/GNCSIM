@@ -177,6 +177,9 @@ Iyy_t = dryPitchMOI + (wetPitchMOI - dryPitchMOI) * (burn_time - t) / burn_time;
 Izz_t = dryYawMOI + (wetYawMOI - dryYawMOI) * (burn_time - t) / burn_time;
 m_t = dry_mass + (wet_mass - dry_mass) * (burn_time - t) / burn_time;
 
+CG_t_handle = matlabFunction(CG_t);
+rho_t_handle = @(t) 1.2;
+
 %nonlinear_EOM = EOM_no_aero;
 nonlinear_EOM = EOM_no_aero + EOM_only_aero;
 
@@ -236,20 +239,17 @@ trim_points.generate_trim_batches(time_arr);
 % Define the number of trim points to generate per time instance for 'u' variations
 num_trim_points_per_time = 10;
 
-% Define the spacing factor for 'u' variations (e.g., 20% variation around the base 'u' value)
-trim_spacing = 0.28;
-
 % Add 'u' (velocity) variations to each trim batch based on the specified parameters
 % This creates different trim points by varying the 'u' component within the defined spacing
 % THIS FUNCTION SHOULD BE CHANGED TO INCLUDE AERO MOMENTS
-trim_points.add_u_variations(time_arr, num_trim_points_per_time, trim_spacing);   
+trim_points.add_u_variations(time_arr, num_trim_points_per_time, aero, CG_t_handle, rho_t_handle);   
 
 turn_batch_index = 1:length(time_arr);  % Define the indices of batches to which custom variations will be added
 turn_variation_name = "turn";  % Define the name of the custom variation to add
 
 % Define the variables involved in the custom variation
 % In this case, the variation affects the quaternion components q0, q1, q2, and q3
-turn_varables = ["q0", "q1", "q2", "q3"];
+turn_variables = ["q0", "q1", "q2", "q3"];
 
 % Define the variation data matrix for the custom variation
 % Each row represents a different state for the variation
@@ -261,9 +261,10 @@ turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
 turn_include_base = true;
 
 % This will create additional trim points by varying the specified quaternion components
-trim_points.add_custom_variations(turn_batch_index, turn_variation_name, turn_varables, turn_data, turn_include_base);
+trim_points.add_custom_variations(turn_batch_index, turn_variation_name, turn_variables, turn_data, turn_include_base);
 
-% This consolidates all trim points into the obj.trim_points property for further use
+% This consolidates all trim points into the obj.trim_points property for
+% further use AND convert all trim points to trimmed points.
 trim_points.generate_trim_points(Doof, env, flight, aero);
 
 % straight up Q and R
