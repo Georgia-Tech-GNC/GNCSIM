@@ -37,7 +37,7 @@ classdef Environment
             elevation = location(3);
 
             % Launch Site Altitude
-            obj.launch_site_altitude = location(3);
+            obj.location = location;
 
             % Wind Parameters Monte Carlo Parameter Initialization
             currentDir = fileparts(mfilename('fullpath'));
@@ -49,7 +49,7 @@ classdef Environment
 
             % Creating Data with Rocketpy
             filename = fullfile(currentDir, 'Environment', 'generate_environment_data.py');
-            system(['python "' filename '" ' num2str(latitude) ' ' num2str(longitude) ' ' num2str(elevation)]);
+            [~, ~] = system(['python "' filename '" ' num2str(latitude) ' ' num2str(longitude) ' ' num2str(elevation)]);
 
             % Extracting Data
             filename = fullfile(currentDir, 'Environment', 'EnvironmentData.csv'); 

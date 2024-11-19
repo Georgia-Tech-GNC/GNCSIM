@@ -98,14 +98,10 @@ aero.set_L_p_func(L_p_func);
 % Assuming Location of GRITS Launch Site; 31.2732° N, 83.3538° W
 latitude = 31.2732; % deg
 longitude = 83.3538; % deg
-elevation = 75; %m
+elevation = 75; % m
 
-location = [latitude longitude elevation]
+location = [latitude longitude elevation];
 env = Environment(location);
-
-% Other parameters
-
-
 
 %% Flight Parameters
 
