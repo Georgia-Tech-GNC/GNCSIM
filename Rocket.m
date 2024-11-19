@@ -25,7 +25,7 @@ classdef Rocket
         end
         
         % Start Setter Functions
-        function obj = set_wet_mass(obj, wet_mass)
+        function obj= set_wet_mass(obj, wet_mass)
             if (~isdouble(wet_mass) || wet_mass < 0)
                 error('Wet mass value must be a positive double.')
             else
