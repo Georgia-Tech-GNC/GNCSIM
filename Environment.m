@@ -3,26 +3,67 @@ classdef Environment
     %   Detailed explanation goes here
 
     properties (SetAccess = private)
+
+        altitudes;
+        
         rho;
-        launch_site_altitude;
+
+        pressure;
+
+        temperature;
+
+        speed_of_sound;
+
+        wind_speed;
+
+        location;
+        
         wind_parameters;
+
     end
 
     methods
-        function obj = Environment(launch_site_altitude_input)
+        function obj = Environment(location)
             %   Constructing Default Environment Class
-            %   Takes
+            %   
+            %   The location must be a 1X3 vector with the format
+            %   [latitude, longitude, elevation]
+            %   Requires Python in order to initialize data from rocketpy
+            %
             %   Assumes Default Wind Parameters as defined in MonteCarlo
-            obj.launch_site_altitude = launch_site_altitude_input;
 
+            latitude = location(1);
+            longitude = location(2);
+            elevation = location(3);
+
+            % Launch Site Altitude
+            obj.launch_site_altitude = location(3);
+
+            % Wind Parameters Monte Carlo Parameter Initialization
             currentDir = fileparts(mfilename('fullpath'));
-            filename = fullfile(currentDir, 'WindMonteCarlo', 'WindParameters.xlsx');
-            data = readcell(filename);
+            filename = fullfile(currentDir, 'Environment', 'WindParameters.xlsx');
+            data = readcell(filename);C:\Users\ahrid\anaconda3\envs\wind_env\python.exe
 
+            % Updating Wind Parameters
             obj.wind_parameters = cell2mat(data(2:end,2:5));
 
-            obj.rho = 1.225; % kg / m^3
+            % Creating Data with Rocketpy
+            filename = fullfile(currentDir, 'Environment', 'generate_environment_data.py');
+            system(['python "' filename '" ' num2str(latitude) ' ' num2str(longitude) ' ' num2str(elevation)]);
+
+            % Extracting Data
+            filename = fullfile(currentDir, 'Environment', 'EnvironmentData.csv'); 
+            data = readtable(filename);
+            obj.altitudes = data.Altitude';
+            obj.rho = data.Density';
+            obj.pressure = data.Pressure';
+            obj.temperature = data.Temperature';
+            obj.speed_of_sound = data.SpeedOfSound';
+            obj.wind_speed = data.WindSpeed';
+
         end
+
+    % Calc Aero Body _ JV in rocketmodel
 
         function wind_speed = wind_speed_change(V_m, d_m, x)
             % Wind Speed Change: returns instantanous wind speed based on parameters that describe the speed and length of the gust
@@ -64,7 +105,7 @@ classdef Environment
             end
         end
 
-        function [] = add_wind_parameter(obj, gust_speed_mean, gust_speed_3sigma, gust_length_mean, gust_length_3sigma)
+        function obj = add_wind_parameter(obj, gust_speed_mean, gust_speed_3sigma, gust_length_mean, gust_length_3sigma)
             % Adding a wind parameter (There should be 4 wind parameters added by default)
             % Specify the object, the mean and 3 times the standard
             % deviation of wind gust speed, and the mean ant he 3 times the
@@ -81,7 +122,7 @@ classdef Environment
             wind_parameters = obj.wind_parameters(index,:);
         end
 
-        function [] = remove_wind_parameter(obj, index)
+        function obj = remove_wind_parameter(obj, index)
             obj.wind_parameters(index,:) = [];
         end
 
@@ -93,6 +134,26 @@ classdef Environment
 
             V_m = random(dist1);
             d_m = random(dist2);
+        end
+
+        function [rho_final] = get_rho(obj, altitude_selected)
+            rho_final = interp1(obj.altitudes, obj.rho, altitude_selected);
+        end
+
+        function [pressure_final] = get_pressure(obj, altitude_selected)
+            pressure_final = interp1(obj.altitudes, obj.pressure, altitude_selected);
+        end
+
+        function [temperature_final] = get_temperature(obj, altitude_selected)
+            temperature_final = interp1(obj.altitudes, obj.temperature, altitude_selected);
+        end
+            
+        function [speed_of_sound_final] = get_speed_of_sound(obj, altitude_selected)
+            speed_of_sound_final = interp1(obj.altitudes, obj.speed_of_sound, altitude_selected);
+        end
+
+        function [wind_speed_final] = get_wind_speed(obj, altitude_selected)
+            wind_speed_final = interp1(obj.altitudes, obj.wind_speed, altitude_selected);
         end
     end
 end
