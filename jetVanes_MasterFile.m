@@ -95,10 +95,13 @@ aero.set_L_p_func(L_p_func);
 
 %% Environment Parameters
 
-env = Environment();
-%env.set_launchSiteAltitude(177); % launch site altitude (m) [not implemented]
-% TODO - other parameters
+% Assuming Location of GRITS Launch Site; 31.2732° N, 83.3538° W
+latitude = 31.2732; % deg
+longitude = 83.3538; % deg
+elevation = 75; % m
 
+location = [latitude longitude elevation];
+env = Environment(location);
 
 %% Flight Parameters
 
