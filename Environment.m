@@ -53,7 +53,11 @@ classdef Environment
 
             % Extracting Data
             filename = fullfile(currentDir, 'Environment', 'EnvironmentData.csv'); 
+
+            warning('off', 'all');
             data = readtable(filename);
+            warning('on', 'all');
+
             obj.altitudes = data.Altitude';
             obj.rho = data.Density';
             obj.pressure = data.Pressure';
@@ -62,8 +66,6 @@ classdef Environment
             obj.wind_speed = data.WindSpeed';
 
         end
-
-    % Calc Aero Body _ JV in rocketmodel
 
         function wind_speed = wind_speed_change(V_m, d_m, x)
             % Wind Speed Change: returns instantanous wind speed based on parameters that describe the speed and length of the gust
