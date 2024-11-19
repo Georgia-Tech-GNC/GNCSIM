@@ -166,7 +166,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     
     % Getting Air Density
     altitude = px;
-    rho = EnvironmentObj.get_rho(EnvironmentObj,altitude);
+    rho = EnvironmentObj.get_rho(altitude);
 
     % Applying Wind
     if applyWind
@@ -186,19 +186,8 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
             % Calculating Wind Speed with Discrete Gust Model
             windspeed = EnvironmentObj.wind_speed_change(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
         
-            % wind gust in y and z
-            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
-        
-            % Calculating to velocity to account for wind speed
-            va_x = v_a(1);
-            va_y = v_a(2);
-            va_z = v_a(3);
-        
-            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
-            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
-    
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
         else
+
             % Gust Period
             T = 2.5; % Seconds Between the Start of Each Gust
         
@@ -208,19 +197,22 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
             % Calculating Wind Speed with Discrete Gust Model
             windspeed = EnvironmentObj.wind_speed-gust(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
         
-            % wind gust in y and z
-            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
-        
-            % Calculating to velocity to account for wind speed
-            va_x = v_a(1);
-            va_y = v_a(2);
-            va_z = v_a(3);
-        
-            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
-            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
-    
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
         end
+
+        % wind gust in y and z
+        v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
+    
+        % Calculating to velocity to account for wind speed
+        va_x = v_a(1);
+        va_y = v_a(2);
+        va_z = v_a(3);
+    
+        alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
+        beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
+
+        [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+    else
+        [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
     end
 
     %% External Moments
