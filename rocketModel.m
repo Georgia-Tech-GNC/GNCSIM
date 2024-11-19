@@ -164,12 +164,64 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
 
     %% Aerodynamics & Environment. TODO: Consult Hridai on how this should work with wind/environment
     
-    % TODO: Get rho
-    
-    % To get aerodynamic forces, use
-    rho = 1.2; % THIS SHOULD BE CHANGED
-    [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+    % Getting Air Density
+    altitude = px;
+    rho = EnvironmentObj.get_rho(EnvironmentObj,altitude);
 
+    % Applying Wind
+    if applyWind
+            % Discrete Wind Gust Model
+            wind_parameter_index = 1; % 1-4 different wind parameters are defined by default
+            [Vm, dm] = EnvironmentObj.get_wind_aspects(EnvironmentObj, wind_parameter_index);
+
+            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
+            udir = [0 1 0];
+
+        if ~applyPeriodicWindGusts
+            
+            % Distance moved into gust
+            normXu = norm(dot([px py pz],udir));
+            normXu = normXu + Vm*t; % Assuming wind gust moves at a speed Vm and starts at t = 0. starts at a distance dm away from rocket
+            
+            % Calculating Wind Speed with Discrete Gust Model
+            windspeed = EnvironmentObj.wind_speed_change(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
+        
+            % wind gust in y and z
+            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
+        
+            % Calculating to velocity to account for wind speed
+            va_x = v_a(1);
+            va_y = v_a(2);
+            va_z = v_a(3);
+        
+            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
+            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
+    
+            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+        else
+            % Gust Period
+            T = 2.5; % Seconds Between the Start of Each Gust
+        
+            % Distance moved into gust (Assuming that rocket position does not affect )
+            normXu = Vm*mod(t,T);
+            
+            % Calculating Wind Speed with Discrete Gust Model
+            windspeed = EnvironmentObj.wind_speed-gust(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
+        
+            % wind gust in y and z
+            v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
+        
+            % Calculating to velocity to account for wind speed
+            va_x = v_a(1);
+            va_y = v_a(2);
+            va_z = v_a(3);
+        
+            alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
+            beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
+    
+            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+        end
+    end
 
     %% External Moments
     % Note: similar performance issues as controls
