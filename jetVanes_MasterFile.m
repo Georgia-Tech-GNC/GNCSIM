@@ -240,7 +240,7 @@ time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_peri
 trim_points.generate_trim_batches(time_arr);
 
 % Define the number of trim points to generate per time instance for 'u' variations
-num_trim_points_per_time = 10;
+num_trim_points_per_time = 13;
 
 % Add 'u' (velocity) variations to each trim batch based on the specified parameters
 % This creates different trim points by varying the 'u' component within the defined spacing
@@ -256,9 +256,9 @@ turn_variables = ["q0", "q1", "q2", "q3"];
 
 % Define the variation data matrix for the custom variation
 % Each row represents a different state for the variation
-turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
-             0.0871557, 0, 0, 0.9961947;   % 10 deg
-             0.1305262, 0, 0, 0.9914449];  % 15 deg
+turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
+             0.9961947, 0, 0, 0.0871557;  % 10 deg
+             0.9914449, 0, 0, 0.1305262]; % 15 deg
 
 % include base state [0, 0, 0, 1] strait up flight
 turn_include_base = true;
