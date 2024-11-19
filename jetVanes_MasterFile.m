@@ -256,9 +256,13 @@ turn_variables = ["q0", "q1", "q2", "q3"];
 
 % Define the variation data matrix for the custom variation
 % Each row represents a different state for the variation
-turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
-             0.0871557, 0, 0, 0.9961947;   % 10 deg
-             0.1305262, 0, 0, 0.9914449];  % 15 deg
+turn_data = [0.9990482, 0, 0, 0.0436194;
+             0.9961947, 0, 0, 0.0871557;
+             0.9914449, 0, 0, 0.1305262];
+
+%turn_data = [0.0436194, 0, 0, 0.9990482;   % 5 deg
+%             0.0871557, 0, 0, 0.9961947;   % 10 deg
+%             0.1305262, 0, 0, 0.9914449];  % 15 deg
 
 % include base state [0, 0, 0, 1] strait up flight
 turn_include_base = true;
