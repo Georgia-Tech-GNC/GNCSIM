@@ -240,7 +240,7 @@ time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_peri
 trim_points.generate_trim_batches(time_arr);
 
 % Define the number of trim points to generate per time instance for 'u' variations
-num_trim_points_per_time = 10;
+num_trim_points_per_time = 13;
 
 % Add 'u' (velocity) variations to each trim batch based on the specified parameters
 % This creates different trim points by varying the 'u' component within the defined spacing

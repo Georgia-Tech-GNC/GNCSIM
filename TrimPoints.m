@@ -552,8 +552,11 @@ classdef TrimPoints < handle
         function trim_rocket_model(obj, rocket, env, flight, aero)
             % trim_rocket_model Processes Trim Points to Optimize Rocket Model States
 
-            % Load necessary structures from the master_struct.mat file
-            %load("master_struct.mat")
+            % Define a reference quaternion representing the "up" orientation
+            up = [1, 0, 0, 0];  % Quaternion components (q0, q1, q2, q3)
+
+            % Number of constraints used in optimization
+            num_constraints = 18;
 
             % Initialize trimmed_points by copying the existing trim_points
             obj.trimmed_points = obj.trim_points;
@@ -578,9 +581,20 @@ classdef TrimPoints < handle
                     fprintf('Trimming Progress: %d%%\n', current_percent);
                     last_percent = current_percent;  % Update the last_percent to the current_percent
                 end
+
+                one_vec = ones(1, num_constraints);
+                H = diag(one_vec);
+                if ~isequal(trim_point(7:10), up)  % This is for turning
+                    H(4,4) = 100;
+                    H(6,6) = 100;
+                    H(7,7) = 100;
+                    H(8,8) = 100;
+                    H(9,9) = 100;
+                    H(10,10) = 100;
+                end
         
                 % Perform optimization to find the optimal state vector (ZStar) that minimizes the cost function
-                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model_turning(Zguess, trim_point, t, rocket, env, flight, aero), ...
+                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model(Zguess, trim_point, t, rocket, env, flight, aero, H), ...
                                           trim_point, ...
                                           optimset('TolX', 1e-10, 'MaxFunEvals', 100, 'MaxIter', 100, 'Display', 'off'));
                 
@@ -626,7 +640,6 @@ classdef TrimPoints < handle
                              ZStar(7), ZStar(8), ZStar(9), ZStar(10), t);
 
                 A = real(A);  % Fix to make A matrix real
-                         
                 B = compute_B(t);
                 
                 % Determine whether the current state corresponds to "straight up" flight
@@ -754,7 +767,25 @@ classdef TrimPoints < handle
             full_state = [state; control];
         end
 
-        function f0 = cost_rocket_model_turning(Z, trim_point, t, rocket, environment, flight, aero)
+        function f0 = cost_rocket_model(Z, trim_point, t, rocket, environment, flight, aero, H)
+            % cost_rocket_model Evaluates the Cost Function for Rocket Trim Optimization
+            % Inputs:
+            %   Z            - Current state vector (including control variables).
+            %                  Format: [u; v; w; p; q; r; q0; q1; q2; q3; M_roll; M_yaw; T].
+            %   trim_point   - Desired trim point state vector for comparison.
+            %                  Format: [u_trim; v_trim; w_trim; ...; T_trim].
+            %   t            - Current time (used for dynamic calculations).
+            %   rocket       - Rocket object containing physical properties and parameters.
+            %   environment  - Environment object defining atmospheric conditions.
+            %   flight       - Flight dynamics object for simulation.
+            %   aero         - Aerodynamic model object for the rocket.
+            %   H            - Weighting matrix for penalizing deviations in constraints.
+            %
+            % Output:
+            %   f0 - Cost value computed as the weighted sum of squared deviations from
+            %        the desired trim point and dynamic constraints.
+
+            % Extract state variables from the input vector Z
             u = Z(1);   
             v = Z(2);   
             w = Z(3);   
@@ -766,6 +797,7 @@ classdef TrimPoints < handle
             q2 = Z(9);  
             q3 = Z(10); 
 
+            % Extract corresponding trim point values
             u_trim = trim_point(1);
             v_trim = trim_point(2);
             w_trim = trim_point(3);
@@ -780,31 +812,27 @@ classdef TrimPoints < handle
             M_yaw_trim = trim_point(12);
             T_trim = trim_point(13);
             
+            % Extract control variables from the input vector Z
             M_roll = Z(11); 
             M_yaw = Z(12);  
             T = Z(13);
 
-            X = [0,0,0, Z(1:10)];  % State variables now start at Z(1)
-
-            U = Z(11:13);  % Control variables now start at Z(11)
-            
-
+            % Compute the rocket dynamics using the current state (Z)
+            X = [0, 0, 0, Z(1:10)]; % State vector (position not included)
+            U = Z(11:13);           % Control vector (moments and thrust)
             [xdot, ~] = rocketModel(t, X, rocket, environment, flight, aero, -1);
-            xdot = real(xdot);
+            xdot = real(xdot);      % Ensure dynamics are real-valued
 
+            % Extract derivatives from the rocket dynamics
             udot = xdot(4);
             vdot = xdot(5);
             wdot = xdot(6);
             pdot = xdot(11);
             qdot = xdot(12);
             rdot = xdot(13);
-            q0dot = xdot(7);
-            q1dot = xdot(8);
-            q2dot = xdot(9);
-            q3dot = xdot(10);
 
+             % Define constraint deviations for optimization
             num_constraints = 18; % Let the number of constraints happen here
-
             Q = ones(num_constraints, 1);
             Q(1) = u - u_trim;
             Q(2) = 0; % v;
@@ -824,15 +852,6 @@ classdef TrimPoints < handle
             Q(16) = pdot;
             Q(17) = qdot;
             Q(18) = sqrt(q0^2 + q1^2 + q2^2 + q3^2) - 1;
-
-            one_vec = ones(1, num_constraints);
-            H = diag(one_vec); % Should be dimensions of the number of constraints
-            H(4,4) = 100;
-            H(6,6) = 100;
-            H(7,7) = 100;
-            H(8,8) = 100;
-            H(9,9) = 100;
-            H(10,10) = 100;
 
             f0 = Q' * H * Q; % Compute the cost function
         end 
