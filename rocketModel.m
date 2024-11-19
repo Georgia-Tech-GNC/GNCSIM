@@ -171,8 +171,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     % Applying Wind
     if applyWind
             % Discrete Wind Gust Model
-            wind_parameter_index = 1; % 1-4 different wind parameters are defined by default
-            [Vm, dm] = EnvironmentObj.get_wind_aspects(EnvironmentObj, wind_parameter_index);
+            [Vm, dm] = EnvironmentObj.get_wind_aspects(EnvironmentObj);
 
             % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
             udir = [0 1 0];

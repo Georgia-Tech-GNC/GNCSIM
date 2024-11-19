@@ -20,6 +20,8 @@ classdef Environment
         
         wind_parameters;
 
+        index;
+
     end
 
     methods
@@ -118,18 +120,17 @@ classdef Environment
         end
 
         function [wind_parameters] = get_wind_parameter(obj, index)
-            % Deletes wind parameter at specified index
-            if index > size(obj.wind_parameters, 1)
-            end
+            validateattributes(index, {'numeric'}, {'integer', 'positive', '<=', size(obj.wind_parameters, 1)}, 'get_wind_parameter', 'index');
             wind_parameters = obj.wind_parameters(index,:);
         end
 
         function obj = remove_wind_parameter(obj, index)
+            validateattributes(index, {'numeric'}, {'integer', 'positive', '<=', size(obj.wind_parameters, 1)}, 'get_wind_parameter', 'index');
             obj.wind_parameters(index,:) = [];
         end
 
-        function [V_m, d_m] = get_wind_aspects(obj, index)
-            params = obj.wind_parameters(index,:);
+        function [V_m, d_m] = get_wind_aspects(obj)
+            params = obj.wind_parameters(obj.index,:);
 
             dist1 = makedist('Normal','mu',params(1),'sigma',params(2)/3);
             dist2 = makedist('Normal','mu',params(3),'sigma',params(4)/3);
@@ -156,6 +157,11 @@ classdef Environment
 
         function [wind_speed_final] = get_wind_speed(obj, altitude_selected)
             wind_speed_final = interp1(obj.altitudes, obj.wind_speed, altitude_selected);
+        end
+
+        function obj = set_index(obj, value)
+            validateattributes(value, {'numeric'}, {'integer', 'positive', '<=', size(obj.wind_parameters, 1)}, 'set_index', 'index');
+            obj.index = value;
         end
     end
 end

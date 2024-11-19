@@ -6,31 +6,27 @@ classdef MonteCarlo
         runGaussian; % boolean
         runSweep; %boolean
 
-        % Rocket Parameters
-            % Mean Value
+        % Rocket Parameters - Mean Value
         wetMass;
         dryMass;
-        peakThrust;
         burnTime;
-        thrustCurve;
+        thrustCurve; % 2d array
         wetMOI; % 3x3 matrix
         dryMOI; % 3x3 matrix
-            % Standard Deviation
-        wetMass_std;
-        dryMass_std;
-        peakThrust_std;
-        burnTime_std;
-        thrustCurve_std;
-        wetMOI_std; % 3x3 matrix
-        dryMOI_std; % 3x3 matrix
+
+        % Rocket Parameters - 3 Sigma
+        wetMass_3sigma;
+        dryMass_3sigma;
+        burnTime_3sigma;
+        thrustCurve_3sigma; % scalar
+        wetMOI_3sigma; % 1x3 vector
+        dryMOI_3sigma; % 1x3 vector
 
         % Wind Parameters
-            % Mean Value
-            % Standard Deviation
+        windIndex; % mean values and 3sigma are in WindParameters.xslx
 
-        % Actuator Model Parameters
-            % Mean Value
-            % Standard Deviation
+        % Actuator Model Parameters - Mean Value
+        % Actuator Model Parameters - 3 Sigma
 
     end
 
@@ -65,11 +61,6 @@ classdef MonteCarlo
             obj.dryMass = value;
         end
 
-        function obj = set.peakThrust(obj, value)
-            validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, 'set_peakThrust', 'peakThrust');
-            obj.peakThrust = value;
-        end
-
         function obj = set.burnTime(obj, value)
             validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, 'set_burnTime', 'burnTime');
             obj.burnTime = value;
@@ -88,6 +79,42 @@ classdef MonteCarlo
         function obj = set.dryMOI(obj, value)
             validateattributes(value, {'numeric'}, {'size', [3, 3]}, 'set_dryMOI', 'dryMOI');
             obj.dryMOI = value;
+        end
+
+        function obj = set.wetMass_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set.wetMass_3sigma', 'wetMass_3sigma');
+            obj.wetMass_3sigma = value;
+        end
+
+        function obj = set.dryMass_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set.dryMass_3sigma', 'dryMass_3sigma');
+            obj.dryMass_3sigma = value;
+        end
+
+
+        function obj = set.burnTime_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'positive'}, 'set.burnTime_3sigma', 'burnTime_3sigma');
+            obj.burnTime_3sigma = value;
+        end
+
+        function obj = set.thrustCurve_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar'}, 'set.thrustCurve_3sigma', 'thrustCurve_3sigma');
+            obj.thrustCurve_3sigma = value;
+        end
+
+        function obj = set.wetMOI_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'size', [1, 3]}, 'set.wetMOI_3sigma', 'wetMOI_3sigma');
+            obj.wetMOI_3sigma = value;
+        end
+
+        function obj = set.dryMOI_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'size', [1, 3]}, 'set.dryMOI_3sigma', 'dryMOI_3sigma');
+            obj.dryMOI_3sigma = value;
+        end
+
+        function obj = set_windIndex(obj, value)
+            validateattributes(value, {'numeric'}, {'integer', 'positive'}, 'set_windIndex', 'windIndex');
+            obj.windIndex = value;
         end
 
         % Gaussian Noise Function

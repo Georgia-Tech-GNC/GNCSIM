@@ -139,9 +139,9 @@ classdef TrimPoints < handle
             end
         end
 
-        function add_u_variations(obj, time_arr, num_trim_points_per_time, aero, CG_t_handle, rho_t_handle)
+        function add_u_variations(obj, time_arr, num_trim_points_per_time, AerodynamicsObj, CG_t_handle, rho_t_handle)
             % Adds 'u' Variations to Each Batch Based on Specified Parameters
-            % This method generates variations in 'u' (velocity) for each batch and adds them.
+            % This method generates variations in 'u' (velocity) for each b atch and adds them.
             %
             % Inputs:
             %   time_arr                - Array of times corresponding to each batch.
@@ -156,7 +156,7 @@ classdef TrimPoints < handle
             % Loop over each time to generate and add 'u' variations
             for ii = 1:length(time_arr)
                 % Generate 'u' variations for the current time
-                u_vars = obj.generate_trim_points_from_u_var(time_arr(ii), num_trim_points_per_time, aero, CG_t_handle, rho_t_handle);
+                u_vars = obj.generate_trim_points_from_u_var(time_arr(ii), num_trim_points_per_time, AerodynamicsObj, CG_t_handle, rho_t_handle);
                 
                 % Add the 'u' variations to the corresponding batch
                 obj.batches(ii).add_variation("speed", "u", u_vars.');
@@ -352,7 +352,7 @@ classdef TrimPoints < handle
             end
         end
 
-        function u_vars = generate_trim_points_from_u_var(obj, time, num_trim_points_per_time, aero, CG_t_handle, rho_t_handle)
+        function u_vars = generate_trim_points_from_u_var(obj, time, num_trim_points_per_time, AerodynamicsObj, CG_t_handle, rho_t_handle)
             % Generates Variations in 'u' (Velocity) Around a Base Value
             % This method creates an array of 'u' values centered around
             % the base 'u' at a given time. Each 'u' value successively varies the
@@ -385,7 +385,7 @@ classdef TrimPoints < handle
             u_vars_temp(middle) = u; % Assign a value to the chosen middle
 
             % Get initial aero forces
-            [FAb, MAb]= aero.calcAeroBodyFrame_JV(u, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+            [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
 
             % Initializing u_iterative and u_step for loop
             u_iterative = u;
@@ -404,7 +404,7 @@ classdef TrimPoints < handle
                 % Increasing u until 8% change is reached
                 while (percent_change_FAb < 0.08 && percent_change_MAb < 0.08)
                     u_iterative = u_iterative + u_step;
-                    [FAb, MAb]= aero.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+                    [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
                     percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
                     percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
                 end
@@ -412,7 +412,7 @@ classdef TrimPoints < handle
             end
 
             % Get initial aero forces
-            [FAb, MAb]= aero.calcAeroBodyFrame_JV(u, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+            [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
 
             % Initializing u_iterative and u_step for loop
             u_iterative = u;
@@ -431,7 +431,7 @@ classdef TrimPoints < handle
                 % Increasing u until 8% change is reached
                 while (percent_change_FAb < 0.08 && percent_change_MAb < 0.08)
                     u_iterative = u_iterative + u_step;
-                    [FAb, MAb]= aero.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
+                    [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
                     percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
                     percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
                 end
