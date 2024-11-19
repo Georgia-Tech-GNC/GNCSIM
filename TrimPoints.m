@@ -624,6 +624,8 @@ classdef TrimPoints < handle
                 % Compute the system matrix A and B based on the optimized state and time
                 A = compute_A(ZStar(1), ZStar(2), ZStar(3), ZStar(4), ZStar(5), ZStar(6), ...
                              ZStar(7), ZStar(8), ZStar(9), ZStar(10), t);
+
+                A = real(A);  % Fix to make A matrix real
                          
                 B = compute_B(t);
                 
