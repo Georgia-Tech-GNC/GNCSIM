@@ -117,9 +117,22 @@ classdef MonteCarlo
             obj.windIndex = value;
         end
 
-        % Gaussian Noise Function
-        % Input: Parameter mean value and standard deviation
-        % Output: Random gaussian value
+        function randomValue = generateGaussianRandom(meanValue, stdValue)
+            % generateGaussianRandom - Generate a Gaussian random number
+            %
+            % Inputs:
+            %   meanValue - The mean value (expected value)
+            %   stdValue  - The standard deviation (sigma)
+            %
+            % Outputs:
+            %   randomValue - A single Gaussian random number
+            
+            % Calculate the standard deviation from the 3-sigma value
+            sigma = stdValue / 3;
+            
+            % Generate a Gaussian random number
+            randomValue = meanValue + sigma * randn();
+        end
 
     end
 end
