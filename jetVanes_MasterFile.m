@@ -69,7 +69,7 @@ Doof.set_thrustCurve(tc);
 % computed about CG directly
 
 %% Aerodynamic Parameters
-aero = Aerodynamics();
+AeroObj = Aerodynamics();
 
 syms u v w rho CG p r
 FAx_sym = (0.231*((v/u)^2)*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (0.02563*rho*(u^2 + v^2 + w^2)*(v/u)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^2)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2);
@@ -86,12 +86,12 @@ n_a_func = matlabFunction(n_a_sym);
 n_r_func = matlabFunction(n_r_sym);
 L_p_func = matlabFunction(L_p_sym);
 
-aero.set_FAx_func(FAx_func);
-aero.set_FAy_func(FAy_func);
-aero.set_FAz_func(FAz_func);
-aero.set_n_a_func(n_a_func);
-aero.set_n_r_func(n_r_func);
-aero.set_L_p_func(L_p_func);
+AeroObj.set_FAx_func(FAx_func);
+AeroObj.set_FAy_func(FAy_func);
+AeroObj.set_FAz_func(FAz_func);
+AeroObj.set_n_a_func(n_a_func);
+AeroObj.set_n_r_func(n_r_func);
+AeroObj.set_L_p_func(L_p_func);
 
 %% Environment Parameters
 
@@ -101,24 +101,24 @@ longitude = 83.3538; % deg
 elevation = 75; % m
 
 location = [latitude longitude elevation];
-env = Environment(location);
+EnvironmentObj = Environment(location);
 
 %% Flight Parameters
 
-flight = Flight();
-flight.set_tStep(0.01); % s
-flight.set_runClosedLoop(false);
-flight.set_calcXDots(true);
-flight.set_runLinearModel(false);
-flight.set_applyWind(false);
-flight.set_numStates(13);
-flight.set_numInputs(3);
-flight.set_simTime(12); % seconds
-flight.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
-flight.set_tSpan()
+FlightObj = Flight();
+FlightObj.set_tStep(0.01); % s
+FlightObj.set_runClosedLoop(true);
+FlightObj.set_calcXDots(true);
+FlightObj.set_runLinearModel(false);
+FlightObj.set_applyWind(false);
+FlightObj.set_numStates(13);
+FlightObj.set_numInputs(3);
+FlightObj.set_simTime(12); % seconds
+FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
+FlightObj.set_tSpan()
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
 
-flight.set_uSpan(zeros(length(flight.get_tSpan()), flight.get_numInputs()));
+FlightObj.set_uSpan(zeros(length(FlightObj.get_tSpan()), FlightObj.get_numInputs()));
 
 initial_state = [0; % px
                  0; % py
@@ -133,7 +133,7 @@ initial_state = [0; % px
                  0.001; % p
                  0; % q
                  0]; % r
-flight.set_initState(initial_state);
+FlightObj.set_initState(initial_state);
 
 % At this point, should be able to run a single nonlinear flight
 %flight.run_Flight()
@@ -219,15 +219,16 @@ compute_A = @(u, v, w, p, q, r, q0, q1, q2, q3, t)compute_A_fn(p,q,q0,q1,q2,q3,r
 compute_B = matlabFunction(B);
 
 %% Trim Point Generation
+FlightObj.set_runClosedLoop(false) % Needed to optimize trimpoints
 
 % csv generated from open rocket
 flight_path = 'Flight Profile\JVR_sim.csv';
 
 % Create a TrimPoints object by initializing it with the specified flight data file
-trim_points = TrimPoints(flight_path);
+TrimPointsObj = TrimPoints(flight_path);
 
 % Find the time of the "LIFTOFF" event in the flight data
-liftoff_time = trim_points.find_event_time("LIFTOFF");
+liftoff_time = TrimPointsObj.find_event_time("LIFTOFF");
 
 % Find the time of the burnout
 burnout_time = burn_time + liftoff_time;
@@ -237,7 +238,7 @@ trim_switching_period = 1;
 time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_period;
 
 % Generate trim batches for each time point in time_arr
-trim_points.generate_trim_batches(time_arr);
+TrimPointsObj.generate_trim_batches(time_arr);
 
 % Define the number of trim points to generate per time instance for 'u' variations
 num_trim_points_per_time = 13;
@@ -245,7 +246,7 @@ num_trim_points_per_time = 13;
 % Add 'u' (velocity) variations to each trim batch based on the specified parameters
 % This creates different trim points by varying the 'u' component within the defined spacing
 % THIS FUNCTION SHOULD BE CHANGED TO INCLUDE AERO MOMENTS
-trim_points.add_u_variations(time_arr, num_trim_points_per_time, aero, CG_t_handle, rho_t_handle);   
+TrimPointsObj.add_u_variations(time_arr, num_trim_points_per_time, AeroObj, CG_t_handle, rho_t_handle);   
 
 turn_batch_index = 1:length(time_arr);  % Define the indices of batches to which custom variations will be added
 turn_variation_name = "turn";  % Define the name of the custom variation to add
@@ -264,11 +265,11 @@ turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
 turn_include_base = true;
 
 % This will create additional trim points by varying the specified quaternion components
-trim_points.add_custom_variations(turn_batch_index, turn_variation_name, turn_variables, turn_data, turn_include_base);
+TrimPointsObj.add_custom_variations(turn_batch_index, turn_variation_name, turn_variables, turn_data, turn_include_base);
 
 % This consolidates all trim points into the obj.trim_points property for
 % further use AND convert all trim points to trimmed points.
-trim_points.generate_trim_points(Doof, env, flight, aero);
+TrimPointsObj.generate_trim_points(Doof, EnvironmentObj, FlightObj, AeroObj);
 
 % straight up Q and R
 straight_up_Q_arr = ones(9, 1);
@@ -315,13 +316,10 @@ maneuver_Q = diag(maneuver_Q_arr);
 maneuver_R = diag(maneuver_R_arr);
 
 % Generate K matrix for all trim points given Q and R matrixes
-trim_points.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
+TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
 
 % Visualize 'u' variations
-trim_points.draw_u_trim_points(0, burnout_time)
-
-
-
+% trim_points.draw_u_trim_points(0, burnout_time)
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
@@ -329,5 +327,26 @@ trim_points.draw_u_trim_points(0, burnout_time)
 % rocket state
 
 
+%% Setting Reference States
+% Define time array and variations for the test
+variations_cell_arr = {
+    {time_arr(6), {'r', 0.1745}, {'q0', 0.9962}, {'q3', 0.0872}};   % ~5th second
+    {time_arr(7), {'r', 0.1745}, {'q0', 0.9962}, {'q3', 0.0872}};   % ~6th second
+    {time_arr(8), {'q0', 0.9962}, {'q3', 0.0872}};                  % ~7th second
+    {time_arr(9), {'q0', 0.9962}, {'q3', 0.0872}};                  % ~8th second
+    {time_arr(10), {'r', -0.1745}, {'q0', 0.9962}, {'q3', 0.0872}}; % ~9th second
+    {time_arr(11), {'r', -0.1745}, {'q0', 0.9962}, {'q3', 0.0872}}  % ~10th second
+};
+
+% Call the set_reference_states method
+TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
+
+%% RunFlight
+FlightObj.set_runClosedLoop(true) % Set to true to simulate controlled flight
+log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
+FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
+
 %% Monte Carlo Parameters
+
+
 

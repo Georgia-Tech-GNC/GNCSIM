@@ -54,9 +54,6 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     applyWind = FlightObj.get_applyWind();
     %applyPeriodicWindGusts = FlightObj.get_applyPeriodicWindGusts();
     applyPeriodicWindGusts = false;
-    if runClosedLoop
-        trimpoint_struct_arr = TrimPointObj.get_trimpoint_struct_arr();
-    end
 
     %% Extract states
 
@@ -118,22 +115,22 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         % xRef = interp1(tSpan,xRefSpan,t);
 
         lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
-        [~, ~, K, xDot0, x0, u0] = LQR_gain_selector_v2(lin_x,t,trimpoint_struct_arr);
+        [K, x0, ~] = TrimPointObj.LQR_configuration_selector(lin_x, t);
         % del_u = r' - K*del_x;
 
-        % Old bug: used to be x0'  instead. Quite a devious bug, bc it doesnt error and del_u is just
+        % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
         % a matrix that can still be referenced
         del_x = lin_x - x0;
         del_u = -K*del_x;
 
-        MT_bx = del_u(1) + u0(1); % M_roll
+        MT_bx = del_u(1); % M_roll
 
         % Forcefully turning off pitch control in the FSW? In that case 
         % M_pitch would be zero in the nonlinear (truth) model
         % MT_by = del_u(2) + u0(2); % M_pitch
         MT_by = 0;
 
-        MT_bz = del_u(3) + u0(3); % M_yaw     
+        MT_bz = del_u(3); % M_yaw     
     else
         MT_bx = 0;
         MT_by = 0;
@@ -274,8 +271,10 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     %% Logging
 
     % add to log
-    % log.alpha = alpha;
-    % log.beta = beta;
+    if FlightObj.get_applyWind
+        log.alpha = alpha;
+        log.beta = beta;
+    end
     % log.D0 = D0;
     % log.L = L;
     % log.Di = Di;
@@ -293,9 +292,9 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     log.FA_b = FA_b';
     log.velFlat = p_f_dot'; % should be [1x3]
     log.accelFlat =quat_rotate(quatconj(q_bf),real(v_b_dot)');
-    % log.l_p = l_p;
-    % log.n_a = n_a;
-    % log.n_r = n_r;
+    %log.l_p = l_p;
+    %log.n_a = n_a;
+    %log.n_r = n_r;
     
 end
 

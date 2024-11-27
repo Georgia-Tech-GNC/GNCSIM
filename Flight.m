@@ -19,7 +19,7 @@ classdef Flight < handle
         uSpan; % length of t span by 3 array of double
         %MCxlsx; % filename of Excel sheet with Monte Carlo information
         windParam; % is set based on Monte Carlo data
-        options = odeset('Events',@rocket_events);
+        options; % odeevents options
         initState;
     end
 
@@ -150,6 +150,10 @@ classdef Flight < handle
 
         function obj= set_windParam(obj, wp)
             obj.windParam = wp; % No conditions check because this comes from Monte Carlo
+        end
+
+        function obj = set_options(obj)
+            obj.options = odeset('Events', @Flight.rocket_events);
         end
 
         function tstep= get_tStep(obj)
@@ -284,7 +288,7 @@ classdef Flight < handle
 
                 % Get initial state for each LQR time interval
                 if lqrIndex == 1
-                    initial_state = Flight.get_initState();
+                    initial_state = obj.get_initState();
                     lin_initial_state = initial_state([4 5 6 11 12 13 8 9 10]);
                 else
                     initial_state =prevFinalState;
@@ -299,6 +303,7 @@ classdef Flight < handle
 
                 % Solve nonlinear trajectory for the current time
                 % interval
+                obj.set_options()
                 ode_options = obj.get_options();
                 [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), ...
                                          local_tSpan, ...
@@ -314,7 +319,7 @@ classdef Flight < handle
                 tempMClog(lqrIndex).q_bf = traj.x(:, 7:10);
                 tempMClog(lqrIndex).angVel = traj.x(:, 11:13);
 
-                if config.calcXdots == 1
+                if obj.get_calcXdots()
                     tempMClog(lqrIndex).angleOfAttack = zeros([length(traj.t),1]); % alpha
                     tempMClog(lqrIndex).sideslipAngle = zeros([length(traj.t),1]); % beta
                     tempMClog(lqrIndex).CG = zeros([length(traj.t)],1);
@@ -327,21 +332,23 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
                         [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
-                        tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
-                        tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
+                        if obj.get_applyWind()  
+                            tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
+                            tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
+                        end
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;
                         tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
                         tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;
                         tempMClog(lqrIndex).MT_b(i,:) = modelLog.MT_b;
                         tempMClog(lqrIndex).ME_b(i,:) = modelLog.ME_b;
-                        tempMClog(lqrIndex).l_p(i,:) = modelLog.l_p;
-                        tempMClog(lqrIndex).n_a(i,:) = modelLog.n_a;
-                        tempMClog(lqrIndex).n_r(i,:) = modelLog.n_r;  
+                        %tempMClog(lqrIndex).l_p(i,:) = modelLog.l_p; % doesn't exist in rocketModel
+                        %tempMClog(lqrIndex).n_a(i,:) = modelLog.n_a; % doesn't exist in rocketModel
+                        %tempMClog(lqrIndex).n_r(i,:) = modelLog.n_r; % doesn't exist in rocketModel
                     end
                 end
 
                 if obj.get_runLinearModel()
-                % Solve linear trajectory for current time interval
+                    % Solve linear trajectory for current time interval
                     [linTraj.t, linTraj.x] = ode45(@(t,x) linearRocketModelrocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj),...
                                                 local_tSpan,...
                                                 lin_initial_state);
@@ -350,7 +357,7 @@ classdef Flight < handle
                     tempMClinLog(lqrIndex).q_bf = [ones(length(tempMClinLog(lqrIndex).time),1) linTraj.x(:,7:9)];
                     tempMClinLog(lqrIndex).angVel = linTraj.x(:,4:6);
 
-                    if obj.get_calcXdots == 1
+                    if obj.get_calcXdots()
                         tempMClinLog(lqrIndex).v_f = zeros(length(tempMClinLog(lqrIndex).time),3);
                         tempMClinLog(lqrIndex).rollMoment = zeros(length(tempMClinLog(lqrIndex).time));
                         tempMClinLog(lqrIndex).pitchMoment = zeros(length(tempMClinLog(lqrIndex).time));
@@ -377,7 +384,7 @@ classdef Flight < handle
                 tempLoggedData.q_bf = vertcat(tempMClog.q_bf);
                 tempLoggedData.angVel = vertcat(tempMClog.angVel);
         
-                if config.calcXdots == 1
+                if obj.get_calcXdots()
                     tempLoggedData.angleOfAttack = vertcat(tempMClog.angleOfAttack);
                     tempLoggedData.sideslipAngle = vertcat(tempMClog.sideslipAngle);
                     tempLoggedData.CG = vertcat(tempMClog.CG);
@@ -391,13 +398,13 @@ classdef Flight < handle
                     
                 end
         
-                if testConfig.runLinearModel
+                if obj.get_runLinearModel()
                     tempLinLoggedData.time = vertcat(tempMClinLog.time);
                     tempLinLoggedData.velBody = vertcat(tempMClinLog.velBody);
                     tempLinLoggedData.q_bf = vertcat(tempMClinLog.q_bf);
                     tempLinLoggedData.angVel = vertcat(tempMClinLog.angVel);
         
-                    if config.calcXdots == 1
+                    if obj.get_calcXdots()
                         tempLinLoggedData.v_f = vertcat(tempMClinLog.v_f);
                         tempLinLoggedData.rollMoment = vertcat(tempMClinLog.rollMoment);
                         tempLinLoggedData.pitchMoment = vertcat(tempMClinLog.pitchMoment);
@@ -406,7 +413,7 @@ classdef Flight < handle
                     end
                 end
                 log.loggedData = tempLoggedData;
-                if testConfig.runLinearModel
+                if obj.get_runLinearModel()
                     log.linLoggedData = tempLinLoggedData;
                 end
         
@@ -418,7 +425,7 @@ classdef Flight < handle
             toc
         end
 
-        function []= plot_sim_dashboard(obj, log, Rocket, Environment)
+        function [] = plot_sim_dashboard(obj, log, Rocket, Environment)
 
             % Plot a flight in a dashboard
             figure;
@@ -601,14 +608,15 @@ classdef Flight < handle
             grid on
             legend('l_p','n_a','n_r','MA_b')
         end
+    end
 
-        function [value, isterminal, direction]= rocket_events(t,x)
-            %rocket_events - called by ode45 to determine various rocket
-            %events, i.e., rocket hitting ground
-            value = x(1); % Define event as px = 0
-            isterminal=1; %stop integration when event happens
-            direction = -1; %only stop is px is increasing (altitude is decreasing)
+    methods (Static)
+        function [value, isterminal, direction] = rocket_events(t, x)
+            % rocket_events - Event function for ODE solver
+            % Determines when the rocket reaches the ground (px = 0)
+            value = x(1);          % Event condition (e.g., altitude)
+            isterminal = 1;        % Stop integration when event occurs
+            direction = -1;        % Detect only when altitude is decreasing
         end
-
     end
 end

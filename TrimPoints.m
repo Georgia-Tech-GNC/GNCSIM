@@ -48,7 +48,12 @@ classdef TrimPoints < handle
 
         % State Dictionary
         % A containers.Map object mapping state names (as strings) to their corresponding indices.
-        state_dict    
+        state_dict  
+
+        % An array of structs, each containing the reference state for
+        % a second of controlled flight.
+        reference_states
+
     end
 
     methods
@@ -122,7 +127,7 @@ classdef TrimPoints < handle
                 time = time_arr(ii);
                 
                 % Get the vertical state as the base state
-                base_state = obj.get_vertical_state();
+                base_state = TrimPoints.get_vertical_state();
                 
                 % Retrieve the velocity 'u' and thrust at the specified time
                 [u, thrust] = obj.get_info(time);
@@ -594,7 +599,7 @@ classdef TrimPoints < handle
                 end
         
                 % Perform optimization to find the optimal state vector (ZStar) that minimizes the cost function
-                [ZStar, f0] = fminsearch(@(Zguess) obj.cost_rocket_model(Zguess, trim_point, t, rocket, env, flight, aero, H), ...
+                [ZStar, f0] = fminsearch(@(Zguess) TrimPoints.cost_rocket_model(Zguess, trim_point, t, rocket, env, flight, aero, H), ...
                                           trim_point, ...
                                           optimset('TolX', 1e-10, 'MaxFunEvals', 100, 'MaxIter', 100, 'Display', 'off'));
                 
@@ -741,6 +746,137 @@ classdef TrimPoints < handle
             % Release the hold on the current figure
             hold off;
         end
+
+        function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
+            % LQR_config_selector Gets the current LQR config based on the current state and time
+            %
+            % x - current state (9x1)
+            % t - current time
+    
+            % Variables from input
+            u = x(1);
+            v = x(2);
+            w = x(3);
+            q1 = x(7);
+            q2 = x(8);
+            q3 = x(9);
+        
+            % Set t to a nonzero integer (1-12)
+            t = round(t);
+            if (t < 1.0)
+                t = 1.0;
+            end
+        
+            % Get airspeed
+            airspeed = sqrt(u^2 + v^2 + w^2);
+        
+            % Find the matching time index in trimmed_points struct
+            t_values = round([obj.trimmed_points.time]);  % Extract all t values into an array
+            ind = (t_values == t);  % Compare t_values to t
+    
+            % Check if any time matches
+            if ~any(ind)
+                K = zeros(size([obj.trimmed_points(1).K]));
+                x0 = zeros(size(x));
+            end
+        
+            % Calculate the differences for the matching rows
+            speedDiff = arrayfun(@(s) abs(sqrt(s.states(1)^2 + s.states(2)^2 + s.states(3)^2) - airspeed), obj.trimmed_points(ind));
+            q1Diff = arrayfun(@(s) abs(s.states(8) - q1), obj.trimmed_points(ind));
+            q2Diff = arrayfun(@(s) abs(s.states(9) - q2), obj.trimmed_points(ind));
+            q3Diff = arrayfun(@(s) abs(s.states(10) - q3), obj.trimmed_points(ind));
+            distance = sqrt(speedDiff.^2 + q1Diff.^2 + q2Diff.^2 + q3Diff.^2);
+        
+            % Find the minimum distance and its index
+            [~, min_index] = min(distance);
+        
+            % Extract the corresponding K gain
+            K_sublist = {obj.trimmed_points(ind).K};
+            K = K_sublist{min_index};
+
+            % Find the matching time index in reference_state struct
+            t_values = round([obj.reference_states.time]);  % Extract all t values into an array
+            ind = (t_values == t);  % Compare t_values to t
+            
+            % Construct x0 (reference state vector)
+            reference_states_index = logical([1 1 1 1 1 1 0 1 1 1 0 0 0]); % Getting u, v, w, p, q, r, q1, q2, q3
+            x0 = obj.reference_states(ind).states(reference_states_index);  % Getting reference states for the correct second
+            
+            % Construct u0 (reference control vector)
+            u0 = obj.reference_states(ind).states(end-2:end); % Getting reference controls for the correct second
+        end
+
+        function obj = set_reference_states(obj, time_arr, variations_cell_arr)
+            % Sets Reference States Based on Time Array and Variations
+            %
+            % This method initializes the reference states for the object based on the
+            % provided `time_arr` and `variations_cell_arr`. Each reference state is created
+            % using a predefined template and adjusted based on the variations provided.
+            %
+            % Inputs:
+            %   time_arr            - Array of time values for the reference states (1D numeric array).
+            %   variations_cell_arr - Cell array of variations to modify the reference states.
+            %                         Format: {{time, {'state', value}, {'state', value}, ...}, ...}
+
+            % Template for an individual reference_state struct
+            reference_state_template = struct('time', [], 'states', []);
+            
+            % Initialize total_reference_states counter
+            total_reference_states = length(time_arr);
+            
+            % Preallocate the reference_state array with the total number of reference states
+            obj.reference_states = repmat(reference_state_template, total_reference_states, 1);
+
+            % Populate reference states with default values
+            for i = 1:length(time_arr)
+                obj.reference_states(i).time = time_arr(i);
+                obj.reference_states(i).states = TrimPoints.get_vertical_state();
+            end
+
+            % Iterate over each variation entry to adjust the reference states
+            for i = 1:length(variations_cell_arr)
+                % Find the index of the variation time in the time array
+                variation_index = find(time_arr == variations_cell_arr{i}{1}, 1);
+                if isempty(variation_index)
+                    error('No matching time found for variation.');
+                end
+                
+                % Apply each variation to the appropriate state
+                for j = 2:length(variations_cell_arr{i})
+                    state_index = obj.state_dict(variations_cell_arr{i}{j}{1});
+                    obj.reference_states(variation_index).states(state_index) = variations_cell_arr{i}{j}{2};
+                end
+            end        
+        end
+
+        function reference_state = get_reference_state(obj, time)
+            % Retrieves the Reference State for a Specified Time
+            %
+            % This method searches the reference states for the given time and
+            % returns the corresponding state. An error is raised if the time 
+            % is not found in the reference states.
+            %
+            % Inputs:
+            %   time - The time value for which the reference state is requested (double).
+            %
+            % Output:
+            %   reference_state - The state corresponding to the specified time.
+
+            % Validate that the given time exists in the reference state array
+            if ~ismember(time, [obj.reference_states.time])
+                % Raise an error if no matching time is found
+                assert(false,'ERROR: No matching time found in the reference state array\n');
+                return;
+            end
+
+            % Find the index corresponding to the given time
+            index = find([obj.reference_states.time] == time);
+
+            % Retrieve the reference state at the found index
+            reference_state = obj.reference_states(index).states;
+        end 
+
+        
     end
 
     methods (Static)
@@ -854,6 +990,6 @@ classdef TrimPoints < handle
             Q(18) = sqrt(q0^2 + q1^2 + q2^2 + q3^2) - 1;
 
             f0 = Q' * H * Q; % Compute the cost function
-        end 
+        end
     end
 end

@@ -2,9 +2,8 @@ classdef MonteCarlo
 
     properties (Access = private)
         % Monte Carlo Hyperparameters
-        numRuns; 
         runGaussian; % boolean
-        runSweep; %boolean
+        runSweep; % boolean
 
         % Rocket Parameters - Mean Value
         wetMass;
@@ -117,12 +116,23 @@ classdef MonteCarlo
             obj.windIndex = value;
         end
 
+        function logMonteCarlo = runMonteCarlo(obj, numRuns, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
+            
+            logMonteCarlo = 
+            for i = 1:numRuns
+                log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj);
+            end
+        end
+
+    end
+
+    methods (Static)
         function randomValue = generateGaussianRandom(meanValue, stdValue)
             % generateGaussianRandom - Generate a Gaussian random number
             %
             % Inputs:
             %   meanValue - The mean value (expected value)
-            %   stdValue  - The standard deviation (sigma)
+            %   stdValue  - The standard deviation (3sigma)
             %
             % Outputs:
             %   randomValue - A single Gaussian random number
@@ -133,6 +143,5 @@ classdef MonteCarlo
             % Generate a Gaussian random number
             randomValue = meanValue + sigma * randn();
         end
-
     end
 end
