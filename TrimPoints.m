@@ -748,10 +748,21 @@ classdef TrimPoints < handle
         end
 
         function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
-            % LQR_config_selector Gets the current LQR config based on the current state and time
+            % LQR_configuration_selector Selects the appropriate LQR configuration based on the current state and time.
             %
-            % x - current state (9x1)
-            % t - current time
+            % INPUTS:
+            % obj - The object containing trimmed_points and reference_states structures with pre-computed data.
+            % x   - Current state vector (9x1) consisting of:
+            %       [u, v, w, p, q, r, q1, q2, q3], where:
+            %           u, v, w: Velocity components (m/s)
+            %           p, q, r: Angular velocity components (rad/s)
+            %           q1, q2, q3: Quaternion components representing orientation.
+            % t   - Current time (scalar, in seconds). The function rounds `t` to the nearest integer.
+            %
+            % OUTPUTS:
+            % K   - LQR gain matrix corresponding to the closest matching trimmed condition.
+            % x0  - Reference state vector corresponding to the matched condition.
+            % u0  - Reference control vector corresponding to the matched condition.
     
             % Variables from input
             u = x(1);
