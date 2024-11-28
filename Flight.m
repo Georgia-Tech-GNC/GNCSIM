@@ -9,7 +9,6 @@ classdef Flight < handle
         calcXDots; % boolean
         runLinearModel; % boolean
         applyWind; % boolean
-        %useLatinHyperCubeSampling; % boolean
         numStates = 13; 
         numInputs = 3;
         localSimTime; % seconds (double)
@@ -17,7 +16,6 @@ classdef Flight < handle
         tSpan; % Vector of doubles
         gravity = 9.81 % m/(s^2)
         uSpan; % length of t span by 3 array of double
-        %MCxlsx; % filename of Excel sheet with Monte Carlo information
         windParam; % is set based on Monte Carlo data
         options; % odeevents options
         initState;
@@ -68,15 +66,6 @@ classdef Flight < handle
                 obj.applyWind = apply_wind;
             end
         end
-
-        % Should be refactored
-        % function obj= set_useLatinHyperCubeSampling(obj, latin_sample)
-        %     if ~islogical(latin_sample)
-        %         error('useLatinHyperCubeSampling must be a logical value.')
-        %     else
-        %         obj.useLatinHyperCubeSampling = latin_sample;
-        %     end
-        % end
 
         function obj= set_numStates(obj, num_states)
             if ~isnumeric(num_states) || num_states < 1
@@ -139,15 +128,6 @@ classdef Flight < handle
             end
         end
 
-        % Should be refactored
-        % function obj= set_MCxlsx(obj, fn)
-        %     if ~ischar(fn)
-        %         error('MCxlsx must be a filename in the form of a char array')
-        %     else
-        %         obj.MCxlsx = fn;
-        %     end
-        % end
-
         function obj= set_windParam(obj, wp)
             obj.windParam = wp; % No conditions check because this comes from Monte Carlo
         end
@@ -175,11 +155,6 @@ classdef Flight < handle
         function aw = get_applyWind(obj)
             aw = obj.applyWind;
         end
-
-        % Should be refactored
-        % function ulhcs = get_useLatinHyperCubeSampling(obj)
-        %     ulhcs = obj.useLatinHyperCubeSampling;
-        % end
 
         function ns = get_numStates(obj)
             ns = obj.numStates;
@@ -212,53 +187,10 @@ classdef Flight < handle
         function is = get_initState(obj)
             is = obj.initState;
         end
-    
-        % Should be refactored
-        % function mcexcel = get_MCxlsx(obj)
-        %     mcexcel = obj.MCxlsx;
-        % end
 
         function opts = get_options(obj)
             opts = obj.options;
         end
-
-        % This function should be rolled into the Monte Carlo class and
-        % refactored
-        % function mcParams = getRandomSample(xlsxFile,runIndex)
-        %     % getRandomSample
-        %     xlsxFile = readcell(xlsxFile);
-        % 
-        %     gustAmplitude = random(makedist(xlsxFile{2*runIndex,4},'mu',xlsxFile{2*runIndex,5},'sigma',xlsxFile{2*runIndex,6}/3));
-        %     gustLength = random(makedist(xlsxFile{1+2*runIndex,4},'mu',xlsxFile{1+2*runIndex,5},'sigma',xlsxFile{1+2*runIndex,6}/3));
-        %     windParameter = [gustAmplitude gustLength];
-        % 
-        %     % INSERT NEW MONTE CARLO PARAM (READ FROM EXCEL SHEET) HERE
-        %     wetMass = 38.87;% update to read from excel sheet
-        %     dryMass = 30.96; % update to read from excel sheet
-        %     peakThrust = 2262; % update to read from excel sheet
-        %     burnTime = 13.1; % update to read from excel sheet
-        %     % thrustCurve = generate_thrust_curve(peakThrust, burnTime);
-        %     wetRollMOI = 0.2109; % update to read from excel sheet
-        %     wetPitchMOI = 21.1212; % update to read from excel sheet
-        %     wetYawMOI = 21.1202; % update to read from excel sheet
-        %     dryRollMOI = 0.2036; % update to read from excel sheet
-        %     dryPitchMOI = 18.99; % update to read from excel sheet
-        %     dryYawMOI = 18.988; % update to read from excel sheet
-        % 
-        %     % UPDATE OUTPUT STRUCT
-        %     mcParams.windParam = windParameter;
-        %     mcParams.wetMass = wetMass;
-        %     mcParams.dryMass = dryMass;
-        %     mcParams.peakThrust = peakThrust;
-        %     mcParams.burnTime = burnTime;
-        %     mcParams.thrustCurve = thrustCurve;
-        %     mcParams.wetMOI = [wetRollMOI 0 0;
-        %                         0 wetPitchMOI 0;
-        %                         0 0 wetYawMOI];
-        %     mcParams.dryMOI = [dryRollMOI 0 0;
-        %                         0 dryPitchMOI 0;
-        %                         0 0 dryYawMOI];
-        % end
 
         function log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj)
             tic
@@ -275,13 +207,6 @@ classdef Flight < handle
             if obj.get_runLinearModel()
                 tempMClinLog(numIntervals) = struct();
             end
-                
-            % The below will be rolled into the Monte Carlo class
-            % if obj.get_useLatinHyperCubeSampling()
-            %     mcParams = getLatinHyperCubeSample(obj.get_MCxlsx(), runIndex);
-            % else
-            %     mcParams = getRandomSample(obj.get_MCxlsx(), runIndex);
-            % end
 
             for lqrIndex =  1:numIntervals
                 fprintf('Current LQR config: %d \n', lqrIndex);
