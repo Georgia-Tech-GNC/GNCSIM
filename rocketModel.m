@@ -168,7 +168,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     % Applying Wind
     if applyWind
             % Discrete Wind Gust Model
-            [Vm, dm] = EnvironmentObj.get_wind_aspects(EnvironmentObj);
+            [Vm, dm] = EnvironmentObj.get_wind_aspects();
 
             % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
             udir = [0 1 0];
@@ -191,7 +191,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
             normXu = Vm*mod(t,T);
             
             % Calculating Wind Speed with Discrete Gust Model
-            windspeed = EnvironmentObj.wind_speed-gust(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
+            windspeed = EnvironmentObj.wind_speed_gust(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
         
         end
 

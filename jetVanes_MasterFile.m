@@ -100,8 +100,11 @@ latitude = 31.2732; % deg
 longitude = 83.3538; % deg
 elevation = 75; % m
 
+% Use default location? (if not, then python is needed to generate the new location data)
+use_default = true;
+
 location = [latitude longitude elevation];
-EnvironmentObj = Environment(location);
+EnvironmentObj = Environment(location, use_default);
 
 %% Flight Parameters
 
@@ -110,7 +113,7 @@ FlightObj.set_tStep(0.01); % s
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);
-FlightObj.set_applyWind(false);
+FlightObj.set_applyWind(true);
 FlightObj.set_numStates(13);
 FlightObj.set_numInputs(3);
 FlightObj.set_simTime(12); % seconds
