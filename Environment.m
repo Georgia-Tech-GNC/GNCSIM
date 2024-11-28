@@ -25,7 +25,7 @@ classdef Environment
     end
 
     methods
-        function obj = Environment(location)
+        function obj = Environment(location, use_default)
             %   Constructing Default Environment Class
             %   
             %   The location must be a 1X3 vector with the format
@@ -49,13 +49,21 @@ classdef Environment
             % Updating Wind Parameters
             obj.wind_parameters = cell2mat(data(2:end,2:5));
 
-            % Creating Data with Rocketpy
-            filename = fullfile(currentDir, 'Environment', 'generate_environment_data.py');
-            [~, ~] = system(['python "' filename '" ' num2str(latitude) ' ' num2str(longitude) ' ' num2str(elevation)]);
+            % Choosing Index
+            obj.index = 1;
 
-            % Extracting Data
-            filename = fullfile(currentDir, 'Environment', 'EnvironmentData.csv'); 
+            if ~use_default
+                % Creating Data with Rocketpy
+                filename = fullfile(currentDir, 'Environment', 'generate_environment_data.py');
+                [~, ~] = system(['python "' filename '" ' num2str(latitude) ' ' num2str(longitude) ' ' num2str(elevation)]);
 
+                % Extracting Data
+                filename = fullfile(currentDir, 'Environment', 'EnvironmentData.csv'); 
+            else
+                % Extracting Data
+                filename = fullfile(currentDir, 'Environment', 'EnvironmentData_default.csv');
+            end
+            
             warning('off', 'all');
             data = readtable(filename);
             warning('on', 'all');
@@ -69,7 +77,7 @@ classdef Environment
 
         end
 
-        function wind_speed = wind_speed_change(V_m, d_m, x)
+        function wind_speed = wind_speed_change(obj, V_m, d_m, x)
             % Wind Speed Change: returns instantanous wind speed based on parameters that describe the speed and length of the gust
             % This function models a change in wind speed using a 1 -
             % cosine wave. The maximum wind speed is defined by V_m and the
@@ -82,12 +90,12 @@ classdef Environment
                 wind_speed = 0;
             elseif (0 <= x && x < d_m)
                 wind_speed = (V_m/2)*(1 - cos((pi*x)/d_m));
-            elseif (d_m <= x)
+            else
                 wind_speed = V_m;
             end
         end
 
-        function wind_speed = wind_speed_gust(V_m, d_m, x)
+        function wind_speed = wind_speed_gust(obj, V_m, d_m, x)
             % Wind Speed Change: returns instantanous wind speed based on parameters that describe the speed and length of the gust
             % This function models a change in wind speed using a symmetric 1 -
             % cosine wave. The maximum wind speed is defined by V_m and the
