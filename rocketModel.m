@@ -56,7 +56,6 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     applyPeriodicWindGusts = false;
 
     %% Extract states
-
     % Position in flat Earth frame, "f" (m)
     px = x(1);
     py = x(2);
@@ -206,9 +205,17 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
         beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
 
-        [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+        if va_x < 0
+            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*va_x, va_y, va_z, wx, wz, rho, CG);
+        else
+            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+        end
     else
-        [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+        if vx < 0
+            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*vx, vy, vz, wx, wz, rho, CG);
+        else
+            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+        end
     end
 
     %% External Moments
@@ -267,6 +274,16 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     
     % stack components
     xDot = [p_f_dot; v_b_dot; q_bf_dot; wbf_b_dot];
+
+    % Kinematic constraints - necessary if initial thrust is lower than mg
+    if t < 1 % Only when initially launching...
+        if xDot(1) < 0
+            xDot(1) = 0; % prevents rocket from sinking lower than its launch altitude
+        end
+        if xDot(4) < 0
+            xDot(4) = 0; % prevents rocket from having AOA = 180 deg
+        end
+    end
     
     %% Logging
 

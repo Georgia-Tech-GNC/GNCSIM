@@ -122,7 +122,7 @@ classdef Rocket < handle
         end
             
         function dryMass = get_dryMass(obj)
-            dryMass = obj.wetMass;
+            dryMass = obj.dryMass;
         end
 
         function dryInertias = get_dryMOI(obj)

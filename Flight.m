@@ -228,12 +228,22 @@ classdef Flight < handle
 
                 % Solve nonlinear trajectory for the current time
                 % interval
-                obj.set_options()
-                ode_options = obj.get_options();
-                [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), ...
-                                         local_tSpan, ...
-                                         initial_state, ...
-                                         ode_options);
+                obj.set_options();
+                % ode_options = obj.get_options();
+                % [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), ...
+                %                         local_tSpan, ...
+                %                         initial_state, ...
+                %                         ode_options);
+                traj.t = [];
+                traj.x = [];
+                x = initial_state;
+                for time = local_tSpan
+                    traj.t = [traj.t; time];
+                    traj.x = [traj.x; x'];
+                    [xDot, ~] = rocketModel(time, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj);
+                    x = x + xDot*obj.get_tStep();
+                end
+
                 prevFinalState = traj.x(end, :)';
              
                 % Log nonlinear traj data for current LQR interval to
