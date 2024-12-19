@@ -72,26 +72,28 @@ Doof.set_thrustCurve(tc);
 AeroObj = Aerodynamics();
 
 syms u v w rho CG p r
-FAx_sym = (0.231*((v/u)^2)*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (0.02563*rho*(u^2 + v^2 + w^2)*(v/u)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^2)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2);
-FAy_sym = (-0.231*((v/u))*rho*(u^2 + v^2 + w^2))/(3.59306 + sqrt(1 - (8.3939e-6*(u^2 + v^2 + w^2)))) + (-0.02563*rho*(u^2 + v^2 + w^2)*(asin((r/(u^2+v^2+w^2))*(3.147-CG))))/sqrt(1.7976 - (6.889*10e-6)*(u^2+v^2+w^2)) - 0.08131*rho*((v/u)^3)*(u^2+v^2+w^2) - 0.001364*rho*(u^2 + v^2 + w^2)*(v/u);
-FAz_sym = 0.01*sin(u); % essentially a noise term
-n_a_sym = (3.146*rho*(u^2 + v^2 + w^2))/(27.816 + 16.834*sqrt(1-(8.939*10^-6)*(u^2+v^2+w^2))) - (1.0679*10^-4)*rho*(u^2+v^2+w^2)*(v/u) + (1.695*10^-4)*rho*(u^2+v^2+w^2);
-n_r_sym = ((0.0349*rho*(u^2+v^2+w^2))/(1+sqrt(1.798-(6.889*10^-6)*(u^2+v^2+w^2))))*asin((r/(u^2+v^2+w^2))*(3.1473-CG))*(10.3264 - 3.281*CG);
-L_p_sym = (0.02064*p)/sqrt(1-(8.6372*10^-6)*(u^2+v^2+w^2));
+Vars = [u v w rho CG p r];
 
-FAx_func = matlabFunction(FAx_sym);
-FAy_func = matlabFunction(FAy_sym);
-FAz_func = matlabFunction(FAz_sym);
-n_a_func = matlabFunction(n_a_sym);
-n_r_func = matlabFunction(n_r_sym);
-L_p_func = matlabFunction(L_p_sym);
+FAx_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*sin(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(v/u));
+FAy_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
+FAz_b_sym = 0;
+MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
+MAy_b_sym = 0;
+MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
 
-AeroObj.set_FAx_func(FAx_func);
-AeroObj.set_FAy_func(FAy_func);
-AeroObj.set_FAz_func(FAz_func);
-AeroObj.set_n_a_func(n_a_func);
-AeroObj.set_n_r_func(n_r_func);
-AeroObj.set_L_p_func(L_p_func);
+FAx_b_func = matlabFunction(FAx_b_sym, vars=Vars);
+FAy_b_func = matlabFunction(FAy_b_sym, vars=Vars);
+FAz_b_func = matlabFunction(FAz_b_sym, vars=Vars);
+MAx_b_func = matlabFunction(MAx_b_sym, vars=Vars);
+MAy_b_func = matlabFunction(MAy_b_sym, vars=Vars);
+MAz_b_func = matlabFunction(MAz_b_sym, vars=Vars);
+
+AeroObj.set_FAx_func(FAx_b_func);
+AeroObj.set_FAy_func(FAy_b_func);
+AeroObj.set_FAz_func(FAz_b_func);
+AeroObj.set_MAx_func(MAx_b_func);
+AeroObj.set_MAy_func(MAy_b_func);
+AeroObj.set_MAz_func(MAz_b_func);
 
 %% Environment Parameters
 
@@ -160,12 +162,12 @@ EOM_no_aero = [(1/m)*(m*g*(1-2*(q0^2+q1^2)) + 0.95*u4) + r*v - q*w - udot,
      0.5*(q*q0 - r*q1 + p*q3) - q2dot,
      0.5*(r*q0 + q*q1 - p*q2) - q3dot];
 
-FAx = FAx_sym;
-FAy = FAy_sym;
-FAz = FAz_sym;
-MAx = L_p_sym;
-MAy = 0;
-MAz = n_a_sym + n_r_sym;
+FAx = FAx_b_sym;
+FAy = FAy_b_sym;
+FAz = FAz_b_sym;
+MAx = MAx_b_sym;
+MAy = MAy_b_sym;
+MAz = MAz_b_sym;
 
 EOM_only_aero = [(1/m)*FAx,
                  (1/m)*FAy,
@@ -175,7 +177,7 @@ EOM_only_aero = [(1/m)*FAx,
                  (1/Izz)*MAz,
                  0,
                  0,
-                 0]; % This is the only thing that needs to be configured for a new vehicle
+                 0]; 
 
 CG_t = final_CG + (initial_CG - final_CG) * (burn_time - t) / burn_time;
 Ixx_t = dryRollMOI + (wetRollMOI - dryRollMOI) * (burn_time - t) / burn_time;

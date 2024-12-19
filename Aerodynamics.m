@@ -6,9 +6,9 @@ classdef Aerodynamics < handle
         FAx_func;
         FAy_func;
         FAz_func;
-        n_a_func;
-        n_r_func;
-        L_p_func;
+        MAx_func;
+        MAy_func;
+        MAz_func;
     end
 
     methods
@@ -32,41 +32,41 @@ classdef Aerodynamics < handle
             obj.FAz_func = FAz_function;
         end
 
-        function obj= set_n_a_func(obj, na_function)
-            obj.n_a_func = na_function;
+        function obj= set_MAx_func(obj, MAx_function)
+            obj.MAx_func = MAx_function;
         end
 
-        function obj= set_n_r_func(obj, nr_function)
-            obj.n_r_func = nr_function;
+        function obj= set_MAy_func(obj, MAy_function)
+            obj.MAy_func = MAy_function;
         end
 
-        function obj= set_L_p_func(obj, Lp_function)
-            obj.L_p_func = Lp_function;
+        function obj= set_MAz_func(obj, MAz_function)
+            obj.MAz_func = MAz_function;
         end
 
         % Getters
         function FAx_function = get_FAx_func(obj)
-            FAx = obj.FAx_func;
+            FAx_function = obj.FAx_func;
         end
 
         function FAy_function = get_FAy_func(obj)
-            FAy = obj.FAy_func;
+            FAy_function = obj.FAy_func;
         end
 
         function FAz_function = get_FAz_func(obj)
-            FAz = obj.FAz_func;
+            FAz_function = obj.FAz_func;
         end
 
-        function na_function = get_n_a_func(obj)
-            na_function = obj.n_a_func;
+        function MAx_function = get_MAx_func(obj)
+            MAx_function = obj.MAx_func;
         end
 
-        function nr_function = get_n_r_func(obj)
-            nr_function = obj.n_r_func;
+        function MAy_function = get_MAy_func(obj)
+            MAy_function = obj.MAy_func;
         end
 
-        function Lp_function = get_L_p_func(obj)
-            Lp_function = obj.L_p_func;
+        function MAz_function = get_MAz_func(obj)
+            MAz_function = obj.MAz_func;
         end
 
         function [FAb, MAb]= calcAeroBodyFrame_JV(obj, u, v, w, p, r, rho, CG)
@@ -78,22 +78,22 @@ classdef Aerodynamics < handle
             FAy_function = obj.FAy_func;
             FAz_function = obj.FAz_func;
 
-            FAx = FAx_function(CG, r, rho, u, v, w);
-            FAy = FAy_function(CG, r, rho, u, v, w);
-            FAz = FAz_function(u);
+            FAx = FAx_function(u, v, w, rho, CG, p, r);
+            FAy = FAy_function(u, v, w, rho, CG, p, r);
+            FAz = FAz_function(u, v, w, rho, CG, p, r);
             
             FAb = [FAx; FAy; FAz];
 
             % Aerodynamic moments
-            na_function = obj.n_a_func;
-            nr_function = obj.n_r_func;
-            Lp_function = obj.L_p_func;
+            MAx_function = obj.MAx_func;
+            MAy_function = obj.MAy_func;
+            MAz_function = obj.MAz_func;
 
-            n_a = na_function(rho, u, v, w);
-            n_r = nr_function(CG, r, rho, u, v, w);
-            L_p = Lp_function(p, u, v, w);
+            MAx_b = MAx_function(u, v, w, rho, CG, p, r);
+            MAy_b = MAy_function(u, v, w, rho, CG, p, r);
+            MAz_b = MAz_function(u, v, w, rho, CG, p, r);
 
-            MAb = [L_p; 0; n_a + n_r];
+            MAb = [MAx_b; MAy_b; MAz_b];
         end
 
     end
