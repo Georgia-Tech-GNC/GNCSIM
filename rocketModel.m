@@ -110,7 +110,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
     % issues. 
     % TODO: Add interface with trim points
-    if runClosedLoop
+    if (runClosedLoop && (t > 1))
         % xRef = interp1(tSpan,xRefSpan,t);
 
         lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
@@ -119,6 +119,10 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
 
         % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
         % a matrix that can still be referenced
+        disp(x0)
+        disp(K)
+        disp(lin_x)
+
         del_x = lin_x - x0;
         del_u = -K*del_x;
 
