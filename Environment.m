@@ -167,6 +167,10 @@ classdef Environment
             wind_speed_final = interp1(obj.altitudes, obj.wind_speed, altitude_selected);
         end
 
+        function [alts] = get_altitudes(obj)
+            alts = obj.altitudes;
+        end
+
         function obj = set_index(obj, value)
             validateattributes(value, {'numeric'}, {'integer', 'positive', '<=', size(obj.wind_parameters, 1)}, 'set_index', 'index');
             obj.index = value;

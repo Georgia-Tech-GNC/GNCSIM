@@ -119,9 +119,6 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
 
         % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
         % a matrix that can still be referenced
-        disp(x0)
-        disp(K)
-        disp(lin_x)
 
         del_x = lin_x - x0;
         del_u = -K*del_x;

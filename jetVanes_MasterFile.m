@@ -310,11 +310,11 @@ maneuver_Q_arr(5) = 0.01; % q
 maneuver_Q_arr(6) = 1000; % r
 maneuver_Q_arr(7) = 1000; % q1
 maneuver_Q_arr(8) = 0.01; % q2
-maneuver_Q_arr(9) = 1000; % q3
+maneuver_Q_arr(9) = 10000; % q3
 
-maneuver_R_arr(1) = 0.001; % M_roll
+maneuver_R_arr(1) = 0.01; % M_roll
 maneuver_R_arr(2) = 1000; % M_pitch
-maneuver_R_arr(3) = 0.01; % M_yaw
+maneuver_R_arr(3) = 0.001; % M_yaw
 maneuver_R_arr(4) = 1000; % Thrust
 
 maneuver_Q = diag(0.01*maneuver_Q_arr);
@@ -348,7 +348,7 @@ TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 
 %% RunFlight
 FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(true);
+FlightObj.set_applyWind(false);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
