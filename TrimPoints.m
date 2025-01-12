@@ -885,9 +885,7 @@ classdef TrimPoints < handle
 
             % Retrieve the reference state at the found index
             reference_state = obj.reference_states(index).states;
-        end 
-
-        
+        end    
     end
 
     methods (Static)
