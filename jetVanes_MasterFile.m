@@ -224,8 +224,6 @@ compute_A = @(u, v, w, p, q, r, q0, q1, q2, q3, t)compute_A_fn(p,q,q0,q1,q2,q3,r
 compute_B = matlabFunction(B);
 
 %% Trim Point Generation
-FlightObj.set_runClosedLoop(false) % Needed to optimize trimpoints
-
 % csv generated from open rocket
 flight_path = 'Flight Profile\JVR_sim.csv';
 
@@ -239,42 +237,49 @@ liftoff_time = TrimPointsObj.find_event_time("LIFTOFF");
 burnout_time = burn_time + liftoff_time;
 
 trim_switching_period = 1;
-
+    
 time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_period;
 
-% Generate trim batches for each time point in time_arr
-TrimPointsObj.generate_trim_batches(time_arr);
+FlightObj.set_runClosedLoop(false) % Needed to optimize trimpoints
 
-% Define the number of trim points to generate per time instance for 'u' variations
-num_trim_points_per_time = 13;
-
-% Add 'u' (velocity) variations to each trim batch based on the specified parameters
-% This creates different trim points by varying the 'u' component within the defined spacing
-% THIS FUNCTION SHOULD BE CHANGED TO INCLUDE AERO MOMENTS
-TrimPointsObj.add_u_variations(time_arr, num_trim_points_per_time, AeroObj, CG_t_handle, rho_t_handle);   
-
-turn_batch_index = 1:length(time_arr);  % Define the indices of batches to which custom variations will be added
-turn_variation_name = "turn";  % Define the name of the custom variation to add
-
-% Define the variables involved in the custom variation
-% In this case, the variation affects the quaternion components q0, q1, q2, and q3
-turn_variables = ["q0", "q1", "q2", "q3"];
-
-% Define the variation data matrix for the custom variation
-% Each row represents a different state for the variation
-turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
-             0.9961947, 0, 0, 0.0871557;  % 10 deg
-             0.9914449, 0, 0, 0.1305262]; % 15 deg
-
-% include base state [0, 0, 0, 1] strait up flight
-turn_include_base = true;
-
-% This will create additional trim points by varying the specified quaternion components
-TrimPointsObj.add_custom_variations(turn_batch_index, turn_variation_name, turn_variables, turn_data, turn_include_base);
-
-% This consolidates all trim points into the obj.trim_points property for
-% further use AND convert all trim points to trimmed points.
-TrimPointsObj.generate_trim_points(Doof, EnvironmentObj, FlightObj, AeroObj);
+generate_trim_points = false;
+if generate_trim_points
+    % Generate trim batches for each time point in time_arr
+    TrimPointsObj.generate_trim_batches(time_arr);
+    
+    % Define the number of trim points to generate per time instance for 'u' variations
+    num_trim_points_per_time = 13;
+    
+    % Add 'u' (velocity) variations to each trim batch based on the specified parameters
+    % This creates different trim points by varying the 'u' component within the defined spacing
+    % THIS FUNCTION SHOULD BE CHANGED TO INCLUDE AERO MOMENTS
+    TrimPointsObj.add_u_variations(time_arr, num_trim_points_per_time, AeroObj, CG_t_handle, rho_t_handle);   
+    
+    turn_batch_index = 1:length(time_arr);  % Define the indices of batches to which custom variations will be added
+    turn_variation_name = "turn";  % Define the name of the custom variation to add
+    
+    % Define the variables involved in the custom variation
+    % In this case, the variation affects the quaternion components q0, q1, q2, and q3
+    turn_variables = ["q0", "q1", "q2", "q3"];
+    
+    % Define the variation data matrix for the custom variation
+    % Each row represents a different state for the variation
+    turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
+                 0.9961947, 0, 0, 0.0871557;  % 10 deg
+                 0.9914449, 0, 0, 0.1305262]; % 15 deg
+    
+    % include base state [0, 0, 0, 1] strait up flight
+    turn_include_base = true;
+    
+    % This will create additional trim points by varying the specified quaternion components
+    TrimPointsObj.add_custom_variations(turn_batch_index, turn_variation_name, turn_variables, turn_data, turn_include_base);
+    
+    % This consolidates all trim points into the obj.trim_points property for
+    % further use AND convert all trim points to trimmed points.
+    TrimPointsObj.generate_trim_points(Doof, EnvironmentObj, FlightObj, AeroObj);
+else
+    load("trimObj.mat", "TrimPointsObj");
+end
 
 % straight up Q and R
 straight_up_Q_arr = ones(9, 1);
