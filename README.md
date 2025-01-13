@@ -2,10 +2,10 @@
 GNC Simulation, Integration, and Modeling
 
 ## Environment Class
-Requires Python3 Environment to run. Must be Python 3.9 or newer. 3.13 is recommended.
+Environment Class Requires Python3 Environment in order to regenerate location data. If not, existing location data will be used.
+Must be Python 3.9 or newer. 3.13 is recommended.
 
 The following python packages are required (Installing Just Rocketpy should automatically install the rest):
-
 - Rocketpy
 - requests
 - Numpy >= 1.13
