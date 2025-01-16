@@ -1,13 +1,63 @@
 classdef Sensor < handle
 
     properties
-        q;
+        test_accel_params;
+        test_gyro_params;
+        test_mag_params;
+        ADIS16500_accel_params;
+        ADIS_16500_gyro_params;
+        LIS3MDL_params;
+        IMU;
+        GPS
     end
 
     methods
 
-        function obj = Sensor()
-                % Constructor here             
+        function obj = Sensor(refLLA)
+
+            test_accel_params = accelparams('MeasurementRange',392, ...
+                                             'ConstantBias',[0 0 0], ...
+                                             'NoiseDensity',[800e-6 700e-6 750e-6], ...
+                                             'BiasInstability',[125.0e-4 125.0e-4 134.0e-4]);
+            
+            test_gyro_params = gyroparams('MeasurementRange',deg2rad(2000), ...
+                                            'ConstantBias',deg2rad([0 0 0]), ...
+                                            'NoiseDensity',deg2rad([6.1e-3 6.1e-3 7e-3]), ...
+                                            'BiasInstability',10*deg2rad([7.5 8.1 4.9])*(1/3600), ...
+                                            'AccelerationBias',deg2rad([7.5 8.1 4.9])*(1/3600));
+            
+            test_mag_params = magparams('MeasurementRange',G2microT(16), ...
+                                       'ConstantBias',[0 0 0]);
+            
+            ADIS16500_accel_params = accelparams('MeasurementRange',392, ...
+                                                 'ConstantBias',[58.8e-3 58.8e-3 58.8e-3], ...
+                                                 'NoiseDensity',[880e-6 880e-6 732e-6], ...
+                                                 'BiasInstability',[125.0e-6 125.0e-6 134.0e-6]);
+            
+            ADIS_16500_gyro_params = gyroparams('MeasurementRange',deg2rad(2000), ...
+                                                'ConstantBias',deg2rad([0.14 1.4 0.14]), ...
+                                                'NoiseDensity',deg2rad([6.1e-3 6.1e-3 7e-3]), ...
+                                                'BiasInstability',deg2rad([7.5 8.1 4.9])*(1/3600), ...
+                                                'AccelerationBias',deg2rad([0.572e-3 1.02e-3 0.408e-3]));
+            
+            LIS3MDL_params = magparams('MeasurementRange',G2microT(16), ...
+                                       'ConstantBias',[0 0 0]);
+            
+            IMU = imuSensor('IMUType','accel-gyro-mag', ...
+                            'SampleRate',100, ...
+                            'MagneticField',[27.5550 -2.4169 -16.0849], ... % at lat long alt 0
+                            'Accelerometer',test_accel_params, ...
+                            'Gyroscope',test_gyro_params, ...
+                            'Magnetometer',test_mag_params, ...
+                            'RandomStream','Global stream', ...
+                            'Seed',67);
+            
+            GPS = gpsSensor('SampleRate',100, ...
+                            'ReferenceLocation',refLLA, ... % LLA of Georgia Tech
+                            'PositionInputFormat','Local', ...
+                            'HorizontalPositionAccuracy',0.1, ...
+                            'VerticalPositionAccuracy',0.1);
+
         end
 
         %{
@@ -77,6 +127,27 @@ classdef Sensor < handle
             y_flat = y_enu;
             z_flat = -1 * x_enu;
                 
+        end
+
+        function [x2f, v2f, a2f] = state2imu(wbfb, x1f, v1f, a1f, qbf, r21b, v21b)
+
+           qfb = quatconj(qbf'); % outputs 1x4
+        
+           % Assumptions
+           a21b = [0;0;0];
+           wfib = [0;0;0];
+           alphabfb = [0;0;0];
+           
+           x2f = x1f - quat_rotate(qfb, r21b')';
+           v2f = v1f - quat_rotate(qfb, (v21b + cross(wbfb,r21b))')';
+           a2f = a1f - quat_rotate(qfb, (a21b + cross(wbfb, r21b + 2*v21b) + cross(alphabfb, r21b))')';
+
+        end
+
+        function microT_value = G2microT(gauss_value)
+
+            microT_value = gauss_value * 100;
+            
         end
         
     end
