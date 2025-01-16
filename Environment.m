@@ -45,7 +45,7 @@ classdef Environment
             currentDir = fileparts(mfilename('fullpath'));
             filename = fullfile(currentDir, 'Environment', 'WindParameters.xlsx');
             data = readcell(filename);
-
+    
             % Updating Wind Parameters
             obj.wind_parameters = cell2mat(data(2:end,2:5));
 
