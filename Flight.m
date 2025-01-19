@@ -234,22 +234,25 @@ classdef Flight < handle
                 %                         local_tSpan, ...
                 %                         initial_state, ...
                 %                         ode_options);
-                traj.t = [];
-                traj.x = [];
-                x = initial_state;
-                for time = local_tSpan
-                    traj.t = [traj.t; time];
-                    traj.x = [traj.x; x'];
-                    [xDot, ~] = rocketModel(time, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj);
-                    x = x + xDot*obj.get_tStep();
 
-                    discrete_second_check = (time == fix(time)); % Check if simulation time is an integer
-                    if discrete_second_check
-                        curr_time_str = num2str(time);
-                        printed_str = [curr_time_str ' seconds of flight simulated.'];
-                        disp(printed_str)
-                    end
-                end
+
+                [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), local_tSpan, initial_state, ode_options);
+                % traj.t = [];
+                % traj.x = [];
+                % x = initial_state;
+                % for time = local_tSpan
+                %     traj.t = [traj.t; time];
+                %     traj.x = [traj.x; x'];
+                %     [xDot, ~] = rocketModel(time, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj);
+                %     x = x + xDot*obj.get_tStep();
+                % 
+                %     discrete_second_check = (time == fix(time)); % Check if simulation time is an integer
+                %     if discrete_second_check
+                %         curr_time_str = num2str(time);
+                %         printed_str = [curr_time_str ' seconds of flight simulated.'];
+                %         disp(printed_str)
+                %     end
+                % end
 
                 prevFinalState = traj.x(end, :)';
              
