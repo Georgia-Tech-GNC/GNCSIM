@@ -217,6 +217,9 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         else
             [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
         end
+
+        alpha = atan2(vy, vx);
+        beta = atan2(vz, vx);
     end
 
     %% External Moments
@@ -289,10 +292,8 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     %% Logging
 
     % add to log
-    if FlightObj.get_applyWind
-        log.alpha = alpha;
-        log.beta = beta;
-    end
+    log.alpha = alpha;
+    log.beta = beta;
     % log.D0 = D0;
     % log.L = L;
     % log.Di = Di;

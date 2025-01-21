@@ -293,37 +293,37 @@ straight_up_Q_arr(5) = 0.01; % q
 straight_up_Q_arr(6) = 1000; % r
 straight_up_Q_arr(7) = 1000; % q1
 straight_up_Q_arr(8) = 0.01; % q2
-straight_up_Q_arr(9) = 1000; % q3
+straight_up_Q_arr(9) = 100000; % q3
 
 straight_up_R_arr(1) = 0.01; % M_roll
 straight_up_R_arr(2) = 1000; % M_pitch
-straight_up_R_arr(3) = 0.01; % M_yaw
+straight_up_R_arr(3) = 0.001; % M_yaw
 straight_up_R_arr(4) = 100; % Thrust
 
-straight_up_Q = diag(0.01*straight_up_Q_arr);
-straight_up_R = diag(straight_up_R_arr);
+straight_up_Q = diag(1*straight_up_Q_arr);
+straight_up_R = diag(10*straight_up_R_arr);
 
 % maneuver Q and R
-maneuver_Q_arr = ones(9, 1);
-maneuver_R_arr = ones(4, 1);
+% maneuver_Q_arr = ones(9, 1);
+% maneuver_R_arr = ones(4, 1);
+% 
+% maneuver_Q_arr(1) = 0.01; % u
+% maneuver_Q_arr(2) = 0.01; % v
+% maneuver_Q_arr(3) = 0.01; % w
+% maneuver_Q_arr(4) = 1000; % p
+% maneuver_Q_arr(5) = 0.01; % q
+% maneuver_Q_arr(6) = 1000; % r
+% maneuver_Q_arr(7) = 1000; % q1
+% maneuver_Q_arr(8) = 0.01; % q2
+% maneuver_Q_arr(9) = 10000; % q3
+% 
+% maneuver_R_arr(1) = 0.01; % M_roll
+% maneuver_R_arr(2) = 1000; % M_pitch
+% maneuver_R_arr(3) = 0.001; % M_yaw
+% maneuver_R_arr(4) = 1000; % Thrust
 
-maneuver_Q_arr(1) = 0.01; % u
-maneuver_Q_arr(2) = 0.01; % v
-maneuver_Q_arr(3) = 0.01; % w
-maneuver_Q_arr(4) = 1000; % p
-maneuver_Q_arr(5) = 0.01; % q
-maneuver_Q_arr(6) = 1000; % r
-maneuver_Q_arr(7) = 1000; % q1
-maneuver_Q_arr(8) = 0.01; % q2
-maneuver_Q_arr(9) = 10000; % q3
-
-maneuver_R_arr(1) = 0.01; % M_roll
-maneuver_R_arr(2) = 1000; % M_pitch
-maneuver_R_arr(3) = 0.001; % M_yaw
-maneuver_R_arr(4) = 1000; % Thrust
-
-maneuver_Q = diag(0.01*maneuver_Q_arr);
-maneuver_R = diag(maneuver_R_arr);
+maneuver_Q = straight_up_Q;
+maneuver_R = straight_up_R;
 
 % Generate K matrix for all trim points given Q and R matrixes
 TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
@@ -339,13 +339,14 @@ TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, c
 
 %% Setting Reference States
 % Define time array and variations for the test
+
 variations_cell_arr = {
-    {time_arr(6), {'r', 0.1745}, {'q0', 0.9962}, {'q3', 0.0872}};   % ~5th second
-    {time_arr(7), {'r', 0.1745}, {'q0', 0.9962}, {'q3', 0.0872}};   % ~6th second
-    {time_arr(8), {'q0', 0.9962}, {'q3', 0.0872}};                  % ~7th second
-    {time_arr(9), {'q0', 0.9962}, {'q3', 0.0872}};                  % ~8th second
-    {time_arr(10), {'r', -0.1745}, {'q0', 0.9962}, {'q3', 0.0872}}; % ~9th second
-    {time_arr(11), {'r', -0.1745}, {'q0', 0.9962}, {'q3', 0.0872}}  % ~10th second
+    {time_arr(5), {'r', 0.1745}, {'q0', 0.9990482}, {'q3', 0.0436194}};   % ~4th second
+    {time_arr(6), {'r', 0.1745}, {'q0', 0.9990482}, {'q3', 0.0436194}};   % ~5th second
+    {time_arr(7), {'q0', 0.9990482}, {'q3', 0.0436194}};                  % ~6th second
+    {time_arr(8), {'q0', 0.9990482}, {'q3', 0.0436194}};                  % ~7th second
+    {time_arr(9), {'r', -0.1745}, {'q0', 0.9990482}, {'q3', 0.0436194}}; % ~8th second
+    {time_arr(9), {'r', -0.1745}}                                   % 9th second
 };
 
 % Call the set_reference_states method
