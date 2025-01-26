@@ -358,7 +358,37 @@ FlightObj.set_applyWind(false);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
-%% Monte Carlo Parameters
+%% Monte Carlo Analysis
+monteCarlo = MonteCarlo();
+
+% Set hyperparameters
+monteCarlo.set_runGaussianLHS(true);
+monteCarlo.set_numRuns(10);
+
+% Set 3sigma values 
+monteCarlo.set_wetMass_3sigma(2);
+monteCarlo.set_dryMass_3sigma(2);
+
+monteCarlo.set_wetRollMOI_3sigma(0.2);
+monteCarlo.set_wetPitchMOI_3sigma(2);
+monteCarlo.set_wetYawMOI_3sigma(2);
+monteCarlo.set_dryRollMOI_3sigma(0.2);
+monteCarlo.set_dryPitchMOI_3sigma(2);
+monteCarlo.set_dryYawMOI_3sigma(2);
+
+monteCarlo.set_initialCG_3sigma(0.2);
+monteCarlo.set_finalCG_3sigma(0.2);
+
+monteCarlo.set_burnTime_3sigma(2);
+monteCarlo.set_thrustCurve_3sigma(100);
+
+% Saving parameters in CSV for future use
+monteCarlo.saveToCSV('monteCarloParameters.csv')
+
+logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointObj);
+
+monteCarlo.plotLHSSamples()
+
 
 
 
