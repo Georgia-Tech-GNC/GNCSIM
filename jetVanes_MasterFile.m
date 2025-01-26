@@ -385,10 +385,12 @@ monteCarlo.set_thrustCurve_3sigma(100);
 % Saving parameters in CSV for future use
 monteCarlo.saveToCSV('monteCarloParameters.csv')
 
-logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointObj);
+logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
 monteCarlo.plotLHSSamples()
 
+%% Plotting MonteCarlo Analysis
+FlightObj.plot_sim_dashboard(logMonteCarlo(5).loggedData, Doof, EnvironmentObj);
 
 
 

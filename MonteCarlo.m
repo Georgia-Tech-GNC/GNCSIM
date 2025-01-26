@@ -1,4 +1,4 @@
-classdef MonteCarlo
+classdef MonteCarlo < handle
 
     properties (Access = private)
         % Monte Carlo Hyperparameters
@@ -12,16 +12,16 @@ classdef MonteCarlo
         % Rocket Parameters - 3 Sigma
         wetMass_3sigma;
         dryMass_3sigma;
-        wetRollMOI_3sigma = 0.2109;  % Ixx
-        wetPitchMOI_3sigma = 21.1212;  % Iyy
-        wetYawMOI_3sigma = 21.1202;  % Izz
-        dryRollMOI_3sigma = 0.2036;
-        dryPitchMOI_3sigma = 18.99;
-        dryYawMOI_3sigma = 18.988;
-        initialCG_3sigma; % scalar
-        finalCG_3sigma; % scalar
+        wetRollMOI_3sigma; 
+        wetPitchMOI_3sigma;
+        wetYawMOI_3sigma;
+        dryRollMOI_3sigma;
+        dryPitchMOI_3sigma;
+        dryYawMOI_3sigma;
+        initialCG_3sigma; 
+        finalCG_3sigma;
         burnTime_3sigma;
-        thrustCurve_3sigma; % scalar
+        thrustCurve_3sigma;
 
         % Wind Parameters
         windIndex; % mean values and 3sigma are in WindParameters.xslx
@@ -48,7 +48,7 @@ classdef MonteCarlo
         % end
         
         function obj = set_runGaussianLHS(obj, value)
-            validateattributes(value, {'logical'}, {'scalar'}, 'set_runGaussian', 'runGaussianLHS');
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_runGaussianLHS', 'runGaussianLHS');
             obj.runGaussianLHS = value;
         end
         
@@ -58,62 +58,62 @@ classdef MonteCarlo
         % end
 
         function obj = set_wetMass_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set.wetMass_3sigma', 'wetMass_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_wetMass_3sigma', 'wetMass_3sigma');
             obj.wetMass_3sigma = value;
         end
 
         function obj = set_dryMass_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set.dryMass_3sigma', 'dryMass_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_dryMass_3sigma', 'dryMass_3sigma');
             obj.dryMass_3sigma = value;
         end
 
         function obj = set_wetRollMOI_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.wetRollMOI_3sigma', 'wetRollMOI_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_wetRollMOI_3sigma', 'wetRollMOI_3sigma');
             obj.wetRollMOI_3sigma = value;
         end
         
         function obj = set_wetPitchMOI_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.wetPitchMOI_3sigma', 'wetPitchMOI_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_wetPitchMOI_3sigma', 'wetPitchMOI_3sigma');
             obj.wetPitchMOI_3sigma = value;
         end
         
         function obj = set_wetYawMOI_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.wetYawMOI_3sigma', 'wetYawMOI_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_wetYawMOI_3sigma', 'wetYawMOI_3sigma');
             obj.wetYawMOI_3sigma = value;
         end
         
         function obj = set_dryRollMOI_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.dryRollMOI_3sigma', 'dryRollMOI_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_dryRollMOI_3sigma', 'dryRollMOI_3sigma');
             obj.dryRollMOI_3sigma = value;
         end
         
         function obj = set_dryPitchMOI_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.dryPitchMOI_3sigma', 'dryPitchMOI_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_dryPitchMOI_3sigma', 'dryPitchMOI_3sigma');
             obj.dryPitchMOI_3sigma = value;
         end
         
         function obj = set_dryYawMOI_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.dryYawMOI_3sigma', 'dryYawMOI_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_dryYawMOI_3sigma', 'dryYawMOI_3sigma');
             obj.dryYawMOI_3sigma = value;
         end
 
         function obj = set_initialCG_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.initialCG_3sigma', 'initialCG_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_initialCG_3sigma', 'initialCG_3sigma');
             obj.initialCG_3sigma = value;
         end
         
         function obj = set_finalCG_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.finalCG_3sigma', 'finalCG_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_finalCG_3sigma', 'finalCG_3sigma');
             obj.finalCG_3sigma = value;
         end
 
         function obj = set_burnTime_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar', 'positive'}, 'set.burnTime_3sigma', 'burnTime_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_burnTime_3sigma', 'burnTime_3sigma');
             obj.burnTime_3sigma = value;
         end
 
         function obj = set_thrustCurve_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar'}, 'set.thrustCurve_3sigma', 'thrustCurve_3sigma');
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_thrustCurve_3sigma', 'thrustCurve_3sigma');
             obj.thrustCurve_3sigma = value;
         end
 
@@ -302,5 +302,6 @@ classdef MonteCarlo
             % Adjust layout
             sgtitle('LHS Samples Distribution'); % Add a title for the figure
         end
+
     end
 end
