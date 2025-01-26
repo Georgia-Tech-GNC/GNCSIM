@@ -4,6 +4,7 @@ classdef MonteCarlo < handle
         % Monte Carlo Hyperparameters
         runGaussianLHS; % boolean (LHS = Latin Hypercube Sampling)
         runUniformLHS; % boolean
+        runCustomLHS;
         numRuns; % integer
         %numVariables; % integer
 
@@ -51,7 +52,12 @@ classdef MonteCarlo < handle
             validateattributes(value, {'logical'}, {'scalar'}, 'set_runGaussianLHS', 'runGaussianLHS');
             obj.runGaussianLHS = value;
         end
-        
+
+        function obj = set_runCustomLHS(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_runCustomLHS', 'runCustomLHS');
+            obj.runGaussianLHS = value;
+        end
+
         % function obj = set_runUniformLHS(obj, value)
         %     validateattributes(value, {'logical'}, {'scalar'}, 'set_runSweep', 'runUniformLHS');
         %     obj.runUniformLHS = value;
@@ -121,6 +127,11 @@ classdef MonteCarlo < handle
             validateattributes(value, {'numeric'}, {'integer', 'positive'}, 'set_windIndex', 'windIndex');
             obj.windIndex = value;
         end
+
+        function obj = set_lhsSamples(obj, value)
+            validateattributes(value, {'numeric'}, {'2d', 'nonempty'}, 'set_lhsSamples', 'lhsSamples');
+            obj.lhsSamples = value;
+        end
         
         % Getters
         function lhsSamples = get_lhsSamples(obj)
@@ -176,8 +187,12 @@ classdef MonteCarlo < handle
             %     lhsSamples = lhsdesign(obj.numRuns, obj.numVariables);
             %     variable1 = 0 + (10 - 0) * lhsSamples(:, 1); % Uniform distribution
 
+            elseif obj.runCustomLHS
+                if isempty(obj.lhsSamples)
+                    error("Please set lhsSamples with a correct Latin Hypercube Sample matrix.")
+                end
             else
-                error('Either runGaussianLHS or runUniformLHS must be set to true.')
+                error('Either runGaussianLHS, runUniformLHS or runCustomLHS must be set to true.')
             end
             
             % Preallocate struct array
@@ -191,7 +206,7 @@ classdef MonteCarlo < handle
                 % Making copy of objects to avoid broadcasting issues
                 RocketObjIter = RocketObj; 
                 FlightObjCopy = FlightObj; 
-                objCopy = obj;
+                objCopy = obj;  
                 thrustCurveCopy = thrustCurve;
 
                 % Assign random variables to RocketObjIter
