@@ -202,7 +202,7 @@ classdef MonteCarlo < handle
             tic;
 
             % Parallel loop
-            parfor i = 1:obj.numRuns
+            parfor i = 1:size(obj.lhsSamples, 1)
                 % Making copy of objects to avoid broadcasting issues
                 RocketObjIter = RocketObj; 
                 FlightObjCopy = FlightObj; 
@@ -237,6 +237,14 @@ classdef MonteCarlo < handle
 
             timeFor = toc;
             fprintf('Elapsed time: %.2f seconds for %d iterations\n', timeFor, obj.numRuns);
+        end
+
+        function logMonteCarlo = evaluate_MonteCarlo(obj, logMonteCarlo)
+            parpool;
+            tic;
+            parfor i = length(logMonteCarlo)
+                
+            end
         end
 
         % Save all parameters to a CSV file

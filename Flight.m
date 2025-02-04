@@ -19,6 +19,8 @@ classdef Flight < handle
         windParam; % is set based on Monte Carlo data
         options; % odeevents options
         initState;
+        odeSolverStartTime;
+        odeSolverMaxTime;
     end
 
     methods
@@ -132,8 +134,17 @@ classdef Flight < handle
             obj.windParam = wp; % No conditions check because this comes from Monte Carlo
         end
 
+        function obj = set_odeSolverStartTime(obj, value)
+            obj.odeSolverStartTime = value; % Set start time using tic
+        end
+        
+        function obj = set_odeSolverMaxTime(obj, value)
+            validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, mfilename, 'odeSolverMaxTime');
+            obj.odeSolverMaxTime = value;
+        end
+
         function obj = set_options(obj)
-            obj.options = odeset('Events', @Flight.rocket_events);
+            obj.options = odeset('Events', @Flight.rocket_events,'OutputFcn', @(t, x, flag) Flight.stopSolver(t, x, flag, obj.odeSolverStartTime, obj.odeSolverMaxTime));
         end
 
         function tstep= get_tStep(obj)
@@ -228,6 +239,9 @@ classdef Flight < handle
 
                 % Solve nonlinear trajectory for the current time
                 % interval
+                startTime = tic;
+                obj.set_odeSolverStartTime(startTime)
+                obj.set_odeSolverMaxTime(100); % 100 seconds max for ode solver
                 obj.set_options();
                 ode_options = obj.get_options();
                 % [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), ...
@@ -797,6 +811,22 @@ classdef Flight < handle
             value = x(1);          % Event condition (e.g., altitude)
             isterminal = 1;        % Stop integration when event occurs
             direction = -1;        % Detect only when altitude is decreasing
+        end
+
+        function status = stopSolver(~, ~, flag, startTime, maxTime)
+            if strcmp(flag, 'init')  % Solver initialization case
+                status = 0;
+                return;
+            end
+        
+            elapsedTime = toc(startTime);  % Get elapsed time
+        
+            if elapsedTime > maxTime
+                disp('Terminating ODE solver: Time limit exceeded.');
+                status = 1;  % Stop solver
+            else
+                status = 0;  % Continue solver
+            end
         end
     end
 end
