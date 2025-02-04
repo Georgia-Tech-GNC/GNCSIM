@@ -291,10 +291,10 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
                         [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
-                        if obj.get_applyWind()  
+                        
                             tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
                             tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
-                        end
+                 
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;
                         tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
                         tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;

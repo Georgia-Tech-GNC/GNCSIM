@@ -392,5 +392,27 @@ monteCarlo.plotLHSSamples()
 %% Plotting MonteCarlo Analysis
 FlightObj.plot_sim_dashboard(logMonteCarlo(5).loggedData, Doof, EnvironmentObj);
 
+% Euler Angles Plot For LQR Paper %
+figure()
+num_MonteCarloRuns = length(logMonteCarlo);
+
+for i = 1:num_MonteCarloRuns
+    eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
+    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
+    hold on
+end
+
+title('Yaw Angle Monte Carlo Simulation')
+ylabel('Angle (deg)', 'FontSize', 12)
+xlabel('Time (s)', 'FontSize', 12)
+grid on
+ax = gca;
+ax.XMinorTick = 'on';
+ax.YMinorTick = 'on';
+ax.MinorGridLineStyle = ':';
+ax.XMinorGrid = 'on';
+ax.YMinorGrid = 'on';
+
+
 
 
