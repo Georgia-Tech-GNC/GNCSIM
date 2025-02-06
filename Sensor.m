@@ -130,8 +130,10 @@ classdef Sensor < handle
         end
 
         function [x2f, v2f, a2f] = state2imu(wbfb, x1f, v1f, a1f, qbf, r21b, v21b)
-
+   
            qfb = quatconj(qbf'); % outputs 1x4
+           r12b = -r21b;
+           v12b = -v21b;
         
            % Assumptions
            a21b = [0;0;0];
@@ -139,9 +141,9 @@ classdef Sensor < handle
            alphabfb = [0;0;0];
            
            x2f = x1f - quat_rotate(qfb, r21b')';
-           v2f = v1f - quat_rotate(qfb, (v21b + cross(wbfb,r21b))')';
-           a2f = a1f - quat_rotate(qfb, (a21b + cross(wbfb, r21b + 2*v21b) + cross(alphabfb, r21b))')';
-
+           v2f = v1f - quat_rotate(qfb, (v12b + cross(wbfb,r12b))')';
+           a2f = a1f - quat_rotate(qfb, (cross(wbfb,v21b) + cross(wbfb,cross(wbfb,r12b)) )')';
+        
         end
 
         function microT_value = G2microT(gauss_value)

@@ -1,0 +1,12 @@
+wetMass_3sigma,2
+dryMass_3sigma,2
+wetRollMOI_3sigma,0.2
+wetPitchMOI_3sigma,2
+wetYawMOI_3sigma,2
+dryRollMOI_3sigma,0.2
+dryPitchMOI_3sigma,2
+dryYawMOI_3sigma,2
+initialCG_3sigma,0.2
+finalCG_3sigma,0.2
+burnTime_3sigma,2
+thrustCurve_3sigma,100
