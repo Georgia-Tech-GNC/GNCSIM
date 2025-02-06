@@ -25,12 +25,12 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     resetTerminalCounter = resetTerminalCounter + 1;
     
     if resetTerminalCounter >= 3000
-         %tprintf('rocketModel');
+         tprintf('rocketModel');
          resetTerminalCounter = 0;
     end
     
     if terminalCounter >= 100
-        %tprintf('rocketModel',num2str(t));
+        tprintf('rocketModel',num2str(t));
         terminalCounter = 0;
     end
 
@@ -54,6 +54,10 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     applyWind = FlightObj.get_applyWind();
     %applyPeriodicWindGusts = FlightObj.get_applyPeriodicWindGusts();
     applyPeriodicWindGusts = false;
+    mainChuteCd = RocketObj.get_mainChuteCd;
+    mainChuteArea = RocketObj.get_mainChuteArea;
+    controlsTime = FlightObj.get_controlsTime;
+
 
     %% Extract states
     % Position in flat Earth frame, "f" (m)
@@ -62,7 +66,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     pz = x(3);
     p_f = [px;py;pz];
 
-    % Velocity in body brame, "b" (m/s)
+    % Velocity in body frame, "b" (m/s)
     vx = real(x(4));
     vy = real(x(5));
     vz = real(x(6));
@@ -74,6 +78,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     q2 = real(x(9));
     q3 = real(x(10));
     q_bf = quatnormalize([q0 q1 q2 q3]);
+    v_f = quat_rotate(quatconj(q_bf),real(v_b)');
     
     % Angular velocity with respect to "f" expressed in "b" (rad/s)
     wx = real(x(11));
@@ -110,7 +115,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
     % issues. 
     % TODO: Add interface with trim points
-    if (runClosedLoop && (t > 1))
+    if (runClosedLoop && (t > 1) && (t < controlsTime))
         % xRef = interp1(tSpan,xRefSpan,t);
 
         lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
@@ -221,6 +226,18 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         alpha = atan2(vy, vx);
         beta = atan2(vz, vx);
     end
+
+    % TEMPORARY FIX due to aero model not having valid readings after 10
+    % degrees AOA
+
+    %% Parachute Forces
+    if v_f(1) < -999999999999
+        FP_b_mag = mainChuteCd * rho * ((norm(v_b)^2)/2) * mainChuteArea;
+        FP_b = FP_b_mag * (-v_b/(norm(v_b)));
+    else
+        FP_b = [0;0;0];
+    end
+   
 
     %% External Moments
     % Note: similar performance issues as controls

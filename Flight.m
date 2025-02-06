@@ -19,6 +19,7 @@ classdef Flight < handle
         windParam; % is set based on Monte Carlo data
         options; % odeevents options
         initState;
+        controlsTime;
     end
 
     methods
@@ -136,6 +137,10 @@ classdef Flight < handle
             obj.options = odeset('Events', @Flight.rocket_events);
         end
 
+        function obj = set_controlsTime(obj,newTime)
+            obj.controlsTime = newTime;
+        end
+
         function tstep= get_tStep(obj)
             tstep = obj.tStep;
         end
@@ -190,6 +195,10 @@ classdef Flight < handle
 
         function opts = get_options(obj)
             opts = obj.options;
+        end
+
+        function controlsTime = get_controlsTime(obj)
+            controlsTime = obj.controlsTime;
         end
 
         function log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj)
@@ -277,10 +286,12 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
                         [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
-                        if obj.get_applyWind()  
-                            tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
-                            tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
-                        end
+                        % if obj.get_applyWind()
+                        %     tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
+                        %     tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
+                        % end
+                        tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
+                        tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;
                         tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
                         tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;

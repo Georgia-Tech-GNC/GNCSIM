@@ -27,6 +27,9 @@ dryYawMOI = 18.988;
 
 burn_time = 13.1;
 
+Doof.set_mainChuteCd(2.2);
+Doof.set_mainChuteArea(7.2965877);
+
 Doof.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
 Doof.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
 Doof.set_burnTime(burn_time);
@@ -77,8 +80,8 @@ Vars = [u v w rho CG p r];
 FAx_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*sin(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(v/u));
 FAy_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
 FAz_b_sym = 0;
-MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
-%MAx_b_sym = 0;
+%MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
+MAx_b_sym = 0;
 MAy_b_sym = 0;
 MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
 
@@ -111,17 +114,18 @@ EnvironmentObj = Environment(location, use_default);
 %% Flight Parameters
 
 FlightObj = Flight();
-FlightObj.set_tStep(0.001); % s
+FlightObj.set_tStep(0.01); % s
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);
 FlightObj.set_applyWind(false);
 FlightObj.set_numStates(13);
 FlightObj.set_numInputs(3);
-FlightObj.set_simTime(12); % seconds
-FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
+FlightObj.set_simTime(38.92); % seconds
+FlightObj.set_localSimTime(38.92); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
 FlightObj.set_tSpan()
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
+FlightObj.set_controlsTime(12);
 
 FlightObj.set_uSpan(zeros(length(FlightObj.get_tSpan()), FlightObj.get_numInputs()));
 
