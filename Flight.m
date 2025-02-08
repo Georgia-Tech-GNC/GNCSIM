@@ -212,7 +212,7 @@ classdef Flight < handle
             controlsTime = obj.controlsTime;
         end
 
-        function log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj)
+        function log = runFlight(obj, Rocket, Environment, Aerodynamics, ControlObj)
             tic
             log = struct();
             fprintf('Running flight...\n')
@@ -259,7 +259,7 @@ classdef Flight < handle
                 %                         ode_options);
 
 
-                [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), local_tSpan, initial_state, ode_options);
+                [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, ode_options);
                 % traj.t = [];
                 % traj.x = [];
                 % x = initial_state;
@@ -299,7 +299,7 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
-                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
+                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,ControlObj);
                         tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
                         tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;

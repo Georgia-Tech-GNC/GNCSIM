@@ -13,6 +13,7 @@ classdef TrimPoints < handle
         % State Indices
         % A constant array representing the indices corresponding to each state name.
         state_index_con = 1:length(TrimBatch.state_names);
+        controller_ID = 'LQR';
     end
 
     properties (SetAccess = private)
@@ -106,6 +107,10 @@ classdef TrimPoints < handle
             
             % Create a dictionary (Map) with state names as keys and their indices as values
             obj.state_dict = containers.Map(state_keys, state_values);  
+        end
+        
+        function [controller_ID] = get_controllerID(obj)
+            controller_ID = obj.controller_ID;
         end
 
         function generate_trim_batches(obj, time_arr)
@@ -815,6 +820,10 @@ classdef TrimPoints < handle
             
             % Construct u0 (reference control vector)
             u0 = obj.reference_states(ind).states(end-2:end); % Getting reference controls for the correct second
+        end
+
+        function del_u = compute_controls(obj, K, del_x)
+            del_u = -K*del_x;
         end
 
         function obj = set_reference_states(obj, time_arr, variations_cell_arr)

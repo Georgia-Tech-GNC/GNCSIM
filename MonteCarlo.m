@@ -142,7 +142,7 @@ classdef MonteCarlo < handle
         end
 
         % Function that runs MonteCarlo for numRuns
-        function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
+        function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, ControlObj)
             % Setting up LHS parameters  
             if obj.runGaussianLHS
                 thrustCurve = RocketObj.get_thrustCurve();
@@ -229,7 +229,7 @@ classdef MonteCarlo < handle
                 RocketObjIter.set_thrustCurve(thrustCurveCopy);
             
                 % Run the flight simulation
-                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, TrimPointObj);
+                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, ControlObj);
             
                 % Store the results
                 logMonteCarlo(i).loggedData = log;
