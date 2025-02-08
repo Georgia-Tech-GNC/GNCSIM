@@ -4,10 +4,10 @@ clear; clc; close all;
 
 %% Rocket Parameters
 
-wet_mass = 38.87;
-dry_mass = 30.96;
-initial_CG = 2.433;
-final_CG = 2.34;
+wet_mass = 40.912994; % kg
+dry_mass = 32.619994;
+initial_CG = 2.419762;
+final_CG = 2.314814;
 
 Doof = Rocket();
 Doof.set_wetMass(wet_mass);
@@ -18,12 +18,12 @@ Doof.set_length(3.4); % length of rocket (m)
 Doof.set_initialCG(initial_CG); % initial CG from tip of nosecone (m)
 Doof.set_finalCG(final_CG); % final CG from tip of nosecone (m)
 
-wetRollMOI = 0.2109;  % Ixx
-wetPitchMOI = 21.1212;  % Iyy
-wetYawMOI = 21.1202;  % Izz
-dryRollMOI = 0.2036;
-dryPitchMOI = 18.99;
-dryYawMOI = 18.988;
+wetRollMOI = 0.209731;  % Ixx
+wetPitchMOI = 24.655278;  % Iyy
+wetYawMOI = 24.656148;  % Izz
+dryRollMOI = 0.201846;
+dryPitchMOI = 22.301315;
+dryYawMOI = 22.301570;
 
 burn_time = 13.1;
 
