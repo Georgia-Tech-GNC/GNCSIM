@@ -114,7 +114,6 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
 
     % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
     % issues. 
-    % TODO: Add interface with trim points
     if (runClosedLoop && (t > 1) && (t < controlsTime))
         controller_ID = ControlObj.get_controllerID();
         switch controller_ID
@@ -138,7 +137,6 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
                 % M_pitch would be zero in the nonlinear (truth) model
                 % MT_by = del_u(2) + u0(2); % M_pitch
                 MT_by = 0;
-                
                 MT_bz = del_u(3); % M_yaw  
             case 'PID'
                 % TODO

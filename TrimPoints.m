@@ -13,7 +13,7 @@ classdef TrimPoints < handle
         % State Indices
         % A constant array representing the indices corresponding to each state name.
         state_index_con = 1:length(TrimBatch.state_names);
-        controller_ID = 'LQR';
+        controllerID = 'LQR';
     end
 
     properties (SetAccess = private)
