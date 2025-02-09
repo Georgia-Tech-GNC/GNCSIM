@@ -359,7 +359,7 @@ TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 
 %% RunFlight
 FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(false);
+FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
@@ -369,7 +369,7 @@ monteCarlo = MonteCarlo();
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
 monteCarlo.set_numRuns(10);
-monteCarlo.set_odeSolverMaxTime(10); % kills ode after 100s
+monteCarlo.set_odeSolverMaxTime(600); % kills ode after x seconds
 
 % Set 3sigma values 
 monteCarlo.set_wetMass_3sigma(2);
@@ -394,7 +394,7 @@ monteCarlo.saveToCSV('monteCarloParameters.csv')
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
 %% Plotting MonteCarlo Analysis
-FlightObj.plot_sim_dashboard(logMonteCarlo(1).loggedData, Doof, EnvironmentObj);
+%FlightObj.plot_sim_dashboard(logMonteCarlo(1).loggedData, Doof, EnvironmentObj);
 
 % Euler Angles Plot For LQR Paper %
 figure()

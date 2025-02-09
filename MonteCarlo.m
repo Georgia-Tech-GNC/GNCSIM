@@ -1,3 +1,4 @@
+% Main Authors: Karsten Caillet 
 classdef MonteCarlo < handle
 
     properties (Access = private)
@@ -165,7 +166,7 @@ classdef MonteCarlo < handle
                     RocketObj.get_initialCG(), ...         % Initial CG (m)
                     RocketObj.get_finalCG(), ...           % Final CG (m)
                     RocketObj.get_burnTime(), ...          % Burn time (s)
-                    thrustCurve_mu                            % Flattened thrust curve (s, N)
+                    thrustCurve_mu                         % Flattened thrust curve (s, N)
                     ];
 
                 sigma = [
@@ -190,6 +191,18 @@ classdef MonteCarlo < handle
 
                 obj.lhsSamples = lhsnorm(mu, sigma, obj.numRuns);
 
+                % Temporary solution to incorporate Wind using existing
+                % discrete wind parameters in the xslx table. Future improvement:
+                % changing Environment class to accept continuous
+                % parameters, which can be modified through LHSSampling
+                % (more realistic)
+                indexLHS = lhsdesign(obj.numRuns, 1);  
+                indexSamples = ceil(indexLHS * 4);
+
+                % Append the discrete parameter as an additional column:
+                obj.lhsSamples = [obj.lhsSamples, indexSamples];
+                
+                
             % elseif obj.runUniformLHS
             %     lhsSamples = lhsdesign(obj.numRuns, obj.numVariables);
             %     variable1 = 0 + (10 - 0) * lhsSamples(:, 1); % Uniform distribution
@@ -205,13 +218,19 @@ classdef MonteCarlo < handle
             % Preallocate struct array
             logMonteCarlo(obj.numRuns) = struct('loggedData', [], 'Pass', []);
 
-            parpool;
+            % Check for an existing parallel pool and start one if necessary.
+            poolobj = gcp('nocreate'); % Get current pool without creating a new one.
+            if isempty(poolobj)
+                parpool;  % Start a new pool if one does not exist.
+            end
+            
             tic;
 
             % Parallel loop
             parfor i = 1:size(obj.lhsSamples, 1)
                 % Making copy of objects to avoid broadcasting issues
                 RocketObjIter = RocketObj; 
+                EnvironmentObjIter = EnvironmentObj;
                 FlightObjCopy = FlightObj; 
                 objCopy = obj;  
                 thrustCurveCopy = thrustCurve;
@@ -232,11 +251,15 @@ classdef MonteCarlo < handle
                 RocketObjIter.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
                 RocketObjIter.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
                 RocketObjIter.set_burnTime(objCopy.lhsSamples(i,11));
-                thrustCurveCopy(:,2) = objCopy.lhsSamples(i,12:end); 
+                thrustCurveCopy(:,2) = objCopy.lhsSamples(i,12:end-1); 
                 RocketObjIter.set_thrustCurve(thrustCurveCopy);
-            
+
+                % Assign random variables to EnvironmentObjIter
+                EnvironmentObjIter.set_index(objCopy.lhsSamples(i,end))
+                fprintf('Wind Index: %d', objCopy.lhsSamples(i,end));
+                
                 % Run the flight simulation
-                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, ControlObj);
+                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObjIter, AerodynamicsObj, TrimPointObj);
             
                 % Store the results
                 logMonteCarlo(i).loggedData = log;

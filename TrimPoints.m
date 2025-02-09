@@ -1,3 +1,4 @@
+% Main Authors: David Reynolds
 classdef TrimPoints < handle
     % TrimPoint Class for Generating Trim Points
     % This class reads flight data from a CSV file, processes it, and generates trim points
@@ -13,7 +14,7 @@ classdef TrimPoints < handle
         % State Indices
         % A constant array representing the indices corresponding to each state name.
         state_index_con = 1:length(TrimBatch.state_names);
-        controllerID = 'LQR';
+        controller_ID = 'LQR';
     end
 
     properties (SetAccess = private)
@@ -753,6 +754,8 @@ classdef TrimPoints < handle
         end
 
         function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
+            % Author: Karsten Caillet
+
             % LQR_configuration_selector Selects the appropriate LQR configuration based on the current state and time.
             %
             % INPUTS:
@@ -827,6 +830,8 @@ classdef TrimPoints < handle
         end
 
         function obj = set_reference_states(obj, time_arr, variations_cell_arr)
+            % Author: Karsten Caillet
+
             % Sets Reference States Based on Time Array and Variations
             %
             % This method initializes the reference states for the object based on the
@@ -870,6 +875,8 @@ classdef TrimPoints < handle
         end
 
         function reference_state = get_reference_state(obj, time)
+            % Author: Karsten Caillet
+
             % Retrieves the Reference State for a Specified Time
             %
             % This method searches the reference states for the given time and

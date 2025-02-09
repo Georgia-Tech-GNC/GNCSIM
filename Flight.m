@@ -1,3 +1,4 @@
+% Main Authors: Patrick Barry, Albert Zheng
 classdef Flight < handle
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
@@ -251,7 +252,7 @@ classdef Flight < handle
                 %                         ode_options);
 
 
-                [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), local_tSpan, initial_state, obj.odeOptions);
+                [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
                 
                 % traj.t = [];
                 % traj.x = [];
