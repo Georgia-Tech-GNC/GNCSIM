@@ -6,7 +6,7 @@ classdef MonteCarlo < handle
         runUniformLHS; % boolean
         runCustomLHS;
         numRuns; % integer
-        %numVariables; % integer
+        odeSolverMaxTime; 
 
         lhsSamples;
 
@@ -132,6 +132,11 @@ classdef MonteCarlo < handle
             validateattributes(value, {'numeric'}, {'2d', 'nonempty'}, 'set_lhsSamples', 'lhsSamples');
             obj.lhsSamples = value;
         end
+
+        function obj = set_odeSolverMaxTime(obj, value)
+            validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, mfilename, 'odeSolverMaxTime');
+            obj.odeSolverMaxTime = value;
+        end
         
         % Getters
         function lhsSamples = get_lhsSamples(obj)
@@ -143,6 +148,8 @@ classdef MonteCarlo < handle
 
         % Function that runs MonteCarlo for numRuns
         function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
+            FlightObj.set_odeSolverMaxTime(obj.odeSolverMaxTime);
+
             % Setting up LHS parameters  
             if obj.runGaussianLHS
                 thrustCurve = RocketObj.get_thrustCurve();
@@ -196,7 +203,7 @@ classdef MonteCarlo < handle
             end
             
             % Preallocate struct array
-            logMonteCarlo(obj.numRuns) = struct('loggedData', []);
+            logMonteCarlo(obj.numRuns) = struct('loggedData', [], 'Pass', []);
 
             parpool;
             tic;
@@ -324,6 +331,29 @@ classdef MonteCarlo < handle
     
             % Adjust layout
             sgtitle('LHS Samples Distribution'); % Add a title for the figure
+        end
+
+        function plotMonteCarlo(obj, logMonteCarlo)
+            % Euler Angles Plot For LQR Paper %
+            figure()
+            num_MonteCarloRuns = length(logMonteCarlo);
+            
+            for i = 1:num_MonteCarloRuns
+                eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
+                plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
+                hold on
+            end
+            
+            title('Yaw Angle Monte Carlo Simulation')
+            ylabel('Angle (deg)', 'FontSize', 12)
+            xlabel('Time (s)', 'FontSize', 12)
+            grid on
+            ax = gca;
+            ax.XMinorTick = 'on';
+            ax.YMinorTick = 'on';
+            ax.MinorGridLineStyle = ':';
+            ax.XMinorGrid = 'on';
+            ax.YMinorGrid = 'on';
         end
 
     end

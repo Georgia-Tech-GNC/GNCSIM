@@ -121,6 +121,7 @@ FlightObj.set_numInputs(3);
 FlightObj.set_simTime(12); % seconds
 FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
 FlightObj.set_tSpan()
+FlightObj.set_odeSolverMaxTime(300) % 300s before killing the simulation
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
 
 FlightObj.set_uSpan(zeros(length(FlightObj.get_tSpan()), FlightObj.get_numInputs()));
@@ -364,6 +365,7 @@ monteCarlo = MonteCarlo();
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
 monteCarlo.set_numRuns(10);
+monteCarlo.set_odeSolverMaxTime(10); % kills ode after 100s
 
 % Set 3sigma values 
 monteCarlo.set_wetMass_3sigma(2);
@@ -387,10 +389,8 @@ monteCarlo.saveToCSV('monteCarloParameters.csv')
 
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
-monteCarlo.plotLHSSamples()
-
 %% Plotting MonteCarlo Analysis
-FlightObj.plot_sim_dashboard(logMonteCarlo(5).loggedData, Doof, EnvironmentObj);
+FlightObj.plot_sim_dashboard(logMonteCarlo(1).loggedData, Doof, EnvironmentObj);
 
 % Euler Angles Plot For LQR Paper %
 figure()
