@@ -19,6 +19,7 @@ classdef Flight < handle
         windParam; % is set based on Monte Carlo data
         odeOptions; % odeevents options
         initState;
+        controlsTime;
         odeSolverStartTime;
         odeSolverMaxTime = 1000; % set to 1000s by default to avoid errors
         odeSolverTerminationFlag = false;
@@ -140,6 +141,10 @@ classdef Flight < handle
             obj.odeSolverMaxTime = value;
         end
 
+        function obj = set_controlsTime(obj,newTime)
+            obj.controlsTime = newTime;
+        end
+
         function tstep= get_tStep(obj)
             tstep = obj.tStep;
         end
@@ -196,7 +201,11 @@ classdef Flight < handle
             opts = obj.options;
         end
 
-        function log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj)
+        function controlsTime = get_controlsTime(obj)
+            controlsTime = obj.controlsTime;
+        end
+
+        function log = runFlight(obj, Rocket, Environment, Aerodynamics, ControlObj)
             tic
             log = struct();
             fprintf('Running flight...\n')
@@ -283,11 +292,9 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
-                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
-                        
-                            tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
-                            tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
-                 
+                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,ControlObj);
+                        tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
+                        tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;
                         tempMClog(lqrIndex).angAccel(i,:) = xdot(11:13);
                         tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;

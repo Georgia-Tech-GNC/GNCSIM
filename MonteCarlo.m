@@ -236,7 +236,7 @@ classdef MonteCarlo < handle
                 RocketObjIter.set_thrustCurve(thrustCurveCopy);
             
                 % Run the flight simulation
-                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, TrimPointObj);
+                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, ControlObj);
             
                 % Store the results
                 logMonteCarlo(i).loggedData = log;
