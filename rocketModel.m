@@ -1,11 +1,11 @@
-function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, TrimPointObj)
+function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, ControlObj)
 % rocketModel: Open loop model for jet vanes rocket dynamics
 % t: current time
 % x: current state: [px py pz vx vy vz q0 q1 q2 q3 wx wy wz]
 % RocketObj:  object representing rocket
 % AerodynamicsObj: object representing aerodynamic forces on rocket
 % FlightObj: object representing flight of the rocket
-% TrimPointObj: object representing trim points
+% ControlObj: an object that denotes the control algorithm running
 
 % xDot = f(x, u)
 % log --> data that gets logged
@@ -25,12 +25,12 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     resetTerminalCounter = resetTerminalCounter + 1;
     
     if resetTerminalCounter >= 3000
-         tprintf('rocketModel');
+         %tprintf('rocketModel');
          resetTerminalCounter = 0;
     end
     
     if terminalCounter >= 100
-        tprintf('rocketModel',num2str(t));
+        %tprintf('rocketModel',num2str(t));
         terminalCounter = 0;
     end
 
@@ -114,28 +114,35 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
 
     % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
     % issues. 
-    % TODO: Add interface with trim points
     if (runClosedLoop && (t > 1) && (t < controlsTime))
-        % xRef = interp1(tSpan,xRefSpan,t);
+        controller_ID = ControlObj.get_controllerID();
+        switch controller_ID
+            case 'LQR'
+                % xRef = interp1(tSpan,xRefSpan,t);
 
-        lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
-        [K, x0, ~] = TrimPointObj.LQR_configuration_selector(lin_x, t);
-        % del_u = r' - K*del_x;
+                lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
+                [K, x0, ~] = ControlObj.LQR_configuration_selector(lin_x, t);
+                % del_u = r' - K*del_x;
 
-        % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
-        % a matrix that can still be referenced
+                % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
+                % a matrix that can still be referenced
 
-        del_x = lin_x - x0;
-        del_u = -K*del_x;
+                del_x = lin_x - x0;
+                del_u = ControlObj.compute_controls(K, del_x);
+                %del_u = -K*del_x;
 
-        MT_bx = del_u(1); % M_roll
+                MT_bx = del_u(1); % M_roll
 
-        % Forcefully turning off pitch control in the FSW? In that case 
-        % M_pitch would be zero in the nonlinear (truth) model
-        % MT_by = del_u(2) + u0(2); % M_pitch
-        MT_by = 0;
-
-        MT_bz = del_u(3); % M_yaw     
+                % Forcefully turning off pitch control in the FSW? In that case 
+                % M_pitch would be zero in the nonlinear (truth) model
+                % MT_by = del_u(2) + u0(2); % M_pitch
+                MT_by = 0;
+                MT_bz = del_u(3); % M_yaw  
+            case 'PID'
+                % TODO
+            case 'MPC'
+                % TODO
+        end
     else
         MT_bx = 0;
         MT_by = 0;

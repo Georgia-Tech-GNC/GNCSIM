@@ -1,3 +1,4 @@
+% Main Authors: Patrick Barry, Albert Zheng
 classdef Flight < handle
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
@@ -17,11 +18,12 @@ classdef Flight < handle
         gravity = 9.81 % m/(s^2)
         uSpan; % length of t span by 3 array of double
         windParam; % is set based on Monte Carlo data
-        options; % odeevents options
+        odeOptions; % odeevents options
         initState;
         controlsTime;
         odeSolverStartTime;
-        odeSolverMaxTime;
+        odeSolverMaxTime = 1000; % set to 1000s by default to avoid errors
+        odeSolverTerminationFlag = false;
     end
 
     methods
@@ -134,18 +136,10 @@ classdef Flight < handle
         function obj= set_windParam(obj, wp)
             obj.windParam = wp; % No conditions check because this comes from Monte Carlo
         end
-
-        function obj = set_odeSolverStartTime(obj, value)
-            obj.odeSolverStartTime = value; % Set start time using tic
-        end
         
         function obj = set_odeSolverMaxTime(obj, value)
             validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, mfilename, 'odeSolverMaxTime');
             obj.odeSolverMaxTime = value;
-        end
-
-        function obj = set_options(obj)
-            obj.options = odeset('Events', @Flight.rocket_events,'OutputFcn', @(t, x, flag) Flight.stopSolver(t, x, flag, obj.odeSolverStartTime, obj.odeSolverMaxTime));
         end
 
         function obj = set_controlsTime(obj,newTime)
@@ -212,7 +206,7 @@ classdef Flight < handle
             controlsTime = obj.controlsTime;
         end
 
-        function log = runFlight(obj, Rocket, Environment, Aerodynamics, TrimPointObj)
+        function log = runFlight(obj, Rocket, Environment, Aerodynamics, ControlObj)
             tic
             log = struct();
             fprintf('Running flight...\n')
@@ -248,34 +242,36 @@ classdef Flight < handle
 
                 % Solve nonlinear trajectory for the current time
                 % interval
-                startTime = tic;
-                obj.set_odeSolverStartTime(startTime)
-                obj.set_odeSolverMaxTime(100); % 100 seconds max for ode solver
-                obj.set_options();
-                ode_options = obj.get_options();
+                obj.odeSolverStartTime = tic;
+                obj.odeSolverTerminationFlag = false;
+                obj.odeOptions = odeset('Events', @Flight.rocket_events,'OutputFcn', @(t, x, flag) obj.stopSolver(t, x, flag, obj.odeSolverStartTime, obj.odeSolverMaxTime));
+                
                 % [traj.t, traj.x, traj.te, traj.ye, traj.ie] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), ...
                 %                         local_tSpan, ...
                 %                         initial_state, ...
                 %                         ode_options);
 
-
-                [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj), local_tSpan, initial_state, ode_options);
-                % traj.t = [];
-                % traj.x = [];
-                % x = initial_state;
-                % for time = local_tSpan
-                %     traj.t = [traj.t; time];
-                %     traj.x = [traj.x; x'];
-                %     [xDot, ~] = rocketModel(time, x, Rocket, Environment, obj, Aerodynamics, TrimPointObj);
-                %     x = x + xDot*obj.get_tStep();
-                % 
-                %     discrete_second_check = (time == fix(time)); % Check if simulation time is an integer
-                %     if discrete_second_check
-                %         curr_time_str = num2str(time);
-                %         printed_str = [curr_time_str ' seconds of flight simulated.'];
-                %         disp(printed_str)
-                %     end
-                % end
+                if obj.get_applyWind()
+                
+                    traj.t = [];
+                    traj.x = [];
+                    x = initial_state;
+                    for time = local_tSpan
+                        traj.t = [traj.t; time];
+                        traj.x = [traj.x; x'];
+                        [xDot, ~] = rocketModel(time, x, Rocket, Environment, obj, Aerodynamics, ControlObj);
+                        x = x + xDot*obj.get_tStep();
+    
+                        discrete_second_check = (time == fix(time)); % Check if simulation time is an integer
+                        if discrete_second_check
+                            curr_time_str = num2str(time);
+                            printed_str = [curr_time_str ' seconds of flight simulated.'];
+                            disp(printed_str)
+                        end
+                    end
+                else
+                    [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
+                end
 
                 prevFinalState = traj.x(end, :)';
              
@@ -299,7 +295,7 @@ classdef Flight < handle
                     tempMClog(lqrIndex).n_a = zeros(length(traj.t),1);
                     tempMClog(lqrIndex).n_r = zeros(length(traj.t),1);
                     for i = 1:length(traj.t)
-                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,TrimPointObj);
+                        [xdot,modelLog] = rocketModel(traj.t(i),traj.x(i,:)',Rocket,Environment,obj,Aerodynamics,ControlObj);
                         tempMClog(lqrIndex).angleOfAttack(i) = modelLog.alpha;
                         tempMClog(lqrIndex).sideslipAngle(i) = modelLog.beta;
                         tempMClog(lqrIndex).CG(i) = modelLog.CG;
@@ -349,6 +345,7 @@ classdef Flight < handle
                 tempLoggedData.velBody = vertcat(tempMClog.velBody);
                 tempLoggedData.q_bf = vertcat(tempMClog.q_bf);
                 tempLoggedData.angVel = vertcat(tempMClog.angVel);
+                tempLoggedData.termination_flag = obj.odeSolverTerminationFlag;
         
                 if obj.get_calcXdots()
                     tempLoggedData.angleOfAttack = vertcat(tempMClog.angleOfAttack);
@@ -809,18 +806,8 @@ classdef Flight < handle
 
             end
         end
-    end
 
-    methods (Static)
-        function [value, isterminal, direction] = rocket_events(t, x)
-            % rocket_events - Event function for ODE solver
-            % Determines when the rocket reaches the ground (px = 0)
-            value = x(1);          % Event condition (e.g., altitude)
-            isterminal = 1;        % Stop integration when event occurs
-            direction = -1;        % Detect only when altitude is decreasing
-        end
-
-        function status = stopSolver(~, ~, flag, startTime, maxTime)
+        function status = stopSolver(obj, ~, ~, flag, startTime, maxTime)
             if strcmp(flag, 'init')  % Solver initialization case
                 status = 0;
                 return;
@@ -830,10 +817,21 @@ classdef Flight < handle
         
             if elapsedTime > maxTime
                 disp('Terminating ODE solver: Time limit exceeded.');
+                obj.odeSolverTerminationFlag = true;
                 status = 1;  % Stop solver
             else
                 status = 0;  % Continue solver
             end
+        end
+    end
+
+    methods (Static)
+        function [value, isterminal, direction] = rocket_events(t, x)
+            % rocket_events - Event function for ODE solver
+            % Determines when the rocket reaches the ground (px = 0)
+            value = x(1);          % Event condition (e.g., altitude)
+            isterminal = 1;        % Stop integration when event occurs
+            direction = -1;        % Detect only when altitude is decreasing
         end
     end
 end

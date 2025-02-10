@@ -1,3 +1,4 @@
+% Main Authors: David Reynolds
 classdef TrimPoints < handle
     % TrimPoint Class for Generating Trim Points
     % This class reads flight data from a CSV file, processes it, and generates trim points
@@ -13,6 +14,7 @@ classdef TrimPoints < handle
         % State Indices
         % A constant array representing the indices corresponding to each state name.
         state_index_con = 1:length(TrimBatch.state_names);
+        controller_ID = 'LQR';
     end
 
     properties (SetAccess = private)
@@ -106,6 +108,10 @@ classdef TrimPoints < handle
             
             % Create a dictionary (Map) with state names as keys and their indices as values
             obj.state_dict = containers.Map(state_keys, state_values);  
+        end
+        
+        function [controller_ID] = get_controllerID(obj)
+            controller_ID = obj.controller_ID;
         end
 
         function generate_trim_batches(obj, time_arr)
@@ -748,6 +754,8 @@ classdef TrimPoints < handle
         end
 
         function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
+            % Author: Karsten Caillet
+
             % LQR_configuration_selector Selects the appropriate LQR configuration based on the current state and time.
             %
             % INPUTS:
@@ -817,7 +825,13 @@ classdef TrimPoints < handle
             u0 = obj.reference_states(ind).states(end-2:end); % Getting reference controls for the correct second
         end
 
+        function del_u = compute_controls(obj, K, del_x)
+            del_u = -K*del_x;
+        end
+
         function obj = set_reference_states(obj, time_arr, variations_cell_arr)
+            % Author: Karsten Caillet
+
             % Sets Reference States Based on Time Array and Variations
             %
             % This method initializes the reference states for the object based on the
@@ -861,6 +875,8 @@ classdef TrimPoints < handle
         end
 
         function reference_state = get_reference_state(obj, time)
+            % Author: Karsten Caillet
+
             % Retrieves the Reference State for a Specified Time
             %
             % This method searches the reference states for the given time and

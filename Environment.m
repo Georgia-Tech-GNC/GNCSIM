@@ -1,3 +1,4 @@
+% Main Authors: Hridai Ambati
 classdef Environment
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
@@ -50,7 +51,7 @@ classdef Environment
             obj.wind_parameters = cell2mat(data(2:end,2:5));
 
             % Choosing Index
-            obj.index = 1;
+            obj.index = 3;
 
             if ~use_default
                 % Creating Data with Rocketpy

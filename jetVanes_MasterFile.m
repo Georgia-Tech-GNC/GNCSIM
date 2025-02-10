@@ -4,10 +4,10 @@ clear; clc; close all;
 
 %% Rocket Parameters
 
-wet_mass = 38.87;
-dry_mass = 30.96;
-initial_CG = 2.433;
-final_CG = 2.34;
+wet_mass = 40.912994; % kg
+dry_mass = 32.619994;
+initial_CG = 2.419762;
+final_CG = 2.314814;
 
 Doof = Rocket();
 Doof.set_wetMass(wet_mass);
@@ -18,12 +18,12 @@ Doof.set_length(3.4); % length of rocket (m)
 Doof.set_initialCG(initial_CG); % initial CG from tip of nosecone (m)
 Doof.set_finalCG(final_CG); % final CG from tip of nosecone (m)
 
-wetRollMOI = 0.2109;  % Ixx
-wetPitchMOI = 21.1212;  % Iyy
-wetYawMOI = 21.1202;  % Izz
-dryRollMOI = 0.2036;
-dryPitchMOI = 18.99;
-dryYawMOI = 18.988;
+wetRollMOI = 0.209731;  % Ixx
+wetPitchMOI = 24.655278;  % Iyy
+wetYawMOI = 24.656148;  % Izz
+dryRollMOI = 0.201846;
+dryPitchMOI = 22.301315;
+dryYawMOI = 22.301570;
 
 burn_time = 13.1;
 
@@ -114,16 +114,17 @@ EnvironmentObj = Environment(location, use_default);
 %% Flight Parameters
 
 FlightObj = Flight();
-FlightObj.set_tStep(0.01); % s
+FlightObj.set_tStep(0.001); % s
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);
 FlightObj.set_applyWind(false);
 FlightObj.set_numStates(13);
 FlightObj.set_numInputs(3);
-FlightObj.set_simTime(13); % seconds
-FlightObj.set_localSimTime(13); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
+FlightObj.set_simTime(12.5); % seconds
+FlightObj.set_localSimTime(12.5); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
 FlightObj.set_tSpan()
+FlightObj.set_odeSolverMaxTime(300) % 300s before killing the simulation
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
 FlightObj.set_controlsTime(12);
 
@@ -358,7 +359,7 @@ TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 
 %% RunFlight
 FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(false);
+FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
@@ -368,6 +369,7 @@ monteCarlo = MonteCarlo();
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
 monteCarlo.set_numRuns(10);
+monteCarlo.set_odeSolverMaxTime(600); % kills ode after x seconds
 
 % Set 3sigma values 
 monteCarlo.set_wetMass_3sigma(2);
@@ -391,10 +393,8 @@ monteCarlo.saveToCSV('monteCarloParameters.csv')
 
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
-monteCarlo.plotLHSSamples()
-
 %% Plotting MonteCarlo Analysis
-FlightObj.plot_sim_dashboard(logMonteCarlo(5).loggedData, Doof, EnvironmentObj);
+%FlightObj.plot_sim_dashboard(logMonteCarlo(1).loggedData, Doof, EnvironmentObj);
 
 % Euler Angles Plot For LQR Paper %
 figure()
