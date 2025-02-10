@@ -1,4 +1,5 @@
 % Main Authors: Patrick Barry, Albert Zheng
+
 classdef Flight < handle
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
