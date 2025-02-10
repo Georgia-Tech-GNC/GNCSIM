@@ -114,7 +114,7 @@ EnvironmentObj = Environment(location, use_default);
 %% Flight Parameters
 
 FlightObj = Flight();
-FlightObj.set_tStep(0.01); % s
+FlightObj.set_tStep(0.001); % s
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);

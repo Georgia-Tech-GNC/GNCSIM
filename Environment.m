@@ -51,7 +51,7 @@ classdef Environment
             obj.wind_parameters = cell2mat(data(2:end,2:5));
 
             % Choosing Index
-            obj.index = 1;
+            obj.index = 3;
 
             if ~use_default
                 % Creating Data with Rocketpy
