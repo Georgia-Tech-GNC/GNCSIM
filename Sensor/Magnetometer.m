@@ -94,4 +94,3 @@ classdef Magnetometer
     end
     
 end
-
