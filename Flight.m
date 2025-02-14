@@ -252,8 +252,8 @@ classdef Flight < handle
                 %                         initial_state, ...
                 %                         ode_options);
 
-                if obj.get_applyWind()
-                
+                % Euler Propagation
+                %{
                     traj.t = [];
                     traj.x = [];
                     x = initial_state;
@@ -270,9 +270,10 @@ classdef Flight < handle
                             disp(printed_str)
                         end
                     end
-                else
-                    [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
-                end
+                %}
+                % End Euler Propagation
+                
+                [traj.t, traj.x] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
 
                 prevFinalState = traj.x(end, :)';
              
