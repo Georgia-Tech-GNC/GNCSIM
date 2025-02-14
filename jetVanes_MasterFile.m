@@ -373,7 +373,7 @@ monteCarlo = MonteCarlo();
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
 monteCarlo.set_numRuns(10);
-monteCarlo.set_odeSolverMaxTime(600); % kills ode after x seconds
+monteCarlo.set_odeSolverMaxTime(150); % kills ode after x seconds
 
 % Set 3sigma values 
 monteCarlo.set_wetMass_3sigma(2);
@@ -395,31 +395,20 @@ monteCarlo.set_thrustCurve_3sigma(100);
 % Saving parameters in CSV for future use
 monteCarlo.saveToCSV('monteCarloParameters.csv')
 
+% Setting up FlightObj
+FlightObj.set_runClosedLoop(true);
+FlightObj.set_applyWind(false);
+
+% Run parallel simulations
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
+%% Evaluate pass/fail
+logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
+
 %% Plotting MonteCarlo Analysis
-%FlightObj.plot_sim_dashboard(logMonteCarlo(1).loggedData, Doof, EnvironmentObj);
+FlightObj.plot_sim_dashboard(logMonteCarlo(6).loggedData, Doof, EnvironmentObj);
 
-% Euler Angles Plot For LQR Paper %
-figure()
-num_MonteCarloRuns = length(logMonteCarlo);
 
-for i = 1:num_MonteCarloRuns
-    eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
-    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
-    hold on
-end
-
-title('Yaw Angle Monte Carlo Simulation')
-ylabel('Angle (deg)', 'FontSize', 12)
-xlabel('Time (s)', 'FontSize', 12)
-grid on
-ax = gca;
-ax.XMinorTick = 'on';
-ax.YMinorTick = 'on';
-ax.MinorGridLineStyle = ':';
-ax.XMinorGrid = 'on';
-ax.YMinorGrid = 'on';
 
 
 
