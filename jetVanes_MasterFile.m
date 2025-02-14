@@ -109,7 +109,11 @@ elevation = 75; % m
 use_default = true;
 
 location = [latitude longitude elevation];
-EnvironmentObj = Environment2(location, use_default);
+EnvironmentObj = Environment();
+EnvironmentObj.set_max_altitude(10000) % m
+EnvironmentObj.set_vm_mean(5) % m/s
+EnvironmentObj.set_vm_3sigma(10) % m/s
+
 
 %% Flight Parameters
 

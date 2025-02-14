@@ -175,7 +175,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     
     % Getting Air Density
     altitude = px;
-    rho = EnvironmentObj.get_rho(altitude);
+    [T,a,P,rho,nu,mu] = atmosisa(altitude);
 
     % Applying Wind
     if applyWind
