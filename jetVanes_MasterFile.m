@@ -109,7 +109,7 @@ elevation = 75; % m
 use_default = true;
 
 location = [latitude longitude elevation];
-EnvironmentObj = Environment(location, use_default);
+EnvironmentObj = Environment2(location, use_default);
 
 %% Flight Parameters
 

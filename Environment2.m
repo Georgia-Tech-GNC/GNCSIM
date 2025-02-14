@@ -23,14 +23,17 @@ classdef Environment2
 
         index;
 
-        vm_mean = 0;
+        vm_mean = 0;  % change this for MC
 
-        vm_3sigma = 5;
+        vm_3sigma = 15;  % change this for MC
 
-        dm_mean = 5
+        alts;
 
-        dm_3sigma = 2.5
+        wind_vec;
 
+        step_size = 1;  % step size of wind vector. A step size of 10 will update the wind every 10 meters
+
+        max_altitude = 10000;
         
     end
 
@@ -83,10 +86,24 @@ classdef Environment2
             obj.pressure = data.Pressure';
             obj.temperature = data.Temperature';
             obj.speed_of_sound = data.SpeedOfSound';
-            obj.wind_speed = data.WindSpeed';
+            %obj.wind_speed = data.WindSpeed';
+
+            
+            alpha = 0.9999;
+            sigma_AR1 = (obj.vm_3sigma/3) * sqrt(1 - alpha^2);
+
+            % wind vector (wind speed as function of altitude)
+            [obj.alts, obj.wind_vec] = get_AR1(obj.vm_mean, sigma_AR1, alpha, obj.max_altitude, obj.step_size);
+            plot(obj.wind_vec, obj.alts, 'LineWidth', 1);
 
         end
+        
+        function windspeed = get_windspeed(obj, alt)
+            wind_index = clip(round(alt / obj.step_size), 1, obj.max_altitude);
+            windspeed = obj.wind_vec(wind_index);
+        end
 
+        %{
         function wind_speed = wind_speed_change(obj, V_m, d_m, x)
             % Wind Speed Change: returns instantanous wind speed based on parameters that describe the speed and length of the gust
             % This function models a change in wind speed using a 1 -
@@ -158,6 +175,7 @@ classdef Environment2
             V_m = random(dist1);
             d_m = random(dist2);
         end
+        %}
 
         function [rho_final] = get_rho(obj, altitude_selected)
             rho_final = interp1(obj.altitudes, obj.rho, altitude_selected);
@@ -187,13 +205,13 @@ classdef Environment2
             vm_3sigma = obj.vm_3sigma;
         end
 
-        function [dm_mean] = get_dm_mean(obj)
-            dm_mean = obj.dm_mean;
-        end
+        %function [dm_mean] = get_dm_mean(obj)
+        %    dm_mean = obj.dm_mean;
+        %end
 
-        function [dm_3sigma] = get_dm_3sigma(obj)
-            dm_3sigma = obj.dm_3sigma;
-        end
+        %function [dm_3sigma] = get_dm_3sigma(obj)
+        %    dm_3sigma = obj.dm_3sigma;
+        %end
         
         % Setters
         function obj = set_vm_mean(obj, vm_mean)
@@ -204,13 +222,13 @@ classdef Environment2
             obj.vm_3sigma = vm_3sigma;
         end
 
-        function obj = set_dm_mean(obj, dm_mean)
-            obj.dm_mean = dm_mean;
-        end
+        %function obj = set_dm_mean(obj, dm_mean)
+        %    obj.dm_mean = dm_mean;
+        %end
 
-        function obj = set_dm_3sigma(obj, dm_3sigma)
-            obj.dm_3sigma = dm_3sigma;
-        end
+        %function obj = set_dm_3sigma(obj, dm_3sigma)
+        %    obj.dm_3sigma = dm_3sigma;
+        %end
 
         function [alts] = get_altitudes(obj)
             alts = obj.altitudes;
@@ -222,3 +240,18 @@ classdef Environment2
         end
     end
 end
+
+
+function [alt_vec, wind_vec] = get_AR1(mu, sigma, alpha, max_altitude, step_size)
+	alt_vec = 0 : step_size : max_altitude;
+	nSteps = length(alt_vec) - 1;
+
+	wind_vec	=	zeros(1, nSteps+1);
+    wind_vec(1) = mu;  % initial
+    noise		= normrnd(0, sigma, 1, nSteps+1); 
+
+    for n = 2:nSteps+1
+        wind_vec(n) = (1 - alpha)*mu + alpha*wind_vec(n-1) + noise(n);
+    end
+end
+
