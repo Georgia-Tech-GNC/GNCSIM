@@ -21,7 +21,7 @@ classdef MonteCarlo < handle
         evaluate_yawRange; 
         evaluate_AoARange;
 
-        % Rocket Parameters - 3 Sigma
+        % Rocket Parameters
         wetMass_3sigma;
         dryMass_3sigma;
         wetRollMOI_3sigma; 
@@ -34,7 +34,6 @@ classdef MonteCarlo < handle
         finalCG_3sigma;
         burnTime_3sigma;
         thrustCurve_3sigma;
-
 
     end
 
@@ -133,6 +132,16 @@ classdef MonteCarlo < handle
             validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, mfilename, 'odeSolverMaxTime');
             obj.odeSolverMaxTime = value;
         end
+
+        function obj = set_vm_mean(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_vm_mean', 'vm_mean');
+            obj.vm_mean = value;
+        end
+        
+        function obj = set_vm_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_vm_3sigma', 'vm_3sigma');
+            obj.vm_3sigma = value;
+        end
         
         % Getters
         function lhsSamples = get_lhsSamples(obj)
@@ -186,17 +195,6 @@ classdef MonteCarlo < handle
 
                 obj.lhsSamples = lhsnorm(mu, sigma, obj.numRuns);
 
-                % Temporary solution to incorporate Wind using existing
-                % discrete wind parameters in the xslx table. Future improvement:
-                % changing Environment class to accept continuous
-                % parameters, which can be modified through LHSSampling
-                % (more realistic)
-                indexLHS = lhsdesign(obj.numRuns, 1);  
-                indexSamples = ceil(indexLHS * 4);
-
-                % Append the discrete parameter as an additional column:
-                obj.lhsSamples = [obj.lhsSamples, indexSamples];
-
             elseif obj.runCustomLHS
                 if isempty(obj.lhsSamples)
                     error("Please set lhsSamples with a correct Latin Hypercube Sample matrix.")
@@ -220,7 +218,6 @@ classdef MonteCarlo < handle
             parfor i = 1:size(obj.lhsSamples, 1)
                 % Making copy of objects to avoid broadcasting issues
                 RocketObjIter = RocketObj; 
-                EnvironmentObjIter = EnvironmentObj;
                 FlightObjCopy = FlightObj; 
                 objCopy = obj;  
                 thrustCurveCopy = thrustCurve;
@@ -241,15 +238,11 @@ classdef MonteCarlo < handle
                 RocketObjIter.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
                 RocketObjIter.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
                 RocketObjIter.set_burnTime(objCopy.lhsSamples(i,11));
-                thrustCurveCopy(:,2) = objCopy.lhsSamples(i,12:end-1); 
+                thrustCurveCopy(:,2) = objCopy.lhsSamples(i,12:end); 
                 RocketObjIter.set_thrustCurve(thrustCurveCopy);
-
-                % Assign random variables to EnvironmentObjIter
-                EnvironmentObjIter.set_index(objCopy.lhsSamples(i,end))
-                fprintf('Wind Index: %d', objCopy.lhsSamples(i,end));
                 
                 % Run the flight simulation
-                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObjIter, AerodynamicsObj, TrimPointObj);
+                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, TrimPointObj);
             
                 % Store the results
                 logMonteCarlo(i).loggedData = log;
@@ -283,9 +276,12 @@ classdef MonteCarlo < handle
                                 if eul(time_indices(k), 1) < obj.evaluate_rollRange{j}{2}(1) || eul(time_indices(k), 1) > obj.evaluate_rollRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
                                     fprintf('Index %d: Yaw condition at %s failed (found eul < 5 deg), setting pass to false.\n', i);
-
-                            
-
+                                end
+                            end
+                        end
+                    end
+                end
+            end
 
             for i = 1:length(logMonteCarlo)
                 % Check if ode solver got terminated for excessive solving time

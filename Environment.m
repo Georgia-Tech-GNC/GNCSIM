@@ -34,7 +34,7 @@ classdef Environment
         end
         
         function windspeed = get_windspeed(obj, alt)
-            wind_index = clip(round(alt / obj.step_size), 1, obj.max_altitude);
+            wind_index = max(min(round(alt / obj.step_size), obj.max_altitude), 1);
             windspeed = obj.wind_vec(wind_index);
         end
         

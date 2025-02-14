@@ -365,7 +365,7 @@ TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
 FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
-FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
+% FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
 %% Monte Carlo Analysis
 monteCarlo = MonteCarlo();
@@ -392,21 +392,25 @@ monteCarlo.set_finalCG_3sigma(0.2);
 monteCarlo.set_burnTime_3sigma(2);
 monteCarlo.set_thrustCurve_3sigma(100);
 
+EnvironmentObj.set_vm_mean(0);
+EnvironmentObj.set_vm_3sigma(15);
+
 % Saving parameters in CSV for future use
 monteCarlo.saveToCSV('monteCarloParameters.csv')
 
 % Setting up FlightObj
 FlightObj.set_runClosedLoop(true);
-FlightObj.set_applyWind(false);
+FlightObj.set_applyWind(true);
 
 % Run parallel simulations
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
 %% Evaluate pass/fail
-logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
+%logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
 
 %% Plotting MonteCarlo Analysis
-FlightObj.plot_sim_dashboard(logMonteCarlo(6).loggedData, Doof, EnvironmentObj);
+
+monteCarlo.plotMonteCarlo(logMonteCarlo)
 
 
 
