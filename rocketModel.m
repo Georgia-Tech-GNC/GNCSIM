@@ -175,16 +175,19 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     
     % Getting Air Density
     altitude = px;
-    rho = EnvironmentObj.get_rho(altitude);
+    [T,a,P,rho,nu,mu] = atmosisa(altitude);
 
     % Applying Wind
     if applyWind
-            % Discrete Wind Gust Model
-            [Vm, dm] = EnvironmentObj.get_wind_aspects();
+        % Discrete Wind Gust Model
+        %[Vm, dm] = EnvironmentObj.get_wind_aspects();
 
-            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
-            udir = [0 1 0];
+        % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
+        udir = [0 1 0];
+        
+        
 
+            %{
         if ~applyPeriodicWindGusts
             
             % Distance moved into gust
@@ -204,12 +207,15 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
             
             % Calculating Wind Speed with Discrete Gust Model
             windspeed = EnvironmentObj.wind_speed_gust(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
-        
+           
         end
+         %}
+        windspeed = EnvironmentObj.get_windspeed(altitude);
 
         % wind gust in y and z
         v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
-    
+        %v_a = v_b + windspeed*udir
+
         % Calculating to velocity to account for wind speed
         va_x = v_a(1);
         va_y = v_a(2);

@@ -761,7 +761,7 @@ classdef Flight < handle
                 text(6.5, 3, num2str(dry_mois));
 
                 altitudes = Environment.get_altitudes();
-                windspeed_on_ground = Environment.get_wind_speed(altitudes(1));
+                windspeed_on_ground = Environment.get_windspeed(altitudes(1));
                 text(0.5, 4, 'Ground Windspeed (m/s): ');
                 text(9, 4, num2str(windspeed_on_ground));
 
