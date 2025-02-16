@@ -241,6 +241,7 @@ TrimPointsObj = TrimPoints(flight_path);
 
 % Find the time of the "LIFTOFF" event in the flight data
 liftoff_time = TrimPointsObj.find_event_time("LIFTOFF");
+%liftoff_time = 0.18;
 
 % Find the time of the burnout
 burnout_time = burn_time + liftoff_time;
@@ -251,13 +252,13 @@ time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_peri
 
 FlightObj.set_runClosedLoop(false) % Needed to optimize trimpoints
 
-generate_trim_points = false;
+generate_trim_points = true;
 if generate_trim_points
     % Generate trim batches for each time point in time_arr
     TrimPointsObj.generate_trim_batches(time_arr);
     
     % Define the number of trim points to generate per time instance for 'u' variations
-    num_trim_points_per_time = 13;
+    num_trim_points_per_time = 11;
     
     % Add 'u' (velocity) variations to each trim batch based on the specified parameters
     % This creates different trim points by varying the 'u' component within the defined spacing
@@ -273,9 +274,13 @@ if generate_trim_points
     
     % Define the variation data matrix for the custom variation
     % Each row represents a different state for the variation
-    turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
-                 0.9961947, 0, 0, 0.0871557;  % 10 deg
-                 0.9914449, 0, 0, 0.1305262]; % 15 deg
+    %turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
+    %             0.9961947, 0, 0, 0.0871557;  % 10 deg
+    %             0.9914449, 0, 0, 0.1305262]; % 15 deg
+
+    turn_data = [0.999762, 0, 0, 0.0218149;   % 2.5 deg
+                 0.9990482, 0, 0, 0.0436194]; % 5 deg
+
     
     % include base state [0, 0, 0, 1] strait up flight
     turn_include_base = true;
@@ -337,8 +342,12 @@ maneuver_R = straight_up_R;
 % Generate K matrix for all trim points given Q and R matrixes
 TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
 
+save_h_data = false;
+if save_h_data
+    TrimPointsObj.export_to_ref_h('output/h_data.h')
+end
 % Visualize 'u' variations
-% trim_points.draw_u_trim_points(0, burnout_time)
+TrimPointsObj.draw_u_trim_points(0, burnout_time)
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
@@ -411,7 +420,6 @@ logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroOb
 %% Plotting MonteCarlo Analysis
 
 monteCarlo.plotMonteCarlo(logMonteCarlo)
-
 
 
 
