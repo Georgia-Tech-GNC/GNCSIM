@@ -449,6 +449,7 @@ classdef TrimPoints < handle
             % Initializing u_iterative and u_step for loop
             u_iterative = u;
             u_step = 0.1;
+            eps = 1E-8;
             
             % Loop forward from the middle to the end
             for i = middle+1:num_trim_points_per_time
@@ -464,8 +465,8 @@ classdef TrimPoints < handle
                 while (percent_change_FAb < percent && percent_change_MAb < percent)
                     u_iterative = u_iterative + u_step;
                     [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
-                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
-                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
+                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / (FAb_initial_mag + eps));
+                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / (MAb_initial_mag + eps));
                 end
                 u_vars_temp(i) = u_iterative;
             end
@@ -491,8 +492,9 @@ classdef TrimPoints < handle
                 while (percent_change_FAb < percent && percent_change_MAb < percent)
                     u_iterative = u_iterative + u_step;
                     [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
-                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
-                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
+                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / (FAb_initial_mag + eps));
+                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / (MAb_initial_mag + eps));
+                    %percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
                 end
                 u_vars_temp(i) = u_iterative;
             end
