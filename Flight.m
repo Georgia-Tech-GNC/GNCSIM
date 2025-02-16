@@ -1,4 +1,5 @@
 % Main Authors: Patrick Barry, Albert Zheng
+
 classdef Flight < handle
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
@@ -251,8 +252,8 @@ classdef Flight < handle
                 %                         initial_state, ...
                 %                         ode_options);
 
-                if obj.get_applyWind()
-                
+                % Euler Propagation
+                %{
                     traj.t = [];
                     traj.x = [];
                     x = initial_state;
@@ -269,9 +270,10 @@ classdef Flight < handle
                             disp(printed_str)
                         end
                     end
-                else
-                    [traj.t, traj.x] = ode23(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
-                end
+                %}
+                % End Euler Propagation
+                
+                [traj.t, traj.x] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
 
                 prevFinalState = traj.x(end, :)';
              
@@ -760,7 +762,7 @@ classdef Flight < handle
                 text(6.5, 3, num2str(dry_mois));
 
                 altitudes = Environment.get_altitudes();
-                windspeed_on_ground = Environment.get_wind_speed(altitudes(1));
+                windspeed_on_ground = Environment.get_windspeed(altitudes(1));
                 text(0.5, 4, 'Ground Windspeed (m/s): ');
                 text(9, 4, num2str(windspeed_on_ground));
 

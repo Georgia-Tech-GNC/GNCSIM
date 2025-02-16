@@ -110,7 +110,11 @@ elevation = 75; % m
 use_default = true;
 
 location = [latitude longitude elevation];
-EnvironmentObj = Environment(location, use_default);
+EnvironmentObj = Environment();
+EnvironmentObj.set_max_altitude(10000) % m
+EnvironmentObj.set_vm_mean(5) % m/s
+EnvironmentObj.set_vm_3sigma(10) % m/s
+
 
 %% Flight Parameters
 
@@ -238,6 +242,7 @@ TrimPointsObj = TrimPoints(flight_path);
 
 % Find the time of the "LIFTOFF" event in the flight data
 liftoff_time = TrimPointsObj.find_event_time("LIFTOFF");
+%liftoff_time = 0.18;
 
 % Find the time of the burnout
 burnout_time = burn_time + liftoff_time;
@@ -248,13 +253,13 @@ time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_peri
 
 FlightObj.set_runClosedLoop(false) % Needed to optimize trimpoints
 
-generate_trim_points = false;
+generate_trim_points = true;
 if generate_trim_points
     % Generate trim batches for each time point in time_arr
     TrimPointsObj.generate_trim_batches(time_arr);
     
     % Define the number of trim points to generate per time instance for 'u' variations
-    num_trim_points_per_time = 13;
+    num_trim_points_per_time = 11;
     
     % Add 'u' (velocity) variations to each trim batch based on the specified parameters
     % This creates different trim points by varying the 'u' component within the defined spacing
@@ -270,9 +275,13 @@ if generate_trim_points
     
     % Define the variation data matrix for the custom variation
     % Each row represents a different state for the variation
-    turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
-                 0.9961947, 0, 0, 0.0871557;  % 10 deg
-                 0.9914449, 0, 0, 0.1305262]; % 15 deg
+    %turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
+    %             0.9961947, 0, 0, 0.0871557;  % 10 deg
+    %             0.9914449, 0, 0, 0.1305262]; % 15 deg
+
+    turn_data = [0.999762, 0, 0, 0.0218149;   % 2.5 deg
+                 0.9990482, 0, 0, 0.0436194]; % 5 deg
+
     
     % include base state [0, 0, 0, 1] strait up flight
     turn_include_base = true;
@@ -334,8 +343,12 @@ maneuver_R = straight_up_R;
 % Generate K matrix for all trim points given Q and R matrixes
 TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
 
+save_h_data = true;
+if save_h_data
+    TrimPointsObj.export_to_ref_h('output/h_data.h')
+end
 % Visualize 'u' variations
-% trim_points.draw_u_trim_points(0, burnout_time)
+%TrimPointsObj.draw_u_trim_points(0, burnout_time)
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
@@ -362,15 +375,20 @@ TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
 FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
-FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
+% FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
 %% Monte Carlo Analysis
 monteCarlo = MonteCarlo();
 
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
+<<<<<<< HEAD
 monteCarlo.set_numRuns(1);
 monteCarlo.set_odeSolverMaxTime(600); % kills ode after x seconds
+=======
+monteCarlo.set_numRuns(10);
+monteCarlo.set_odeSolverMaxTime(150); % kills ode after x seconds
+>>>>>>> e37491beda0cc887e92d5cdd29b6fa5de8a4771a
 
 % Set 3sigma values 
 monteCarlo.set_wetMass_3sigma(2);
@@ -389,34 +407,26 @@ monteCarlo.set_finalCG_3sigma(0.2);
 monteCarlo.set_burnTime_3sigma(2);
 monteCarlo.set_thrustCurve_3sigma(100);
 
+EnvironmentObj.set_vm_mean(0);
+EnvironmentObj.set_vm_3sigma(15);
+
 % Saving parameters in CSV for future use
 monteCarlo.saveToCSV('monteCarloParameters.csv')
 
+% Setting up FlightObj
+FlightObj.set_runClosedLoop(true);
+FlightObj.set_applyWind(true);
+
+% Run parallel simulations
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
+%% Evaluate pass/fail
+%logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
+
 %% Plotting MonteCarlo Analysis
-%FlightObj.plot_sim_dashboard(logMonteCarlo(1).loggedData, Doof, EnvironmentObj);
 
-% Euler Angles Plot For LQR Paper %
-figure()
-num_MonteCarloRuns = length(logMonteCarlo);
+monteCarlo.plotMonteCarlo(logMonteCarlo)
 
-for i = 1:num_MonteCarloRuns
-    eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
-    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
-    hold on
-end
-
-title('Yaw Angle Monte Carlo Simulation')
-ylabel('Angle (deg)', 'FontSize', 12)
-xlabel('Time (s)', 'FontSize', 12)
-grid on
-ax = gca;
-ax.XMinorTick = 'on';
-ax.YMinorTick = 'on';
-ax.MinorGridLineStyle = ':';
-ax.XMinorGrid = 'on';
-ax.YMinorGrid = 'on';
 
 
 

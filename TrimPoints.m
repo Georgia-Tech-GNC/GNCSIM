@@ -363,6 +363,52 @@ classdef TrimPoints < handle
             end
         end
 
+        function export_to_ref_h(obj, output_file_path)
+            % Check if trim_points are generated
+            if isempty(obj.trim_points)
+                error('No trim points to export. Please generate trim points first.');
+            end
+           
+            fid = fopen(output_file_path, 'w');
+            if fid == -1
+                error('Could not open file %s for writing.', output_file_path);
+            end
+
+            num_trim_points = length(obj.trim_points);
+            start_time = obj.trimmed_points(1).time;
+            for ii=1:num_trim_points
+                trim_pt = obj.trimmed_points(ii);
+
+                time = trim_pt.time - start_time;
+                airspeed = trim_pt.states(1);
+                q3 = trim_pt.states(10);
+                K = trim_pt.K;
+                flat_K = reshape(K, 1, []);
+                %flat_K = K(:);
+
+                lineStr = sprintf('{ %.6f, { %.6f, %.6f }, { ', time, airspeed, q3);
+        
+                % Append each element of flat_K, separated by commas.
+                numK = length(flat_K);
+                for j = 1:numK
+                    if j < numK
+                        lineStr = sprintf('%s%.6f, ', lineStr, flat_K(j));
+                    else
+                        lineStr = sprintf('%s%.6f', lineStr, flat_K(j));
+                    end
+                end
+                
+                % Close the brace and add a trailing comma.
+                lineStr = sprintf('%s } },\n', lineStr);
+                
+                % Write the line to the file.
+                fprintf(fid, '%s', lineStr);
+            end
+
+            % Close the file.
+            fclose(fid);
+        end
+
         function u_vars = generate_trim_points_from_u_var(obj, time, num_trim_points_per_time, AerodynamicsObj, CG_t_handle, rho_t_handle)
             % Generates Variations in 'u' (Velocity) Around a Base Value
             % This method creates an array of 'u' values centered around
@@ -378,6 +424,8 @@ classdef TrimPoints < handle
             %
             % Output:
             %   u_vars - Array of 'u' variation values.
+
+            percent = 0.08;
             
             % Retrieve the base 'u' value at the specified time
             [u, ~] = obj.get_info(time);
@@ -401,6 +449,7 @@ classdef TrimPoints < handle
             % Initializing u_iterative and u_step for loop
             u_iterative = u;
             u_step = 0.1;
+            eps = 1E-8;
             
             % Loop forward from the middle to the end
             for i = middle+1:num_trim_points_per_time
@@ -413,11 +462,11 @@ classdef TrimPoints < handle
                 percent_change_MAb = 0;
 
                 % Increasing u until 8% change is reached
-                while (percent_change_FAb < 0.08 && percent_change_MAb < 0.08)
+                while (percent_change_FAb < percent && percent_change_MAb < percent)
                     u_iterative = u_iterative + u_step;
                     [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
-                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
-                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
+                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / (FAb_initial_mag + eps));
+                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / (MAb_initial_mag + eps));
                 end
                 u_vars_temp(i) = u_iterative;
             end
@@ -440,11 +489,12 @@ classdef TrimPoints < handle
                 percent_change_MAb = 0;
 
                 % Increasing u until 8% change is reached
-                while (percent_change_FAb < 0.08 && percent_change_MAb < 0.08)
+                while (percent_change_FAb < percent && percent_change_MAb < percent)
                     u_iterative = u_iterative + u_step;
                     [FAb, MAb]= AerodynamicsObj.calcAeroBodyFrame_JV(u_iterative, 0, 0, 0, 0, rho_t_handle(time), CG_t_handle(time));
-                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / FAb_initial_mag);
-                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
+                    percent_change_FAb = abs((norm(FAb) - FAb_initial_mag) / (FAb_initial_mag + eps));
+                    percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / (MAb_initial_mag + eps));
+                    %percent_change_MAb = abs((norm(MAb) - MAb_initial_mag) / MAb_initial_mag);
                 end
                 u_vars_temp(i) = u_iterative;
             end
