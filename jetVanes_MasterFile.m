@@ -342,12 +342,12 @@ maneuver_R = straight_up_R;
 % Generate K matrix for all trim points given Q and R matrixes
 TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
 
-save_h_data = false;
+save_h_data = true;
 if save_h_data
     TrimPointsObj.export_to_ref_h('output/h_data.h')
 end
 % Visualize 'u' variations
-TrimPointsObj.draw_u_trim_points(0, burnout_time)
+%TrimPointsObj.draw_u_trim_points(0, burnout_time)
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
