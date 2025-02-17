@@ -383,8 +383,8 @@ classdef TrimPoints < handle
                 airspeed = trim_pt.states(1);
                 q3 = trim_pt.states(10);
                 K = trim_pt.K;
-                flat_K = reshape(K, 1, []);
                 %flat_K = K(:);
+                flat_K = reshape(K.', 1, []);
 
                 lineStr = sprintf('{ %.6f, { %.6f, %.6f }, { ', time, airspeed, q3);
         
