@@ -19,6 +19,8 @@ classdef Rocket < handle
 
         mainChuteCd; % Cd of the Main Parachute
         mainChuteArea; % (m^2) of the Main Parachute
+        drogueChuteCd;  % Cd of the Drogue Parachute
+        drogueChuteArea; % (m^2) of the Drogue Parachute
     end
 
     methods
@@ -122,8 +124,16 @@ classdef Rocket < handle
             obj.mainChuteCd = newCdValue;
         end
 
+        function obj = set_drogueChuteCd(obj,newCdValue)
+            obj.drogueChuteCd = newCdValue;
+        end
+
         function obj = set_mainChuteArea(obj,newAreaValue)
             obj.mainChuteArea = newAreaValue;
+        end
+
+        function obj = set_drogueChuteArea(obj,newAreaValue)
+            obj.drogueChuteArea = newAreaValue;
         end
         % End Setter Functions
 
@@ -182,6 +192,14 @@ classdef Rocket < handle
 
         function mainChuteAreaValue = get_mainChuteArea(obj)
             mainChuteAreaValue = obj.mainChuteArea;
+        end
+
+        function drogueChuteCdValue = get_drogueChuteCd(obj)
+            drogueChuteCdValue = obj.drogueChuteCd;
+        end
+
+        function drogueChuteAreaValue = get_drogueChuteArea(obj)
+            drogueChuteAreaValue = obj.drogueChuteArea;
         end
         % End Getter Functions
         

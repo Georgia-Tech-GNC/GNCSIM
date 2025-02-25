@@ -56,6 +56,8 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     applyPeriodicWindGusts = false;
     mainChuteCd = RocketObj.get_mainChuteCd;
     mainChuteArea = RocketObj.get_mainChuteArea;
+    drogueChuteCd = RocketObj.get_drogueChuteCd;
+    drogueChuteArea = RocketObj.get_drogueChuteArea;
     controlsTime = FlightObj.get_controlsTime;
 
 
@@ -224,28 +226,38 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
         beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
 
-        if va_x < 0
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*va_x, va_y, va_z, wx, wz, rho, CG);
+        if v_f(1) < 0
+            FA_b = [0;0;0]; % Aeroforces and moments turned off for descent
+            MA_b = [0;0;0];
         else
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+            if va_x < 0
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*va_x, va_y, va_z, wx, wz, rho, CG);
+            else
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+            end
         end
     else
-        if vx < 0
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*vx, vy, vz, wx, wz, rho, CG);
+        if v_f(1) < 0
+            FA_b = [0;0;0]; % Aeroforces and moments turned off for descent
+            MA_b = [0;0;0];
         else
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+            if vx < 0
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*vx, vy, vz, wx, wz, rho, CG);
+            else
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+            end
         end
 
         alpha = atan2(vy, vx);
         beta = atan2(vz, vx);
     end
 
-    % TEMPORARY FIX due to aero model not having valid readings after 10
-    % degrees AOA
-
     %% Parachute Forces
-    if v_f(1) < -999999999999
-        FP_b_mag = mainChuteCd * rho * ((norm(v_b)^2)/2) * mainChuteArea;
+    if v_f(1) < 0
+        FP_b_mag = drogueChuteCd * rho * ((norm(v_b)^2)/2) * drogueChuteArea; % Drogue chute deploys at apogee
+        FP_b = FP_b_mag * (-v_b/(norm(v_b)));
+    elseif (t > burnTime) && (px < 304.8)
+        FP_b_mag = (mainChuteCd + drogueChuteCd) * rho * ((norm(v_b)^2)/2) * (mainChuteArea + drogueChuteArea); % Main chute deploys at 1000 ft (304.8 m)
         FP_b = FP_b_mag * (-v_b/(norm(v_b)));
     else
         FP_b = [0;0;0];
@@ -284,7 +296,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     p_f_dot = p_f_dot'; % [3x1]
     
     % velocity eqns of motion
-    F_b = FG_b + FT_b + FA_b;
+    F_b = FG_b + FT_b + FA_b + FP_b;
     v_b_dot = (1/m)*F_b - cross(wbf_b, v_b);
     
     % quaternion eqns of motion
@@ -339,6 +351,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     log.FG_b = FG_b';
     log.FT_b = FT_b';
     log.FA_b = FA_b';
+    log.FP_b = FP_b';
     log.velFlat = p_f_dot'; % should be [1x3]
     log.accelFlat =quat_rotate(quatconj(q_bf),real(v_b_dot)');
     %log.l_p = l_p;

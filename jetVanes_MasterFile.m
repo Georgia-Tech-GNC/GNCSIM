@@ -29,6 +29,8 @@ burn_time = 13.1;
 
 Doof.set_mainChuteCd(2.2);
 Doof.set_mainChuteArea(7.2965877);
+Doof.set_drogueChuteCd(1.55);
+Doof.set_drogueChuteArea(0.291863508);
 
 Doof.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
 Doof.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
@@ -81,7 +83,6 @@ FAx_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + s
 FAy_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
 FAz_b_sym = 0;
 MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
-%MAx_b_sym = 0;
 MAy_b_sym = 0;
 MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
 
@@ -125,8 +126,8 @@ FlightObj.set_runLinearModel(false);
 FlightObj.set_applyWind(false);
 FlightObj.set_numStates(13);
 FlightObj.set_numInputs(3);
-FlightObj.set_simTime(12); % seconds
-FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
+FlightObj.set_simTime(30); % seconds
+FlightObj.set_localSimTime(30); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
 FlightObj.set_tSpan()
 FlightObj.set_odeSolverMaxTime(300) % 300s before killing the simulation
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
@@ -241,6 +242,7 @@ TrimPointsObj = TrimPoints(flight_path);
 
 % Find the time of the "LIFTOFF" event in the flight data
 liftoff_time = TrimPointsObj.find_event_time("LIFTOFF");
+%liftoff_time = 0.18;
 
 % Find the time of the burnout
 burnout_time = burn_time + liftoff_time;
@@ -251,13 +253,13 @@ time_arr = liftoff_time:trim_switching_period:burnout_time - trim_switching_peri
 
 FlightObj.set_runClosedLoop(false) % Needed to optimize trimpoints
 
-generate_trim_points = false;
+generate_trim_points = true;
 if generate_trim_points
     % Generate trim batches for each time point in time_arr
     TrimPointsObj.generate_trim_batches(time_arr);
     
     % Define the number of trim points to generate per time instance for 'u' variations
-    num_trim_points_per_time = 13;
+    num_trim_points_per_time = 11;
     
     % Add 'u' (velocity) variations to each trim batch based on the specified parameters
     % This creates different trim points by varying the 'u' component within the defined spacing
@@ -273,9 +275,13 @@ if generate_trim_points
     
     % Define the variation data matrix for the custom variation
     % Each row represents a different state for the variation
-    turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
-                 0.9961947, 0, 0, 0.0871557;  % 10 deg
-                 0.9914449, 0, 0, 0.1305262]; % 15 deg
+    %turn_data = [0.9990482, 0, 0, 0.0436194;  % 5 deg
+    %             0.9961947, 0, 0, 0.0871557;  % 10 deg
+    %             0.9914449, 0, 0, 0.1305262]; % 15 deg
+
+    turn_data = [0.999762, 0, 0, 0.0218149;   % 2.5 deg
+                 0.9990482, 0, 0, 0.0436194]; % 5 deg
+
     
     % include base state [0, 0, 0, 1] strait up flight
     turn_include_base = true;
@@ -337,8 +343,12 @@ maneuver_R = straight_up_R;
 % Generate K matrix for all trim points given Q and R matrixes
 TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B);
 
+save_h_data = true;
+if save_h_data
+    TrimPointsObj.export_to_ref_h('output/h_data.h')
+end
 % Visualize 'u' variations
-% trim_points.draw_u_trim_points(0, burnout_time)
+%TrimPointsObj.draw_u_trim_points(0, burnout_time)
 
 %A_current_time_step = compute_A(2.43,1,10,10,9.81,33,0.02,-0.04,0.962,0,0,0.0872,0.07,0.8,150,0.4,0.02)
 %B_current_time_step = compute_B(1,10,10,33)
@@ -372,8 +382,13 @@ monteCarlo = MonteCarlo();
 
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
+<<<<<<< HEAD
+monteCarlo.set_numRuns(1);
+monteCarlo.set_odeSolverMaxTime(600); % kills ode after x seconds
+=======
 monteCarlo.set_numRuns(10);
 monteCarlo.set_odeSolverMaxTime(150); % kills ode after x seconds
+>>>>>>> e37491beda0cc887e92d5cdd29b6fa5de8a4771a
 
 % Set 3sigma values 
 monteCarlo.set_wetMass_3sigma(2);
@@ -425,7 +440,6 @@ logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
 
 %% Plotting MonteCarlo Analysis
 monteCarlo.plotMonteCarlo(logMonteCarlo)
-
 
 
 
