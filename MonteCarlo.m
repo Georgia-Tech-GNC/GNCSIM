@@ -16,10 +16,12 @@ classdef MonteCarlo < handle
         evaluate_checkPitch = false;
         evaluate_checkYaw = false;
         evaluate_checkAoA = false;
-        evaluate_rollRange; % {{yawTimeRange, boundary}, {yawTimeRange, boundary}}
+        evaluate_rollRange; 
         evaluate_pitchRange;
         evaluate_yawRange; 
         evaluate_AoARange;
+
+        % {{yawTimeRange, boundary}, {yawTimeRange, boundary}}
 
         % Rocket Parameters
         wetMass_3sigma;
@@ -58,10 +60,10 @@ classdef MonteCarlo < handle
             obj.runGaussianLHS = value;
         end
 
-        % function obj = set_runUniformLHS(obj, value)
-        %     validateattributes(value, {'logical'}, {'scalar'}, 'set_runSweep', 'runUniformLHS');
-        %     obj.runUniformLHS = value;
-        % end
+        function obj = set_runUniformLHS(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_runSweep', 'runUniformLHS');
+            obj.runUniformLHS = value;
+        end
 
         function obj = set_wetMass_3sigma(obj, value)
             validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_wetMass_3sigma', 'wetMass_3sigma');
@@ -133,14 +135,49 @@ classdef MonteCarlo < handle
             obj.odeSolverMaxTime = value;
         end
 
-        function obj = set_vm_mean(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_vm_mean', 'vm_mean');
-            obj.vm_mean = value;
+        function obj = set_evaluate_checkTermination(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_evaluate_checkTermination', 'evaluate_checkTermination');
+            obj.evaluate_checkTermination = value;
         end
         
-        function obj = set_vm_3sigma(obj, value)
-            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_vm_3sigma', 'vm_3sigma');
-            obj.vm_3sigma = value;
+        function obj = set_evaluate_checkRoll(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_evaluate_checkRoll', 'evaluate_checkRoll');
+            obj.evaluate_checkRoll = value;
+        end
+        
+        function obj = set_evaluate_checkPitch(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_evaluate_checkPitch', 'evaluate_checkPitch');
+            obj.evaluate_checkPitch = value;
+        end
+
+        function obj = set_evaluate_checkYaw(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_evaluate_checkYaw', 'evaluate_checkYaw');
+            obj.evaluate_checkYaw = value;
+        end
+
+        function obj = set_evaluate_checkAoA(obj, value)
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_evaluate_checkAoA', 'evaluate_checkAoA');
+            obj.evaluate_checkAoA = value;
+        end
+        
+        function obj = set_evaluate_rollRange(obj, value)
+            validateattributes(value, {'cell'}, {}, 'set_evaluate_rollRange', 'evaluate_rollRange');
+            obj.evaluate_rollRange = value;
+        end
+
+        function obj = set_evaluate_pitchRange(obj, value)
+            validateattributes(value, {'cell'}, {}, 'set_evaluate_pitchRange', 'evaluate_pitchRange');
+            obj.evaluate_pitchRange = value;
+        end
+
+        function obj = set_evaluate_yawRange(obj, value)
+            validateattributes(value, {'cell'}, {}, 'set_evaluate_yawRange', 'evaluate_yawRange');
+            obj.evaluate_yawRange = value;
+        end
+
+        function obj = set_evaluate_AoARange(obj, value)
+            validateattributes(value, {'cell'}, {}, 'set_evaluate_AoARange', 'evaluate_AoARange');
+            obj.evaluate_AoARange = value;
         end
         
         % Getters
@@ -204,7 +241,7 @@ classdef MonteCarlo < handle
             end
             
             % Preallocate struct array
-            logMonteCarlo(obj.numRuns) = struct('loggedData', [], 'pass', true);
+            logMonteCarlo(obj.numRuns) = struct('loggedData', [], 'pass', []);
 
             % Check for an existing parallel pool and start one if necessary.
             poolobj = gcp('nocreate'); % Get current pool without creating a new one.
@@ -255,6 +292,11 @@ classdef MonteCarlo < handle
         function logMonteCarlo = evaluateMonteCarlo(obj, logMonteCarlo)
             tic;
             numSims = length(logMonteCarlo);
+            
+            % Setting all pass to true by default
+            for i = 1:numSims
+                logMonteCarlo(i).pass = true;
+            end
 
             % Check if ode solver got terminated for excessive solving time
             if obj.evaluate_checkTermination
@@ -266,16 +308,18 @@ classdef MonteCarlo < handle
                 end
             end
 
+            % Check if roll is within bounds
             if obj.evaluate_checkRoll
                 for i = 1:numSims
                     if logMonteCarlo(i).pass == true
                         eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
                         for j = 1:length(obj.evaluate_rollRange)
-                            time_indices = find(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_rollRange{j}{1});
+                            time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_rollRange{j}{1}));
                             for k = 1:length(time_indices)
                                 if eul(time_indices(k), 1) < obj.evaluate_rollRange{j}{2}(1) || eul(time_indices(k), 1) > obj.evaluate_rollRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
-                                    fprintf('Index %d: Yaw condition at %s failed (found eul < 5 deg), setting pass to false.\n', i);
+                                    fprintf('Index %d: Roll condition at seconds: [%d, %d] failed (found %d < roll < %d deg), setting pass to false.\n', i,...
+                                        obj.evaluate_rollRange{j}{1}(1), obj.evaluate_rollRange{j}{1}{end}, obj.evaluate_rollRange{j}{2}(1), obj.evaluate_rollRange{j}{2}(2));
                                 end
                             end
                         end
@@ -283,70 +327,62 @@ classdef MonteCarlo < handle
                 end
             end
 
-            for i = 1:length(logMonteCarlo)
-                % Check if ode solver got terminated for excessive solving time
-                if logMonteCarlo(i).loggedData.loggedData.termination_flag == true
-                    logMonteCarlo(i).pass = false;
-                    fprintf('Index %d: termination_flag is true, setting pass to false.\n', i);
-                else
-                    % Check if yaw gets above 5 deg at 5th second
-                    indices_time_5s = find(floor(logMonteCarlo(i).loggedData.loggedData.time) == 5);
-                    eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
-                    yaw_5s_condition = true;
-                    index_5s = 1;
-                    while yaw_5s_condition && index_5s <= length(indices_time_5s)
-                        if eul(indices_time_5s(index_5s), 1) < 5
-                            disp(eul(indices_time_5s(index_5s)))
-                            yaw_5s_condition = false;
-                        end
-                        index_5s = index_5s + 1;
-                    end 
-                    if yaw_5s_condition == false
-                        logMonteCarlo(i).pass = false;
-                        fprintf('Index %d: Yaw condition at 5s failed (found eul < 5 deg), setting pass to false.\n', i);
-                    else 
-                        % Check if yaw is within +/- 2 deg around 0 at 12th second
-                        indices_time_12s = find(floor(logMonteCarlo(i).loggedData.loggedData.time) == 12);
-                        yaw_12s_condition = true;
-                        index_12s = 1;
-                        while yaw_12s_condition && index_12s <= length(indices_time_12s)
-                            if eul(indices_time_12s(index_12s), 1) < -2 || eul(indices_time_12s(index_12s), 1) > 2
-                                yaw_12s_condition = false;
-                            end
-                            index_12s = index_12s + 1;
-                        end 
-                        if yaw_12s_condition == false
-                            logMonteCarlo(i).pass = false;
-                            fprintf('Index %d: Yaw condition at 12s failed (eul not in [-2,2]), setting pass to false.\n', i);
-                        else
-                            % Check if roll is within +/- 2 deg around 0 & AoA is not less than 10 deg for the whole flight
-                            index_all = 1;
-                            roll_all_condition = true;
-                            AoA_all_condition = true;
-                            while roll_all_condition && AoA_all_condition && index_all <= length(eul)
-                                if eul(index_all, 3) < -2 || eul(index_all, 3) > 2
-                                    roll_all_condition = false; 
+            % Check if pitch is within bounds
+            if obj.evaluate_checkPitch
+                for i = 1:numSims
+                    if logMonteCarlo(i).pass == true
+                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
+                        for j = 1:length(obj.evaluate_pitchRange)
+                            time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_pitchRange{j}{1}));
+                            for k = 1:length(time_indices)
+                                if eul(time_indices(k), 2) < obj.evaluate_pitchRange{j}{2}(1) || eul(time_indices(k), 2) > obj.evaluate_pitchRange{j}{2}(2)
+                                    logMonteCarlo(i).pass = false;
+                                    fprintf('Index %d: Pitch condition at seconds: [%d, %d] failed (found %d < pitch < %d deg), setting pass to false.\n', i,...
+                                        obj.evaluate_pitchRange{j}{1}(1), obj.evaluate_pitchRange{j}{1}{end}, obj.evaluate_pitchRange{j}{2}(1), obj.evaluate_pitchRange{j}{2}(2));
                                 end
-                                if rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack(index_all)) > 10
-                                    AoA_all_condition = false;
-                                end
-                                index_all = index_all + 1;
-                            end
-                            if roll_all_condition == false 
-                                logMonteCarlo(i).pass = false;
-                                fprintf('Index %d: Roll condition failed, setting pass to false.\n', i);
-                            elseif AoA_all_condition == false
-                                disp(rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack(index_all)))
-                                logMonteCarlo(i).pass = false;
-                                fprintf('Index %d: AoA condition failed, setting pass to false.\n', i);
-                            else
-                                logMonteCarlo(i).pass = true;
-                                fprintf('Index %d: All conditions passed, setting pass to true.\n', i);
                             end
                         end
                     end
                 end
-            end
+            end 
+
+            % Check if yaw is within bounds
+            if obj.evaluate_checkYaw
+                for i = 1:numSims
+                    if logMonteCarlo(i).pass == true
+                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
+                        for j = 1:length(obj.evaluate_yawRange)
+                            time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_yawRange{j}{1}));
+                            for k = 1:length(time_indices)
+                                if eul(time_indices(k), 3) < obj.evaluate_yawRange{j}{2}(1) || eul(time_indices(k), 3) > obj.evaluate_yawRange{j}{2}(2)
+                                    logMonteCarlo(i).pass = false;
+                                    fprintf('Index %d: Yaw condition at seconds: [%d, %d] failed (found %d < yaw < %d deg), setting pass to false.\n', i,...
+                                        obj.evaluate_yawRange{j}{1}(1), obj.evaluate_yawRange{j}{1}{end}, obj.evaluate_yawRange{j}{2}(1), obj.evaluate_yawRange{j}{2}(2));
+                                end
+                            end
+                        end
+                    end
+                end
+            end  
+
+            % Check if AoA is within bounds
+            if obj.evaluate_checkAoA
+                for i = 1:numSims
+                    if logMonteCarlo(i).pass == true
+                        aoa = rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack);
+                        for j = 1:length(obj.evaluate_AoARange)
+                            time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_AoARange{j}{1}));
+                            for k = 1:length(time_indices)
+                                if aoa(time_indices(k)) < obj.evaluate_AoARange{j}{2}(1) || aoa(time_indices(k)) > obj.evaluate_AoARange{j}{2}(2)
+                                    logMonteCarlo(i).pass = false;
+                                    fprintf('Index %d: AoA condition at seconds: [%d, %d] failed (found %d < AoA < %d deg), setting pass to false.\n', i,...
+                                        obj.evaluate_AoARange{j}{1}(1), obj.evaluate_AoARange{j}{1}{end}, obj.evaluate_AoARange{j}{2}(1), obj.evaluate_AoARange{j}{2}(2));
+                                end
+                            end
+                        end
+                    end
+                end
+            end  
             timeFor = toc;
             fprintf('Elapsed time: %.2f seconds\n', timeFor);
         end
@@ -421,12 +457,21 @@ classdef MonteCarlo < handle
             plot3(0,0,0,'o','MarkerSize',10)
             hold on
             for i = 1:num_MonteCarloRuns
-                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
-                    logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize',10)
-                hold on
-                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
-                    logMonteCarlo(i).loggedData.loggedData.posFlat(:,1))
-                hold on
+                if logMonteCarlo(i).pass == true
+                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
+                        logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize', 10, 'Color', 'g')
+                    hold on
+                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
+                        logMonteCarlo(i).loggedData.loggedData.posFlat(:,1), 'Color', 'g')
+                    hold on
+                else
+                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
+                        logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize', 10, 'Color', 'r')
+                    hold on
+                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
+                        logMonteCarlo(i).loggedData.loggedData.posFlat(:,1), 'Color', 'r')
+                    hold on
+                end
             end
             grid on
             title('Closed Loop Trajectories')
@@ -438,8 +483,13 @@ classdef MonteCarlo < handle
             subplot(2,2,2)
             for i = 1:num_MonteCarloRuns
                 eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
-                plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
-                hold on
+                if logMonteCarlo(i).pass == true    
+                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)), 'Color', 'g')
+                    hold on
+                else
+                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)), 'Color', 'r')
+                    hold on
+                end                 
             end
             title('Yaw Angle Monte Carlo')
             ylabel('Angle (deg)', 'FontSize', 12)
@@ -451,9 +501,37 @@ classdef MonteCarlo < handle
             ax.MinorGridLineStyle = ':';
             ax.XMinorGrid = 'on';
             ax.YMinorGrid = 'on';
+
+            % Subplot for AoA
+            % Angle of Attack %
+            subplot(2,2,3)
+            for i = 1:num_MonteCarloRuns
+                if logMonteCarlo(i).pass == true
+                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack), ...
+                            'LineWidth', 1.5, 'Color', 'g');
+                    hold on
+                else
+                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack), ...
+                    'LineWidth', 1.5, 'Color', 'r');
+                    hold on
+                end
+            end
+            title('Angle of Attack Trajectory')
+            xlabel('Time (s)','FontSize', 12)
+            ylabel('\alpha (deg)','FontSize', 12)
+            % legend('1 deg','3 deg','6 deg', '9 deg')
+            grid on
+            hold off
+            
+            % Enable minor tick marks
+            ax = gca; % Get current axis
+            ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+            ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+            
+            % Customize the spacing of minor ticks
+            ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+            ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+            ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
         end
     end
 end
-
-
-       

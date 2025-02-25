@@ -365,7 +365,7 @@ TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
 FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
-% FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
+FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
 %% Monte Carlo Analysis
 monteCarlo = MonteCarlo();
@@ -405,11 +405,25 @@ FlightObj.set_applyWind(true);
 % Run parallel simulations
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
-%% Evaluate pass/fail
-%logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
+%% Evaluate pass/fail for MonteCarlo
+monteCarlo.set_evaluate_checkTermination(true);
+monteCarlo.set_evaluate_checkRoll(true);
+monteCarlo.set_evaluate_checkYaw(true);
+monteCarlo.set_evaluate_checkAoA(true);
+
+% Each sub-cell element has two entries:
+%   - A time range (vector)
+%   - A two-element vector for the acceptable boundaries.
+% Example: {{5:6, [5, 10]}, {11:12, [-2, 2]}} = yaw between 5 and 10
+% degrees at seconds 5 and 6, and between -2 and 2 degrees at seconds 11 and
+% 12.
+monteCarlo.set_evaluate_yawRange({{5:6, [5, 15]}, {12, [-2, 2]}});
+monteCarlo.set_evaluate_rollRange({{1:12, [-2, 2]}});
+monteCarlo.set_evaluate_AoARange({{1:12, [-10, 10]}});
+
+logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
 
 %% Plotting MonteCarlo Analysis
-
 monteCarlo.plotMonteCarlo(logMonteCarlo)
 
 
