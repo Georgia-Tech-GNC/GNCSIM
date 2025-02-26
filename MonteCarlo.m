@@ -3,12 +3,12 @@ classdef MonteCarlo < handle
 
     properties (Access = private)
         % Monte Carlo Simulation Hyperparameters and variables
-        runGaussianLHS; % boolean (LHS = Latin Hypercube Sampling)
-        runUniformLHS; % boolean
-        runCustomLHS;
-        numRuns; % integer
+        runGaussianLHS;  % boolean (Use Gaussian LHS)
+        runUniformLHS;   % boolean (Use Uniform LHS)
+        runCustomLHS;    % boolean (Use user-provided LHS)
+        numRuns;         % integer
         odeSolverMaxTime; 
-        lhsSamples;
+        lhsSamples;      % stores the actual NxM LHS sample matrix
 
         % Monte Carlo Pass/Fail parameters
         evaluate_checkTermination = false;
@@ -20,8 +20,6 @@ classdef MonteCarlo < handle
         evaluate_pitchRange;
         evaluate_yawRange; 
         evaluate_AoARange;
-
-        % {{yawTimeRange, boundary}, {yawTimeRange, boundary}}
 
         % Rocket Parameters
         wetMass_3sigma;
@@ -36,7 +34,6 @@ classdef MonteCarlo < handle
         finalCG_3sigma;
         burnTime_3sigma;
         thrustCurve_3sigma;
-
     end
 
     methods
@@ -44,7 +41,7 @@ classdef MonteCarlo < handle
         function obj = MonteCarlo()
         end
 
-        %Setters
+        % ---------------------- Setters ----------------------
         function obj = set_numRuns(obj, value)
             validateattributes(value, {'numeric'}, {'nonnegative', 'scalar'}, 'set_numRuns', 'numRuns');
             obj.numRuns = value;
@@ -57,11 +54,11 @@ classdef MonteCarlo < handle
 
         function obj = set_runCustomLHS(obj, value)
             validateattributes(value, {'logical'}, {'scalar'}, 'set_runCustomLHS', 'runCustomLHS');
-            obj.runGaussianLHS = value;
+            obj.runCustomLHS = value;
         end
 
         function obj = set_runUniformLHS(obj, value)
-            validateattributes(value, {'logical'}, {'scalar'}, 'set_runSweep', 'runUniformLHS');
+            validateattributes(value, {'logical'}, {'scalar'}, 'set_runUniformLHS', 'runUniformLHS');
             obj.runUniformLHS = value;
         end
 
@@ -180,18 +177,15 @@ classdef MonteCarlo < handle
             obj.evaluate_AoARange = value;
         end
         
-        % Getters
+        % ---------------------- Getters ----------------------
         function lhsSamples = get_lhsSamples(obj)
             if isempty(obj.lhsSamples)
                 error('The lhsSamples property has not been initialized.');
             end
             lhsSamples = obj.lhsSamples;
         end
-
-        % Function that runs MonteCarlo for numRuns
-        function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
-            FlightObj.set_odeSolverMaxTime(obj.odeSolverMaxTime);
-
+        
+        function generateLhsSamples(obj, RocketObj)
             % Setting up LHS parameters  
             if obj.runGaussianLHS
                 thrustCurve = RocketObj.get_thrustCurve();
@@ -231,7 +225,15 @@ classdef MonteCarlo < handle
                 sigma = diag(repelem(sigma, repetitions)); % Creating the covariance matrix for mu
 
                 obj.lhsSamples = lhsnorm(mu, sigma, obj.numRuns);
-
+            elseif obj.runUniformLHS
+                % Example: Uniform LHS generation (user must define bounds)
+                % For demonstration, suppose the dimension is the same as "mu" above:
+                nVars = 11 + length(RocketObj.get_thrustCurve(:,2)); 
+                % Generate an NxM LHS in [0,1], then you can scale it as needed
+                design = lhsdesign(obj.numRuns, nVars);
+                % ... scale 'design' to the relevant ranges ...
+                % Here, just store it so you can see how you'd do your own uniform scaling
+                obj.lhsSamples = design;  
             elseif obj.runCustomLHS
                 if isempty(obj.lhsSamples)
                     error("Please set lhsSamples with a correct Latin Hypercube Sample matrix.")
@@ -239,6 +241,12 @@ classdef MonteCarlo < handle
             else
                 error('Either runGaussianLHS, runUniformLHS or runCustomLHS must be set to true.')
             end
+        end
+
+        % Function that runs MonteCarlo for numRuns
+        function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
+            FlightObj.set_odeSolverMaxTime(obj.odeSolverMaxTime);
+            thrustCurve = RocketObj.get_thrustCurve();
             
             % Preallocate struct array
             logMonteCarlo(obj.numRuns) = struct('loggedData', [], 'pass', []);
@@ -265,12 +273,12 @@ classdef MonteCarlo < handle
                 RocketObjIter.set_initialCG(objCopy.lhsSamples(i,9)); 
                 RocketObjIter.set_finalCG(objCopy.lhsSamples(i,10)); 
                 
-                wetRollMOI = objCopy.lhsSamples(i,3); 
-                wetPitchMOI = objCopy.lhsSamples(i,4); 
-                wetYawMOI = objCopy.lhsSamples(i,5); 
-                dryRollMOI = objCopy.lhsSamples(i,6);
-                dryPitchMOI = objCopy.lhsSamples(i,7);
-                dryYawMOI = objCopy.lhsSamples(i,8);
+                wetRollMOI = abs(objCopy.lhsSamples(i,3)); 
+                wetPitchMOI = abs(objCopy.lhsSamples(i,4)); 
+                wetYawMOI = abs(objCopy.lhsSamples(i,5)); 
+                dryRollMOI = abs(objCopy.lhsSamples(i,6));
+                dryPitchMOI = abs(objCopy.lhsSamples(i,7));
+                dryYawMOI = abs(objCopy.lhsSamples(i,8));
                 
                 RocketObjIter.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
                 RocketObjIter.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
@@ -286,7 +294,8 @@ classdef MonteCarlo < handle
             end
 
             timeFor = toc;
-            fprintf('Elapsed time: %.2f seconds for %d iterations\n', timeFor, obj.numRuns);
+            fprintf('Elapsed time: %.2f seconds for %d iterations\n', timeFor, size(obj.lhsSamples, 1));
+            save("logMonteCarlo")
         end
 
         function logMonteCarlo = evaluateMonteCarlo(obj, logMonteCarlo)
@@ -312,14 +321,15 @@ classdef MonteCarlo < handle
             if obj.evaluate_checkRoll
                 for i = 1:numSims
                     if logMonteCarlo(i).pass == true
-                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
+                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf,'XYZ'));
                         for j = 1:length(obj.evaluate_rollRange)
                             time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_rollRange{j}{1}));
                             for k = 1:length(time_indices)
                                 if eul(time_indices(k), 1) < obj.evaluate_rollRange{j}{2}(1) || eul(time_indices(k), 1) > obj.evaluate_rollRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
-                                    fprintf('Index %d: Roll condition at seconds: [%d, %d] failed (found %d < roll < %d deg), setting pass to false.\n', i,...
-                                        obj.evaluate_rollRange{j}{1}(1), obj.evaluate_rollRange{j}{1}{end}, obj.evaluate_rollRange{j}{2}(1), obj.evaluate_rollRange{j}{2}(2));
+                                    fprintf('Index %d: Roll condition from second %d to %d, failed (found roll = %.2f), setting pass to false.\n', i,...
+                                        obj.evaluate_rollRange{j}{1}(1), obj.evaluate_rollRange{j}{1}(end), eul(time_indices(k), 1));
+                                    break;
                                 end
                             end
                         end
@@ -331,14 +341,15 @@ classdef MonteCarlo < handle
             if obj.evaluate_checkPitch
                 for i = 1:numSims
                     if logMonteCarlo(i).pass == true
-                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
+                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf,'XYZ'));
                         for j = 1:length(obj.evaluate_pitchRange)
                             time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_pitchRange{j}{1}));
                             for k = 1:length(time_indices)
                                 if eul(time_indices(k), 2) < obj.evaluate_pitchRange{j}{2}(1) || eul(time_indices(k), 2) > obj.evaluate_pitchRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
-                                    fprintf('Index %d: Pitch condition at seconds: [%d, %d] failed (found %d < pitch < %d deg), setting pass to false.\n', i,...
-                                        obj.evaluate_pitchRange{j}{1}(1), obj.evaluate_pitchRange{j}{1}{end}, obj.evaluate_pitchRange{j}{2}(1), obj.evaluate_pitchRange{j}{2}(2));
+                                    fprintf('Index %d: Pitch condition from second %d to %d, failed (found pitch = %.2f), setting pass to false.\n', i,...
+                                        obj.evaluate_pitchRange{j}{1}(1), obj.evaluate_pitchRange{j}{1}{end}, eul(time_indices(k), 2));
+                                    break;
                                 end
                             end
                         end
@@ -350,14 +361,15 @@ classdef MonteCarlo < handle
             if obj.evaluate_checkYaw
                 for i = 1:numSims
                     if logMonteCarlo(i).pass == true
-                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf));
+                        eul = rad2deg(quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf,'XYZ'));
                         for j = 1:length(obj.evaluate_yawRange)
                             time_indices = find(ismember(floor(logMonteCarlo(i).loggedData.loggedData.time), obj.evaluate_yawRange{j}{1}));
                             for k = 1:length(time_indices)
                                 if eul(time_indices(k), 3) < obj.evaluate_yawRange{j}{2}(1) || eul(time_indices(k), 3) > obj.evaluate_yawRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
-                                    fprintf('Index %d: Yaw condition at seconds: [%d, %d] failed (found %d < yaw < %d deg), setting pass to false.\n', i,...
-                                        obj.evaluate_yawRange{j}{1}(1), obj.evaluate_yawRange{j}{1}{end}, obj.evaluate_yawRange{j}{2}(1), obj.evaluate_yawRange{j}{2}(2));
+                                    fprintf('Index %d: Yaw condition from second %d to %d, failed (found yaw = %.2f), setting pass to false.\n', i,...
+                                        obj.evaluate_yawRange{j}{1}(1), obj.evaluate_yawRange{j}{1}{end}, eul(time_indices(k), 3));
+                                    break;
                                 end
                             end
                         end
@@ -375,8 +387,9 @@ classdef MonteCarlo < handle
                             for k = 1:length(time_indices)
                                 if aoa(time_indices(k)) < obj.evaluate_AoARange{j}{2}(1) || aoa(time_indices(k)) > obj.evaluate_AoARange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
-                                    fprintf('Index %d: AoA condition at seconds: [%d, %d] failed (found %d < AoA < %d deg), setting pass to false.\n', i,...
-                                        obj.evaluate_AoARange{j}{1}(1), obj.evaluate_AoARange{j}{1}{end}, obj.evaluate_AoARange{j}{2}(1), obj.evaluate_AoARange{j}{2}(2));
+                                    fprintf('Index %d: AoA condition from second %d to %d, failed (found aoa = %.2f), setting pass to false.\n', i,...
+                                        obj.evaluate_AoARange{j}{1}(1), obj.evaluate_AoARange{j}{1}{end}, aoa(time_indices(k)));
+                                    break;
                                 end
                             end
                         end
@@ -444,6 +457,45 @@ classdef MonteCarlo < handle
         
             fprintf('Parameters loaded from %s\n', filename);
         end
+
+        % Split the current LHS into nParts. Returns a cell array of matrices.
+        % Example: splitted = MCobj.splitLHS(10);
+        function splittedLHS = splitLHS(obj, nParts, outFolder)
+            % If the user didn't pass an outFolder, pick a default:
+            if nargin < 3 || isempty(outFolder)
+                outFolder = pwd;  % Current directory by default
+            end
+            
+            % Create the folder if it doesn't already exist
+            if ~exist(outFolder, 'dir')
+                mkdir(outFolder);
+            end
+        
+            if isempty(obj.lhsSamples)
+                error('lhsSamples is empty. Generate or load LHS samples first.');
+            end
+            if mod(obj.numRuns, nParts) ~= 0
+                error('numRuns (%d) must be divisible by nParts (%d).', obj.numRuns, nParts);
+            end
+        
+            chunkSize = obj.numRuns / nParts;
+            splittedLHS = cell(1, nParts);
+        
+            for i = 1:nParts
+                idxStart = (i-1)*chunkSize + 1;
+                idxEnd   = i*chunkSize;
+                lhsChunk = obj.lhsSamples(idxStart:idxEnd, :);
+        
+                % Store it in the cell array
+                splittedLHS{i} = lhsChunk;
+        
+                % Save the chunk to a file in outFolder
+                filename = sprintf('splittedLHS%d.mat', i);
+                fullFilePath = fullfile(outFolder, filename);
+                save(fullFilePath, 'lhsChunk');
+                fprintf('Saved chunk %d to %s\n', i, fullFilePath);
+            end
+        end
     end
         
     methods (Static)
@@ -457,21 +509,12 @@ classdef MonteCarlo < handle
             plot3(0,0,0,'o','MarkerSize',10)
             hold on
             for i = 1:num_MonteCarloRuns
-                if logMonteCarlo(i).pass == true
-                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
-                        logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize', 10, 'Color', 'g')
-                    hold on
-                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
-                        logMonteCarlo(i).loggedData.loggedData.posFlat(:,1), 'Color', 'g')
-                    hold on
-                else
-                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
-                        logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize', 10, 'Color', 'r')
-                    hold on
-                    plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
-                        logMonteCarlo(i).loggedData.loggedData.posFlat(:,1), 'Color', 'r')
-                    hold on
-                end
+                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
+                    logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize', 10)
+                hold on
+                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
+                    logMonteCarlo(i).loggedData.loggedData.posFlat(:,1))
+                hold on
             end
             grid on
             title('Closed Loop Trajectories')
@@ -483,13 +526,8 @@ classdef MonteCarlo < handle
             subplot(2,2,2)
             for i = 1:num_MonteCarloRuns
                 eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
-                if logMonteCarlo(i).pass == true    
-                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)), 'Color', 'g')
-                    hold on
-                else
-                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)), 'Color', 'r')
-                    hold on
-                end                 
+                plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
+                hold on             
             end
             title('Yaw Angle Monte Carlo')
             ylabel('Angle (deg)', 'FontSize', 12)
@@ -506,15 +544,9 @@ classdef MonteCarlo < handle
             % Angle of Attack %
             subplot(2,2,3)
             for i = 1:num_MonteCarloRuns
-                if logMonteCarlo(i).pass == true
-                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack), ...
-                            'LineWidth', 1.5, 'Color', 'g');
-                    hold on
-                else
-                    plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack), ...
-                    'LineWidth', 1.5, 'Color', 'r');
-                    hold on
-                end
+                plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack), ...
+                        'LineWidth', 1.5);
+                hold on;
             end
             title('Angle of Attack Trajectory')
             xlabel('Time (s)','FontSize', 12)
@@ -532,6 +564,13 @@ classdef MonteCarlo < handle
             ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
             ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
             ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+        end
+
+        function combinedLog = combineLogs(~, partialLogs)
+            combinedLog = [];
+            for i = 1:length(partialLogs)
+                combinedLog = [combinedLog, partialLogs{i}]; %#ok<AGROW>
+            end
         end
     end
 end

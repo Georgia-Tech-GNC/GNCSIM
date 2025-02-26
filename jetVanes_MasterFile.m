@@ -126,8 +126,8 @@ FlightObj.set_runLinearModel(false);
 FlightObj.set_applyWind(false);
 FlightObj.set_numStates(13);
 FlightObj.set_numInputs(3);
-FlightObj.set_simTime(30); % seconds
-FlightObj.set_localSimTime(30); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
+FlightObj.set_simTime(12); % seconds
+FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
 FlightObj.set_tSpan()
 FlightObj.set_odeSolverMaxTime(300) % 300s before killing the simulation
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
@@ -377,34 +377,29 @@ FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
-%% Monte Carlo Analysis
+%% Set Up MonteCarlo and get Latin Hypercube Samples
 monteCarlo = MonteCarlo();
 
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
-<<<<<<< HEAD
-monteCarlo.set_numRuns(1);
-monteCarlo.set_odeSolverMaxTime(600); % kills ode after x seconds
-=======
-monteCarlo.set_numRuns(10);
+monteCarlo.set_numRuns(1000);
 monteCarlo.set_odeSolverMaxTime(150); % kills ode after x seconds
->>>>>>> e37491beda0cc887e92d5cdd29b6fa5de8a4771a
 
 % Set 3sigma values 
-monteCarlo.set_wetMass_3sigma(2);
-monteCarlo.set_dryMass_3sigma(2);
+monteCarlo.set_wetMass_3sigma(4.0912994);
+monteCarlo.set_dryMass_3sigma(3.2619994);
 
-monteCarlo.set_wetRollMOI_3sigma(0.2);
-monteCarlo.set_wetPitchMOI_3sigma(2);
-monteCarlo.set_wetYawMOI_3sigma(2);
-monteCarlo.set_dryRollMOI_3sigma(0.2);
-monteCarlo.set_dryPitchMOI_3sigma(2);
-monteCarlo.set_dryYawMOI_3sigma(2);
+monteCarlo.set_wetRollMOI_3sigma(0.0209731);
+monteCarlo.set_wetPitchMOI_3sigma(2.4655278);
+monteCarlo.set_wetYawMOI_3sigma(2.4656148);
+monteCarlo.set_dryRollMOI_3sigma(0.0201846);
+monteCarlo.set_dryPitchMOI_3sigma(2.2301315);
+monteCarlo.set_dryYawMOI_3sigma(2.2301570);
 
-monteCarlo.set_initialCG_3sigma(0.2);
-monteCarlo.set_finalCG_3sigma(0.2);
+monteCarlo.set_initialCG_3sigma(0.2419762);
+monteCarlo.set_finalCG_3sigma(0.2314814);
 
-monteCarlo.set_burnTime_3sigma(2);
+monteCarlo.set_burnTime_3sigma(1.31);
 monteCarlo.set_thrustCurve_3sigma(100);
 
 EnvironmentObj.set_vm_mean(0);
@@ -417,10 +412,16 @@ monteCarlo.saveToCSV('monteCarloParameters.csv')
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_applyWind(true);
 
-% Run parallel simulations
+% Genereate Latin Hypercube Samples 
+monteCarlo.generateLhsSamples(Doof);
+
+% Splits LHS in x parts and saves to folder
+% splittedLHS = monteCarlo.splitLHS(10, 'LHS_splits'); 
+
+%% MonteCarlo Run
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
-%% Evaluate pass/fail for MonteCarlo
+%% MonteCarlo Pass/Fail Evaluation
 monteCarlo.set_evaluate_checkTermination(true);
 monteCarlo.set_evaluate_checkRoll(true);
 monteCarlo.set_evaluate_checkYaw(true);
@@ -441,6 +442,9 @@ logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
 %% Plotting MonteCarlo Analysis
 monteCarlo.plotMonteCarlo(logMonteCarlo)
 
+%% Testing split LHS
+monteCarlo.set_lhsSamples(lhsChunk);
+logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
 
 
