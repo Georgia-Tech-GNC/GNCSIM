@@ -442,7 +442,17 @@ logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
 %% Plotting MonteCarlo Analysis
 monteCarlo.plotMonteCarlo(logMonteCarlo)
 
-%% Testing split LHS
+%% Running SplitLHS
+monteCarlo = MonteCarlo();
+monteCarlo.set_odeSolverMaxTime(150); % kills ode after x seconds
+EnvironmentObj.set_vm_mean(0);
+EnvironmentObj.set_vm_3sigma(15);
+
+% Setting up FlightObj
+FlightObj.set_runClosedLoop(true);
+FlightObj.set_applyWind(true);
+
+
 monteCarlo.set_lhsSamples(lhsChunk);
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
