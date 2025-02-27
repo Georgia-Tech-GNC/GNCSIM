@@ -7,13 +7,16 @@ classdef Magnetometer
         range (1,3) double = [Inf, Inf, Inf]; % max measurement range (microT)
         noise_density (1,3) double = [0, 0, 0]; % power spectral density of noise (microT/sqrt(Hz))
         sampling_rate (1,1) double = 100; % magnetometer sampling rate (Hz)
-        
-        sampling_dt (1,1) double
+    
         coarse_lla (1,3) double =  [33.776, -84.399, 306]; % LLA of Georgia Tech
         
         % Reference: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml
         coarse_declination (1,1) double = 5.52; % Magnetic declination at Georgia Tech (deg)
 
+    end
+
+    properties (Dependent)
+        sampling_dt (1,1) double
     end
 
     methods
