@@ -16,6 +16,11 @@ classdef Rocket < handle
 
         burnTime; % (s)
         thrustCurve; % time history of thrust (s, N)
+
+        mainChuteCd; % Cd of the Main Parachute
+        mainChuteArea; % (m^2) of the Main Parachute
+        drogueChuteCd;  % Cd of the Drogue Parachute
+        drogueChuteArea; % (m^2) of the Drogue Parachute
     end
 
     methods
@@ -114,6 +119,22 @@ classdef Rocket < handle
                 obj.burnTime = burn_time_value;
             end
         end
+
+        function obj = set_mainChuteCd(obj,newCdValue)
+            obj.mainChuteCd = newCdValue;
+        end
+
+        function obj = set_drogueChuteCd(obj,newCdValue)
+            obj.drogueChuteCd = newCdValue;
+        end
+
+        function obj = set_mainChuteArea(obj,newAreaValue)
+            obj.mainChuteArea = newAreaValue;
+        end
+
+        function obj = set_drogueChuteArea(obj,newAreaValue)
+            obj.drogueChuteArea = newAreaValue;
+        end
         % End Setter Functions
 
         % Start Getter Functions
@@ -164,6 +185,22 @@ classdef Rocket < handle
         function thrustCurve = get_thrustCurve(obj)
             thrustCurve = obj.thrustCurve;
         end
+
+        function mainChuteCdValue = get_mainChuteCd(obj)
+            mainChuteCdValue = obj.mainChuteCd;
+        end
+
+        function mainChuteAreaValue = get_mainChuteArea(obj)
+            mainChuteAreaValue = obj.mainChuteArea;
+        end
+
+        function drogueChuteCdValue = get_drogueChuteCd(obj)
+            drogueChuteCdValue = obj.drogueChuteCd;
+        end
+
+        function drogueChuteAreaValue = get_drogueChuteArea(obj)
+            drogueChuteAreaValue = obj.drogueChuteArea;
+        end
         % End Getter Functions
         
         function obj= set_thrustCurve(obj, thrust_arr)
@@ -191,6 +228,10 @@ classdef Rocket < handle
             skipInterpolation = false;
             found = false;
             i = 1;
+            if t > obj.burnTime
+                currentThrust = 0;
+                return
+            end
             % while loop that outputs values to be linearily interpolated
             while i <= m & ~found
                 if arr(i, 1) < t && arr(i + 1, 1) > t

@@ -1,11 +1,11 @@
-function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, TrimPointObj)
+function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, ControlObj)
 % rocketModel: Open loop model for jet vanes rocket dynamics
 % t: current time
 % x: current state: [px py pz vx vy vz q0 q1 q2 q3 wx wy wz]
 % RocketObj:  object representing rocket
 % AerodynamicsObj: object representing aerodynamic forces on rocket
 % FlightObj: object representing flight of the rocket
-% TrimPointObj: object representing trim points
+% ControlObj: an object that denotes the control algorithm running
 
 % xDot = f(x, u)
 % log --> data that gets logged
@@ -54,6 +54,12 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     applyWind = FlightObj.get_applyWind();
     %applyPeriodicWindGusts = FlightObj.get_applyPeriodicWindGusts();
     applyPeriodicWindGusts = false;
+    mainChuteCd = RocketObj.get_mainChuteCd;
+    mainChuteArea = RocketObj.get_mainChuteArea;
+    drogueChuteCd = RocketObj.get_drogueChuteCd;
+    drogueChuteArea = RocketObj.get_drogueChuteArea;
+    controlsTime = FlightObj.get_controlsTime;
+
 
     %% Extract states
     % Position in flat Earth frame, "f" (m)
@@ -62,7 +68,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     pz = x(3);
     p_f = [px;py;pz];
 
-    % Velocity in body brame, "b" (m/s)
+    % Velocity in body frame, "b" (m/s)
     vx = real(x(4));
     vy = real(x(5));
     vz = real(x(6));
@@ -74,6 +80,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     q2 = real(x(9));
     q3 = real(x(10));
     q_bf = quatnormalize([q0 q1 q2 q3]);
+    v_f = quat_rotate(quatconj(q_bf),real(v_b)');
     
     % Angular velocity with respect to "f" expressed in "b" (rad/s)
     wx = real(x(11));
@@ -109,28 +116,35 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
 
     % Note: Controls in the loop for nonlinear sims has typically had extreme performance 
     % issues. 
-    % TODO: Add interface with trim points
-    if (runClosedLoop && (t > 1))
-        % xRef = interp1(tSpan,xRefSpan,t);
+    if (runClosedLoop && (t > 1) && (t < controlsTime))
+        controller_ID = ControlObj.get_controllerID();
+        switch controller_ID
+            case 'LQR'
+                % xRef = interp1(tSpan,xRefSpan,t);
 
-        lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
-        [K, x0, ~] = TrimPointObj.LQR_configuration_selector(lin_x, t);
-        % del_u = r' - K*del_x;
+                lin_x = [vx;vy;vz;wx;wy;wz;q1;q2;q3];
+                [K, x0, ~] = ControlObj.LQR_configuration_selector(lin_x, t);
+                % del_u = r' - K*del_x;
 
-        % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
-        % a matrix that can still be referenced
+                % Old bug: used to be x0' instead. Quite a devious bug, bc it doesnt error and del_u is just
+                % a matrix that can still be referenced
 
-        del_x = lin_x - x0;
-        del_u = -K*del_x;
+                del_x = lin_x - x0;
+                del_u = ControlObj.compute_controls(K, del_x);
+                %del_u = -K*del_x;
 
-        MT_bx = del_u(1); % M_roll
+                MT_bx = del_u(1); % M_roll
 
-        % Forcefully turning off pitch control in the FSW? In that case 
-        % M_pitch would be zero in the nonlinear (truth) model
-        % MT_by = del_u(2) + u0(2); % M_pitch
-        MT_by = 0;
-
-        MT_bz = del_u(3); % M_yaw     
+                % Forcefully turning off pitch control in the FSW? In that case 
+                % M_pitch would be zero in the nonlinear (truth) model
+                % MT_by = del_u(2) + u0(2); % M_pitch
+                MT_by = 0;
+                MT_bz = del_u(3); % M_yaw  
+            case 'PID'
+                % TODO
+            case 'MPC'
+                % TODO
+        end
     else
         MT_bx = 0;
         MT_by = 0;
@@ -163,16 +177,19 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     
     % Getting Air Density
     altitude = px;
-    rho = EnvironmentObj.get_rho(altitude);
+    [T,a,P,rho,nu] = atmosisa(altitude);
 
     % Applying Wind
     if applyWind
-            % Discrete Wind Gust Model
-            [Vm, dm] = EnvironmentObj.get_wind_aspects();
+        % Discrete Wind Gust Model
+        %[Vm, dm] = EnvironmentObj.get_wind_aspects();
 
-            % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
-            udir = [0 1 0];
+        % Direction of Wind Speed in Flat Earth Frame (Must be unit vector)
+        udir = [0 1 0];
+        
+        
 
+            %{
         if ~applyPeriodicWindGusts
             
             % Distance moved into gust
@@ -192,12 +209,15 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
             
             % Calculating Wind Speed with Discrete Gust Model
             windspeed = EnvironmentObj.wind_speed_gust(Vm,dm,normXu); % This takes in positon assuming that wind gust happens at the beginning of trajectory.
-        
+           
         end
+         %}
+        windspeed = EnvironmentObj.get_windspeed(altitude);
 
         % wind gust in y and z
         v_a = v_b + quat_rotate(q_bf,windspeed*udir)'; % This is to account for wind model.
-    
+        %v_a = v_b + windspeed*udir
+
         % Calculating to velocity to account for wind speed
         va_x = v_a(1);
         va_y = v_a(2);
@@ -206,21 +226,43 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         alpha = atan2(real(va_y),real(va_x)); % angle of attack (rad)
         beta = atan2(va_z,(va_x^2 + va_y^2)^0.5); % angle of sideslip (rad) asin(vy/Va)?
 
-        if va_x < 0
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*va_x, va_y, va_z, wx, wz, rho, CG);
+        if v_f(1) < 0
+            FA_b = [0;0;0]; % Aeroforces and moments turned off for descent
+            MA_b = [0;0;0];
         else
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+            if va_x < 0
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*va_x, va_y, va_z, wx, wz, rho, CG);
+            else
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(va_x, va_y, va_z, wx, wz, rho, CG);
+            end
         end
     else
-        if vx < 0
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*vx, vy, vz, wx, wz, rho, CG);
+        if v_f(1) < 0
+            FA_b = [0;0;0]; % Aeroforces and moments turned off for descent
+            MA_b = [0;0;0];
         else
-            [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+            if vx < 0
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(-1*vx, vy, vz, wx, wz, rho, CG);
+            else
+                [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
+            end
         end
 
         alpha = atan2(vy, vx);
         beta = atan2(vz, vx);
     end
+
+    %% Parachute Forces
+    if v_f(1) < 0
+        FP_b_mag = drogueChuteCd * rho * ((norm(v_b)^2)/2) * drogueChuteArea; % Drogue chute deploys at apogee
+        FP_b = FP_b_mag * (-v_b/(norm(v_b)));
+    elseif (t > burnTime) && (px < 304.8)
+        FP_b_mag = (mainChuteCd + drogueChuteCd) * rho * ((norm(v_b)^2)/2) * (mainChuteArea + drogueChuteArea); % Main chute deploys at 1000 ft (304.8 m)
+        FP_b = FP_b_mag * (-v_b/(norm(v_b)));
+    else
+        FP_b = [0;0;0];
+    end
+   
 
     %% External Moments
     % Note: similar performance issues as controls
@@ -254,7 +296,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     p_f_dot = p_f_dot'; % [3x1]
     
     % velocity eqns of motion
-    F_b = FG_b + FT_b + FA_b;
+    F_b = FG_b + FT_b + FA_b + FP_b;
     v_b_dot = (1/m)*F_b - cross(wbf_b, v_b);
     
     % quaternion eqns of motion
@@ -309,6 +351,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     log.FG_b = FG_b';
     log.FT_b = FT_b';
     log.FA_b = FA_b';
+    log.FP_b = FP_b';
     log.velFlat = p_f_dot'; % should be [1x3]
     log.accelFlat =quat_rotate(quatconj(q_bf),real(v_b_dot)');
     %log.l_p = l_p;
