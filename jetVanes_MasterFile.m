@@ -99,6 +99,7 @@ AeroObj.set_FAz_func(FAz_b_func);
 AeroObj.set_MAx_func(MAx_b_func);
 AeroObj.set_MAy_func(MAy_b_func);
 AeroObj.set_MAz_func(MAz_b_func);
+
 %% Environment Parameters
 
 % Assuming Location of GRITS Launch Site; 31.2732° N, 83.3538° W
@@ -437,10 +438,11 @@ monteCarlo.set_evaluate_yawRange({{5:6, [5, 15]}, {12, [-2, 2]}});
 monteCarlo.set_evaluate_rollRange({{1:12, [-2, 2]}});
 monteCarlo.set_evaluate_AoARange({{1:12, [-10, 10]}});
 
-logMonteCarlo = monteCarlo.evaluateMonteCarlo(logMonteCarlo);
+combinedLogMonteCarlo = monteCarlo.evaluateMonteCarlo(combinedLogMonteCarlo);
 
 %% Plotting MonteCarlo Analysis
-monteCarlo.plotMonteCarlo(logMonteCarlo)
+monteCarlo = MonteCarlo();
+monteCarlo.plotMonteCarlo(combinedLogMonteCarlo)
 
 %% Running SplitLHS
 monteCarlo = MonteCarlo();
@@ -455,6 +457,22 @@ FlightObj.set_applyWind(true);
 
 monteCarlo.set_lhsSamples(lhsChunk);
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
+
+%% Combining partial MonteCarlo runs
+
+combinedLogMonteCarlo = [
+    logMonteCarlo1';
+    logMonteCarlo2';
+    logMonteCarlo3';
+    logMonteCarlo4';
+    logMonteCarlo5';
+    logMonteCarlo6';
+    logMonteCarlo7';
+    logMonteCarlo8';
+    logMonteCarlo9';
+    logMonteCarlo10'
+];
+
 
 
 

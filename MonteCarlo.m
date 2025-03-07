@@ -298,7 +298,7 @@ classdef MonteCarlo < handle
             save("logMonteCarlo")
         end
 
-        function logMonteCarlo = evaluateMonteCarlo(obj, logMonteCarlo)
+        function [logMonteCarlo, performance] = evaluateMonteCarlo(obj, logMonteCarlo)
             tic;
             numSims = length(logMonteCarlo);
             
@@ -348,7 +348,7 @@ classdef MonteCarlo < handle
                                 if eul(time_indices(k), 2) < obj.evaluate_pitchRange{j}{2}(1) || eul(time_indices(k), 2) > obj.evaluate_pitchRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
                                     fprintf('Index %d: Pitch condition from second %d to %d, failed (found pitch = %.2f), setting pass to false.\n', i,...
-                                        obj.evaluate_pitchRange{j}{1}(1), obj.evaluate_pitchRange{j}{1}{end}, eul(time_indices(k), 2));
+                                        obj.evaluate_pitchRange{j}{1}(1), obj.evaluate_pitchRange{j}{1}(end), eul(time_indices(k), 2));
                                     break;
                                 end
                             end
@@ -368,7 +368,7 @@ classdef MonteCarlo < handle
                                 if eul(time_indices(k), 3) < obj.evaluate_yawRange{j}{2}(1) || eul(time_indices(k), 3) > obj.evaluate_yawRange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
                                     fprintf('Index %d: Yaw condition from second %d to %d, failed (found yaw = %.2f), setting pass to false.\n', i,...
-                                        obj.evaluate_yawRange{j}{1}(1), obj.evaluate_yawRange{j}{1}{end}, eul(time_indices(k), 3));
+                                        obj.evaluate_yawRange{j}{1}(1), obj.evaluate_yawRange{j}{1}(end), eul(time_indices(k), 3));
                                     break;
                                 end
                             end
@@ -505,7 +505,6 @@ classdef MonteCarlo < handle
             num_MonteCarloRuns = length(logMonteCarlo);
             
             % Subplot for trajectories
-            subplot(2,2,1)
             plot3(0,0,0,'o','MarkerSize',10)
             hold on
             for i = 1:num_MonteCarloRuns
@@ -517,21 +516,21 @@ classdef MonteCarlo < handle
                 hold on
             end
             grid on
-            title('Closed Loop Trajectories')
-            xlabel('Flat Earth Y (m)')
-            ylabel('Flat Earth Z (m)')
-            zlabel('Flat Earth X (m)')
+           % title('\textbf{Closed Loop Trajectories for 1000 MonteCarlo Samples}', 'Interpreter', 'latex')
+            xlabel('\textbf{Flat Earth Y (m)}', 'Interpreter', 'latex')
+            ylabel('\textbf{Flat Earth Z (m)}', 'Interpreter', 'latex')
+            zlabel('\textbf{Flat Earth X (m)}', 'Interpreter', 'latex')
 
             % Subplot for Euler Angles
-            subplot(2,2,2)
+            figure;
             for i = 1:num_MonteCarloRuns
                 eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
                 plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(eul(:,1)))
                 hold on             
             end
-            title('Yaw Angle Monte Carlo')
-            ylabel('Angle (deg)', 'FontSize', 12)
-            xlabel('Time (s)', 'FontSize', 12)
+            %title('\textbf{Yaw Angle for 1000 Monte Carlo Samples}', 'Interpreter', 'latex')
+            ylabel('\textbf{Yaw Angle (deg)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
             grid on
             ax = gca;
             ax.XMinorTick = 'on';
@@ -539,38 +538,100 @@ classdef MonteCarlo < handle
             ax.MinorGridLineStyle = ':';
             ax.XMinorGrid = 'on';
             ax.YMinorGrid = 'on';
+            xlim([0,12]);
 
             % Subplot for AoA
             % Angle of Attack %
-            subplot(2,2,3)
-            for i = 1:num_MonteCarloRuns
-                plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack), ...
-                        'LineWidth', 1.5);
-                hold on;
-            end
-            title('Angle of Attack Trajectory')
-            xlabel('Time (s)','FontSize', 12)
-            ylabel('\alpha (deg)','FontSize', 12)
-            % legend('1 deg','3 deg','6 deg', '9 deg')
-            grid on
-            hold off
-            
-            % Enable minor tick marks
-            ax = gca; % Get current axis
-            ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
-            ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
-            
-            % Customize the spacing of minor ticks
-            ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
-            ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
-            ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
-        end
+            % subplot(2,2,4)
+            % for i = 1:num_MonteCarloRuns
+            %     plot(logMonteCarlo(i).loggedData.loggedData.time,rad2deg(logMonteCarlo(i).loggedData.loggedData.angleOfAttack));
+            %     hold on;
+            % end
+            % title('Angle of Attack Monte Carlo')
+            % xlabel('Time (s)','FontSize', 12)
+            % ylabel('\alpha (deg)','FontSize', 12)
+            % % legend('1 deg','3 deg','6 deg', '9 deg')
+            % grid on
+            % hold off
+            % 
+            % % Enable minor tick marks
+            % ax = gca; % Get current axis
+            % ax.XMinorTick = 'on'; % Turn on minor ticks for x-axis
+            % ax.YMinorTick = 'on'; % Turn on minor ticks for y-axis
+            % 
+            % % Customize the spacing of minor ticks
+            % ax.MinorGridLineStyle = ':'; % Optional: dotted grid for minor ticks
+            % ax.XMinorGrid = 'on'; % Turn on minor grid for x-axis
+            % ax.YMinorGrid = 'on'; % Turn on minor grid for y-axis
+            % xlim([0,12]);
 
-        function combinedLog = combineLogs(~, partialLogs)
-            combinedLog = [];
-            for i = 1:length(partialLogs)
-                combinedLog = [combinedLog, partialLogs{i}]; %#ok<AGROW>
+            figure;
+    
+            % Preallocate yaw_all for efficiency
+            yaw_all = zeros(num_MonteCarloRuns, length(logMonteCarlo(1).loggedData.loggedData.q_bf));
+            
+            % Extract yaw angle from quaternion logs
+            for i = 1:num_MonteCarloRuns
+                eul = quat2eul(logMonteCarlo(i).loggedData.loggedData.q_bf);
+                yaw_all(i, :) = rad2deg(eul(:,1))'; % Store each Monte Carlo run
             end
+            
+            % Compute statistics
+            yaw_mean = mean(yaw_all, 1);
+            yaw_std = std(yaw_all, 0, 1);
+            yaw_3sigma = 3 * yaw_std;
+            time = linspace(0, 12, length(yaw_mean));
+            
+            % Mission requirements
+            time_1_4 = linspace(0, 3, 100);
+            req_1_4 = 1 * ones(1, 100);
+            time_5_6 = linspace(5, 7, 100);
+            req_5_6 = 5 * ones(1, 100);
+            time_11_12 = linspace(11, 12, 50);
+            req_11_12 = 2 * ones(1, 50);
+            
+            % Plot yaw statistics
+            p1 = plot(time, yaw_mean, 'b-', 'LineWidth', 3.0); hold on;
+            p2 = plot(time, yaw_mean + yaw_std, 'c--', 'LineWidth', 1.2);
+            plot(time, yaw_mean - yaw_std, 'c--', 'LineWidth', 1.2);
+            p3 = plot(time, yaw_mean + yaw_3sigma, 'r--', 'LineWidth', 1.2);
+            plot(time, yaw_mean - yaw_3sigma, 'r--', 'LineWidth', 1.2);
+            
+            % % Plot mission requirement constraints
+            % p4 = plot(time_1_4, req_1_4, 'k--', 'LineWidth', 1.5);
+            % plot(time_5_6, req_5_6, 'k--', 'LineWidth', 1.5);
+            % plot(time_11_12, req_11_12, 'k--', 'LineWidth', 1.5);
+
+            % **Shaded Requirement Areas**
+            % 1. Yaw must be under 1° from 0s to 3s
+            h1 = patch([0, 3, 3, 0], [-1, -1, 1, 1], 'green', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+            
+            % 2. Yaw must be above 5° from 5s to 7s
+            patch([4, 7, 7, 4], [5, 5, 8, 8], 'green', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+            
+            % 3. Yaw must be under 2° during the 12th second
+            patch([11.5, 12, 12, 11.5], [-2, -2, 2, 2], 'green', 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+            
+            hold off;
+            
+            % Formatting and labels
+            %title('\textbf{Yaw Angle Mean, Standard Deviation, and 3$\sigma$ with Mission Requirements of 1000 MonteCarlo Samples}', 'Interpreter', 'latex');
+            ylabel('\textbf{Yaw Angle (deg)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            grid on;
+            
+            % Enhance minor grid
+            ax = gca;
+            ax.XMinorTick = 'on';
+            ax.YMinorTick = 'on';
+            ax.MinorGridLineStyle = ':';
+            ax.XMinorGrid = 'on';
+            ax.YMinorGrid = 'on';
+            
+            % Add legend
+            legend([p1, p2, p3, h1], ...
+                {'Mean Yaw', 'Mean ±1σ', 'Mean ±3σ', 'Mission Requirement'}, ...
+                'Location', 'northeast');
         end
     end
 end
