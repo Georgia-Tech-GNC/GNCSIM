@@ -224,7 +224,9 @@ classdef Flight < handle
             end
 
             for lqrIndex =  1:numIntervals
-                fprintf('Current LQR config: %d \n', lqrIndex);
+                if obj.get_runLinearModel()
+                    fprintf('Current linear config: %d \n', lqrIndex);
+                end
 
                 % Get initial state for each LQR time interval
                 if lqrIndex == 1
@@ -273,7 +275,8 @@ classdef Flight < handle
                 %}
                 % End Euler Propagation
                 
-                [traj.t, traj.x] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
+                %[traj.t, traj.x] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
+                [traj.t, traj.x] = obj.timestepper(initial_state, obj.get_tStep(), local_tSpan, Rocket, Environment, Aerodynamics, ControlObj);
 
                 prevFinalState = traj.x(end, :)';
              
@@ -825,6 +828,49 @@ classdef Flight < handle
                 status = 0;  % Continue solver
             end
         end
+
+        function [traj_t, traj_x] = timestepper(obj, x0, dt, tspan, RocketObj, EnvironmentObj, AerodynamicsObj, ControlObj)
+
+            traj_x = x0';
+            traj_t = tspan;
+            x = x0';
+            FlightObject = obj;
+
+            passed_quarter = false;
+            passed_half = false;
+            passed_threequarter = false;
+            for i = 2:length(tspan)
+                curr_t = tspan(i);
+                k1 = rocketModel(curr_t, x, RocketObj, EnvironmentObj, FlightObject, AerodynamicsObj, ControlObj);
+                k2 = rocketModel(curr_t + dt/2, x + (k1')*dt/2, RocketObj, EnvironmentObj, obj, AerodynamicsObj, ControlObj);
+                k3 = rocketModel(curr_t + dt/2, x + (k2')*dt/2, RocketObj, EnvironmentObj, obj, AerodynamicsObj, ControlObj);
+                k4 = rocketModel(curr_t + dt, x + (k3')*dt, RocketObj, EnvironmentObj, obj, AerodynamicsObj, ControlObj);
+
+                x_next = x + dt*((1/6)*k1' + (1/3)*k2' + (1/3)*k3' + (1/6)*k4');
+                traj_x = [traj_x; x_next];
+                x = x_next;
+
+                if (x(4) > 2500) & (abs(x(9)) > 1000)
+                    disp('Solver likely experienced numerical instability. Consider decreasing time step.')
+                    return;
+                end
+
+                if i >= 0.25*length(tspan) & ~passed_quarter
+                    disp('Simulation 25% complete.')
+                    passed_quarter = true;
+                end
+                if i >= 0.5*length(tspan) & ~passed_half
+                    disp('Simulation 50% complete.')
+                    passed_half = true;
+                end
+                if i >= 0.75*length(tspan) & ~passed_threequarter
+                    disp('Simulation 75% complete')
+                    passed_threequarter = true;
+                end
+            end
+        end
+
+
     end
 
     methods (Static)

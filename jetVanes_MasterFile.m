@@ -119,7 +119,7 @@ EnvironmentObj.set_vm_3sigma(10) % m/s
 %% Flight Parameters
 
 FlightObj = Flight();
-FlightObj.set_tStep(0.001); % s
+FlightObj.set_tStep(0.005); % s
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);
