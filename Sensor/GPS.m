@@ -1,13 +1,6 @@
 classdef GPS < handle
 
     properties
-        test_accel_params;
-        test_gyro_params;
-        test_mag_params;
-        ADIS16500_accel_params;
-        ADIS_16500_gyro_params;
-        LIS3MDL_params;
-        IMU;
         GPS;
     end
 
