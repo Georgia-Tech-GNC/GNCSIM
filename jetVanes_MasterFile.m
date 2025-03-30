@@ -119,7 +119,7 @@ EnvironmentObj.set_vm_3sigma(10) % m/s
 %% Flight Parameters
 
 FlightObj = Flight();
-FlightObj.set_tStep(0.001); % s
+FlightObj.set_tStep(0.005); % s
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);
@@ -345,7 +345,7 @@ TrimPointsObj.generate_K(straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, c
 
 save_h_data = true;
 if save_h_data
-    TrimPointsObj.export_to_ref_h('output/h_data.h')
+    TrimPointsObj.export_to_ref_h('data/h_data.h')
 end
 % Visualize 'u' variations
 %TrimPointsObj.draw_u_trim_points(0, burnout_time)
@@ -382,7 +382,7 @@ monteCarlo = MonteCarlo();
 
 % Set hyperparameters
 monteCarlo.set_runGaussianLHS(true);
-monteCarlo.set_numRuns(1000);
+monteCarlo.set_numRuns(100);
 monteCarlo.set_odeSolverMaxTime(150); % kills ode after x seconds
 
 % Set 3sigma values 
