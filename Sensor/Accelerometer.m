@@ -16,6 +16,13 @@ classdef Accelerometer
 
     methods
 
+        function log = run_ekf(inputs)
+            
+            
+
+
+        end
+
         function obj = Sensor()
             % Constructor
             obj.refTraj = open('data/JV1.mat'); % Need to bring stuff from jet vanes simulations

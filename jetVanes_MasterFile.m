@@ -112,22 +112,22 @@ use_default = true;
 location = [latitude longitude elevation];
 EnvironmentObj = Environment();
 EnvironmentObj.set_max_altitude(10000) % m
-EnvironmentObj.set_vm_mean(5) % m/s
-EnvironmentObj.set_vm_3sigma(10) % m/s
+EnvironmentObj.set_vm_mean(0.01) % m/s
+EnvironmentObj.set_vm_3sigma(0.01) % m/s
 
 
 %% Flight Parameters
 
 FlightObj = Flight();
 FlightObj.set_tStep(0.005); % s
-FlightObj.set_runClosedLoop(true);
+FlightObj.set_runClosedLoop(false);
 FlightObj.set_calcXDots(true);
 FlightObj.set_runLinearModel(false);
 FlightObj.set_applyWind(false);
 FlightObj.set_numStates(13);
 FlightObj.set_numInputs(3);
-FlightObj.set_simTime(12); % seconds
-FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
+FlightObj.set_simTime(50); % seconds
+FlightObj.set_localSimTime(50); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
 FlightObj.set_tSpan()
 FlightObj.set_odeSolverMaxTime(300) % 300s before killing the simulation
 %flight.set_tSpan(0:flight.get_tStep():flight.get_simTime());
@@ -372,8 +372,8 @@ variations_cell_arr = {
 TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 
 %% RunFlight
-FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(true);
+FlightObj.set_runClosedLoop(false); % Set to true to simulate controlled flight
+FlightObj.set_applyWind(false);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 

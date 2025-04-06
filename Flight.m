@@ -308,6 +308,7 @@ classdef Flight < handle
                         tempMClog(lqrIndex).MA_b(i,:) = modelLog.MA_b;
                         tempMClog(lqrIndex).MT_b(i,:) = modelLog.MT_b;
                         tempMClog(lqrIndex).ME_b(i,:) = modelLog.ME_b;
+                        tempMClog(lqrIndex).accelFlat(i,:) = modelLog.accelFlat;
                         %tempMClog(lqrIndex).l_p(i,:) = modelLog.l_p; % doesn't exist in rocketModel
                         %tempMClog(lqrIndex).n_a(i,:) = modelLog.n_a; % doesn't exist in rocketModel
                         %tempMClog(lqrIndex).n_r(i,:) = modelLog.n_r; % doesn't exist in rocketModel
@@ -363,6 +364,7 @@ classdef Flight < handle
                     tempLoggedData.l_p = vertcat(tempMClog.l_p);
                     tempLoggedData.n_a = vertcat(tempMClog.n_a);
                     tempLoggedData.n_r = vertcat(tempMClog.n_r);
+                    tempLoggedData.accelFlat = vertcat(tempMClog.accelFlat);
                     
                 end
         
