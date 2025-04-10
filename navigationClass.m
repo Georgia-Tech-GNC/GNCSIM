@@ -39,7 +39,7 @@ classdef navigationClass
             obj.dhdx = dhdx;
             obj.h = h;
             obj.t_ref = log.loggedData.time;
-            obj.dt = dt;
+            obj.dt = log.loggedData.time(2)- log.loggedData.time(1);
 
             obj.gyroBias = gyroBias;
             obj.gyroRange = gyroRange;
@@ -54,7 +54,7 @@ classdef navigationClass
 
                 
                 % Prediction Step
-                obj.EKF_x = obj.f(obj.EKF_x, obj.accelForStep);
+                obj.EKF_x = obj.f(obj.EKF_x, obj.accelForStep, obj.dt);
                 obj.EKF_P = obj.predict_covariance();
                 
                 % Update Step
