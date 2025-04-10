@@ -291,6 +291,7 @@ classdef MonteCarlo < handle
             
                 % Store the results
                 logMonteCarlo(i).loggedData = log;
+
             end
 
             timeFor = toc;
