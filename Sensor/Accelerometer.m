@@ -77,6 +77,32 @@ classdef Accelerometer
         
         end
 
+        % Setters
+        function obj = set_bias(obj,new_bias)
+            obj.bias = new_bias;
+        end
+
+        function obj = set_noise_density(new_noise_density)
+            obj.noise_density = new_noise_density;
+        end
+
+        function obj = set_sampling_rate(new_sampling_rate)
+            obj.sampling_rate = new_sampling_rate;
+        end
+
+        % Getters
+        function [bias] = get_bias(obj)
+            bias = obj.bias;
+        end
+
+        function [noise_density] = get_noise_density(obj)
+            noise_density = obj.noise_density;
+        end
+
+        function [sampling_rate] = get_sampling_rate(obj)
+            sampling_rate = obj.sampling_rate;
+        end
+
 
     end
 

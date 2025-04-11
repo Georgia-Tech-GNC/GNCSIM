@@ -92,7 +92,48 @@ classdef Magnetometer
 %             end
 % 
 %         end
-                
+
+        % Setters
+        function obj = set_bias(obj,new_bias)
+            obj.bias = new_bias;
+        end
+
+        function obj = set_noise_density(new_noise_density)
+            obj.noise_density = new_noise_density;
+        end
+
+        function obj = set_sampling_rate(new_sampling_rate)
+            obj.sampling_rate = new_sampling_rate;
+        end
+
+        function obj = set_coarse_lla(new_coarse_lla)
+            obj.coarse_lla = new_coarse_lla;
+        end
+
+        function obj = set_coarse_declination(new_coarse_declination)
+            obj.coarse_declination = new_coarse_declination;
+        end
+
+        % Getters
+        function [bias] = get_bias(obj)
+            bias = obj.bias;
+        end
+
+        function [noise_density] = get_noise_density(obj)
+            noise_density = obj.noise_density;
+        end
+
+        function [sampling_rate] = get_sampling_rate(obj)
+            sampling_rate = obj.sampling_rate;
+        end
+           
+        function [coarse_lla] = get_coarse_lla(obj)
+            coarse_lla = obj.coarse_lla;
+        end
+
+        function [coarse_declination] = get_coarse_declination(obj)
+            coarse_declination = obj.coarse_declination;
+        end
 
     end
     
