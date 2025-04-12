@@ -53,8 +53,7 @@ classdef navigationClass
         end
         
         % Attitude Update
-        function obj = runAttitudeEstimation(obj,log ,dt)
-            [~, obj.gyroForStep, ~] = readSensors(log);
+        function obj = runAttitudeEstimation(obj,dt)
             wx = obj.gyroForStep(1);
             wy = obj.gyroForStep(2);
             wz = obj.gyroForStep(3);
