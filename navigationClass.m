@@ -14,62 +14,53 @@ classdef navigationClass
         h
         K
         ekfIndex
-        gyroBias
-        gyroRange
-        gyroNoise_density
-        gyroSampling_rate
+        accelerometer
+        gyro
+        gps
         accelForStep
+        gpsDataForStep
         gyroForStep
-        gpsData
-        t_ref
     end
     
     methods
         %Constructor
-        function obj = navigationClass(initialState,initialCovariance, processNoise, initialQuaternion, sensedData,f, dfdx, h, dhdx, dt, gyroBias, gyroRange, gyroNoise_density,gyroSampling_rate, gyroSampling_dt)         
+        function obj = navigationClass(initialState,initialCovariance, processNoise, initialQuaternion, f, dfdx, h, dhdx,accelerometer, gyro, gps)         
             obj.EKF_x = initialState;
             obj.EKF_P = initialCovariance;
             obj.EKF_Q = processNoise; 
             obj.EKF_R = eye(3); % For now
             obj.q_current = initialQuaternion;
-            obj.sensedData = sensedData; 
-            obj.ekfIndex =1;
             obj.f = f;
             obj.dfdx = dfdx;
             obj.dhdx = dhdx;
             obj.h = h;
-            obj.t_ref = log.loggedData.time;
-            obj.dt = log.loggedData.time(2)- log.loggedData.time(1);
-
-            obj.gyroBias = gyroBias;
-            obj.gyroRange = gyroRange;
-            obj.gyroNoise_density = gyroNoise_density;
-            obj.gyroSampling_rate = gyroSampling_rate;
+            obj.accelerometer = accelerometer;
+            obj.gyro = gyro;
+            obj.gps = gps;
         end
         
         %% EKF Function
-        function obj = runEKF(obj)
-                % Update sensor data
-                [obj.accelForStep, obj.gyroForStep, obj.gpsData] = readSensors(log); % GPS Data is not final still
-
-                
+        function obj = runEKF(obj, dt)                
                 % Prediction Step
-                obj.EKF_x = obj.f(obj.EKF_x, obj.accelForStep, obj.dt);
-                obj.EKF_P = obj.predict_covariance();
+                obj.EKF_x = obj.f(obj.EKF_x, obj.accelForStep, dt, velFlat); % Need to get velFlat
+                obj.EKF_P = obj.predict_covariance(obj.accelForStep);
                 
                 % Update Step
-                obj.z = obj.gps'; % Need GPS data
+                obj.z = obj.gpsDataForStep'; % Need GPS data
                 obj.K = obj.kalman_gain();
                 obj.EKF_x = obj.update_state();
                 obj.EKF_P = obj.update_covariance();
-            
-                obj.ekfIndex = obj.ekfIndex+1;
         end
         
         % Attitude Update
-        function obj = runAttitudeEstimation(obj)
-            q_delt = obj.gyroToInstantaneousRotationQuat(obj.gyroForStep(1), obj.gyroForStep(2), obj.gyroForStep(3));
-            obj.q_current = obj.quatMulitply(obj.q_current, q_delt);
+        function obj = runAttitudeEstimation(obj,log ,dt)
+            [~, obj.gyroForStep, ~] = readSensors(log);
+            wx = obj.gyroForStep(1);
+            wy = obj.gyroForStep(2);
+            wz = obj.gyroForStep(3);
+            q_delt = gyroToInstantaneousRotationQuat(wx, wy, wz, dt);
+            q_new = quatMulitply(obj.q_current, q_delt);
+            obj.q_current = q_new;
 
         end
         %% Helper Functions
@@ -92,26 +83,26 @@ classdef navigationClass
         end
         
         % Predict Covariance
-        function P_next = predict_covariance(obj)
-            F = obj.dfdx(obj.EKF_x, obj.accelForStep);
+        function P_next = predict_covariance(obj,accelForStep)
+            F = obj.dfdx(obj.EKF_x, accelForStep);
             P_next = F * obj.EKF_P * F' + obj.EKF_Q;
         end
         
-        function [accelForStep, gyroForStep, gpsData] = readSensors(log)
+        function [accelForStep, gyroForStep, gpsDataForStep] = readSensors(log,t)
+            t_ref = log.loggedData.time;
 
             a_f = log.loggedData.accelFlat;
             q_bf = log.loggedData.q_bf;
             w_bf = log.loggedData.angVel;
-            accelerometer = Sensor();
-            accelData = accelerometer.accelerometer_reading(a_f, w_bf, q_bf);
-            accelForStep = accelData(obj.ekfIndex);
-            
+            accelData = obj.accelerometer.accelerometer_reading(a_f, w_bf, q_bf);
+            accelForStep = interp1(t_ref, accelData, t, 'linear', 'extrap');    
+
             w_bf = log.loggedData.angVel;
-            gyro = Gyro(obj.gyroBias, obj.gyroRange, obj.gyroNoise_density, obj.gyroSampling_rate);
-            gyroData = gyro.gyro_model(w_bf, obj.t_ref);
-            gyroForStep = gyroData(obj.ekfIndex);
+            gyroData = obj.gyro.gyro_model(w_bf, t_ref);
+            gyroForStep  = interp1(t_ref, gyroData,t,'linear','extrap');   
             
-            gpsData = obj.sensedData.posFlat(efkIndex,:); % Still Need a GPS Sensor
+            gpsData = []; % Still Need a GPS Sensor
+            gpsDataForStep = interp1(t_ref, gpsData,t,'linear', 'extrap');
 
         end
 
