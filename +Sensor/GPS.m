@@ -21,7 +21,7 @@ classdef GPS < handle
             alt = refLLA(3);
 
             
-            [x, y, z] = GPS.LLA2ECEF(lat, lon, alt);
+            [x, y, z] = obj.LLA2ECEF(lat, lon, alt);
             flat_origin = [x, y, z];
 
            
@@ -50,7 +50,7 @@ classdef GPS < handle
                 
         end
 
-        function [x_ecef, y_ecef, z_ecef] = LLA2ECEF(lat, lon, alt)
+        function [x_ecef, y_ecef, z_ecef] = LLA2ECEF(obj, lat, lon, alt)
             % Converts from WGS84 to ECEF
             % Define intermediate variables
             WGS84_E = 0.08181;
@@ -70,7 +70,7 @@ classdef GPS < handle
             z_ecef = (N .* (1.0 - WGS84_E .* WGS84_E) + alt) .* slat;
         end
 
-        function [flat_state] = readGPS(posState, velState)
+        function [flat_state] = readGPS(obj,posState, velState)
             origin = obj.flat_origin;
 
             xr = origin(1);

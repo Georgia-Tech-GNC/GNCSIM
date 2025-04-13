@@ -2,9 +2,14 @@ clear;
 clc;
 close all;
 
-accelerometer = Sensor();
-gyro = Gyro(obj.gyroBias, obj.gyroRange, obj.gyroNoise_density, obj.gyroSampling_rate);
-gps;
+accelerometer = Sensor.Accelerometer();
+gyroBias = [0 0 0];
+gyroRange = [Inf, Inf, Inf];
+gyroNoise_density = [0 0 0];
+gyroSampling_rate = 100;
+gyro = Sensor.Gyro(gyroBias, gyroRange, gyroNoise_density, gyroSampling_rate);
+refLLA = [33.776, -84.399, 306];
+gps = Sensor.GPS(refLLA);
 dt = [];
 x0 = [0;0;0;0;0;0];
 P0 = 0.01 .* eye(6);
@@ -18,8 +23,8 @@ Q = sigma_a^2 .* [(dt^4)/4, (dt^3)/2,                    0,                    0
                                               0,                    0,                    0,                    0, (dt^3)/2,    dt^2];
 
 R = [4.2 0 0;
-              0 8.4 0;
-              0 0 8.4];
+      0 8.4 0;
+      0 0 8.4];
 
 f = @(x,dt,a_b) state_transition_fn(x,dt,a_b);
 h = @(x)[x(1);x(2);x(3)];
@@ -33,7 +38,7 @@ dhdx = [1 0 0 0 0 0;
             0 0 1 0 0 0;
             0 0 0 0 1 0];
 
-navObj = Navigation(x, P0, q0, Q, R, f, dfdx, h, dhdx, accelerometer, gyro, gps);
+navObj = Navigation(x0, P0, q0, Q, R, f, dfdx, h, dhdx, accelerometer, gyro, gps);
 %%
 load('data/6dof_traj.mat') % Generates struct of flight simulation data named "log"
 

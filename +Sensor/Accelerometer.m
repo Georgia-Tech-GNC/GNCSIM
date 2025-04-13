@@ -11,6 +11,8 @@ classdef Accelerometer
         sampling_dt (1,1) double
         refTraj;
 
+        % TODO define lever arm location and lever arm rate of change props
+
     end
 
 
@@ -53,16 +55,23 @@ classdef Accelerometer
         % variable gravity would be nice
         % include lever arm offset and cg rate in accel_params
 
-        
-        [x2f, v2f, a2f] = state2imu(w_bf, x_f, v_f, a_f, q_bf, r21b, v21b);
+
+        % TODO add a lever arm interpolator
+        r21b = [0 0 0];
+        v21b = [0 0 0];
+        r21b = repmat(r21b,size(w_bf,1), 1);
+        v21b = repmat(v21b,size(w_bf,1), 1);
+        a2f = obj.state2imu(w_bf, a_f, q_bf, r21b, v21b);
+        sf = a2f;
         
 
         
         end
 
-        function [x2f, v2f, a2f] = state2imu(wbfb, x1f, v1f, a1f, qbf, r21b, v21b)
+        % function a2f = state2imu(wbfb, x1f, v1f, a1f, qbf, r21b, v21b)
+        function a2f = state2imu(obj, wbfb, a1f, qbf, r21b, v21b)
    
-           qfb = quatconj(qbf'); % outputs 1x4
+           qfb = quatconj(qbf); % outputs 1x4
            r12b = -r21b;
            v12b = -v21b;
         
@@ -71,9 +80,9 @@ classdef Accelerometer
            wfib = [0;0;0];
            alphabfb = [0;0;0];
            
-           x2f = x1f - quat_rotate(qfb, r21b')';
-           v2f = v1f - quat_rotate(qfb, (v12b + cross(wbfb,r12b))')';
-           a2f = a1f - quat_rotate(qfb, (cross(wbfb,v21b) + cross(wbfb,cross(wbfb,r12b)) )')';
+           % x2f = x1f - quat_rotate(qfb, r21b')';
+           % v2f = v1f - quat_rotate(qfb, (v12b + cross(wbfb,r12b))')';
+           a2f = a1f - Sensor.quat_rotate(qfb, (cross(wbfb,v21b,2) + cross(wbfb,cross(wbfb,r12b,2),2) ));
         
         end
 
