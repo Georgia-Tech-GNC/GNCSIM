@@ -10,6 +10,7 @@ gyroSampling_rate = 100;
 gyro = Sensor.Gyro(gyroBias, gyroRange, gyroNoise_density, gyroSampling_rate);
 refLLA = [33.776, -84.399, 306];
 gps = Sensor.GPS(refLLA);
+
 dt = [];
 x0 = [0;0;0;0;0;0];
 P0 = 0.01 .* eye(6);
@@ -26,7 +27,7 @@ R = [4.2 0 0;
       0 8.4 0;
       0 0 8.4];
 
-f = @(x,dt,a_b) state_transition_fn(x,dt,a_b);
+f = @(x,q_curr,a_b,dt) state_transition_fn(x,q_curr,a_b,dt);
 h = @(x)[x(1);x(2);x(3)];
 dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
             0,                        1, 0,                        0, 0,                        0
@@ -48,9 +49,9 @@ for i = 1:length(ts)-1
 
     t = ts(i);
     dt = ts(i+1) - ts(i);
-    navObj.readSensors(log, t);
-    navObj.runAttitudeEstimation(dt);
-    navObj.runEKF(dt);
+    navObj = navObj.readSensors(log, t);
+    navObj = navObj.runAttitudeEstimation(dt);
+    navObj = navObj.runEKF(dt);
 
 end
 
@@ -85,8 +86,8 @@ end
 %             0 0 0 0 1 0];end
 
 
-function [x_tplus1] = state_transition_fn(x_n, dt, accel_body)
-    velFlat_n = quat_rotate(quatconj(atdf.q_current'), [x_n(2) x_n(4) x_n(6)]);
+function [x_tplus1] = state_transition_fn(x_n, q_current, accel_body,dt)
+    velFlat_n = Sensor.quat_rotate(quatconj(q_current'), [x_n(2) x_n(4) x_n(6)]);
     f1 = x_n(1) + velFlat_n(1)*dt;
     f2 = x_n(2) + dt*accel_body(1);
     f3 = x_n(3) + velFlat_n(2)*dt;

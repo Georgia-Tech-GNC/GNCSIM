@@ -44,7 +44,7 @@ classdef Navigation
                 % Prediction Step
                 
                 obj.EKF_x = obj.f(obj.EKF_x, obj.q_current, obj.accelForStep, dt);
-                obj.EKF_P = obj.predict_covariance(obj.accelForStep);
+                obj.EKF_P = obj.predict_covariance();
                 
                 % Update Step
                 obj.z = obj.gpsDataForStep';
@@ -58,8 +58,8 @@ classdef Navigation
             wx = obj.gyroForStep(1);
             wy = obj.gyroForStep(2);
             wz = obj.gyroForStep(3);
-            q_delt = gyroToInstantaneousRotationQuat(wx, wy, wz, dt);
-            q_new = quatMulitply(obj.q_current, q_delt);
+            q_delt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz, dt);
+            q_new = obj.quatMulitply(obj.q_current, q_delt);
             obj.q_current = q_new;
 
         end
@@ -88,27 +88,30 @@ classdef Navigation
             P_next = F * obj.EKF_P * F' + obj.EKF_Q;
         end
         
-        function [accelForStep, gyroForStep, gpsDataForStep] = readSensors(obj,log,t)
+        function obj = readSensors(obj,log,t)
             t_ref = log.loggedData.time;
 
             a_f = log.loggedData.accelFlat;
             q_bf = log.loggedData.q_bf;
             w_bf = log.loggedData.angVel;
             accelData = obj.accelerometer.accelerometer_reading(a_f, w_bf, q_bf);
-            accelForStep = interp1(t_ref, accelData, t, 'linear', 'extrap');    
+            obj.accelForStep = interp1(t_ref, accelData, t, 'linear', 'extrap');    
 
             w_bf = log.loggedData.angVel;
             gyroData = obj.gyro.gyro_model(w_bf, t_ref);
-            gyroForStep  = interp1(t_ref, gyroData,t,'linear','extrap');   
+            obj.gyroForStep  = interp1(t_ref, gyroData,t,'linear','extrap');   
             
-            postPos = [obj.EKF_x(1); obj.EKF_x(2); obj.EKF_x(3)];
-            postVel = [obj.EKF_x(4); obj.EKF_x(5); obj.EKF_x(6)];
-            gpsData = obj.gps.readGPS(postPos,postVel);
-            gpsDataForStep = interp1(t_ref, gpsData,t,'linear', 'extrap');
+            % postPos = [obj.EKF_x(1); obj.EKF_x(2); obj.EKF_x(3)];
+            % postVel = [obj.EKF_x(4); obj.EKF_x(5); obj.EKF_x(6)];
+            posFlat = log.loggedData.posFlat;
+            velBody = log.loggedData.velBody;
+            velFlat = Sensor.quat_rotate( conj(q_bf), velBody );
+            obj.gpsDataForStep = obj.gps.readGPS(posFlat,velFlat);
+            % gpsDataForStep = interp1(t_ref, gpsData,t,'linear', 'extrap');
 
         end
 
-        function [q_delt] = gyroToInstantaneousRotationQuat(wx, wy, wz, timeStep)
+        function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz, timeStep)
 
             omegaVec = [wx wy wz];
             
@@ -128,7 +131,7 @@ classdef Navigation
             
             end
             
-            function [quat_new]= quatMulitply(q1,q2)
+            function [quat_new]= quatMulitply(obj, q1,q2)
             
             q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
             q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
