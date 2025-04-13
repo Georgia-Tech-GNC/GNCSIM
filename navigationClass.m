@@ -1,4 +1,4 @@
-classdef navigationClass
+classdef Navigation
     properties
         dt
         EKF_x
@@ -24,11 +24,11 @@ classdef navigationClass
     
     methods
         %Constructor
-        function obj = navigationClass(initialState,initialCovariance, processNoise, initialQuaternion, f, dfdx, h, dhdx,accelerometer, gyro, gps)         
+        function obj = Navigation(initialState,initialCovariance, initialQuaternion, processNoise, measurementNoise, f, dfdx, h, dhdx,accelerometer, gyro, gps)         
             obj.EKF_x = initialState;
             obj.EKF_P = initialCovariance;
             obj.EKF_Q = processNoise; 
-            obj.EKF_R = eye(3); % For now
+            obj.EKF_R = measurementNoise; % For now
             obj.q_current = initialQuaternion;
             obj.f = f;
             obj.dfdx = dfdx;
@@ -82,8 +82,8 @@ classdef navigationClass
         end
         
         % Predict Covariance
-        function P_next = predict_covariance(obj,accelForStep)
-            F = obj.dfdx(obj.EKF_x, accelForStep);
+        function P_next = predict_covariance(obj)
+            F = obj.dfdx(obj.EKF_x, obj.q_current);
             P_next = F * obj.EKF_P * F' + obj.EKF_Q;
         end
         
