@@ -47,7 +47,7 @@ classdef navigationClass
                 obj.EKF_P = obj.predict_covariance(obj.accelForStep);
                 
                 % Update Step
-                obj.z = obj.gpsDataForStep'; % Need GPS data
+                obj.z = obj.gpsDataForStep';
                 obj.K = obj.kalman_gain();
                 obj.EKF_x = obj.update_state();
                 obj.EKF_P = obj.update_covariance();
@@ -101,7 +101,9 @@ classdef navigationClass
             gyroData = obj.gyro.gyro_model(w_bf, t_ref);
             gyroForStep  = interp1(t_ref, gyroData,t,'linear','extrap');   
             
-            gpsData = []; % Still Need a GPS Sensor
+            postPos = [obj.EKF_x(1); obj.EKF_x(2); obj.EKF_x(3)];
+            postVel = [obj.EKF_x(4); obj.EKF_x(5); obj.EKF_x(6)];
+            gpsData = obj.gps.readGPS(postPos,postVel);
             gpsDataForStep = interp1(t_ref, gpsData,t,'linear', 'extrap');
 
         end
