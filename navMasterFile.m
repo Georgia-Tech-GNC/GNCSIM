@@ -21,7 +21,7 @@ R = [4.2 0 0;
               0 8.4 0;
               0 0 8.4];
 
-f = @(x, accelReading, dt, velFlat_n) [x(1) + dt*x(2); x(2) + dt*accelReading(1); x(3) + velFlat_n(2)*dt; x(4) + dt*accelReading(2); x(5) + velFlat_n(3)*dt; x(6) + dt*accelReading(3)];
+f = @(x,dt,a_b) state_transition_fn(x,dt,a_b);
 h = @(x)[x(1);x(2);x(3)];
 dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
             0,                        1, 0,                        0, 0,                        0
@@ -80,9 +80,14 @@ end
 %             0 0 0 0 1 0];end
 
 
-function [x_tplus1] = f(x, dt, velFlat)
-
-
-
+function [x_tplus1] = state_transition_fn(x_n, dt, accel_body)
+    velFlat_n = quat_rotate(quatconj(atdf.q_current'), [x_n(2) x_n(4) x_n(6)]);
+    f1 = x_n(1) + velFlat_n(1)*dt;
+    f2 = x_n(2) + dt*accel_body(1);
+    f3 = x_n(3) + velFlat_n(2)*dt;
+    f4 = x_n(4) + dt*accel_body(2);
+    f5 = x_n(5) + velFlat_n(3)*dt;
+    f6 = x_n(6) + dt*accel_body(3);   
+    x_tplus1 = [f1;f2;f3;f4;f5;f6];
 
 end
