@@ -42,7 +42,8 @@ classdef navigationClass
         %% EKF Function
         function obj = runEKF(obj, dt)                
                 % Prediction Step
-                obj.EKF_x = obj.f(obj.EKF_x, obj.accelForStep, dt, velFlat); % Need to get velFlat
+                
+                obj.EKF_x = obj.f(obj.EKF_x, obj.q_current, obj.accelForStep, dt);
                 obj.EKF_P = obj.predict_covariance(obj.accelForStep);
                 
                 % Update Step
