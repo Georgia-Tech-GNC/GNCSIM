@@ -299,7 +299,7 @@ classdef MonteCarlo < handle
             save("logMonteCarlo")
         end
 
-        function [logMonteCarlo, performance] = evaluateMonteCarlo(obj, logMonteCarlo)
+        function logMonteCarlo = evaluateMonteCarlo(obj, logMonteCarlo)
             tic;
             numSims = length(logMonteCarlo);
             

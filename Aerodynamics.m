@@ -1,3 +1,5 @@
+% Main Authors: Patrick Barry
+
 classdef Aerodynamics < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here

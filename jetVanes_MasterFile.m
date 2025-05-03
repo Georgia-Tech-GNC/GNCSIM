@@ -454,7 +454,6 @@ EnvironmentObj.set_vm_3sigma(15);
 FlightObj.set_runClosedLoop(true);
 FlightObj.set_applyWind(true);
 
-
 monteCarlo.set_lhsSamples(lhsChunk);
 logMonteCarlo = monteCarlo.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 
@@ -472,8 +471,3 @@ combinedLogMonteCarlo = [
     logMonteCarlo9';
     logMonteCarlo10'
 ];
-
-
-
-
-
