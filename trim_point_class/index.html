@@ -1,0 +1,1316 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.gatech.edu/pages/gnc/GNCSIM/trim_point_class/">
+      
+      
+        <link rel="prev" href="../trim_batch_class/">
+      
+      
+        <link rel="next" href="../onboarding/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Trim Point Class - GNCSIM Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#trimpoints-class-documentation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GNCSIM Wiki" class="md-header__button md-logo" aria-label="GNCSIM Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GNCSIM Wiki
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Trim Point Class
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GNCSIM Wiki" class="md-nav__button md-logo" aria-label="GNCSIM Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GNCSIM Wiki
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    GNCSIM Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            GNCSIM Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aerodynamics_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Aerodynamics Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../environment_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Environment Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flight_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Flight CLass
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monte_carlo_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Monte Carlo Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rocket_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Rocket Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trim_batch_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Trim Batch Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Trim Point Class
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Trim Point Class
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#class-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Class Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      Properties
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generate_trim_batches" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_trim_batches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add_u_variations" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_u_variations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add_custom_variations" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_custom_variations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate_trim_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_trim_points
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_trim_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_trim_points
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export_trim_points_to_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      export_trim_points_to_csv
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export_to_ref_h" class="md-nav__link">
+    <span class="md-ellipsis">
+      export_to_ref_h
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate_trim_points_from_u_var" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_trim_points_from_u_var
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_info
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#find_event_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      find_event_time
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#look_for_data_types" class="md-nav__link">
+    <span class="md-ellipsis">
+      look_for_data_types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trim_rocket_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      trim_rocket_model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate_k" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_K
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draw_u_trim_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      draw_u_trim_points
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lqr_configuration_selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      LQR_configuration_selector
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compute_controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      compute_controls
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set_reference_states" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_reference_states
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_reference_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_reference_state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_vertical_state-static" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_vertical_state (Static)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost_rocket_model-static" class="md-nav__link">
+    <span class="md-ellipsis">
+      cost_rocket_model (Static)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typical-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Typical Workflow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Onboarding
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#class-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Class Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      Properties
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generate_trim_batches" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_trim_batches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add_u_variations" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_u_variations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add_custom_variations" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_custom_variations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate_trim_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_trim_points
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_trim_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_trim_points
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export_trim_points_to_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      export_trim_points_to_csv
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export_to_ref_h" class="md-nav__link">
+    <span class="md-ellipsis">
+      export_to_ref_h
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate_trim_points_from_u_var" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_trim_points_from_u_var
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_info" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_info
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#find_event_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      find_event_time
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#look_for_data_types" class="md-nav__link">
+    <span class="md-ellipsis">
+      look_for_data_types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trim_rocket_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      trim_rocket_model
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generate_k" class="md-nav__link">
+    <span class="md-ellipsis">
+      generate_K
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draw_u_trim_points" class="md-nav__link">
+    <span class="md-ellipsis">
+      draw_u_trim_points
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lqr_configuration_selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      LQR_configuration_selector
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compute_controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      compute_controls
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set_reference_states" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_reference_states
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_reference_state" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_reference_state
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_vertical_state-static" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_vertical_state (Static)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cost_rocket_model-static" class="md-nav__link">
+    <span class="md-ellipsis">
+      cost_rocket_model (Static)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#typical-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Typical Workflow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="trimpoints-class-documentation"><code>TrimPoints</code> Class Documentation</h1>
+<p>The <code>TrimPoints</code> class handles the generation, organization, and storage of “trim points” – specific rocket states (plus controls) that serve as initial conditions for flight simulations or linear control analysis. It reads flight data from a CSV file, constructs baseline states for specific times, applies variations, and runs trimming procedures.</p>
+<hr />
+<h2 id="class-overview">Class Overview</h2>
+<pre><code class="language-matlab">classdef TrimPoints &lt; handle
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Inheritance</strong>: Inherits from MATLAB’s built-in <code>handle</code> class, so changes to properties persist when passed around.</li>
+<li><strong>Purpose</strong>:</li>
+<li>Reads and stores flight data from a CSV.</li>
+<li>Builds multiple <code>TrimBatch</code> objects, each representing variations around a base state at a given time.</li>
+<li>Performs trimming to solve for near-steady or desired conditions.</li>
+<li>Exports resulting trim points to CSV or header files.</li>
+</ul>
+<hr />
+<h2 id="properties">Properties</h2>
+<ul>
+<li>
+<p><strong><code>file_path</code> (string)</strong><br />
+  Path to the CSV flight data file.</p>
+</li>
+<li>
+<p><strong><code>flight_data</code> (table)</strong><br />
+  Raw data read from the CSV, includes headers and text.</p>
+</li>
+<li>
+<p><strong><code>num_rows</code>, <code>num_cols</code> (integers)</strong><br />
+  Size of <code>flight_data</code>.</p>
+</li>
+<li>
+<p><strong><code>flight_data_num</code> (numeric matrix)</strong><br />
+  Cleaned numeric data (NaN rows removed).</p>
+</li>
+<li>
+<p><strong><code>batches</code> (array of <code>TrimBatch</code> objects)</strong><br />
+  Each batch represents a specific time's base state plus variations.</p>
+</li>
+<li>
+<p><strong><code>num_batches</code> (integer)</strong><br />
+  Number of batches.</p>
+</li>
+<li>
+<p><strong><code>trim_points</code> (struct array)</strong><br />
+  Combined list of generated (untrimmed) trim points.</p>
+</li>
+<li>
+<p><strong><code>trimmed_points</code> (struct array)</strong><br />
+  Trim points with optimized states and associated metadata (e.g., K, A).</p>
+</li>
+<li>
+<p><strong><code>column_positions_csv</code> (array)</strong><br />
+  Indices for variables like time, thrust, velocity.</p>
+</li>
+<li>
+<p><strong><code>state_dict</code> (<code>containers.Map</code>)</strong><br />
+  Maps string state names to column indices.</p>
+</li>
+<li>
+<p><strong><code>reference_states</code> (struct array)</strong><br />
+  Reference states for control, matched to specific times.</p>
+</li>
+<li>
+<p><strong><code>controller_ID</code> (constant, string)</strong><br />
+  Default controller name (typically 'LQR').</p>
+</li>
+<li>
+<p><strong><code>state_names</code> (constant cell array)</strong><br />
+  Ordered list of all possible state names.</p>
+</li>
+<li>
+<p><strong><code>state_index_con</code> (constant array)</strong><br />
+  Indices corresponding to <code>state_names</code>.</p>
+</li>
+</ul>
+<hr />
+<h2 id="methods">Methods</h2>
+<h3 id="generate_trim_batches"><code>generate_trim_batches</code></h3>
+<pre><code class="language-matlab">function generate_trim_batches(obj, time_arr)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Inputs</strong>: <code>time_arr</code> – vector of times (seconds)</li>
+<li><strong>Description</strong>: Creates one <code>TrimBatch</code> per time and initializes base states.</li>
+</ul>
+<hr />
+<h3 id="add_u_variations"><code>add_u_variations</code></h3>
+<pre><code class="language-matlab">function add_u_variations(obj, ...)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Adds velocity (u) variations to each batch around nominal values.</li>
+</ul>
+<hr />
+<h3 id="add_custom_variations"><code>add_custom_variations</code></h3>
+<pre><code class="language-matlab">function add_custom_variations(obj, batch_indexes, name, var, data, include_base_state)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Allows the user to add custom state/control variations to selected batches.</li>
+</ul>
+<hr />
+<h3 id="generate_trim_points"><code>generate_trim_points</code></h3>
+<pre><code class="language-matlab">function generate_trim_points(obj, rocket, env, flight, aero)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Generates trim points and performs trimming optimization for each one.</li>
+</ul>
+<hr />
+<h3 id="get_trim_points"><code>get_trim_points</code></h3>
+<pre><code class="language-matlab">function batch_trim_points = get_trim_points(obj, target_time)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Returns trim points closest in time to the target.</li>
+</ul>
+<hr />
+<h3 id="export_trim_points_to_csv"><code>export_trim_points_to_csv</code></h3>
+<pre><code class="language-matlab">function export_trim_points_to_csv(obj, output_file_path)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Writes generated trim points to CSV format.</li>
+</ul>
+<hr />
+<h3 id="export_to_ref_h"><code>export_to_ref_h</code></h3>
+<pre><code class="language-matlab">function export_to_ref_h(obj, output_file_path)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Writes trimmed points to a C-style header file with [time, airspeed, K] format.</li>
+</ul>
+<hr />
+<h3 id="generate_trim_points_from_u_var"><code>generate_trim_points_from_u_var</code></h3>
+<pre><code class="language-matlab">function u_vars = generate_trim_points_from_u_var(obj, ...)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Internally used to compute velocity spreads with bounded force variation.</li>
+</ul>
+<hr />
+<h3 id="get_info"><code>get_info</code></h3>
+<pre><code class="language-matlab">function [u, thrust] = get_info(obj, time)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Interpolates flight data to retrieve velocity and thrust at <code>time</code>.</li>
+</ul>
+<hr />
+<h3 id="find_event_time"><code>find_event_time</code></h3>
+<pre><code class="language-matlab">function event_time = find_event_time(obj, event_name)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Searches the CSV for a named event and returns its timestamp.</li>
+</ul>
+<hr />
+<h3 id="look_for_data_types"><code>look_for_data_types</code></h3>
+<pre><code class="language-matlab">function positions = look_for_data_types(obj, required_vars)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Locates CSV columns matching specified variables.</li>
+</ul>
+<hr />
+<h3 id="trim_rocket_model"><code>trim_rocket_model</code></h3>
+<pre><code class="language-matlab">function trim_rocket_model(obj, rocket, env, flight, aero)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Optimizes state vectors to yield near-steady conditions.</li>
+</ul>
+<hr />
+<h3 id="generate_k"><code>generate_K</code></h3>
+<pre><code class="language-matlab">function generate_K(obj, straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Computes LQR gain matrices using linearized dynamics at each trimmed point.</li>
+</ul>
+<hr />
+<h3 id="draw_u_trim_points"><code>draw_u_trim_points</code></h3>
+<pre><code class="language-matlab">function draw_u_trim_points(obj, start_time, end_time)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Plots real vs. trimmed velocity values over a time window.</li>
+</ul>
+<hr />
+<h3 id="lqr_configuration_selector"><code>LQR_configuration_selector</code></h3>
+<pre><code class="language-matlab">function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Given a current state/time, selects the nearest trimmed point and returns its (K, x0, u0).</li>
+</ul>
+<hr />
+<h3 id="compute_controls"><code>compute_controls</code></h3>
+<pre><code class="language-matlab">function del_u = compute_controls(obj, K, del_x)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Simple LQR control law: <code>del_u = -K * del_x</code>.</li>
+</ul>
+<hr />
+<h3 id="set_reference_states"><code>set_reference_states</code></h3>
+<pre><code class="language-matlab">function obj = set_reference_states(obj, time_arr, variations_cell_arr)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Builds the reference_states struct array for use in feedback control.</li>
+</ul>
+<hr />
+<h3 id="get_reference_state"><code>get_reference_state</code></h3>
+<pre><code class="language-matlab">function reference_state = get_reference_state(obj, time)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Retrieves the closest-in-time reference state.</li>
+</ul>
+<hr />
+<h3 id="get_vertical_state-static"><code>get_vertical_state</code> (Static)</h3>
+<pre><code class="language-matlab">function full_state = get_vertical_state()
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: Returns a default 13-element vertical flight state.</li>
+</ul>
+<hr />
+<h3 id="cost_rocket_model-static"><code>cost_rocket_model</code> (Static)</h3>
+<pre><code class="language-matlab">function f0 = cost_rocket_model(Z, trim_point, t, rocket, environment, flight, aero, H)
+    ...
+end
+</code></pre>
+<ul>
+<li><strong>Description</strong>: The cost function for state trimming optimization (used by <code>fminsearch</code>).</li>
+</ul>
+<hr />
+<h2 id="typical-workflow">Typical Workflow</h2>
+<pre><code class="language-matlab">tp = TrimPoints(&quot;my_flight_log.csv&quot;);
+tp.generate_trim_batches([5, 10, 15]);
+tp.add_u_variations(...);
+tp.generate_trim_points(rocket, env, flight, aero);
+tp.generate_K(...);
+tp.export_trim_points_to_csv(&quot;output.csv&quot;);
+</code></pre>
+<hr />
+<h2 id="conclusion">Conclusion</h2>
+<p>The <code>TrimPoints</code> class is a robust workflow manager for extracting flight data, building rocket state sets, and performing trimming optimizations. It links together data parsing, structured variation, and numerical optimization to prepare data for control design.</p>
+<hr />
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
