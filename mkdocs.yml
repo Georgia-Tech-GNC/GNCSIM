@@ -1,7 +1,12 @@
 site_name: GNCSIM Wiki
 site_url: https://github.gatech.edu/pages/gnc/GNCSIM/
+
 theme:
   name: material
+  logo: img/logo.jfif
+  palette:
+  primary: indigo
+  accent: amber
 
 nav:
 - Home: index.md
