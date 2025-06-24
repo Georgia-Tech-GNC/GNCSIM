@@ -1,4 +1,17 @@
-site_name: GNCSIM Pages
+site_name: GNCSIM Wiki
 site_url: https://github.gatech.edu/pages/gnc/GNCSIM/
 theme:
   name: material
+
+nav:
+- Home: index.md
+- GNCSIM Documentation:
+    - Aerodynamics Class: aerodynamics_class.md
+    - Environment Class: environment_class.md
+    - Flight CLass: flight_class.md
+    - Monte Carlo Class: monte_carlo_class.md
+    - Rocket Class: rocket_class.md
+    - Trim Batch Class: trim_batch_class.md
+    - Trim Point Class: trim_point_class.md
+- Onboarding: onboarding.md
+
