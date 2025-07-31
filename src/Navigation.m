@@ -24,7 +24,7 @@ classdef Navigation
     
     methods
         %Constructor
-        function obj = Navigation(initialState,initialCovariance, initialQuaternion, processNoise, measurementNoise, f, dfdx, h, dhdx,accelerometer, gyro, gps)         
+        function obj = Navigation(initialState,initialCovariance, initialQuaternion, processNoise, measurementNoise, f, dfdx, h, dhdx, accelerometer, gyro, gps)         
             obj.EKF_x = initialState;
             obj.EKF_P = initialCovariance;
             obj.EKF_Q = processNoise; 
