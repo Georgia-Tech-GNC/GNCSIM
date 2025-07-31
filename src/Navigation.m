@@ -111,7 +111,11 @@ classdef Navigation
 
         end
 
-        function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz, timeStep)
+    end
+        
+    methods(Static)
+
+        function [q_delt] = gyroToInstantaneousRotationQuat(wx, wy, wz, timeStep)
 
             omegaVec = [wx wy wz];
             
@@ -131,7 +135,7 @@ classdef Navigation
             
             end
             
-            function [quat_new]= quatMulitply(obj, q1,q2)
+            function [quat_new]= quatMulitply(q1,q2)
             
             q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
             q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
