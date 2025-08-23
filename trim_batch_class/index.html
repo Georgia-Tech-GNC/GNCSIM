@@ -28,6 +28,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -55,7 +58,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,8 +114,8 @@
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -788,10 +796,10 @@
 <p>The <code>TrimBatch</code> class manages a group of “variations” around a single base state at a specific time. It forms all possible combinations of these variations into distinct trim points for analysis or simulation.</p>
 <hr />
 <h2 id="class-overview">Class Overview</h2>
-<pre><code class="language-matlab">classdef TrimBatch &lt; handle
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">TrimBatch</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">handle</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inheritance</strong>: Inherits from <code>handle</code></li>
 <li><strong>Purpose</strong>:</li>
@@ -847,10 +855,10 @@ end
 <hr />
 <h2 id="methods">Methods</h2>
 <h3 id="constructor">Constructor</h3>
-<pre><code class="language-matlab">function obj = TrimBatch(base_state, time, id)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">TrimBatch</span><span class="p">(</span>base_state, time, id<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>: </li>
 <li><code>base_state</code>: 13×1 state vector</li>
@@ -860,48 +868,48 @@ end
 </ul>
 <hr />
 <h3 id="add_variation"><code>add_variation</code></h3>
-<pre><code class="language-matlab">function add_variation(obj, name, varables, variation_data)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">add_variation</span><span class="p">(</span>obj, name, varables, variation_data<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Adds a variation specification to the batch.</li>
 </ul>
 <hr />
 <h3 id="count_trim_points"><code>count_trim_points</code></h3>
-<pre><code class="language-matlab">function count_trim_points(obj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">count_trim_points</span><span class="p">(</span>obj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Computes the total number of trim points (Cartesian product size).</li>
 </ul>
 <hr />
 <h3 id="generate_trim_batch"><code>generate_trim_batch</code></h3>
-<pre><code class="language-matlab">function generate_trim_batch(obj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">generate_trim_batch</span><span class="p">(</span>obj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Forms all trim points by applying all combinations of variations.</li>
 </ul>
 <hr />
 <h3 id="generate_combinations-private"><code>generate_combinations</code> (Private)</h3>
-<pre><code class="language-matlab">function combinations = generate_combinations(obj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>combinations<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">generate_combinations</span><span class="p">(</span>obj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Computes index matrix for combination generation.</li>
 </ul>
 <hr />
 <h2 id="typical-usage">Typical Usage</h2>
-<pre><code class="language-matlab">baseSt = [0 0 0 0 0 0 1 0 0 0 0 0 0];
-tb = TrimBatch(baseSt, 5, 1);
-tb.add_variation(&quot;speed&quot;, [&quot;u&quot;], [200; 210; 220]);
-tb.generate_trim_batch();
-disp(tb.trim_points);
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="n">baseSt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">];</span>
+<span class="n">tb</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">TrimBatch</span><span class="p">(</span><span class="n">baseSt</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="n">tb</span><span class="p">.</span><span class="n">add_variation</span><span class="p">(</span><span class="s">&quot;speed&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;u&quot;</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">200</span><span class="p">;</span><span class="w"> </span><span class="mi">210</span><span class="p">;</span><span class="w"> </span><span class="mi">220</span><span class="p">]);</span>
+<span class="n">tb</span><span class="p">.</span><span class="n">generate_trim_batch</span><span class="p">();</span>
+<span class="nb">disp</span><span class="p">(</span><span class="n">tb</span><span class="p">.</span><span class="n">trim_points</span><span class="p">);</span>
+</code></pre></div>
 <hr />
 <h2 id="conclusion">Conclusion</h2>
 <p>The <code>TrimBatch</code> class helps manage controlled variations around a nominal rocket state, producing complete trim point sets for trimming, control design, or trajectory initialization.</p>

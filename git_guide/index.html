@@ -26,6 +26,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -53,7 +56,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -104,8 +112,8 @@
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -1423,8 +1431,8 @@ Please follow the <a href="../git_onboarding_instructions/">git setup</a> guide 
 <li><strong>Staging Area (Index):</strong> A prep area for changes you want to commit</li>
 <li><strong>Repository:</strong> Where Git stores the committed history</li>
 </ol>
-<pre><code>Working Directory → git add → Staging Area → git commit → Repository
-</code></pre>
+<div class="highlight"><pre><span></span><code>Working Directory → git add → Staging Area → git commit → Repository
+</code></pre></div>
 <h3 id="file-states">File States</h3>
 <p>Files in Git can be in different states:</p>
 <ul>
@@ -1440,77 +1448,77 @@ Please follow the <a href="../git_onboarding_instructions/">git setup</a> guide 
 <p>Follow the <a href="../git_onboarding_instructions/">git setup</a> to clone GNCSIM to your local machine. </p>
 <h2 id="basic-workflow">Basic Workflow</h2>
 <p>The fundamental Git workflow looks like this:</p>
-<pre><code class="language-bash"># 1. Check current status
-git status
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Check current status</span>
+git<span class="w"> </span>status
 
-# 2. Make changes to your files (edit, create, delete)
+<span class="c1"># 2. Make changes to your files (edit, create, delete)</span>
 
-# 3. See what changed
-git diff
+<span class="c1"># 3. See what changed</span>
+git<span class="w"> </span>diff
 
-# 4. Add changes to staging area
-git add filename.txt           # Add specific file
-git add .                      # Add all changes
-git add *.js                   # Add all JavaScript files
+<span class="c1"># 4. Add changes to staging area</span>
+git<span class="w"> </span>add<span class="w"> </span>filename.txt<span class="w">           </span><span class="c1"># Add specific file</span>
+git<span class="w"> </span>add<span class="w"> </span>.<span class="w">                      </span><span class="c1"># Add all changes</span>
+git<span class="w"> </span>add<span class="w"> </span>*.js<span class="w">                   </span><span class="c1"># Add all JavaScript files</span>
 
-# 5. Commit the changes
-git commit -m &quot;Describe what you changed&quot;
+<span class="c1"># 5. Commit the changes</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Describe what you changed&quot;</span>
 
-# 6. Push to remote repository
-git push
-</code></pre>
+<span class="c1"># 6. Push to remote repository</span>
+git<span class="w"> </span>push
+</code></pre></div>
 <h2 id="branching">Branching</h2>
 <p>Branches let you work on different features without affecting the main code.</p>
 <h3 id="creating-and-managing-branches">Creating and Managing Branches</h3>
-<pre><code class="language-bash"># See all branches (* shows current branch)
-git branch
+<div class="highlight"><pre><span></span><code><span class="c1"># See all branches (* shows current branch)</span>
+git<span class="w"> </span>branch
 
-# Create a new branch
-git branch feature-branch
+<span class="c1"># Create a new branch</span>
+git<span class="w"> </span>branch<span class="w"> </span>feature-branch
 
-# Switch to the new branch
-git checkout feature-branch
+<span class="c1"># Switch to the new branch</span>
+git<span class="w"> </span>checkout<span class="w"> </span>feature-branch
 
-# Create and switch to a branch in one command
-git checkout -b feature-branch
-</code></pre>
+<span class="c1"># Create and switch to a branch in one command</span>
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature-branch
+</code></pre></div>
 <h3 id="working-with-branches">Working with Branches</h3>
-<pre><code class="language-bash"># Make changes in your branch
-# Edit files, add, commit as usual
+<div class="highlight"><pre><span></span><code><span class="c1"># Make changes in your branch</span>
+<span class="c1"># Edit files, add, commit as usual</span>
 
-# Switch back to main branch
-git checkout main
+<span class="c1"># Switch back to main branch</span>
+git<span class="w"> </span>checkout<span class="w"> </span>main
 
-# See the difference between branches
-git diff main feature-branch
+<span class="c1"># See the difference between branches</span>
+git<span class="w"> </span>diff<span class="w"> </span>main<span class="w"> </span>feature-branch
 
-# Delete a branch (only after it's merged)
-git branch -d feature-branch
+<span class="c1"># Delete a branch (only after it&#39;s merged)</span>
+git<span class="w"> </span>branch<span class="w"> </span>-d<span class="w"> </span>feature-branch
 
-# Force delete a branch (be careful! You could lose all progress)
-git branch -D feature-branch
-</code></pre>
+<span class="c1"># Force delete a branch (be careful! You could lose all progress)</span>
+git<span class="w"> </span>branch<span class="w"> </span>-D<span class="w"> </span>feature-branch
+</code></pre></div>
 <h2 id="working-with-remote-repositories">Working with Remote Repositories</h2>
 <h3 id="tracking-remote-branches">Tracking Remote Branches</h3>
-<pre><code class="language-bash"># Push your branch and set it to track the remote
-git push -u origin feature-branch
+<div class="highlight"><pre><span></span><code><span class="c1"># Push your branch and set it to track the remote</span>
+git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>feature-branch
 
-# See which branches are tracking remotes
-git branch -vv
-</code></pre>
+<span class="c1"># See which branches are tracking remotes</span>
+git<span class="w"> </span>branch<span class="w"> </span>-vv
+</code></pre></div>
 <h2 id="fetching-and-pulling">Fetching and Pulling</h2>
 <h3 id="understanding-the-difference">Understanding the Difference</h3>
 <ul>
 <li><strong>Fetch:</strong> Downloads changes but doesn't merge them</li>
 <li><strong>Pull:</strong> Downloads changes AND merges them into your current branch</li>
 </ul>
-<p>Assuming your branch is already tracking the remote (see above):</p>
-<pre><code class="language-bash"># Fetch all changes from remote (safe - doesn't change your code)
-git fetch
+<p>Assuming your branch is already tracking the remote (see above):
+<div class="highlight"><pre><span></span><code><span class="c1"># Fetch all changes from remote (safe - doesn&#39;t change your code)</span>
+git<span class="w"> </span>fetch
 
-# Merge all changes from remote into your branch:
-git pull
-</code></pre>
+<span class="c1"># Merge all changes from remote into your branch:</span>
+git<span class="w"> </span>pull
+</code></pre></div></p>
 <h3 id="when-to-use-each">When to Use Each</h3>
 <ul>
 <li>Use <code>git fetch</code> when you want to see what others have done without changing your work</li>
@@ -1543,55 +1551,55 @@ git pull
 </ul>
 <p>You can make many commits locally before pushing them all at once to the remote repository.</p>
 <h3 id="making-good-commits">Making Good Commits</h3>
-<pre><code class="language-bash"># Add specific files
-git add file1.js file2.css
+<div class="highlight"><pre><span></span><code><span class="c1"># Add specific files</span>
+git<span class="w"> </span>add<span class="w"> </span>file1.js<span class="w"> </span>file2.css
 
-# Add all changes in current directory
-git add .
+<span class="c1"># Add all changes in current directory</span>
+git<span class="w"> </span>add<span class="w"> </span>.
 
-# Add all changes in the entire repository
-git add -A
+<span class="c1"># Add all changes in the entire repository</span>
+git<span class="w"> </span>add<span class="w"> </span>-A
 
-# Commit with a message (recommended)
-git commit -m &quot;Add user login functionality&quot;
+<span class="c1"># Commit with a message (recommended)</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Add user login functionality&quot;</span>
 
-# Add and commit in one step (only for tracked files)
-git commit -am &quot;Fix typo in README&quot;
-</code></pre>
+<span class="c1"># Add and commit in one step (only for tracked files)</span>
+git<span class="w"> </span>commit<span class="w"> </span>-am<span class="w"> </span><span class="s2">&quot;Fix typo in README&quot;</span>
+</code></pre></div>
 <h3 id="commit-message-best-practices">Commit Message Best Practices</h3>
-<pre><code class="language-bash"># Good commit messages are:
-# - Present tense (&quot;Add feature&quot; not &quot;Added feature&quot;)
-# - Concise but descriptive
-# - Start with a capital letter
+<div class="highlight"><pre><span></span><code><span class="c1"># Good commit messages are:</span>
+<span class="c1"># - Present tense (&quot;Add feature&quot; not &quot;Added feature&quot;)</span>
+<span class="c1"># - Concise but descriptive</span>
+<span class="c1"># - Start with a capital letter</span>
 
-# Examples of good commit messages:
-git commit -m &quot;Add user authentication&quot;
-git commit -m &quot;Fix navigation menu on mobile&quot;
-git commit -m &quot;Update README with installation instructions&quot;
-git commit -m &quot;Remove deprecated API endpoints&quot;
-</code></pre>
+<span class="c1"># Examples of good commit messages:</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Add user authentication&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Fix navigation menu on mobile&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Update README with installation instructions&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Remove deprecated API endpoints&quot;</span>
+</code></pre></div>
 <h3 id="pushing-changes">Pushing Changes</h3>
-<p>Assuming your branch is already tracking remote:</p>
-<pre><code class="language-bash"># If branch is tracking remote:
-git push
-</code></pre>
+<p>Assuming your branch is already tracking remote:
+<div class="highlight"><pre><span></span><code><span class="c1"># If branch is tracking remote:</span>
+git<span class="w"> </span>push
+</code></pre></div></p>
 <h2 id="advanced-topics">Advanced Topics</h2>
 <h3 id="merge-conflicts">Merge Conflicts</h3>
 <p>Merge conflicts happen when two people change the same part of a file. Here's how to resolve them:</p>
-<pre><code class="language-bash"># When you encounter a conflict during merge/pull:
-# Git will tell you which files have conflicts
+<div class="highlight"><pre><span></span><code><span class="c1"># When you encounter a conflict during merge/pull:</span>
+<span class="c1"># Git will tell you which files have conflicts</span>
 
-**To resolve:**
+**To<span class="w"> </span>resolve:**
 
-1. Edit the file to choose which changes to keep
-2. Remove the conflict markers (`&lt;&lt;&lt;&lt;&lt;&lt;&lt;`, `=======`, `&gt;&gt;&gt;&gt;&gt;&gt;&gt;`)
-3. Add and commit the resolved file
+<span class="m">1</span>.<span class="w"> </span>Edit<span class="w"> </span>the<span class="w"> </span>file<span class="w"> </span>to<span class="w"> </span>choose<span class="w"> </span>which<span class="w"> </span>changes<span class="w"> </span>to<span class="w"> </span>keep
+<span class="m">2</span>.<span class="w"> </span>Remove<span class="w"> </span>the<span class="w"> </span>conflict<span class="w"> </span>markers<span class="w"> </span><span class="o">(</span><span class="sb">`</span><span class="o">&lt;&lt;&lt;&lt;&lt;&lt;</span>&lt;<span class="sb">`</span>,<span class="w"> </span><span class="sb">`</span><span class="o">=======</span><span class="sb">`</span>,<span class="w"> </span><span class="sb">`</span>&gt;&gt;&gt;&gt;&gt;&gt;&gt;<span class="sb">`</span><span class="o">)</span>
+<span class="m">3</span>.<span class="w"> </span>Add<span class="w"> </span>and<span class="w"> </span>commit<span class="w"> </span>the<span class="w"> </span>resolved<span class="w"> </span>file
 
-```bash
-# After editing the file:
-git add conflicted-file.js
-git commit -m &quot;Resolve merge conflict in login function&quot;
-</code></pre>
+<span class="sb">```</span>bash
+<span class="c1"># After editing the file:</span>
+git<span class="w"> </span>add<span class="w"> </span>conflicted-file.js
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Resolve merge conflict in login function&quot;</span>
+</code></pre></div>
 <h3 id="rebasing">Rebasing</h3>
 <p>Rebasing takes your commits and "replays" them on top of another branch, creating a cleaner, linear history.</p>
 <p><strong>What rebasing does:</strong>
@@ -1599,25 +1607,25 @@ git commit -m &quot;Resolve merge conflict in login function&quot;
 - Updates your branch to match the target branch (like main)
 - Applies your commits one by one on top of the updated branch
 - Rewrites commit history to make it appear as if your work was done on the latest version</p>
-<p><strong>Visual example:</strong></p>
-<pre><code>Before rebase:           After rebase:
+<p><strong>Visual example:</strong>
+<div class="highlight"><pre><span></span><code>Before rebase:           After rebase:
     A---B---C main           A---B---C main
         \                            \
-         D---E feature                D'---E' feature
-</code></pre>
+         D---E feature                D&#39;---E&#39; feature
+</code></pre></div></p>
 <p>Your feature branch commits (D', E') are now based on the latest main commit (C) instead of the older commit (B). Main branch is unchanged - your commits are still only on your feature branch.</p>
-<pre><code class="language-bash"># Rebase your current branch onto main
-git rebase main
+<div class="highlight"><pre><span></span><code><span class="c1"># Rebase your current branch onto main</span>
+git<span class="w"> </span>rebase<span class="w"> </span>main
 
-# Interactive rebase (lets you edit commits)
-git rebase -i HEAD~3  # Rebase last 3 commits
+<span class="c1"># Interactive rebase (lets you edit commits)</span>
+git<span class="w"> </span>rebase<span class="w"> </span>-i<span class="w"> </span>HEAD~3<span class="w">  </span><span class="c1"># Rebase last 3 commits</span>
 
-# Continue rebase after resolving conflicts
-git rebase --continue
+<span class="c1"># Continue rebase after resolving conflicts</span>
+git<span class="w"> </span>rebase<span class="w"> </span>--continue
 
-# Abort rebase if things go wrong
-git rebase --abort
-</code></pre>
+<span class="c1"># Abort rebase if things go wrong</span>
+git<span class="w"> </span>rebase<span class="w"> </span>--abort
+</code></pre></div>
 <p><strong>Use rebasing to:</strong>
 - Keep a linear project history (no merge commits)
 - Clean up your commits before sharing with others
@@ -1626,93 +1634,93 @@ git rebase --abort
 <p><strong>Important:</strong> Never rebase commits that have been pushed and shared with others, as it rewrites history.</p>
 <h3 id="cherry-picking">Cherry Picking</h3>
 <p>Cherry picking lets you apply a specific commit from another branch:</p>
-<pre><code class="language-bash"># Find the commit hash you want
-git log --oneline
+<div class="highlight"><pre><span></span><code><span class="c1"># Find the commit hash you want</span>
+git<span class="w"> </span>log<span class="w"> </span>--oneline
 
-# Apply that commit to current branch
-git cherry-pick abc123
+<span class="c1"># Apply that commit to current branch</span>
+git<span class="w"> </span>cherry-pick<span class="w"> </span>abc123
 
-# Cherry pick multiple commits
-git cherry-pick abc123 def456
+<span class="c1"># Cherry pick multiple commits</span>
+git<span class="w"> </span>cherry-pick<span class="w"> </span>abc123<span class="w"> </span>def456
 
-# Cherry pick without committing (in case you want to modify)
-git cherry-pick --no-commit abc123
-</code></pre>
+<span class="c1"># Cherry pick without committing (in case you want to modify)</span>
+git<span class="w"> </span>cherry-pick<span class="w"> </span>--no-commit<span class="w"> </span>abc123
+</code></pre></div>
 <h3 id="stashing">Stashing</h3>
 <p>Stashing temporarily saves your uncommitted changes:</p>
-<pre><code class="language-bash"># Stash your current changes
-git stash
+<div class="highlight"><pre><span></span><code><span class="c1"># Stash your current changes</span>
+git<span class="w"> </span>stash
 
-# Stash with a message
-git stash save &quot;Work in progress on login feature&quot;
+<span class="c1"># Stash with a message</span>
+git<span class="w"> </span>stash<span class="w"> </span>save<span class="w"> </span><span class="s2">&quot;Work in progress on login feature&quot;</span>
 
-# See all stashes
-git stash list
+<span class="c1"># See all stashes</span>
+git<span class="w"> </span>stash<span class="w"> </span>list
 
-# Apply most recent stash
-git stash pop
+<span class="c1"># Apply most recent stash</span>
+git<span class="w"> </span>stash<span class="w"> </span>pop
 
-# Apply specific stash
-git stash apply stash@{1}
+<span class="c1"># Apply specific stash</span>
+git<span class="w"> </span>stash<span class="w"> </span>apply<span class="w"> </span>stash@<span class="o">{</span><span class="m">1</span><span class="o">}</span>
 
-# Delete a stash
-git stash drop stash@{0}
-</code></pre>
+<span class="c1"># Delete a stash</span>
+git<span class="w"> </span>stash<span class="w"> </span>drop<span class="w"> </span>stash@<span class="o">{</span><span class="m">0</span><span class="o">}</span>
+</code></pre></div>
 <h2 id="common-scenarios">Common Scenarios</h2>
 <h3 id="contributing-to-an-open-source-project">Contributing to an Open Source Project</h3>
-<pre><code class="language-bash"># 1. Create a feature branch (GNCSIM repo already cloned as per git onboarding instructions)
-git checkout -b fix-typo
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Create a feature branch (GNCSIM repo already cloned as per git onboarding instructions)</span>
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>fix-typo
 
-# 2. Make your changes and commit
-git add .
-git commit -m &quot;Fix typo in documentation&quot;
+<span class="c1"># 2. Make your changes and commit</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Fix typo in documentation&quot;</span>
 
-# 3. Push to the repository
-git push origin fix-typo
+<span class="c1"># 3. Push to the repository</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>fix-typo
 
-# 4. Create a Pull Request on GitHub
+<span class="c1"># 4. Create a Pull Request on GitHub</span>
 
-# 5. Keep your branch updated
-git checkout main
-git pull origin main
-</code></pre>
+<span class="c1"># 5. Keep your branch updated</span>
+git<span class="w"> </span>checkout<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
+</code></pre></div>
 <h3 id="syncing-with-team-changes">Syncing with Team Changes</h3>
-<pre><code class="language-bash"># Daily workflow when working with a team:
+<div class="highlight"><pre><span></span><code><span class="c1"># Daily workflow when working with a team:</span>
 
-# 1. Start your day by updating main
-git checkout main
-git pull origin main
+<span class="c1"># 1. Start your day by updating main</span>
+git<span class="w"> </span>checkout<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
 
-# 2. Update your feature branch
-git checkout your-feature-branch
-git rebase main  # or git merge main
+<span class="c1"># 2. Update your feature branch</span>
+git<span class="w"> </span>checkout<span class="w"> </span>your-feature-branch
+git<span class="w"> </span>rebase<span class="w"> </span>main<span class="w">  </span><span class="c1"># or git merge main</span>
 
-# 3. Work on your changes
-# ... make changes ...
-git add .
-git commit -m &quot;Your changes&quot;
+<span class="c1"># 3. Work on your changes</span>
+<span class="c1"># ... make changes ...</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Your changes&quot;</span>
 
-# 4. Push your work
-git push origin your-feature-branch
-</code></pre>
+<span class="c1"># 4. Push your work</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>your-feature-branch
+</code></pre></div>
 <h3 id="undoing-changes">Undoing Changes</h3>
-<pre><code class="language-bash"># Undo changes in working directory (before staging)
-git checkout -- filename.txt
-git restore filename.txt  # newer syntax
+<div class="highlight"><pre><span></span><code><span class="c1"># Undo changes in working directory (before staging)</span>
+git<span class="w"> </span>checkout<span class="w"> </span>--<span class="w"> </span>filename.txt
+git<span class="w"> </span>restore<span class="w"> </span>filename.txt<span class="w">  </span><span class="c1"># newer syntax</span>
 
-# Unstage files (after git add, before commit)
-git reset HEAD filename.txt
-git restore --staged filename.txt  # newer syntax
+<span class="c1"># Unstage files (after git add, before commit)</span>
+git<span class="w"> </span>reset<span class="w"> </span>HEAD<span class="w"> </span>filename.txt
+git<span class="w"> </span>restore<span class="w"> </span>--staged<span class="w"> </span>filename.txt<span class="w">  </span><span class="c1"># newer syntax</span>
 
-# Undo last commit (keep changes in working directory)
-git reset --soft HEAD~1
+<span class="c1"># Undo last commit (keep changes in working directory)</span>
+git<span class="w"> </span>reset<span class="w"> </span>--soft<span class="w"> </span>HEAD~1
 
-# Undo last commit (discard changes completely)
-git reset --hard HEAD~1
+<span class="c1"># Undo last commit (discard changes completely)</span>
+git<span class="w"> </span>reset<span class="w"> </span>--hard<span class="w"> </span>HEAD~1
 
-# Undo specific commit (creates new commit)
-git revert abc123
-</code></pre>
+<span class="c1"># Undo specific commit (creates new commit)</span>
+git<span class="w"> </span>revert<span class="w"> </span>abc123
+</code></pre></div>
 <h2 id="best-practices">Best Practices</h2>
 <h3 id="commit-practices">Commit Practices</h3>
 <ul>
@@ -1737,55 +1745,55 @@ git revert abc123
 </ul>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="common-issues-and-solutions">Common Issues and Solutions</h3>
-<p><strong>"Your branch is ahead of 'origin/main' by X commits"</strong></p>
-<pre><code class="language-bash">git push origin main
-</code></pre>
-<p><strong>"Your branch is behind 'origin/main' by X commits"</strong></p>
-<pre><code class="language-bash">git pull origin main
-</code></pre>
-<p><strong>"Merge conflict in file.txt"</strong></p>
-<pre><code class="language-bash"># Edit the file to resolve conflicts
-git add file.txt
-git commit -m &quot;Resolve merge conflict&quot;
-</code></pre>
+<p><strong>"Your branch is ahead of 'origin/main' by X commits"</strong>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main
+</code></pre></div></p>
+<p><strong>"Your branch is behind 'origin/main' by X commits"</strong>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
+</code></pre></div></p>
+<p><strong>"Merge conflict in file.txt"</strong>
+<div class="highlight"><pre><span></span><code><span class="c1"># Edit the file to resolve conflicts</span>
+git<span class="w"> </span>add<span class="w"> </span>file.txt
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Resolve merge conflict&quot;</span>
+</code></pre></div></p>
 <p><strong>"Permission denied (publickey)"</strong>
 - Set up SSH keys with your Git hosting service
 - Or use HTTPS URLs instead of SSH</p>
 <p><strong>"Nothing to commit, working tree clean"</strong>
 - This is normal - means all your changes are committed</p>
-<p><strong>Accidentally committed to wrong branch:</strong></p>
-<pre><code class="language-bash"># Move last commit to correct branch
-git checkout correct-branch
-git cherry-pick wrong-branch
-git checkout wrong-branch
-git reset --hard HEAD~1
-</code></pre>
+<p><strong>Accidentally committed to wrong branch:</strong>
+<div class="highlight"><pre><span></span><code><span class="c1"># Move last commit to correct branch</span>
+git<span class="w"> </span>checkout<span class="w"> </span>correct-branch
+git<span class="w"> </span>cherry-pick<span class="w"> </span>wrong-branch
+git<span class="w"> </span>checkout<span class="w"> </span>wrong-branch
+git<span class="w"> </span>reset<span class="w"> </span>--hard<span class="w"> </span>HEAD~1
+</code></pre></div></p>
 <h3 id="getting-help">Getting Help</h3>
-<pre><code class="language-bash"># Get help on any command
-git help command-name
-git command-name --help
+<div class="highlight"><pre><span></span><code><span class="c1"># Get help on any command</span>
+git<span class="w"> </span><span class="nb">help</span><span class="w"> </span>command-name
+git<span class="w"> </span>command-name<span class="w"> </span>--help
 
-# Quick help
-git command-name -h
+<span class="c1"># Quick help</span>
+git<span class="w"> </span>command-name<span class="w"> </span>-h
 
-# See what Git version you have
-git --version
-</code></pre>
+<span class="c1"># See what Git version you have</span>
+git<span class="w"> </span>--version
+</code></pre></div>
 <h3 id="useful-aliases">Useful Aliases</h3>
 <p>Speed up your workflow with aliases:</p>
-<pre><code class="language-bash"># Set up useful aliases
-git config --global alias.st status
-git config --global alias.co checkout
-git config --global alias.br branch
-git config --global alias.ci commit
-git config --global alias.unstage 'reset HEAD --'
-git config --global alias.last 'log -1 HEAD'
-git config --global alias.visual '!gitk'
+<div class="highlight"><pre><span></span><code><span class="c1"># Set up useful aliases</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.st<span class="w"> </span>status
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.co<span class="w"> </span>checkout
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.br<span class="w"> </span>branch
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.ci<span class="w"> </span>commit
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.unstage<span class="w"> </span><span class="s1">&#39;reset HEAD --&#39;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.last<span class="w"> </span><span class="s1">&#39;log -1 HEAD&#39;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>alias.visual<span class="w"> </span><span class="s1">&#39;!gitk&#39;</span>
 
-# Now you can use shortcuts:
-git st      # instead of git status
-git co main # instead of git checkout main
-</code></pre>
+<span class="c1"># Now you can use shortcuts:</span>
+git<span class="w"> </span>st<span class="w">      </span><span class="c1"># instead of git status</span>
+git<span class="w"> </span>co<span class="w"> </span>main<span class="w"> </span><span class="c1"># instead of git checkout main</span>
+</code></pre></div>
 <h2 id="final-tips">Final Tips</h2>
 <ol>
 <li><strong>Practice in a test repository:</strong> Create a dummy project to practice these commands</li>

@@ -28,6 +28,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -55,7 +58,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,8 +114,8 @@
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -773,52 +781,54 @@
 <li>Download Git from <a href="https://git-scm.com/download/win">git-scm.com</a></li>
 <li>Run the installer with default settings</li>
 <li>Open Command Prompt or PowerShell to verify installation:
-   <code>git --version</code></li>
+   <div class="highlight"><pre><span></span><code>git --version
+</code></pre></div></li>
 </ol>
 <h3 id="mac">Mac</h3>
 <p><strong>Option 1 - Using Homebrew (recommended):</strong>
 1. Install Homebrew if you don't have it: <a href="https://brew.sh">brew.sh</a>
 2. Run in Terminal:
-   <code>brew install git</code></p>
+   <div class="highlight"><pre><span></span><code>brew install git
+</code></pre></div></p>
 <p><strong>Option 2 - Download installer:</strong>
 1. Download from <a href="https://git-scm.com/download/mac">git-scm.com</a>
 2. Run the installer</p>
 <h3 id="linux-ubuntudebian">Linux (Ubuntu/Debian)</h3>
-<pre><code class="language-bash">sudo apt update
-sudo apt install git
-</code></pre>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>git
+</code></pre></div>
 <h3 id="linux-centosrhelfedora">Linux (CentOS/RHEL/Fedora)</h3>
-<pre><code class="language-bash">sudo yum install git
-# or for newer versions:
-sudo dnf install git
-</code></pre>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>git
+<span class="c1"># or for newer versions:</span>
+sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>git
+</code></pre></div>
 <h2 id="step-2-configure-git-first-time-only">Step 2: Configure Git (First Time Only)</h2>
-<p>Set up your identity for commits:</p>
-<pre><code class="language-bash">git config --global user.name &quot;Your Full Name&quot;
-git config --global user.email &quot;your.email@example.com&quot;
-</code></pre>
+<p>Set up your identity for commits:
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">&quot;Your Full Name&quot;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">&quot;your.email@example.com&quot;</span>
+</code></pre></div></p>
 <h2 id="step-3-clone-the-repository">Step 3: Clone the Repository</h2>
 <ol>
 <li>
 <p>Navigate to your desired project directory:
-   <code>bash
-   cd ~/Documents  # or wherever you want the project</code></p>
+   <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>~/Documents<span class="w">  </span><span class="c1"># or wherever you want the project</span>
+</code></pre></div></p>
 </li>
 <li>
 <p>Clone the repository:
-   <code>bash
-   git clone https://github.gatech.edu/gnc/GNCSIM.git</code></p>
+   <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.gatech.edu/gnc/GNCSIM.git
+</code></pre></div></p>
 </li>
 <li>
 <p>Navigate into the project directory:
-   <code>bash
-   cd GNCSIM</code></p>
+   <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>GNCSIM
+</code></pre></div></p>
 </li>
 </ol>
 <h2 id="step-4-verify-setup">Step 4: Verify Setup</h2>
-<p>Check that everything is working:</p>
-<pre><code class="language-bash">git status
-</code></pre>
+<p>Check that everything is working:
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>status
+</code></pre></div></p>
 <p>You should see a message about being on the main/master branch with a clean working tree.</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <p><strong>"git command not found"</strong>

@@ -28,6 +28,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -55,7 +58,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,8 +114,8 @@
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -806,10 +814,10 @@
 <p>The <code>Flight</code> class is responsible for executing rocket flight simulations over user-defined time spans. It supports both open-loop and closed-loop modes, optional wind disturbances, and the choice between nonlinear or linearized rocket dynamics.</p>
 <hr />
 <h2 id="class-overview">Class Overview</h2>
-<pre><code class="language-matlab">classdef Flight &lt; handle
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">Flight</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">handle</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inheritance</strong>: Inherits from MATLAB’s built-in <code>handle</code> class, so changes to object properties persist outside method calls.</li>
 <li><strong>Purpose</strong>: Manages time-stepping, logging, and control toggles for a rocket simulation over a specified time horizon.</li>
@@ -940,27 +948,27 @@ end
 <hr />
 <h2 id="methods">Methods</h2>
 <h3 id="constructor">Constructor</h3>
-<pre><code class="language-matlab">function obj = Flight()
-    % Creates a Flight object with default settings.
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">Flight</span><span class="p">()</span>
+<span class="w">    </span><span class="c">% Creates a Flight object with default settings.</span>
+<span class="k">end</span>
+</code></pre></div>
 <hr />
 <h3 id="setters-getters">Setters &amp; Getters</h3>
 <p>Each property includes validated setter and corresponding getter methods.</p>
 <p><strong>Example:</strong></p>
-<pre><code class="language-matlab">myFlight.set_tStep(0.005);
-myFlight.set_simTime(10);
-myFlight.set_runClosedLoop(true);
+<div class="highlight"><pre><span></span><code><span class="n">myFlight</span><span class="p">.</span><span class="n">set_tStep</span><span class="p">(</span><span class="mf">0.005</span><span class="p">);</span>
+<span class="n">myFlight</span><span class="p">.</span><span class="n">set_simTime</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+<span class="n">myFlight</span><span class="p">.</span><span class="n">set_runClosedLoop</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
 
-curr_tStep = myFlight.get_tStep();
-curr_simTime = myFlight.get_simTime();
-</code></pre>
+<span class="n">curr_tStep</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">myFlight</span><span class="p">.</span><span class="n">get_tStep</span><span class="p">();</span>
+<span class="n">curr_simTime</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">myFlight</span><span class="p">.</span><span class="n">get_simTime</span><span class="p">();</span>
+</code></pre></div>
 <hr />
 <h3 id="runflight"><code>runFlight</code></h3>
-<pre><code class="language-matlab">function log = runFlight(obj, Rocket, Environment, Aerodynamics, ControlObj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>log<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">runFlight</span><span class="p">(</span>obj, Rocket, Environment, Aerodynamics, ControlObj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>Rocket</code>: Physical properties and thrust model</li>
@@ -975,35 +983,35 @@ end
 </ul>
 <hr />
 <h3 id="plot_sim_dashboard"><code>plot_sim_dashboard</code></h3>
-<pre><code class="language-matlab">function [] = plot_sim_dashboard(obj, log, Rocket, Environment)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>[]<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">plot_sim_dashboard</span><span class="p">(</span>obj, log, Rocket, Environment<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>:</li>
 <li>Plots 3D trajectory, body rates, quaternion evolution, and control inputs.</li>
 <li>Displays model comparisons if <code>runLinearModel</code> is enabled.</li>
 </ul>
 <p><strong>Example:</strong></p>
-<pre><code class="language-matlab">logData = myFlight.runFlight(myRocket, myEnvironment, myAero, myControl);
-myFlight.plot_sim_dashboard(logData, myRocket, myEnvironment);
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="n">logData</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">myFlight</span><span class="p">.</span><span class="n">runFlight</span><span class="p">(</span><span class="n">myRocket</span><span class="p">,</span><span class="w"> </span><span class="n">myEnvironment</span><span class="p">,</span><span class="w"> </span><span class="n">myAero</span><span class="p">,</span><span class="w"> </span><span class="n">myControl</span><span class="p">);</span>
+<span class="n">myFlight</span><span class="p">.</span><span class="n">plot_sim_dashboard</span><span class="p">(</span><span class="n">logData</span><span class="p">,</span><span class="w"> </span><span class="n">myRocket</span><span class="p">,</span><span class="w"> </span><span class="n">myEnvironment</span><span class="p">);</span>
+</code></pre></div>
 <hr />
 <h3 id="stopsolver"><code>stopSolver</code></h3>
-<pre><code class="language-matlab">function status = stopSolver(obj, ~, ~, flag, startTime, maxTime)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>status<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">stopSolver</span><span class="p">(</span>obj, ~, ~, flag, startTime, maxTime<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Purpose</strong>: Halts the solver if wall-clock time exceeds <code>maxTime</code>.</li>
 <li><strong>Return</strong>: <code>1</code> to terminate, <code>0</code> to continue</li>
 </ul>
 <hr />
 <h3 id="timestepper"><code>timestepper</code></h3>
-<pre><code class="language-matlab">function [traj_t, traj_x] = timestepper(obj, x0, dt, tspan, RocketObj, EnvironmentObj, AerodynamicsObj, ControlObj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">[traj_t, traj_x] = timestepper</span><span class="p">(</span>obj, x0, dt, tspan, RocketObj, EnvironmentObj, AerodynamicsObj, ControlObj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Custom Runge-Kutta 4 (RK4) routine.</li>
 <li><strong>Outputs</strong>:</li>
@@ -1012,25 +1020,25 @@ end
 </ul>
 <hr />
 <h2 id="typical-usage-workflow">Typical Usage Workflow</h2>
-<pre><code class="language-matlab">flightObj = Flight();
+<div class="highlight"><pre><span></span><code><span class="n">flightObj</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Flight</span><span class="p">();</span>
 
-% Configure simulation
-flightObj.set_tStep(0.005);
-flightObj.set_simTime(10);
-flightObj.set_runClosedLoop(true);
-flightObj.set_calcXDots(true);
-flightObj.set_applyWind(false);
+<span class="c">% Configure simulation</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_tStep</span><span class="p">(</span><span class="mf">0.005</span><span class="p">);</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_simTime</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_runClosedLoop</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_calcXDots</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_applyWind</span><span class="p">(</span><span class="nb">false</span><span class="p">);</span>
 
-% Set initial conditions
-flightObj.set_initState([0 0 0 0 0 0 1 0 0 0 0 0 0]');
-flightObj.set_tSpan();  % auto-generates time vector
+<span class="c">% Set initial conditions</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_initState</span><span class="p">([</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="o">&#39;</span><span class="p">);</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">set_tSpan</span><span class="p">();</span><span class="w">  </span><span class="c">% auto-generates time vector</span>
 
-% Run simulation
-logData = flightObj.runFlight(myRocket, myEnvironment, myAero, myControlObj);
+<span class="c">% Run simulation</span>
+<span class="n">logData</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">flightObj</span><span class="p">.</span><span class="n">runFlight</span><span class="p">(</span><span class="n">myRocket</span><span class="p">,</span><span class="w"> </span><span class="n">myEnvironment</span><span class="p">,</span><span class="w"> </span><span class="n">myAero</span><span class="p">,</span><span class="w"> </span><span class="n">myControlObj</span><span class="p">);</span>
 
-% Plot results
-flightObj.plot_sim_dashboard(logData, myRocket, myEnvironment);
-</code></pre>
+<span class="c">% Plot results</span>
+<span class="n">flightObj</span><span class="p">.</span><span class="n">plot_sim_dashboard</span><span class="p">(</span><span class="n">logData</span><span class="p">,</span><span class="w"> </span><span class="n">myRocket</span><span class="p">,</span><span class="w"> </span><span class="n">myEnvironment</span><span class="p">);</span>
+</code></pre></div>
 <hr />
 <h2 id="conclusion">Conclusion</h2>
 <p>The <code>Flight</code> class consolidates all core elements of rocket simulation:</p>

@@ -28,6 +28,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -55,7 +58,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,8 +114,8 @@
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -1058,10 +1066,10 @@
 <p>The <code>TrimPoints</code> class handles the generation, organization, and storage of “trim points” – specific rocket states (plus controls) that serve as initial conditions for flight simulations or linear control analysis. It reads flight data from a CSV file, constructs baseline states for specific times, applies variations, and runs trimming procedures.</p>
 <hr />
 <h2 id="class-overview">Class Overview</h2>
-<pre><code class="language-matlab">classdef TrimPoints &lt; handle
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">TrimPoints</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">handle</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inheritance</strong>: Inherits from MATLAB’s built-in <code>handle</code> class, so changes to properties persist when passed around.</li>
 <li><strong>Purpose</strong>:</li>
@@ -1133,194 +1141,194 @@ end
 <hr />
 <h2 id="methods">Methods</h2>
 <h3 id="generate_trim_batches"><code>generate_trim_batches</code></h3>
-<pre><code class="language-matlab">function generate_trim_batches(obj, time_arr)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">generate_trim_batches</span><span class="p">(</span>obj, time_arr<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>: <code>time_arr</code> – vector of times (seconds)</li>
 <li><strong>Description</strong>: Creates one <code>TrimBatch</code> per time and initializes base states.</li>
 </ul>
 <hr />
 <h3 id="add_u_variations"><code>add_u_variations</code></h3>
-<pre><code class="language-matlab">function add_u_variations(obj, ...)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">add_u_variations</span><span class="p">(</span>obj, ...<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Adds velocity (u) variations to each batch around nominal values.</li>
 </ul>
 <hr />
 <h3 id="add_custom_variations"><code>add_custom_variations</code></h3>
-<pre><code class="language-matlab">function add_custom_variations(obj, batch_indexes, name, var, data, include_base_state)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">add_custom_variations</span><span class="p">(</span>obj, batch_indexes, name, var, data, include_base_state<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Allows the user to add custom state/control variations to selected batches.</li>
 </ul>
 <hr />
 <h3 id="generate_trim_points"><code>generate_trim_points</code></h3>
-<pre><code class="language-matlab">function generate_trim_points(obj, rocket, env, flight, aero)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">generate_trim_points</span><span class="p">(</span>obj, rocket, env, flight, aero<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Generates trim points and performs trimming optimization for each one.</li>
 </ul>
 <hr />
 <h3 id="get_trim_points"><code>get_trim_points</code></h3>
-<pre><code class="language-matlab">function batch_trim_points = get_trim_points(obj, target_time)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>batch_trim_points<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">get_trim_points</span><span class="p">(</span>obj, target_time<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Returns trim points closest in time to the target.</li>
 </ul>
 <hr />
 <h3 id="export_trim_points_to_csv"><code>export_trim_points_to_csv</code></h3>
-<pre><code class="language-matlab">function export_trim_points_to_csv(obj, output_file_path)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">export_trim_points_to_csv</span><span class="p">(</span>obj, output_file_path<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Writes generated trim points to CSV format.</li>
 </ul>
 <hr />
 <h3 id="export_to_ref_h"><code>export_to_ref_h</code></h3>
-<pre><code class="language-matlab">function export_to_ref_h(obj, output_file_path)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">export_to_ref_h</span><span class="p">(</span>obj, output_file_path<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Writes trimmed points to a C-style header file with [time, airspeed, K] format.</li>
 </ul>
 <hr />
 <h3 id="generate_trim_points_from_u_var"><code>generate_trim_points_from_u_var</code></h3>
-<pre><code class="language-matlab">function u_vars = generate_trim_points_from_u_var(obj, ...)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>u_vars<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">generate_trim_points_from_u_var</span><span class="p">(</span>obj, ...<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Internally used to compute velocity spreads with bounded force variation.</li>
 </ul>
 <hr />
 <h3 id="get_info"><code>get_info</code></h3>
-<pre><code class="language-matlab">function [u, thrust] = get_info(obj, time)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">[u, thrust] = get_info</span><span class="p">(</span>obj, time<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Interpolates flight data to retrieve velocity and thrust at <code>time</code>.</li>
 </ul>
 <hr />
 <h3 id="find_event_time"><code>find_event_time</code></h3>
-<pre><code class="language-matlab">function event_time = find_event_time(obj, event_name)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>event_time<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">find_event_time</span><span class="p">(</span>obj, event_name<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Searches the CSV for a named event and returns its timestamp.</li>
 </ul>
 <hr />
 <h3 id="look_for_data_types"><code>look_for_data_types</code></h3>
-<pre><code class="language-matlab">function positions = look_for_data_types(obj, required_vars)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>positions<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">look_for_data_types</span><span class="p">(</span>obj, required_vars<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Locates CSV columns matching specified variables.</li>
 </ul>
 <hr />
 <h3 id="trim_rocket_model"><code>trim_rocket_model</code></h3>
-<pre><code class="language-matlab">function trim_rocket_model(obj, rocket, env, flight, aero)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">trim_rocket_model</span><span class="p">(</span>obj, rocket, env, flight, aero<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Optimizes state vectors to yield near-steady conditions.</li>
 </ul>
 <hr />
 <h3 id="generate_k"><code>generate_K</code></h3>
-<pre><code class="language-matlab">function generate_K(obj, straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">generate_K</span><span class="p">(</span>obj, straight_up_Q, straight_up_R, maneuver_Q, maneuver_R, compute_A, compute_B<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Computes LQR gain matrices using linearized dynamics at each trimmed point.</li>
 </ul>
 <hr />
 <h3 id="draw_u_trim_points"><code>draw_u_trim_points</code></h3>
-<pre><code class="language-matlab">function draw_u_trim_points(obj, start_time, end_time)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">draw_u_trim_points</span><span class="p">(</span>obj, start_time, end_time<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Plots real vs. trimmed velocity values over a time window.</li>
 </ul>
 <hr />
 <h3 id="lqr_configuration_selector"><code>LQR_configuration_selector</code></h3>
-<pre><code class="language-matlab">function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">[K, x0, u0] = LQR_configuration_selector</span><span class="p">(</span>obj, x, t<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Given a current state/time, selects the nearest trimmed point and returns its (K, x0, u0).</li>
 </ul>
 <hr />
 <h3 id="compute_controls"><code>compute_controls</code></h3>
-<pre><code class="language-matlab">function del_u = compute_controls(obj, K, del_x)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>del_u<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">compute_controls</span><span class="p">(</span>obj, K, del_x<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Simple LQR control law: <code>del_u = -K * del_x</code>.</li>
 </ul>
 <hr />
 <h3 id="set_reference_states"><code>set_reference_states</code></h3>
-<pre><code class="language-matlab">function obj = set_reference_states(obj, time_arr, variations_cell_arr)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">set_reference_states</span><span class="p">(</span>obj, time_arr, variations_cell_arr<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Builds the reference_states struct array for use in feedback control.</li>
 </ul>
 <hr />
 <h3 id="get_reference_state"><code>get_reference_state</code></h3>
-<pre><code class="language-matlab">function reference_state = get_reference_state(obj, time)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>reference_state<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">get_reference_state</span><span class="p">(</span>obj, time<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Retrieves the closest-in-time reference state.</li>
 </ul>
 <hr />
 <h3 id="get_vertical_state-static"><code>get_vertical_state</code> (Static)</h3>
-<pre><code class="language-matlab">function full_state = get_vertical_state()
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>full_state<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">get_vertical_state</span><span class="p">()</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Returns a default 13-element vertical flight state.</li>
 </ul>
 <hr />
 <h3 id="cost_rocket_model-static"><code>cost_rocket_model</code> (Static)</h3>
-<pre><code class="language-matlab">function f0 = cost_rocket_model(Z, trim_point, t, rocket, environment, flight, aero, H)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>f0<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">cost_rocket_model</span><span class="p">(</span>Z, trim_point, t, rocket, environment, flight, aero, H<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: The cost function for state trimming optimization (used by <code>fminsearch</code>).</li>
 </ul>
 <hr />
 <h2 id="typical-workflow">Typical Workflow</h2>
-<pre><code class="language-matlab">tp = TrimPoints(&quot;my_flight_log.csv&quot;);
-tp.generate_trim_batches([5, 10, 15]);
-tp.add_u_variations(...);
-tp.generate_trim_points(rocket, env, flight, aero);
-tp.generate_K(...);
-tp.export_trim_points_to_csv(&quot;output.csv&quot;);
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="n">tp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">TrimPoints</span><span class="p">(</span><span class="s">&quot;my_flight_log.csv&quot;</span><span class="p">);</span>
+<span class="n">tp</span><span class="p">.</span><span class="n">generate_trim_batches</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="p">]);</span>
+<span class="n">tp</span><span class="p">.</span><span class="n">add_u_variations</span><span class="p">(</span><span class="k">...</span><span class="c">);</span>
+<span class="n">tp</span><span class="p">.</span><span class="n">generate_trim_points</span><span class="p">(</span><span class="n">rocket</span><span class="p">,</span><span class="w"> </span><span class="n">env</span><span class="p">,</span><span class="w"> </span><span class="n">flight</span><span class="p">,</span><span class="w"> </span><span class="n">aero</span><span class="p">);</span>
+<span class="n">tp</span><span class="p">.</span><span class="n">generate_K</span><span class="p">(</span><span class="k">...</span><span class="c">);</span>
+<span class="n">tp</span><span class="p">.</span><span class="n">export_trim_points_to_csv</span><span class="p">(</span><span class="s">&quot;output.csv&quot;</span><span class="p">);</span>
+</code></pre></div>
 <hr />
 <h2 id="conclusion">Conclusion</h2>
 <p>The <code>TrimPoints</code> class is a robust workflow manager for extracting flight data, building rocket state sets, and performing trimming optimizations. It links together data parsing, structured variation, and numerical optimization to prepare data for control design.</p>

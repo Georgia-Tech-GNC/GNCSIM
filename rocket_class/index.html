@@ -28,6 +28,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
       
 
 
@@ -55,7 +58,12 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -106,8 +114,8 @@
       </div>
     </div>
     
+      
     
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -878,10 +886,10 @@
 <p>The <code>MonteCarlo</code> class is designed to run Monte Carlo simulations for rocket flight. It uses Latin Hypercube Sampling (LHS) to generate various initial conditions and parameters that are tested for performance and constraint satisfaction.</p>
 <hr />
 <h2 id="class-overview">Class Overview</h2>
-<pre><code class="language-matlab">classdef MonteCarlo &lt; handle
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">MonteCarlo</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">handle</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inheritance</strong>: Inherits from MATLAB’s built-in <code>handle</code> class, meaning changes to object properties inside methods persist outside the methods.</li>
 <li><strong>Purpose</strong>: Automate the setup, execution, and evaluation of multiple flight simulations under different parameter draws.</li>
@@ -982,15 +990,15 @@ end
 <hr />
 <h2 id="methods">Methods</h2>
 <h3 id="constructor"><strong>Constructor</strong></h3>
-<p><code>matlab
-  function obj = MonteCarlo()
-  end</code></p>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">MonteCarlo</span><span class="p">()</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Description</strong>: Instantiates a MonteCarlo object with default property values.</li>
 <li>
 <p><strong>Usage</strong>:</p>
-<p><code>matlab
-mc = MonteCarlo();</code></p>
+<div class="highlight"><pre><span></span><code><span class="n">mc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">MonteCarlo</span><span class="p">();</span>
+</code></pre></div>
 </li>
 </ul>
 <hr />
@@ -1044,18 +1052,18 @@ Assigns time intervals and acceptable angle ranges (as cell arrays).</p>
 <li>
 <p><code>get_lhsSamples(obj)</code><br />
     Returns the <code>lhsSamples</code> matrix. Throws an error if empty.</p>
-<p><code>matlab
-function lhsSamples = get_lhsSamples(obj)
-    ...
-end</code></p>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>lhsSamples<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">get_lhsSamples</span><span class="p">(</span>obj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 </li>
 </ul>
 <hr />
 <h3 id="generatelhssamples"><code>generateLhsSamples</code></h3>
-<pre><code class="language-matlab">function generateLhsSamples(obj, RocketObj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">generateLhsSamples</span><span class="p">(</span>obj, RocketObj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>RocketObj</code>: Rocket object containing nominal parameters</li>
@@ -1069,10 +1077,10 @@ end
 </ul>
 <hr />
 <h3 id="runmontecarlo"><code>runMonteCarlo</code></h3>
-<pre><code class="language-matlab">function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>logMonteCarlo<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">runMonteCarlo</span><span class="p">(</span>obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>FlightObj</code>: Flight simulation object</li>
@@ -1089,10 +1097,10 @@ end
 </ul>
 <hr />
 <h3 id="evaluatemontecarlo"><code>evaluateMonteCarlo</code></h3>
-<pre><code class="language-matlab">function [logMonteCarlo, performance] = evaluateMonteCarlo(obj, logMonteCarlo)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">[logMonteCarlo, performance] = evaluateMonteCarlo</span><span class="p">(</span>obj, logMonteCarlo<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>logMonteCarlo</code>: Simulation logs to evaluate</li>
@@ -1109,10 +1117,10 @@ end
 </ul>
 <hr />
 <h3 id="savetocsv"><code>saveToCSV</code></h3>
-<pre><code class="language-matlab">function saveToCSV(obj, filename)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">saveToCSV</span><span class="p">(</span>obj, filename<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>filename</code>: Path to save <code>.csv</code> file</li>
@@ -1121,10 +1129,10 @@ end
 </ul>
 <hr />
 <h3 id="loadfromcsv"><code>loadFromCSV</code></h3>
-<pre><code class="language-matlab">function obj = loadFromCSV(obj, filename)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">loadFromCSV</span><span class="p">(</span>obj, filename<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>filename</code>: Path to a <code>.csv</code> file</li>
@@ -1133,10 +1141,10 @@ end
 </ul>
 <hr />
 <h3 id="splitlhs"><code>splitLHS</code></h3>
-<pre><code class="language-matlab">function splittedLHS = splitLHS(obj, nParts, outFolder)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>splittedLHS<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">splitLHS</span><span class="p">(</span>obj, nParts, outFolder<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>nParts</code>: Number of chunks to divide LHS into</li>
@@ -1149,10 +1157,10 @@ end
 </ul>
 <hr />
 <h3 id="plotmontecarlo-static"><code>plotMonteCarlo</code> (Static)</h3>
-<pre><code class="language-matlab">function plotMonteCarlo(logMonteCarlo)
-    ...
-end
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">plotMonteCarlo</span><span class="p">(</span>logMonteCarlo<span class="p">)</span>
+<span class="w">    </span><span class="k">...</span>
+<span class="k">end</span>
+</code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
 <li><code>logMonteCarlo</code>: Monte Carlo results to visualize</li>
@@ -1166,36 +1174,36 @@ end
 </ul>
 <hr />
 <h2 id="typical-usage-workflow">Typical Usage Workflow</h2>
-<pre><code class="language-matlab">% Instantiate
-mc = MonteCarlo();
+<div class="highlight"><pre><span></span><code><span class="c">% Instantiate</span>
+<span class="n">mc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">MonteCarlo</span><span class="p">();</span>
 
-% Set parameters
-mc.set_numRuns(1000);
-mc.set_runGaussianLHS(true);
-mc.set_odeSolverMaxTime(50);
+<span class="c">% Set parameters</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">set_numRuns</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">set_runGaussianLHS</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">set_odeSolverMaxTime</span><span class="p">(</span><span class="mi">50</span><span class="p">);</span>
 
-% Generate samples
-mc.generateLhsSamples(myRocket);
+<span class="c">% Generate samples</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">generateLhsSamples</span><span class="p">(</span><span class="n">myRocket</span><span class="p">);</span>
 
-% OR load custom LHS
-customLHS = ...;
-mc.set_lhsSamples(customLHS);
-mc.set_runCustomLHS(true);
+<span class="c">% OR load custom LHS</span>
+<span class="n">customLHS</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">...</span><span class="c">;</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">set_lhsSamples</span><span class="p">(</span><span class="n">customLHS</span><span class="p">);</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">set_runCustomLHS</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
 
-% Run simulation
-results = mc.runMonteCarlo(myFlight, myRocket, myEnv, myAero, myTrim);
+<span class="c">% Run simulation</span>
+<span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mc</span><span class="p">.</span><span class="n">runMonteCarlo</span><span class="p">(</span><span class="n">myFlight</span><span class="p">,</span><span class="w"> </span><span class="n">myRocket</span><span class="p">,</span><span class="w"> </span><span class="n">myEnv</span><span class="p">,</span><span class="w"> </span><span class="n">myAero</span><span class="p">,</span><span class="w"> </span><span class="n">myTrim</span><span class="p">);</span>
 
-% Evaluate results
-mc.set_evaluate_checkRoll(true);
-results = mc.evaluateMonteCarlo(results);
+<span class="c">% Evaluate results</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">set_evaluate_checkRoll</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mc</span><span class="p">.</span><span class="n">evaluateMonteCarlo</span><span class="p">(</span><span class="n">results</span><span class="p">);</span>
 
-% Plot
-MonteCarlo.plotMonteCarlo(results);
+<span class="c">% Plot</span>
+<span class="n">MonteCarlo</span><span class="p">.</span><span class="n">plotMonteCarlo</span><span class="p">(</span><span class="n">results</span><span class="p">);</span>
 
-% Save/load
-mc.saveToCSV('params.csv');
-mc.loadFromCSV('params.csv');
-</code></pre>
+<span class="c">% Save/load</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">saveToCSV</span><span class="p">(</span><span class="s">&#39;params.csv&#39;</span><span class="p">);</span>
+<span class="n">mc</span><span class="p">.</span><span class="n">loadFromCSV</span><span class="p">(</span><span class="s">&#39;params.csv&#39;</span><span class="p">);</span>
+</code></pre></div>
 <hr />
 <h2 id="conclusion">Conclusion</h2>
 <p>The <code>MonteCarlo</code> class provides a systematic way to:</p>
