@@ -766,180 +766,92 @@
 <h2 id="class-overview">Class Overview</h2>
 <pre class="mermaid"><code>classDiagram
     class Rocket {
-        -wetMass : double
-        -dryMass : double
-        -wetMOI : matrix[3x3]
-        -dryMOI : matrix[3x3]
-        -initialCG : double
-        -finalCG : double
-        -CP : double
-        -length : double
-        -diameter : double
-        -radius : double
-        -burnTime : double
-        -thrustCurve : matrix
-        -mainChuteCd : double
-        -mainChuteArea : double
-        -drogueChuteCd : double
-        -drogueChuteArea : double
-        +set_wetMass(double)
-        +set_dryMass(double)
-        +set_wetMOI(matrix)
-        +set_dryMOI(matrix)
-        +set_diameter(double)
-        +set_length(double)
-        +set_thrustCurve(matrix)
-        +get_diameter() : double
+        -wetMass
+        -dryMass
+        -wetMOI
+        -dryMOI
+        -initialCG
+        -finalCG
+        -diameter
+        -thrustCurve
+        +set_wetMass()
+        +set_dryMass()
+        +set_thrustCurve()
+        +get_diameter()
     }
 
     class Aerodynamics {
-        -FAx_func : function_handle
-        -FAy_func : function_handle  
-        -FAz_func : function_handle
-        -MAx_func : function_handle
-        -MAy_func : function_handle
-        -MAz_func : function_handle
-        +set_FAx_func(function_handle)
-        +set_FAy_func(function_handle)
-        +set_FAz_func(function_handle)
-        +set_MAx_func(function_handle)
-        +set_MAy_func(function_handle)
-        +set_MAz_func(function_handle)
-        +get_aero_forces_and_moments()
+        -FAx_func
+        -FAy_func
+        -FAz_func
+        -MAx_func
+        -MAy_func
+        -MAz_func
+        +set_FAx_func()
+        +set_MAx_func()
+        +get_forces_moments()
     }
 
     class Environment {
-        -vm_mean : double
-        -vm_3sigma : double
-        -alts : array
-        -wind_vec : array
-        -step_size : double
-        -max_altitude : double
-        +set_max_altitude(double)
-        +set_vm_mean(double)
-        +set_vm_3sigma(double)
-        +get_wind_vector()
-        +get_atmospheric_properties()
+        -vm_mean
+        -vm_3sigma
+        -max_altitude
+        -wind_vec
+        +set_max_altitude()
+        +set_vm_3sigma()
+        +get_wind()
     }
 
     class Flight {
-        -tStep : double
-        -t : double
-        -runClosedLoop : logical
-        -calcXDots : logical
-        -runLinearModel : logical
-        -applyWind : logical
-        -numStates : int
-        -numInputs : int
-        -localSimTime : double
-        -simTime : double
-        -tSpan : array
-        -gravity : double
-        -uSpan : matrix
-        -windParam : array
-        -odeOptions : struct
-        -initState : array
-        -controlsTime : double
-        -odeSolverMaxTime : double
-        +set_tStep(double)
-        +set_runClosedLoop(logical)
-        +set_calcXDots(logical)
-        +set_applyWind(logical)
-        +set_simTime(double)
-        +set_initState(array)
+        -runClosedLoop
+        -applyWind
+        -simTime
+        -initState
+        -tStep
+        +set_runClosedLoop()
+        +set_applyWind()
+        +set_initState()
         +runFlight()
         +plot_sim_dashboard()
     }
 
     class TrimPoints {
-        &lt;&lt;constant&gt;&gt; +state_names : cell_array
-        &lt;&lt;constant&gt;&gt; +state_index_con : array
-        &lt;&lt;constant&gt;&gt; +controller_ID : string
-        -file_path : string
-        -flight_data : table
-        -num_rows : int
-        -num_cols : int
-        -flight_data_num : matrix
-        -batches : TrimBatch[]
-        -num_batches : int
-        +TrimPoints(string)
-        +find_event_time(string)
-        +generate_trim_batches(array)
-        +add_u_variations()
-        +add_custom_variations()
+        -flight_data
+        -batches
+        +TrimPoints(csv_file)
+        +find_event_time()
+        +generate_trim_batches()
         +generate_trim_points()
         +generate_K()
-        +export_to_ref_h()
         +set_reference_states()
     }
 
     class TrimBatch {
-        +state_names : cell_array
-        +state_index_con : array
-        +trim_points : array
-        +variations : cell_array
-        +base_trim_point : array
-        +time : double
+        -trim_points
+        -time
         +generate_trim_points()
-        +add_variation()
     }
 
     class MonteCarlo {
-        -runGaussianLHS : logical
-        -runUniformLHS : logical
-        -runCustomLHS : logical
-        -numRuns : int
-        -odeSolverMaxTime : double
-        -lhsSamples : matrix
-        -evaluate_checkTermination : logical
-        -evaluate_checkRoll : logical
-        -evaluate_checkPitch : logical
-        -evaluate_checkYaw : logical
-        -evaluate_checkAoA : logical
-        -wetMass_3sigma : double
-        -dryMass_3sigma : double
-        -wetRollMOI_3sigma : double
-        -wetPitchMOI_3sigma : double
-        -wetYawMOI_3sigma : double
-        +set_runGaussianLHS(logical)
-        +set_numRuns(int)
-        +set_odeSolverMaxTime(double)
-        +set_wetMass_3sigma(double)
-        +set_dryMass_3sigma(double)
+        -numRuns
+        -lhsSamples
+        -wetMass_3sigma
+        -dryMass_3sigma
+        +set_numRuns()
         +generateLhsSamples()
         +runMonteCarlo()
-        +evaluateMonteCarlo()
         +plotMonteCarlo()
-        +saveToCSV()
     }
 
-    class ActuatorModel {
-        +model_actuator()
-    }
-
-    class Navigation {
-        +navigation_functions()
-    }
-
-    class PID {
-        +pid_control()
-    }
-
-    %% Relationships based on jetVanes_MasterFile.m usage
+    %% Key Relationships
     Flight --&gt; Rocket : uses
-    Flight --&gt; Environment : uses
+    Flight --&gt; Environment : uses  
     Flight --&gt; Aerodynamics : uses
     Flight --&gt; TrimPoints : uses
     TrimPoints --&gt; TrimBatch : contains
     TrimPoints --&gt; Rocket : configures
-    TrimPoints --&gt; Environment : uses
-    TrimPoints --&gt; Flight : uses
-    TrimPoints --&gt; Aerodynamics : uses
-    MonteCarlo --&gt; Flight : runs
-    MonteCarlo --&gt; Rocket : modifies parameters
-    MonteCarlo --&gt; Environment : modifies parameters
-    MonteCarlo --&gt; Aerodynamics : uses
-    MonteCarlo --&gt; TrimPoints : uses</code></pre>
+    MonteCarlo --&gt; Flight : runs simulations
+    MonteCarlo --&gt; Rocket : varies parameters</code></pre>
 <h2 id="class-relationships-in-jetvanes_masterfilem">Class Relationships in jetVanes_MasterFile.m</h2>
 <h3 id="primary-flow">Primary Flow:</h3>
 <ol>
