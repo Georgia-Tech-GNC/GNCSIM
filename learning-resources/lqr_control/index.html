@@ -1964,8 +1964,12 @@
 <h3 id="the-optimal-control-problem">The Optimal Control Problem</h3>
 <p>LQR solves this question: <strong>"What control input minimizes a mathematical cost function while satisfying system dynamics?"</strong></p>
 <h4 id="system-model-state-space">System Model (State-Space)</h4>
-<div class="arithmatex">\[\dot{x} = Ax + Bu \quad \text{(System dynamics)}$$
-$$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
+<div class="arithmatex">\[
+\dot{x} = Ax + Bu \quad \text{(System dynamics)}
+\]</div>
+<div class="arithmatex">\[
+y = Cx + Du \quad \text{(Measurement equation)}
+\]</div>
 <p>Where:</p>
 <ul>
 <li><strong>x</strong>: State vector (positions, velocities, angles, angular rates)</li>
@@ -1973,7 +1977,9 @@ $$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
 <li><strong>A, B, C, D</strong>: System matrices describing dynamics</li>
 </ul>
 <h4 id="cost-function">Cost Function</h4>
-<div class="arithmatex">\[J = \int_0^\infty (x^T Q x + u^T R u) \, dt\]</div>
+<div class="arithmatex">\[
+J = \int_0^\infty (x^T Q x + u^T R u) \, dt
+\]</div>
 <p>Where:</p>
 <ul>
 <li><strong>Q</strong>: State weighting matrix (how much you care about each state)</li>
@@ -1982,8 +1988,10 @@ $$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
 </ul>
 <h4 id="optimal-control-law">Optimal Control Law</h4>
 <p>The LQR solution is always linear state feedback:</p>
-<div class="arithmatex">\[u = -Kx\]</div>
-<p>Where \(K\) is the optimal gain matrix computed by solving the Riccati equation.</p>
+<div class="arithmatex">\[
+u = -Kx
+\]</div>
+<p>Where <span class="arithmatex">\(K\)</span> is the optimal gain matrix computed by solving the Riccati equation.</p>
 <h3 id="physical-interpretation">Physical Interpretation</h3>
 <p><strong>Q Matrix</strong>: "How much do I care about each state?"</p>
 <ul>
@@ -2046,7 +2054,9 @@ $$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
 <h2 id="lqr-for-rocket-control">🚀 LQR for Rocket Control</h2>
 <h3 id="jet-vanes-system-model">Jet Vanes System Model</h3>
 <p>For our rocket, the state vector typically includes:</p>
-<div class="arithmatex">\[x = [\theta, \phi, \psi, p, q, r, x, y, z, u, v, w]^T\]</div>
+<div class="arithmatex">\[
+x = [\theta, \phi, \psi, p, q, r, x, y, z, u, v, w]^T
+\]</div>
 <p>Where:</p>
 <ul>
 <li><strong>θ, φ, ψ</strong>: Euler angles (pitch, roll, yaw)</li>
@@ -2055,7 +2065,9 @@ $$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
 <li><strong>u, v, w</strong>: Velocities</li>
 </ul>
 <p>Control inputs:</p>
-<div class="arithmatex">\[u = [\delta_1, \delta_2, \delta_3, \delta_4]^T\]</div>
+<div class="arithmatex">\[
+u = [\delta_1, \delta_2, \delta_3, \delta_4]^T
+\]</div>
 <p>Where <span class="arithmatex">\(\delta_i\)</span> are the four jet vane deflection angles.</p>
 <h3 id="design-process">Design Process</h3>
 <h4 id="step-1-system-linearization">Step 1: System Linearization</h4>
@@ -2123,8 +2135,12 @@ $$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
 <h2 id="hands-on-learning-activities">🛠️ Hands-On Learning Activities</h2>
 <h3 id="activity-1-simple-lqr-design">Activity 1: Simple LQR Design</h3>
 <p><strong>System</strong>: Double integrator (simplified rocket attitude)</p>
-<div class="arithmatex">\[\dot{x}_1 = x_2 \quad \text{(angle)}$$
-$$\dot{x}_2 = u \quad \text{(angular acceleration)}\]</div>
+<div class="arithmatex">\[
+\dot{x}_1 = x_2 \quad \text{(angle)}
+\]</div>
+<div class="arithmatex">\[
+\dot{x}_2 = u \quad \text{(angular acceleration)}
+\]</div>
 <p><strong>Tasks</strong>:</p>
 <ol>
 <li>Write state-space matrices A and B</li>
@@ -2178,7 +2194,9 @@ $$\dot{x}_2 = u \quad \text{(angular acceleration)}\]</div>
 <h3 id="lqr-with-integral-action-lqi">LQR with Integral Action (LQI)</h3>
 <p><strong>Problem</strong>: Pure LQR has no steady-state error rejection for constant disturbances</p>
 <p><strong>Solution</strong>: Augment system with integrator states</p>
-<div class="arithmatex">\[x_{\text{aug}} = \begin{bmatrix} x \\ \int e \, dt \end{bmatrix}\]</div>
+<div class="arithmatex">\[
+x_{\text{aug}} = \begin{bmatrix} x \\ \int e \, dt \end{bmatrix}
+\]</div>
 <p><strong>Result</strong>: LQI combines LQR optimality with integral action</p>
 <h3 id="gain-scheduling">Gain Scheduling</h3>
 <p><strong>Problem</strong>: Rocket dynamics change dramatically during flight</p>
