@@ -1194,22 +1194,20 @@
 </li>
 <li>
 <p><strong>Physical interpretation</strong></p>
-</li>
-<li>
-<p>How differential equations model real systems</p>
-</li>
+<ul>
+<li>How differential equations model real systems</li>
 <li>Initial conditions and their physical meaning</li>
-<li>
-<p>Steady-state vs. transient behavior</p>
+<li>Steady-state vs. transient behavior</li>
+</ul>
 </li>
 <li>
 <p><strong>Solution techniques</strong></p>
-</li>
-<li>
-<p>Separation of variables</p>
-</li>
+<ul>
+<li>Separation of variables</li>
 <li>Integrating factor method</li>
 <li>Characteristic equation method for linear equations</li>
+</ul>
+</li>
 </ol>
 <hr />
 <h2 id="laplace-transform">🔄 Laplace Transform</h2>
@@ -1245,52 +1243,60 @@
 <p><strong><a href="https://image.slidesharecdn.com/laplacetable-140326134619-phpapp02/95/laplace-table-1-638.jpg?cb=1395841667">Laplace Transform Table</a></strong></p>
 <h3 id="key-concepts-to-master_1">Key Concepts to Master</h3>
 <ol>
-<li><strong>Basic Definition</strong>
+<li>
+<p><strong>Basic Definition</strong>
    <div class="highlight"><pre><span></span><code>L{f(t)} = F(s) = ∫₀^∞ f(t)e^(-st) dt
-</code></pre></div></li>
+</code></pre></div></p>
+<ul>
 <li>Understand what this integral represents</li>
 <li>Why e^(-st) is the kernel function</li>
-<li>
-<p>Meaning of the complex variable s</p>
+<li>Meaning of the complex variable s</li>
+</ul>
 </li>
 <li>
 <p><strong>Common Transform Pairs</strong></p>
-</li>
+<ul>
 <li>Unit step: 1/s</li>
 <li>Exponential: 1/(s+a)</li>
 <li>Sinusoidal: ω/(s²+ω²)</li>
-<li>
-<p>Derivatives: sF(s) - f(0)</p>
+<li>Derivatives: sF(s) - f(0)</li>
+</ul>
 </li>
 <li>
 <p><strong>Properties</strong></p>
-</li>
+<ul>
 <li>Linearity: L{af(t) + bg(t)} = aF(s) + bG(s)</li>
 <li>Time shifting</li>
 <li>Frequency shifting</li>
-<li>
-<p>Initial and final value theorems</p>
+<li>Initial and final value theorems</li>
+</ul>
 </li>
 <li>
 <p><strong>Solving Differential Equations</strong></p>
-</li>
+<ul>
 <li>Transform the equation to s-domain</li>
 <li>Solve algebraically</li>
 <li>Inverse transform back to time domain</li>
 <li>Apply initial conditions</li>
+</ul>
+</li>
 </ol>
 <h3 id="common-pitfalls-to-avoid">Common Pitfalls to Avoid</h3>
 <ol>
-<li><strong>Don't memorize without understanding</strong></li>
-<li>Understand why transforms work, not just how to use them</li>
 <li>
-<p>Connect s-domain behavior to time-domain behavior</p>
+<p><strong>Don't memorize without understanding</strong></p>
+<ul>
+<li>Understand why transforms work, not just how to use them</li>
+<li>Connect s-domain behavior to time-domain behavior</li>
+</ul>
 </li>
 <li>
 <p><strong>Initial conditions matter</strong></p>
-</li>
+<ul>
 <li>Always account for initial conditions when solving equations</li>
 <li>Understand how they affect the transform</li>
+</ul>
+</li>
 </ol>
 <h3 id="connection-to-controls">Connection to Controls</h3>
 <p>Understanding these mathematical tools is crucial because:</p>
