@@ -810,13 +810,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#required-learning-resources" class="md-nav__link">
+  <a href="#learning-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      📚 Required Learning Resources
+      📚 Learning Resources
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="📚 Required Learning Resources">
+    <nav class="md-nav" aria-label="📚 Learning Resources">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1445,13 +1445,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#required-learning-resources" class="md-nav__link">
+  <a href="#learning-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      📚 Required Learning Resources
+      📚 Learning Resources
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="📚 Required Learning Resources">
+    <nav class="md-nav" aria-label="📚 Learning Resources">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1948,7 +1948,7 @@
 
 <h1 id="linear-quadratic-regulator-lqr-control">Linear Quadratic Regulator (LQR) Control</h1>
 <h2 id="overview">Overview</h2>
-<p>Linear Quadratic Regulator (LQR) control is the advanced control technique we're implementing on our jet vanes rocket. Unlike PID control, which uses simple error-based feedback, LQR is an optimal control method that mathematically determines the best possible control law for a given system. It represents the pinnacle of classical control theory and is widely used in aerospace, robotics, and advanced industrial applications.</p>
+<p>Linear Quadratic Regulator (LQR) control is the advanced control technique we implemented on our jet vanes rocket. Unlike PID control, which uses simple error-based feedback, LQR is an optimal control method that mathematically determines the best possible control law for a given system. It represents the pinnacle of classical control theory and is widely used in aerospace, robotics, and advanced industrial applications.</p>
 <h2 id="why-lqr-for-jet-vanes">Why LQR for Jet Vanes?</h2>
 <p><strong>Our Evolution</strong>: We successfully used PID for gimbal control, but jet vanes demand better performance:</p>
 <ul>
@@ -2009,47 +2009,17 @@ u = -Kx
 <li>Provides mathematically optimal feedback gains</li>
 </ul>
 <hr />
-<h2 id="required-learning-resources">📚 Required Learning Resources</h2>
+<h2 id="learning-resources">📚 Learning Resources</h2>
 <h3 id="core-lqr-theory">Core LQR Theory</h3>
 <h4 id="primary-video-sequence">Primary Video Sequence</h4>
 <p>Work through these in order to build understanding:</p>
 <p><strong>1. <a href="https://www.youtube.com/watch?v=FXSpHy8LvmY">What is Pole Placement (Full State Feedback) | State Space, Part 2</a></strong></p>
-<ul>
-<li><strong>Focus</strong>: Understand full state feedback concept</li>
-<li><strong>Key concepts</strong>: How state feedback differs from output feedback (PID)</li>
-<li><strong>Why important</strong>: LQR is a special case of full state feedback</li>
-</ul>
 <p><strong>2. <a href="https://www.youtube.com/watch?v=BYvTEfNAi38">A Conceptual Approach to Controllability and Observability | State Space, Part 3</a></strong></p>
-<ul>
-<li><strong>Focus</strong>: When is LQR possible and meaningful?</li>
-<li><strong>Key concepts</strong>: Controllability matrix, observability matrix</li>
-<li><strong>Why important</strong>: LQR only works for controllable systems</li>
-</ul>
 <p><strong>3. <a href="https://www.youtube.com/watch?v=E_RDCFOlJx4">What Is Linear Quadratic Regulator (LQR) Optimal Control? | State Space, Part 4</a></strong></p>
-<ul>
-<li><strong>Focus</strong>: Core LQR theory and intuition</li>
-<li><strong>Key concepts</strong>: Cost function, Q/R matrices, optimality</li>
-<li><strong>Why important</strong>: This is the heart of what we're implementing</li>
-</ul>
 <h4 id="detailed-implementation-resources">Detailed Implementation Resources</h4>
 <p><strong>4. <a href="https://www.youtube.com/watch?v=oQDi3Giv-DI&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=26">Controllability of a Linear System: The Controllability Matrix and the PBH Test</a></strong></p>
-<ul>
-<li><strong>Focus</strong>: Mathematical tests for controllability</li>
-<li><strong>Key concepts</strong>: PBH test, controllability matrix rank</li>
-<li><strong>Application</strong>: Verify our jet vanes system is controllable</li>
-</ul>
 <p><strong>5. <a href="https://www.youtube.com/watch?v=1zIIcYfp5QA&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=27">Introduction to Full State Feedback Control</a></strong></p>
-<ul>
-<li><strong>Focus</strong>: General state feedback framework</li>
-<li><strong>Key concepts</strong>: Pole placement, closed-loop eigenvalues</li>
-<li><strong>Connection</strong>: How LQR fits into broader state feedback theory</li>
-</ul>
 <p><strong>6. <a href="https://www.youtube.com/watch?v=wEevt2a4SKI&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=29">Introduction to Linear Quadratic Regulator (LQR) Control</a></strong></p>
-<ul>
-<li><strong>Focus</strong>: Practical LQR implementation</li>
-<li><strong>Key concepts</strong>: Riccati equation, MATLAB implementation</li>
-<li><strong>Application</strong>: How to actually compute LQR gains</li>
-</ul>
 <hr />
 <h2 id="lqr-for-rocket-control">🚀 LQR for Rocket Control</h2>
 <h3 id="jet-vanes-system-model">Jet Vanes System Model</h3>

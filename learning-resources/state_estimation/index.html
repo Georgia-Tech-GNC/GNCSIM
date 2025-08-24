@@ -2724,7 +2724,7 @@
 <h3 id="the-estimation-problem">The Estimation Problem</h3>
 <p><strong>Goal</strong>: Estimate the true state <span class="arithmatex">\(x(t)\)</span> given:</p>
 <ul>
-<li><strong>System model</strong>: <span class="arithmatex">\(\\dot{x} = f(x, u)\)</span> (how the system evolves)</li>
+<li><strong>System model</strong>: <span class="arithmatex">\(\dot{x} = f(x, u)\)</span> (how the system evolves)</li>
 <li><strong>Measurement model</strong>: <span class="arithmatex">\(y = h(x) + v\)</span> (what sensors tell us)</li>
 <li><strong>Process noise</strong>: <span class="arithmatex">\(w\)</span> (model uncertainties)</li>
 <li><strong>Measurement noise</strong>: <span class="arithmatex">\(v\)</span> (sensor noise)</li>
@@ -2775,7 +2775,7 @@ P = (I - KH)P^- \quad \text{(Updated uncertainty)}
 \]</div>
 <p>Where:</p>
 <ul>
-<li><strong><span class="arithmatex">\(\\hat{x}\)</span></strong>: State estimate</li>
+<li><strong><span class="arithmatex">\(\hat{x}\)</span></strong>: State estimate</li>
 <li><strong><span class="arithmatex">\(P\)</span></strong>: Error covariance (uncertainty)</li>
 <li><strong><span class="arithmatex">\(Q\)</span></strong>: Process noise covariance</li>
 <li><strong><span class="arithmatex">\(R\)</span></strong>: Measurement noise covariance</li>
@@ -2848,7 +2848,7 @@ P = (I - KH)P^- \quad \text{(Updated uncertainty)}
 </ul>
 <p><strong>Example Augmented State Vector</strong>:</p>
 <div class="arithmatex">\[
-x = [\\theta, \\phi, \\psi, p, q, r, x, y, z, u, v, w, b_{gx}, b_{gy}, b_{gz}, b_{ax}, b_{ay}, b_{az}]^T
+x = [\theta, \phi, \psi, p, q, r, x, y, z, u, v, w, b_{gx}, b_{gy}, b_{gz}, b_{ax}, b_{ay}, b_{az}]^T
 \]</div>
 <p>Where <span class="arithmatex">\(b_{gi}\)</span> and <span class="arithmatex">\(b_{ai}\)</span> are gyroscope and accelerometer biases.</p>
 <h3 id="calibration-resources">Calibration Resources</h3>
@@ -2960,23 +2960,23 @@ x = [\\theta, \\phi, \\psi, p, q, r, x, y, z, u, v, w, b_{gx}, b_{gy}, b_{gz}, b
 <h4 id="step-2-solve-for-trim-state-and-controls">Step 2: Solve for Trim State and Controls</h4>
 <p><strong>Optimization Problem</strong>:</p>
 <div class="arithmatex">\[
-\\text{Find: } x_{\\text{trim}}, u_{\\text{trim}}
+\text{Find: } x_{\text{trim}}, u_{\text{trim}}
 \]</div>
 <div class="arithmatex">\[
-\\text{Such that: } f(x_{\\text{trim}}, u_{\\text{trim}}) = 0 \\quad \\text{(dynamics satisfied)}
+\text{Such that: } f(x_{\text{trim}}, u_{\text{trim}}) = 0 \quad \text{(dynamics satisfied)}
 \]</div>
 <div class="arithmatex">\[
-g(x_{\\text{trim}}, u_{\\text{trim}}) = 0 \\quad \\text{(trim constraints satisfied)}
+g(x_{\text{trim}}, u_{\text{trim}}) = 0 \quad \text{(trim constraints satisfied)}
 \]</div>
 <h4 id="step-3-linearize-around-trim-point">Step 3: Linearize Around Trim Point</h4>
 <p><strong>Compute Jacobians</strong>:</p>
 <div class="arithmatex">\[
-A = \\frac{\\partial f}{\\partial x} \\bigg|_{(x_{\\text{trim}}, u_{\\text{trim}})}
+A = \frac{\partial f}{\partial x} \bigg|_{(x_{\text{trim}}, u_{\text{trim}})}
 \]</div>
 <div class="arithmatex">\[
-B = \\frac{\\partial f}{\\partial u} \\bigg|_{(x_{\\text{trim}}, u_{\\text{trim}})}
+B = \frac{\partial f}{\partial u} \bigg|_{(x_{\text{trim}}, u_{\text{trim}})}
 \]</div>
-<p><strong>Result</strong>: Linear system \(\dot{x} = Ax + Bu\) valid near trim point</p>
+<p><strong>Result</strong>: Linear system <span class="arithmatex">\(\dot{x} = Ax + Bu\)</span> valid near trim point</p>
 <h4 id="step-4-design-kalman-filter">Step 4: Design Kalman Filter</h4>
 <ul>
 <li>Use linear A and B matrices</li>
@@ -2987,22 +2987,22 @@ B = \\frac{\\partial f}{\\partial u} \\bigg|_{(x_{\\text{trim}}, u_{\\text{trim}
 <h2 id="rocket-specific-state-estimation">🚀 Rocket-Specific State Estimation</h2>
 <h3 id="typical-state-vector">Typical State Vector</h3>
 <div class="arithmatex">\[
-x = \\begin{bmatrix}
-\\theta, \\phi, \\psi \\\\ 
-p, q, r \\\\
-x, y, z \\\\  
-u, v, w \\\\
-b_{gx}, b_{gy}, b_{gz} \\\\
+x = \begin{bmatrix}
+\theta, \phi, \psi \\ 
+p, q, r \\
+x, y, z \\  
+u, v, w \\
+b_{gx}, b_{gy}, b_{gz} \\
 b_{ax}, b_{ay}, b_{az}
-\\end{bmatrix}
-\\begin{matrix}
-\\text{// Euler angles (pitch, roll, yaw)} \\\\
-\\text{// Angular rates (body frame)} \\\\
-\\text{// Position (navigation frame)} \\\\
-\\text{// Velocity (body frame)} \\\\
-\\text{// Gyroscope biases} \\\\
-\\text{// Accelerometer biases}
-\\end{matrix}
+\end{bmatrix}
+\begin{matrix}
+\text{// Euler angles (pitch, roll, yaw)} \\
+\text{// Angular rates (body frame)} \\
+\text{// Position (navigation frame)} \\
+\text{// Velocity (body frame)} \\
+\text{// Gyroscope biases} \\
+\text{// Accelerometer biases}
+\end{matrix}
 \]</div>
 <h3 id="sensor-models">Sensor Models</h3>
 <h4 id="imu-measurements">IMU Measurements</h4>
@@ -3032,22 +3032,22 @@ a_{\text{meas}} = R_{bn} \cdot (a_{\text{nav}} + g_{\text{nav}}) + b_a + v_a
 <h3 id="extended-kalman-filter-implementation">Extended Kalman Filter Implementation</h3>
 <p><strong>Prediction Step</strong> (nonlinear):</p>
 <div class="arithmatex">\[
-\\hat{x}^- = f(\\hat{x}, u, dt) \\quad \\text{// Integrate nonlinear dynamics}
+\hat{x}^- = f(\hat{x}, u, dt) \quad \text{// Integrate nonlinear dynamics}
 \]</div>
 <div class="arithmatex">\[
-P^- = FPF^T + Q \\quad \\text{// F = Jacobian of f}
+P^- = FPF^T + Q \quad \text{// F = Jacobian of f}
 \]</div>
 <p><strong>Update Step</strong> (linear in measurements):</p>
 <div class="arithmatex">\[
 K = P^-H^T(HP^-H^T + R)^{-1}
 \]</div>
 <div class="arithmatex">\[
-\\hat{x} = \\hat{x}^- + K(y - h(\\hat{x}^-))
+\hat{x} = \hat{x}^- + K(y - h(\hat{x}^-))
 \]</div>
 <div class="arithmatex">\[
 P = (I - KH)P^-
 \]</div>
-<p>Where \(h(x)\) is the nonlinear measurement model.</p>
+<p>Where <span class="arithmatex">\(h(x)\)</span> is the nonlinear measurement model.</p>
 <hr />
 <h2 id="learning-objectives">🎯 Learning Objectives</h2>
 <h3 id="theoretical-mastery">Theoretical Mastery</h3>
