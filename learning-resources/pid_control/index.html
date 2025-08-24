@@ -898,15 +898,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#activity-3-transfer-function-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Activity 3: Transfer Function Analysis
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -932,9 +923,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#why-were-moving-to-lqr" class="md-nav__link">
+  <a href="#why-we-moved-to-lqr-for-the-jet-vanes-rocket" class="md-nav__link">
     <span class="md-ellipsis">
-      Why We're Moving to LQR
+      Why We Moved to LQR for the Jet Vanes Rocket
     </span>
   </a>
   
@@ -995,48 +986,6 @@
   <a href="#challenge-4-multiple-objectives" class="md-nav__link">
     <span class="md-ellipsis">
       Challenge 4: Multiple Objectives
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#self-assessment-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      📊 Self-Assessment Checklist
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="📊 Self-Assessment Checklist">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#conceptual-questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Conceptual Questions
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mathematical-questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Mathematical Questions
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#practical-questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Practical Questions
     </span>
   </a>
   
@@ -1382,15 +1331,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#activity-3-transfer-function-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Activity 3: Transfer Function Analysis
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1416,9 +1356,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#why-were-moving-to-lqr" class="md-nav__link">
+  <a href="#why-we-moved-to-lqr-for-the-jet-vanes-rocket" class="md-nav__link">
     <span class="md-ellipsis">
-      Why We're Moving to LQR
+      Why We Moved to LQR for the Jet Vanes Rocket
     </span>
   </a>
   
@@ -1479,48 +1419,6 @@
   <a href="#challenge-4-multiple-objectives" class="md-nav__link">
     <span class="md-ellipsis">
       Challenge 4: Multiple Objectives
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#self-assessment-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      📊 Self-Assessment Checklist
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="📊 Self-Assessment Checklist">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#conceptual-questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Conceptual Questions
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#mathematical-questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Mathematical Questions
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#practical-questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Practical Questions
     </span>
   </a>
   
@@ -1776,61 +1674,6 @@
 <li><strong>Step 4</strong>: Add <span class="arithmatex">\(K_d\)</span> to reduce overshoot</li>
 </ul>
 <p><strong>Document</strong>: How the response changes with each adjustment</p>
-<h3 id="activity-3-transfer-function-analysis">Activity 3: Transfer Function Analysis</h3>
-<p><strong>Objective</strong>: Connect PID to frequency domain analysis</p>
-<p><strong>MATLAB Code for Frequency Analysis</strong>:
-<div class="highlight"><pre><span></span><code><span class="nb">clear</span><span class="p">;</span><span class="w"> </span><span class="n">close</span><span class="w"> </span><span class="s">all</span><span class="p">;</span><span class="w"> </span><span class="nb">clc</span><span class="p">;</span>
-
-<span class="c">% PID Controller parameters</span>
-<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
-
-<span class="c">% Create individual controllers</span>
-<span class="n">P_only</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">                    </span><span class="c">% P controller</span>
-<span class="n">PI</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">([</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span><span class="w">           </span><span class="c">% PI controller  </span>
-<span class="n">PID</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">([</span><span class="n">Kd</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span><span class="w">      </span><span class="c">% PID controller</span>
-
-<span class="c">% Alternative way using pid() function</span>
-<span class="c">% PID_alt = pid(Kp, Ki, Kd);</span>
-
-<span class="c">% Plot Bode plots</span>
-<span class="nb">figure</span><span class="p">;</span>
-<span class="n">bode</span><span class="p">(</span><span class="n">P_only</span><span class="p">,</span><span class="w"> </span><span class="n">PI</span><span class="p">,</span><span class="w"> </span><span class="n">PID</span><span class="p">);</span>
-<span class="nb">legend</span><span class="p">(</span><span class="s">&#39;P only&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PI&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PID&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;Location&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;best&#39;</span><span class="p">);</span>
-<span class="n">grid</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
-<span class="nb">title</span><span class="p">(</span><span class="s">&#39;Bode Plot Comparison: P vs PI vs PID&#39;</span><span class="p">);</span>
-
-<span class="c">% Show transfer functions</span>
-<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;P Controller: G_c(s) = %g\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">);</span>
-<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;PI Controller: G_c(s) = %g + %g/s\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">);</span><span class="w">  </span>
-<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;PID Controller: G_c(s) = %g + %g/s + %g*s\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
-
-<span class="c">% Analyze effect on a system</span>
-<span class="n">G_plant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]);</span><span class="w">  </span><span class="c">% Example plant</span>
-
-<span class="c">% Closed-loop responses</span>
-<span class="n">T_P</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">P_only</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G_plant</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
-<span class="n">T_PI</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">PI</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G_plant</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">  </span>
-<span class="n">T_PID</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G_plant</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
-
-<span class="c">% Time domain comparison</span>
-<span class="nb">figure</span><span class="p">;</span>
-<span class="nb">step</span><span class="p">(</span><span class="n">T_P</span><span class="p">,</span><span class="w"> </span><span class="n">T_PI</span><span class="p">,</span><span class="w"> </span><span class="n">T_PID</span><span class="p">);</span>
-<span class="nb">legend</span><span class="p">(</span><span class="s">&#39;P only&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PI&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PID&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;Location&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;best&#39;</span><span class="p">);</span>
-<span class="n">grid</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
-<span class="nb">title</span><span class="p">(</span><span class="s">&#39;Step Response: Effect of I and D Terms&#39;</span><span class="p">);</span>
-</code></pre></div></p>
-<p><strong>Analysis Tasks</strong>:</p>
-<ol>
-<li><strong>Derive the PID transfer function</strong>: <span class="arithmatex">\(G_c(s) = K_p + \frac{K_i}{s} + K_d s\)</span></li>
-<li><strong>Plot Bode plots</strong> for P, PI, and PID controllers (code above)</li>
-<li><strong>Observe how each component affects</strong>:</li>
-<li><strong>P term</strong>: Flat magnitude, zero phase</li>
-<li><strong>I term</strong>: -20dB/decade slope, -90° phase</li>
-<li><strong>D term</strong>: +20dB/decade slope, +90° phase</li>
-<li><strong>Connect frequency response to time-domain performance</strong>:</li>
-<li>High frequency gain → fast response but noise sensitivity</li>
-<li>Low frequency gain → steady-state accuracy</li>
-</ol>
 <hr />
 <h2 id="pid-in-gnc-context">🎨 PID in GNC Context</h2>
 <h3 id="our-gimbal-control-experience">Our Gimbal Control Experience</h3>
@@ -1840,8 +1683,8 @@
 <li><strong>Actuators</strong>: Servo motors controlling gimbal angles</li>
 <li><strong>Challenges</strong>: Noise in sensors, actuator saturation, wind disturbances</li>
 </ul>
-<h3 id="why-were-moving-to-lqr">Why We're Moving to LQR</h3>
-<p>While PID worked for our gimbal system, we're upgrading to LQR for jet vanes because:</p>
+<h3 id="why-we-moved-to-lqr-for-the-jet-vanes-rocket">Why We Moved to LQR for the Jet Vanes Rocket</h3>
+<p>While PID worked for our gimbal system, we upgraded to LQR for jet vanes because:</p>
 <ol>
 <li><strong>Multi-input, Multi-output</strong>: Jet vanes require coordinating multiple control surfaces</li>
 <li><strong>Optimal Performance</strong>: LQR mathematically optimizes the control law</li>
@@ -1874,30 +1717,6 @@
 <p><strong>Problem</strong>: Want to control multiple things simultaneously (attitude, position, velocity)
 <strong>PID Issue</strong>: Single-loop PID can't easily handle multiple objectives
 <strong>Solution</strong>: Move to multi-variable control methods (LQR, MPC)</p>
-<hr />
-<h2 id="self-assessment-checklist">📊 Self-Assessment Checklist</h2>
-<p>Before moving to state-space and LQR concepts, verify you understand:</p>
-<h3 id="conceptual-questions">Conceptual Questions</h3>
-<ul>
-<li>Can you explain PID to someone who's never heard of control systems?</li>
-<li>Do you understand why each component is necessary?</li>
-<li>Can you predict what will happen when you increase/decrease each gain?</li>
-<li>Do you understand the limitations of PID control?</li>
-</ul>
-<h3 id="mathematical-questions">Mathematical Questions</h3>
-<ul>
-<li>Can you write the PID transfer function?</li>
-<li>Can you sketch the step response for different tuning scenarios?</li>
-<li>Do you understand how PID affects closed-loop poles?</li>
-<li>Can you analyze PID stability using Bode plots?</li>
-</ul>
-<h3 id="practical-questions">Practical Questions</h3>
-<ul>
-<li>Can you tune a PID controller systematically?</li>
-<li>Do you understand common implementation issues?</li>
-<li>Can you identify when PID is appropriate vs. inadequate?</li>
-<li>Do you understand how to implement PID in discrete-time?</li>
-</ul>
 <hr />
 <h2 id="connection-to-advanced-control">🔗 Connection to Advanced Control</h2>
 <p>Understanding PID sets you up for success with more advanced control techniques:</p>
