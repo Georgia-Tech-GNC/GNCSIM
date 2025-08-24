@@ -796,13 +796,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#required-learning-resources" class="md-nav__link">
+  <a href="#learning-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      📚 Required Learning Resources
+      📚 Learning Resources
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="📚 Required Learning Resources">
+    <nav class="md-nav" aria-label="📚 Learning Resources">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1331,13 +1331,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#required-learning-resources" class="md-nav__link">
+  <a href="#learning-resources" class="md-nav__link">
     <span class="md-ellipsis">
-      📚 Required Learning Resources
+      📚 Learning Resources
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="📚 Required Learning Resources">
+    <nav class="md-nav" aria-label="📚 Learning Resources">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1702,7 +1702,7 @@
 
 <h1 id="pid-control-fundamentals">PID Control Fundamentals</h1>
 <h2 id="overview">Overview</h2>
-<p>PID (Proportional-Integral-Derivative) control is a fundamental control strategy that forms the backbone of most industrial control systems. While we used PID control for our gimbaled launches, we won't be using it for the jet vanes rocket (we're moving to LQR control). However, understanding PID is essential because it teaches you the core concepts of closed-loop control that underlie all control systems.</p>
+<p>PID (Proportional-Integral-Derivative) control is a fundamental control strategy that forms the backbone of most industrial control systems. Understanding PID is essential because it teaches you the core concepts of closed-loop control that underlie all control systems.</p>
 <h2 id="why-learn-pid-control">Why Learn PID Control?</h2>
 <p><strong>Foundation of Control Theory</strong>: PID introduces you to closed-loop control, feedback, and system response concepts that are universal across all control methods.</p>
 <p><strong>Industry Standard</strong>: Over 95% of industrial control systems use some form of PID control. Understanding it makes you valuable in any controls-related career.</p>
@@ -1711,16 +1711,18 @@
 <hr />
 <h2 id="core-pid-concepts">🎛️ Core PID Concepts</h2>
 <h3 id="the-control-problem">The Control Problem</h3>
-<p>Imagine you want your rocket to point in a specific direction:
-- <strong>Setpoint</strong>: Where you want the rocket to point (reference)
-- <strong>Process Variable</strong>: Where the rocket is actually pointing (measured output)
-- <strong>Error</strong>: The difference between where you want to be and where you are
-- <strong>Control Output</strong>: The command sent to actuators (like gimbal motors)</p>
+<p>Imagine you want your rocket to point in a specific direction:</p>
+<ul>
+<li><strong>Setpoint</strong>: Where you want the rocket to point (reference)</li>
+<li><strong>Process Variable</strong>: Where the rocket is actually pointing (measured output)</li>
+<li><strong>Error</strong>: The difference between where you want to be and where you are</li>
+<li><strong>Control Output</strong>: The command sent to actuators (like gimbal motors)</li>
+</ul>
 <h3 id="the-three-components">The Three Components</h3>
 <h4 id="proportional-p">Proportional (P)</h4>
 <ul>
 <li><strong>What it does</strong>: Provides control output proportional to the current error</li>
-<li><strong>Mathematical form</strong>: P = Kp × error</li>
+<li><strong>Mathematical form</strong>: <span class="arithmatex">\(P = K_p \times \text{error}\)</span></li>
 <li><strong>Physical meaning</strong>: "Push harder when you're further from the target"</li>
 <li><strong>Pros</strong>: Simple, responsive</li>
 <li><strong>Cons</strong>: Cannot eliminate steady-state error, can cause oscillations</li>
@@ -1728,7 +1730,7 @@
 <h4 id="integral-i">Integral (I)</h4>
 <ul>
 <li><strong>What it does</strong>: Provides control output based on the accumulated error over time</li>
-<li><strong>Mathematical form</strong>: I = Ki × ∫error dt</li>
+<li><strong>Mathematical form</strong>: <span class="arithmatex">\(I = K_i \times \int \text{error} \, dt\)</span></li>
 <li><strong>Physical meaning</strong>: "Remember how long you've been off-target and correct for it"</li>
 <li><strong>Pros</strong>: Eliminates steady-state error</li>
 <li><strong>Cons</strong>: Can cause overshoot, slow response</li>
@@ -1736,16 +1738,15 @@
 <h4 id="derivative-d">Derivative (D)</h4>
 <ul>
 <li><strong>What it does</strong>: Provides control output based on the rate of change of error</li>
-<li><strong>Mathematical form</strong>: D = Kd × (d(error)/dt)</li>
+<li><strong>Mathematical form</strong>: <span class="arithmatex">\(D = K_d \times \frac{d(\text{error})}{dt}\)</span></li>
 <li><strong>Physical meaning</strong>: "Anticipate where the error is heading and act early"</li>
 <li><strong>Pros</strong>: Improves stability, reduces overshoot</li>
 <li><strong>Cons</strong>: Amplifies noise, can cause jerky control</li>
 </ul>
 <h3 id="complete-pid-equation">Complete PID Equation</h3>
-<div class="highlight"><pre><span></span><code>Control Output = Kp×error + Ki×∫error dt + Kd×(d(error)/dt)
-</code></pre></div>
+<div class="arithmatex">\[u(t) = K_p e(t) + K_i \int_0^t e(\tau) d\tau + K_d \frac{de(t)}{dt}\]</div>
 <hr />
-<h2 id="required-learning-resources">📚 Required Learning Resources</h2>
+<h2 id="learning-resources">📚 Learning Resources</h2>
 <h3 id="primary-video-series">Primary Video Series</h3>
 <p><strong>Understanding PID Control Playlist (Videos 1-5)</strong>
 <a href="https://www.youtube.com/watch?v=wkfEZmsQqiA&amp;list=PLn8PRpmsu08pQBgjxYFXSsODEF3Jqmm-y">What Is PID Control? | Understanding PID Control, Part 1</a></p>
@@ -1765,7 +1766,7 @@
 <h4 id="video-3-understanding-pid-control-part-3">Video 3: Understanding PID Control, Part 3</h4>
 <ul>
 <li><strong>Focus on</strong>: Tuning methods and parameter selection</li>
-<li><strong>Key concepts</strong>: Kp, Ki, Kd selection strategies</li>
+<li><strong>Key concepts</strong>: <span class="arithmatex">\(K_p\)</span>, <span class="arithmatex">\(K_i\)</span>, <span class="arithmatex">\(K_d\)</span> selection strategies</li>
 <li><strong>Take notes on</strong>: How to systematically tune a PID controller</li>
 </ul>
 <h4 id="video-4-understanding-pid-control-part-4">Video 4: Understanding PID Control, Part 4</h4>
@@ -1781,10 +1782,12 @@
 <li><strong>Take notes on</strong>: How industrial PID controllers actually work</li>
 </ul>
 <h3 id="supplementary-resource">Supplementary Resource</h3>
-<p><strong><a href="https://www.youtube.com/watch?v=_VzHpLjKeZ8&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=20">Introduction to PID Control - Christopher Lum</a></strong>
-- Provides a more mathematical perspective
-- Good for reinforcing concepts from the main series
-- Focus on the transfer function representation of PID</p>
+<p><strong><a href="https://www.youtube.com/watch?v=_VzHpLjKeZ8&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=20">Introduction to PID Control - Christopher Lum</a></strong></p>
+<ul>
+<li>Provides a more mathematical perspective</li>
+<li>Good for reinforcing concepts from the main series</li>
+<li>Focus on the transfer function representation of PID</li>
+</ul>
 <hr />
 <h2 id="learning-objectives">🎯 Learning Objectives</h2>
 <p>By the end of this section, you should be able to:</p>
@@ -1814,33 +1817,153 @@
 <h3 id="activity-1-pid-simulation">Activity 1: PID Simulation</h3>
 <p><strong>Objective</strong>: Build intuition for how each parameter affects system response</p>
 <p><strong>Tools needed</strong>: MATLAB/Simulink, Python, or any simulation environment</p>
-<p><strong>Steps</strong>:
-1. Create a simple second-order system (like a rocket attitude dynamics)
-2. Implement a PID controller
-3. Start with only P control, observe response
-4. Add I control, observe how steady-state error disappears
-5. Add D control, observe how overshoot is reduced
-6. Experiment with different gain values</p>
-<p><strong>Key insights to discover</strong>:
-- Higher Kp → faster response but more oscillation
-- Higher Ki → no steady-state error but potential overshoot
-- Higher Kd → smoother response but noise amplification</p>
+<p><strong>MATLAB Code</strong>:
+<div class="highlight"><pre><span></span><code><span class="nb">clear</span><span class="p">;</span><span class="w"> </span><span class="n">close</span><span class="w"> </span><span class="s">all</span><span class="p">;</span><span class="w"> </span><span class="nb">clc</span><span class="p">;</span>
+
+<span class="c">% Define a simple second-order system (rocket attitude dynamics)</span>
+<span class="c">% Transfer function: G(s) = 1/(s^2 + 2*zeta*wn*s + wn^2)</span>
+<span class="n">wn</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">      </span><span class="c">% Natural frequency</span>
+<span class="n">zeta</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.3</span><span class="p">;</span><span class="w">  </span><span class="c">% Damping ratio</span>
+<span class="n">num</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">wn</span><span class="o">^</span><span class="mi">2</span><span class="p">;</span>
+<span class="n">den</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="o">*</span><span class="n">zeta</span><span class="o">*</span><span class="n">wn</span><span class="p">,</span><span class="w"> </span><span class="n">wn</span><span class="o">^</span><span class="mi">2</span><span class="p">];</span>
+<span class="n">G</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">(</span><span class="n">num</span><span class="p">,</span><span class="w"> </span><span class="n">den</span><span class="p">);</span>
+
+<span class="c">% PID Controller gains (start here and experiment!)</span>
+<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">    </span><span class="c">% Proportional gain</span>
+<span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">    </span><span class="c">% Integral gain  </span>
+<span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">    </span><span class="c">% Derivative gain</span>
+
+<span class="c">% Create PID controller</span>
+<span class="n">C</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">pid</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
+
+<span class="c">% Closed-loop system</span>
+<span class="n">T</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">C</span><span class="o">*</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c">% Step response</span>
+<span class="nb">figure</span><span class="p">;</span>
+<span class="nb">step</span><span class="p">(</span><span class="n">T</span><span class="p">);</span>
+<span class="n">grid</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+<span class="nb">title</span><span class="p">([</span><span class="s">&#39;PID Response: Kp=&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">Kp</span><span class="p">),</span><span class="w"> </span><span class="s">&#39;, Ki=&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">Ki</span><span class="p">),</span><span class="w"> </span><span class="s">&#39;, Kd=&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">num2str</span><span class="p">(</span><span class="n">Kd</span><span class="p">)]);</span>
+<span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Time (s)&#39;</span><span class="p">);</span>
+<span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Response&#39;</span><span class="p">);</span>
+
+<span class="c">% Display system info</span>
+<span class="n">stepinfo</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+</code></pre></div></p>
+<p><strong>Experimentation Steps</strong>:</p>
+<ol>
+<li><strong>P-only control</strong>: Start with <code>Kp = 1</code>, <code>Ki = 0</code>, <code>Kd = 0</code></li>
+<li><strong>Add Integral</strong>: Try <code>Kp = 1</code>, <code>Ki = 0.5</code>, <code>Kd = 0</code> </li>
+<li><strong>Add Derivative</strong>: Try <code>Kp = 1</code>, <code>Ki = 0.5</code>, <code>Kd = 0.1</code></li>
+<li><strong>Experiment</strong>: Change gains and observe the response</li>
+</ol>
+<p><strong>Key insights to discover</strong>:</p>
+<ul>
+<li>Higher <span class="arithmatex">\(K_p\)</span> → faster response but more oscillation</li>
+<li>Higher <span class="arithmatex">\(K_i\)</span> → no steady-state error but potential overshoot</li>
+<li>Higher <span class="arithmatex">\(K_d\)</span> → smoother response but noise amplification</li>
+</ul>
 <h3 id="activity-2-manual-tuning-practice">Activity 2: Manual Tuning Practice</h3>
 <p><strong>Objective</strong>: Develop intuitive tuning skills</p>
-<p><strong>Scenario</strong>: Rocket attitude control with PID
-- Start with Kp = 1, Ki = 0, Kd = 0
-- Increase Kp until you get sustained oscillation
-- Back off Kp by 50%
-- Add Ki slowly until steady-state error vanishes
-- Add Kd to reduce overshoot</p>
+<p><strong>Scenario</strong>: Rocket attitude control with PID</p>
+<p><strong>MATLAB Code for Tuning</strong>:
+<div class="highlight"><pre><span></span><code><span class="nb">clear</span><span class="p">;</span><span class="w"> </span><span class="n">close</span><span class="w"> </span><span class="s">all</span><span class="p">;</span><span class="w"> </span><span class="nb">clc</span><span class="p">;</span>
+
+<span class="c">% System: Rocket attitude dynamics with disturbance</span>
+<span class="n">num</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">den</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">];</span><span class="w">  </span><span class="c">% Slightly different system for tuning practice</span>
+<span class="n">G</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">(</span><span class="n">num</span><span class="p">,</span><span class="w"> </span><span class="n">den</span><span class="p">);</span>
+
+<span class="c">% Step 1: Start with P-only control</span>
+<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="n">C</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">pid</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
+<span class="n">T1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">C</span><span class="o">*</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c">% Step 2: Increase Kp until oscillation</span>
+<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"> </span><span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">  </span><span class="c">% Try higher Kp values</span>
+<span class="n">C</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">pid</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
+<span class="n">T2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">C</span><span class="o">*</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c">% Step 3: Back off Kp and add Ki</span>
+<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.5</span><span class="p">;</span><span class="w"> </span><span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">  </span><span class="c">% Reduce Kp, add Ki</span>
+<span class="n">C</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">pid</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
+<span class="n">T3</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">C</span><span class="o">*</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c">% Step 4: Add Kd to improve response</span>
+<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.5</span><span class="p">;</span><span class="w"> </span><span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">;</span><span class="w">  </span><span class="c">% Add derivative</span>
+<span class="n">C</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">pid</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
+<span class="n">T4</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">C</span><span class="o">*</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c">% Compare all responses</span>
+<span class="nb">figure</span><span class="p">;</span>
+<span class="nb">step</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">,</span><span class="w"> </span><span class="n">T3</span><span class="p">,</span><span class="w"> </span><span class="n">T4</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">15</span><span class="p">);</span>
+<span class="nb">legend</span><span class="p">(</span><span class="s">&#39;P only&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;High Kp&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PI&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PID&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;Location&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;best&#39;</span><span class="p">);</span>
+<span class="n">grid</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+<span class="nb">title</span><span class="p">(</span><span class="s">&#39;PID Tuning Evolution&#39;</span><span class="p">);</span>
+</code></pre></div></p>
+<p><strong>Tuning Steps</strong>:</p>
+<ul>
+<li><strong>Step 1</strong>: Start with <span class="arithmatex">\(K_p = 1\)</span>, <span class="arithmatex">\(K_i = 0\)</span>, <span class="arithmatex">\(K_d = 0\)</span></li>
+<li><strong>Step 2</strong>: Increase <span class="arithmatex">\(K_p\)</span> until you get sustained oscillation</li>
+<li><strong>Step 3</strong>: Back off <span class="arithmatex">\(K_p\)</span> by 50%, add <span class="arithmatex">\(K_i\)</span> slowly until steady-state error vanishes</li>
+<li><strong>Step 4</strong>: Add <span class="arithmatex">\(K_d\)</span> to reduce overshoot</li>
+</ul>
 <p><strong>Document</strong>: How the response changes with each adjustment</p>
 <h3 id="activity-3-transfer-function-analysis">Activity 3: Transfer Function Analysis</h3>
 <p><strong>Objective</strong>: Connect PID to frequency domain analysis</p>
-<p><strong>Tasks</strong>:
-1. Derive the PID transfer function: Kp + Ki/s + Kd×s
-2. Plot Bode plots for P, PI, and PID controllers
-3. Understand how each component affects gain and phase
-4. Connect frequency response to time-domain performance</p>
+<p><strong>MATLAB Code for Frequency Analysis</strong>:
+<div class="highlight"><pre><span></span><code><span class="nb">clear</span><span class="p">;</span><span class="w"> </span><span class="n">close</span><span class="w"> </span><span class="s">all</span><span class="p">;</span><span class="w"> </span><span class="nb">clc</span><span class="p">;</span>
+
+<span class="c">% PID Controller parameters</span>
+<span class="n">Kp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">Ki</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="n">Kd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.5</span><span class="p">;</span>
+
+<span class="c">% Create individual controllers</span>
+<span class="n">P_only</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">(</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">                    </span><span class="c">% P controller</span>
+<span class="n">PI</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">([</span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span><span class="w">           </span><span class="c">% PI controller  </span>
+<span class="n">PID</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">([</span><span class="n">Kd</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span><span class="w">      </span><span class="c">% PID controller</span>
+
+<span class="c">% Alternative way using pid() function</span>
+<span class="c">% PID_alt = pid(Kp, Ki, Kd);</span>
+
+<span class="c">% Plot Bode plots</span>
+<span class="nb">figure</span><span class="p">;</span>
+<span class="n">bode</span><span class="p">(</span><span class="n">P_only</span><span class="p">,</span><span class="w"> </span><span class="n">PI</span><span class="p">,</span><span class="w"> </span><span class="n">PID</span><span class="p">);</span>
+<span class="nb">legend</span><span class="p">(</span><span class="s">&#39;P only&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PI&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PID&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;Location&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;best&#39;</span><span class="p">);</span>
+<span class="n">grid</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+<span class="nb">title</span><span class="p">(</span><span class="s">&#39;Bode Plot Comparison: P vs PI vs PID&#39;</span><span class="p">);</span>
+
+<span class="c">% Show transfer functions</span>
+<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;P Controller: G_c(s) = %g\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">);</span>
+<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;PI Controller: G_c(s) = %g + %g/s\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">);</span><span class="w">  </span>
+<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;PID Controller: G_c(s) = %g + %g/s + %g*s\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">Kp</span><span class="p">,</span><span class="w"> </span><span class="n">Ki</span><span class="p">,</span><span class="w"> </span><span class="n">Kd</span><span class="p">);</span>
+
+<span class="c">% Analyze effect on a system</span>
+<span class="n">G_plant</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tf</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]);</span><span class="w">  </span><span class="c">% Example plant</span>
+
+<span class="c">% Closed-loop responses</span>
+<span class="n">T_P</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">P_only</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G_plant</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="n">T_PI</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">PI</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G_plant</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">  </span>
+<span class="n">T_PID</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">feedback</span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">G_plant</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="c">% Time domain comparison</span>
+<span class="nb">figure</span><span class="p">;</span>
+<span class="nb">step</span><span class="p">(</span><span class="n">T_P</span><span class="p">,</span><span class="w"> </span><span class="n">T_PI</span><span class="p">,</span><span class="w"> </span><span class="n">T_PID</span><span class="p">);</span>
+<span class="nb">legend</span><span class="p">(</span><span class="s">&#39;P only&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PI&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;PID&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;Location&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;best&#39;</span><span class="p">);</span>
+<span class="n">grid</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+<span class="nb">title</span><span class="p">(</span><span class="s">&#39;Step Response: Effect of I and D Terms&#39;</span><span class="p">);</span>
+</code></pre></div></p>
+<p><strong>Analysis Tasks</strong>:</p>
+<ol>
+<li><strong>Derive the PID transfer function</strong>: <span class="arithmatex">\(G_c(s) = K_p + \frac{K_i}{s} + K_d s\)</span></li>
+<li><strong>Plot Bode plots</strong> for P, PI, and PID controllers (code above)</li>
+<li><strong>Observe how each component affects</strong>:</li>
+<li><strong>P term</strong>: Flat magnitude, zero phase</li>
+<li><strong>I term</strong>: -20dB/decade slope, -90° phase</li>
+<li><strong>D term</strong>: +20dB/decade slope, +90° phase</li>
+<li><strong>Connect frequency response to time-domain performance</strong>:</li>
+<li>High frequency gain → fast response but noise sensitivity</li>
+<li>Low frequency gain → steady-state accuracy</li>
+</ol>
 <hr />
 <h2 id="pid-in-gnc-context">🎨 PID in GNC Context</h2>
 <h3 id="our-gimbal-control-experience">Our Gimbal Control Experience</h3>
@@ -1859,11 +1982,13 @@
 <li><strong>Robustness</strong>: Better handling of system uncertainties and disturbances</li>
 </ol>
 <h3 id="pid-legacy-knowledge">PID Legacy Knowledge</h3>
-<p>Understanding PID helps you appreciate:
-- Why feedback control is necessary
-- How control systems can become unstable
-- The importance of sensor noise and actuator limitations
-- Trade-offs between performance and robustness</p>
+<p>Understanding PID helps you appreciate:</p>
+<ul>
+<li>Why feedback control is necessary</li>
+<li>How control systems can become unstable</li>
+<li>The importance of sensor noise and actuator limitations</li>
+<li>Trade-offs between performance and robustness</li>
+</ul>
 <hr />
 <h2 id="common-pid-challenges-in-rocket-control">🚀 Common PID Challenges in Rocket Control</h2>
 <h3 id="challenge-1-actuator-saturation">Challenge 1: Actuator Saturation</h3>
@@ -1887,24 +2012,24 @@
 <p>Before moving to state-space and LQR concepts, verify you understand:</p>
 <h3 id="conceptual-questions">Conceptual Questions</h3>
 <ul>
-<li>[ ] Can you explain PID to someone who's never heard of control systems?</li>
-<li>[ ] Do you understand why each component is necessary?</li>
-<li>[ ] Can you predict what will happen when you increase/decrease each gain?</li>
-<li>[ ] Do you understand the limitations of PID control?</li>
+<li>Can you explain PID to someone who's never heard of control systems?</li>
+<li>Do you understand why each component is necessary?</li>
+<li>Can you predict what will happen when you increase/decrease each gain?</li>
+<li>Do you understand the limitations of PID control?</li>
 </ul>
 <h3 id="mathematical-questions">Mathematical Questions</h3>
 <ul>
-<li>[ ] Can you write the PID transfer function?</li>
-<li>[ ] Can you sketch the step response for different tuning scenarios?</li>
-<li>[ ] Do you understand how PID affects closed-loop poles?</li>
-<li>[ ] Can you analyze PID stability using Bode plots?</li>
+<li>Can you write the PID transfer function?</li>
+<li>Can you sketch the step response for different tuning scenarios?</li>
+<li>Do you understand how PID affects closed-loop poles?</li>
+<li>Can you analyze PID stability using Bode plots?</li>
 </ul>
 <h3 id="practical-questions">Practical Questions</h3>
 <ul>
-<li>[ ] Can you tune a PID controller systematically?</li>
-<li>[ ] Do you understand common implementation issues?</li>
-<li>[ ] Can you identify when PID is appropriate vs. inadequate?</li>
-<li>[ ] Do you understand how to implement PID in discrete-time?</li>
+<li>Can you tune a PID controller systematically?</li>
+<li>Do you understand common implementation issues?</li>
+<li>Can you identify when PID is appropriate vs. inadequate?</li>
+<li>Do you understand how to implement PID in discrete-time?</li>
 </ul>
 <hr />
 <h2 id="connection-to-advanced-control">🔗 Connection to Advanced Control</h2>
