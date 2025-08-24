@@ -2912,29 +2912,39 @@ $$P = (I - KH)P^- \quad \text{(Updated uncertainty)}\]</div>
 <h3 id="required-learning-resource_1">Required Learning Resource</h3>
 <p><strong><a href="https://www.youtube.com/playlist?list=PLxdnSsBqCrrHo2EYb_sMctU959D-iPybT">Christopher Lum - Optimization Playlist</a></strong></p>
 <h4 id="essential-videos-9-12">Essential Videos: 9-12</h4>
-<p><strong>Video 9</strong>: Introduction to Trim Analysis
-- <strong>Focus</strong>: What are trim points and why do we need them?
-- <strong>Key concept</strong>: Equilibrium conditions for rocket flight
-- <strong>Application</strong>: Finding hover conditions, steady climb, etc.</p>
-<p><strong>Video 10</strong>: Setting Up Trim Problems<br />
-- <strong>Focus</strong>: Mathematical formulation of trim constraints
-- <strong>Key concept</strong>: Equality and inequality constraints
-- <strong>Application</strong>: Specifying desired flight conditions</p>
-<p><strong>Video 11</strong>: Solving Trim Problems
-- <strong>Focus</strong>: Numerical methods for constraint optimization
-- <strong>Key concept</strong>: Finding control inputs and states that satisfy trim conditions
-- <strong>Application</strong>: Computing equilibrium points for linearization</p>
-<p><strong>Video 12</strong>: Linearization at Trim Points
-- <strong>Focus</strong>: Computing Jacobian matrices for linear approximation
-- <strong>Key concept</strong>: A and B matrices from partial derivatives
-- <strong>Application</strong>: Creating linear models for Kalman filter design</p>
+<p><strong>Video 9</strong>: Introduction to Trim Analysis</p>
+<ul>
+<li><strong>Focus</strong>: What are trim points and why do we need them?</li>
+<li><strong>Key concept</strong>: Equilibrium conditions for rocket flight</li>
+<li><strong>Application</strong>: Finding hover conditions, steady climb, etc.</li>
+</ul>
+<p><strong>Video 10</strong>: Setting Up Trim Problems  </p>
+<ul>
+<li><strong>Focus</strong>: Mathematical formulation of trim constraints</li>
+<li><strong>Key concept</strong>: Equality and inequality constraints</li>
+<li><strong>Application</strong>: Specifying desired flight conditions</li>
+</ul>
+<p><strong>Video 11</strong>: Solving Trim Problems</p>
+<ul>
+<li><strong>Focus</strong>: Numerical methods for constraint optimization</li>
+<li><strong>Key concept</strong>: Finding control inputs and states that satisfy trim conditions</li>
+<li><strong>Application</strong>: Computing equilibrium points for linearization</li>
+</ul>
+<p><strong>Video 12</strong>: Linearization at Trim Points</p>
+<ul>
+<li><strong>Focus</strong>: Computing Jacobian matrices for linear approximation</li>
+<li><strong>Key concept</strong>: A and B matrices from partial derivatives</li>
+<li><strong>Application</strong>: Creating linear models for Kalman filter design</li>
+</ul>
 <h3 id="trim-point-process-for-rockets">Trim Point Process for Rockets</h3>
 <h4 id="step-1-define-trim-conditions">Step 1: Define Trim Conditions</h4>
-<p><strong>Hover Trim Example</strong>:
-- Vertical position hold: ẋ = 0, ẏ = 0, ż = 0
-- Level attitude: θ = 0, φ = 0
-- No rotation: p = 0, q = 0, r = 0
-- Thrust balances weight: T = mg</p>
+<p><strong>Hover Trim Example</strong>:</p>
+<ul>
+<li>Vertical position hold: ẋ = 0, ẏ = 0, ż = 0</li>
+<li>Level attitude: θ = 0, φ = 0</li>
+<li>No rotation: p = 0, q = 0, r = 0</li>
+<li>Thrust balances weight: T = mg</li>
+</ul>
 <h4 id="step-2-solve-for-trim-state-and-controls">Step 2: Solve for Trim State and Controls</h4>
 <p><strong>Optimization Problem</strong>:</p>
 <div class="arithmatex">\[\\text{Find: } x_{\\text{trim}}, u_{\\text{trim}}$$
