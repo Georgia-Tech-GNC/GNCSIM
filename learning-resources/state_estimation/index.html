@@ -2995,15 +2995,14 @@ u, v, w \\
 b_{gx}, b_{gy}, b_{gz} \\
 b_{ax}, b_{ay}, b_{az}
 \end{bmatrix}
-\begin{matrix}
-\text{// Euler angles (pitch, roll, yaw)} \\
-\text{// Angular rates (body frame)} \\
-\text{// Position (navigation frame)} \\
-\text{// Velocity (body frame)} \\
-\text{// Gyroscope biases} \\
-\text{// Accelerometer biases}
-\end{matrix}
 \]</div>
+<p>Where:
+- \(\theta, \phi, \psi\): Euler angles (pitch, roll, yaw)
+- \(p, q, r\): Angular rates (body frame)<br />
+- \(x, y, z\): Position (navigation frame)
+- \(u, v, w\): Velocity (body frame)
+- \(b_{gx}, b_{gy}, b_{gz}\): Gyroscope biases
+- \(b_{ax}, b_{ay}, b_{az}\): Accelerometer biases</p>
 <h3 id="sensor-models">Sensor Models</h3>
 <h4 id="imu-measurements">IMU Measurements</h4>
 <p><strong>Accelerometers</strong>:</p>
