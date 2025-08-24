@@ -2710,21 +2710,25 @@
 <h2 id="overview">Overview</h2>
 <p>State estimation is the critical process of determining "where your rocket is and what it's doing" using imperfect sensor data. While LQR control assumes you know all system states perfectly, reality is messier - sensors are noisy, biased, and sometimes measure things indirectly. State estimation bridges this gap by mathematically combining sensor data with system models to produce the best possible estimate of the rocket's current state.</p>
 <h2 id="why-state-estimation-is-critical">Why State Estimation is Critical</h2>
-<p><strong>The Control Problem</strong>: LQR needs to know position, velocity, orientation, and angular rates to compute optimal control commands. But sensors give us:
-- <strong>Noisy measurements</strong>: All sensors have random noise
-- <strong>Biased readings</strong>: Sensors have systematic errors and drift over time<br />
-- <strong>Indirect measurements</strong>: Some states (like heading) can't be directly measured in flight
-- <strong>Multiple sensors</strong>: Different sensors measure overlapping information with different accuracies</p>
+<p><strong>The Control Problem</strong>: LQR needs to know position, velocity, orientation, and angular rates to compute optimal control commands. But sensors give us:</p>
+<ul>
+<li><strong>Noisy measurements</strong>: All sensors have random noise</li>
+<li><strong>Biased readings</strong>: Sensors have systematic errors and drift over time  </li>
+<li><strong>Indirect measurements</strong>: Some states (like heading) can't be directly measured in flight</li>
+<li><strong>Multiple sensors</strong>: Different sensors measure overlapping information with different accuracies</li>
+</ul>
 <p><strong>The Solution</strong>: Use mathematical algorithms to optimally combine all available information - sensor data, system dynamics, and prior knowledge - to estimate the true system state.</p>
 <p><strong>Industry Reality</strong>: Every advanced control system (aircraft, spacecraft, autonomous vehicles) relies heavily on state estimation. It's often more challenging than the control design itself.</p>
 <hr />
 <h2 id="core-state-estimation-concepts">🎯 Core State Estimation Concepts</h2>
 <h3 id="the-estimation-problem">The Estimation Problem</h3>
-<p><strong>Goal</strong>: Estimate the true state <strong>x(t)</strong> given:
-- <strong>System model</strong>: ẋ = f(x, u) (how the system evolves)
-- <strong>Measurement model</strong>: y = h(x) + v (what sensors tell us)
-- <strong>Process noise</strong>: w (model uncertainties)
-- <strong>Measurement noise</strong>: v (sensor noise)</p>
+<p><strong>Goal</strong>: Estimate the true state \(x(t)\) given:</p>
+<ul>
+<li><strong>System model</strong>: \(\dot{x} = f(x, u)\) (how the system evolves)</li>
+<li><strong>Measurement model</strong>: \(y = h(x) + v\) (what sensors tell us)</li>
+<li><strong>Process noise</strong>: \(w\) (model uncertainties)</li>
+<li><strong>Measurement noise</strong>: \(v\) (sensor noise)</li>
+</ul>
 <h3 id="key-challenges-for-rockets">Key Challenges for Rockets</h3>
 <h4 id="challenge-1-sensor-characteristics">Challenge 1: Sensor Characteristics</h4>
 <ul>
@@ -2752,47 +2756,57 @@
 </ul>
 <h3 id="the-kalman-filter-solution">The Kalman Filter Solution</h3>
 <p>The Kalman filter is the optimal solution for linear systems with Gaussian noise:</p>
-<p><strong>Prediction Step</strong> (based on system model):
-<div class="highlight"><pre><span></span><code>x̂⁻ = Ax̂ + Bu        (Predicted state)
-P⁻ = APA&#39; + Q        (Predicted uncertainty)
-</code></pre></div></p>
-<p><strong>Update Step</strong> (incorporating measurements):
-<div class="highlight"><pre><span></span><code>K = P⁻H&#39;(HP⁻H&#39; + R)⁻¹    (Kalman gain)
-x̂ = x̂⁻ + K(y - Hx̂⁻)     (Updated state)  
-P = (I - KH)P⁻           (Updated uncertainty)
-</code></pre></div></p>
-<p>Where:
-- <strong>x̂</strong>: State estimate
-- <strong>P</strong>: Error covariance (uncertainty)
-- <strong>Q</strong>: Process noise covariance
-- <strong>R</strong>: Measurement noise covariance
-- <strong>K</strong>: Kalman gain (optimal weighting)</p>
+<p><strong>Prediction Step</strong> (based on system model):</p>
+<div class="arithmatex">\[\hat{x}^- = A\hat{x} + Bu \quad \text{(Predicted state)}$$
+$$P^- = APA^T + Q \quad \text{(Predicted uncertainty)}\]</div>
+<p><strong>Update Step</strong> (incorporating measurements):</p>
+<div class="arithmatex">\[K = P^-H^T(HP^-H^T + R)^{-1} \quad \text{(Kalman gain)}$$
+$$\hat{x} = \hat{x}^- + K(y - H\hat{x}^-) \quad \text{(Updated state)}$$
+$$P = (I - KH)P^- \quad \text{(Updated uncertainty)}\]</div>
+<p>Where:</p>
+<ul>
+<li><strong>\(\hat{x}\)</strong>: State estimate</li>
+<li><strong><span class="arithmatex">\(P\)</span></strong>: Error covariance (uncertainty)</li>
+<li><strong><span class="arithmatex">\(Q\)</span></strong>: Process noise covariance</li>
+<li><strong><span class="arithmatex">\(R\)</span></strong>: Measurement noise covariance</li>
+<li><strong><span class="arithmatex">\(K\)</span></strong>: Kalman gain (optimal weighting)</li>
+</ul>
 <hr />
 <h2 id="primary-learning-resource">📚 Primary Learning Resource</h2>
 <h3 id="complete-kalman-filter-tutorial">Complete Kalman Filter Tutorial</h3>
 <p><strong><a href="https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python">Kalman and Bayesian Filters in Python</a></strong></p>
 <p>This is the definitive resource for learning Kalman filtering. <strong>Work through the entire tutorial</strong> - it's comprehensive, practical, and builds intuition while teaching theory.</p>
 <h4 id="recommended-chapter-sequence">Recommended Chapter Sequence</h4>
-<p><strong>Chapters 1-3: Foundation</strong>
-- <strong>Chapter 1</strong>: The g-h Filter (intuitive introduction)
-- <strong>Chapter 2</strong>: Discrete Bayes Filter (probability fundamentals)
-- <strong>Chapter 3</strong>: Least Squares Filter (mathematical foundation)</p>
-<p><strong>Chapters 4-6: Core Kalman Theory</strong>
-- <strong>Chapter 4</strong>: One-Dimensional Kalman Filter
-- <strong>Chapter 5</strong>: Multivariate Kalman Filter<br />
-- <strong>Chapter 6</strong>: Multivariate Kalman Filter Implementation</p>
-<p><strong>Chapters 7-9: Practical Applications</strong>
-- <strong>Chapter 7</strong>: Kalman Filter Math
-- <strong>Chapter 8</strong>: Designing Kalman Filters
-- <strong>Chapter 9</strong>: Nonlinear Filtering</p>
-<p><strong>Chapters 10-12: Advanced Topics</strong>
-- <strong>Chapter 10</strong>: Unscented Kalman Filter
-- <strong>Chapter 11</strong>: Extended Kalman Filter<br />
-- <strong>Chapter 12</strong>: Particle Filters</p>
-<p><strong>Chapters 13-15: Applications</strong>
-- <strong>Chapter 13</strong>: Smoothing
-- <strong>Chapter 14</strong>: Adaptive Filtering
-- <strong>Chapter 15</strong>: H-infinity Filters</p>
+<p><strong>Chapters 1-3: Foundation</strong></p>
+<ul>
+<li><strong>Chapter 1</strong>: The g-h Filter (intuitive introduction)</li>
+<li><strong>Chapter 2</strong>: Discrete Bayes Filter (probability fundamentals)</li>
+<li><strong>Chapter 3</strong>: Least Squares Filter (mathematical foundation)</li>
+</ul>
+<p><strong>Chapters 4-6: Core Kalman Theory</strong></p>
+<ul>
+<li><strong>Chapter 4</strong>: One-Dimensional Kalman Filter</li>
+<li><strong>Chapter 5</strong>: Multivariate Kalman Filter  </li>
+<li><strong>Chapter 6</strong>: Multivariate Kalman Filter Implementation</li>
+</ul>
+<p><strong>Chapters 7-9: Practical Applications</strong></p>
+<ul>
+<li><strong>Chapter 7</strong>: Kalman Filter Math</li>
+<li><strong>Chapter 8</strong>: Designing Kalman Filters</li>
+<li><strong>Chapter 9</strong>: Nonlinear Filtering</li>
+</ul>
+<p><strong>Chapters 10-12: Advanced Topics</strong></p>
+<ul>
+<li><strong>Chapter 10</strong>: Unscented Kalman Filter</li>
+<li><strong>Chapter 11</strong>: Extended Kalman Filter  </li>
+<li><strong>Chapter 12</strong>: Particle Filters</li>
+</ul>
+<p><strong>Chapters 13-15: Applications</strong></p>
+<ul>
+<li><strong>Chapter 13</strong>: Smoothing</li>
+<li><strong>Chapter 14</strong>: Adaptive Filtering</li>
+<li><strong>Chapter 15</strong>: H-infinity Filters</li>
+</ul>
 <h3 id="study-strategy">Study Strategy</h3>
 <ul>
 <li><strong>Don't just read</strong> - run every code example</li>
@@ -2816,48 +2830,61 @@ P = (I - KH)P⁻           (Updated uncertainty)
 <strong>Example</strong>: Accelerometer scale factor varies with temperature
 <strong>Solution</strong>: Temperature compensation models</p>
 <h3 id="our-jet-vanes-implementation">Our Jet Vanes Implementation</h3>
-<p><strong>Extended Kalman Filter for Bias Estimation</strong>:
-- <strong>Augmented State</strong>: Include sensor biases as states to be estimated
-- <strong>Model</strong>: Biases evolve as random walks or first-order processes
-- <strong>Update</strong>: Use redundant information to estimate biases in real-time</p>
-<p><strong>Example Augmented State Vector</strong>:
-<div class="highlight"><pre><span></span><code>x = [θ, φ, ψ, p, q, r, x, y, z, u, v, w, b_gx, b_gy, b_gz, b_ax, b_ay, b_az]&#39;
-</code></pre></div>
-Where <strong>b_gi</strong> and <strong>b_ai</strong> are gyroscope and accelerometer biases.</p>
+<p><strong>Extended Kalman Filter for Bias Estimation</strong>:</p>
+<ul>
+<li><strong>Augmented State</strong>: Include sensor biases as states to be estimated</li>
+<li><strong>Model</strong>: Biases evolve as random walks or first-order processes</li>
+<li><strong>Update</strong>: Use redundant information to estimate biases in real-time</li>
+</ul>
+<p><strong>Example Augmented State Vector</strong>:</p>
+<div class="arithmatex">\[x = [\\theta, \\phi, \\psi, p, q, r, x, y, z, u, v, w, b_{gx}, b_{gy}, b_{gz}, b_{ax}, b_{ay}, b_{az}]^T\]</div>
+<p>Where \(b_{gi}\) and \(b_{ai}\) are gyroscope and accelerometer biases.</p>
 <h3 id="calibration-resources">Calibration Resources</h3>
-<p><strong>Research Topics</strong> (no specific resources provided in original document):
-- IMU calibration procedures
-- Allan variance analysis for sensor characterization
-- Six-position calibration for accelerometers
-- Rate table calibration for gyroscopes
-- Temperature compensation techniques</p>
+<p><strong>Research Topics</strong> (no specific resources provided in original document):</p>
+<ul>
+<li>IMU calibration procedures</li>
+<li>Allan variance analysis for sensor characterization</li>
+<li>Six-position calibration for accelerometers</li>
+<li>Rate table calibration for gyroscopes</li>
+<li>Temperature compensation techniques</li>
+</ul>
 <hr />
 <h2 id="flight-mechanics-for-state-estimation">✈️ Flight Mechanics for State Estimation</h2>
 <h3 id="why-flight-mechanics-matters">Why Flight Mechanics Matters</h3>
-<p>To estimate rocket states, you need to understand:
-- <strong>How rockets move</strong>: Equations of motion in 6 degrees of freedom
-- <strong>Coordinate systems</strong>: Body, navigation, and inertial reference frames
-- <strong>Attitude representation</strong>: Euler angles, quaternions, rotation matrices
-- <strong>Sensor placement</strong>: How sensor measurements relate to vehicle states</p>
+<p>To estimate rocket states, you need to understand:</p>
+<ul>
+<li><strong>How rockets move</strong>: Equations of motion in 6 degrees of freedom</li>
+<li><strong>Coordinate systems</strong>: Body, navigation, and inertial reference frames</li>
+<li><strong>Attitude representation</strong>: Euler angles, quaternions, rotation matrices</li>
+<li><strong>Sensor placement</strong>: How sensor measurements relate to vehicle states</li>
+</ul>
 <h3 id="required-learning-resource">Required Learning Resource</h3>
 <p><strong><a href="https://www.youtube.com/playlist?list=PLxdnSsBqCrrEx3A6W94sQGClk6Q4YCg-h">Christopher Lum - Flight Mechanics Playlist</a></strong></p>
 <h4 id="critical-videos-for-state-estimation">Critical Videos for State Estimation</h4>
-<p><strong>Mathematical Fundamentals</strong>:
-- <strong>Videos 1-10</strong>: Coordinate systems, reference frames, transformations
-- <strong>Focus</strong>: Understanding how to relate sensor measurements to vehicle states
-- <strong>Application</strong>: Converting IMU readings from body frame to navigation frame</p>
-<p><strong>Euler Angles</strong> (Essential):
-- <strong>Specific videos on Euler angle sequences</strong>
-- <strong>Focus</strong>: How attitude is parameterized and measured
-- <strong>Application</strong>: Converting between different attitude representations</p>
-<p><strong>Flat Earth Equations of Motion</strong>:
-- <strong>Videos covering 6-DOF equations</strong>
-- <strong>Focus</strong>: How vehicle states evolve with control inputs and disturbances
-- <strong>Application</strong>: Prediction step of Kalman filter</p>
-<p><strong>Videos 18-21</strong> (Specifically mentioned as important):
-- <strong>Advanced kinematics and dynamics concepts</strong>
-- <strong>Focus</strong>: Practical aspects of flight mechanics for control
-- <strong>Application</strong>: Building accurate system models for estimation</p>
+<p><strong>Mathematical Fundamentals</strong>:</p>
+<ul>
+<li><strong>Videos 1-10</strong>: Coordinate systems, reference frames, transformations</li>
+<li><strong>Focus</strong>: Understanding how to relate sensor measurements to vehicle states</li>
+<li><strong>Application</strong>: Converting IMU readings from body frame to navigation frame</li>
+</ul>
+<p><strong>Euler Angles</strong> (Essential):</p>
+<ul>
+<li><strong>Specific videos on Euler angle sequences</strong></li>
+<li><strong>Focus</strong>: How attitude is parameterized and measured</li>
+<li><strong>Application</strong>: Converting between different attitude representations</li>
+</ul>
+<p><strong>Flat Earth Equations of Motion</strong>:</p>
+<ul>
+<li><strong>Videos covering 6-DOF equations</strong></li>
+<li><strong>Focus</strong>: How vehicle states evolve with control inputs and disturbances</li>
+<li><strong>Application</strong>: Prediction step of Kalman filter</li>
+</ul>
+<p><strong>Videos 18-21</strong> (Specifically mentioned as important):</p>
+<ul>
+<li><strong>Advanced kinematics and dynamics concepts</strong></li>
+<li><strong>Focus</strong>: Practical aspects of flight mechanics for control</li>
+<li><strong>Application</strong>: Building accurate system models for estimation</li>
+</ul>
 <h3 id="key-concepts-to-master">Key Concepts to Master</h3>
 <h4 id="reference-frames">Reference Frames</h4>
 <ul>
@@ -2909,17 +2936,15 @@ Where <strong>b_gi</strong> and <strong>b_ai</strong> are gyroscope and accelero
 - No rotation: p = 0, q = 0, r = 0
 - Thrust balances weight: T = mg</p>
 <h4 id="step-2-solve-for-trim-state-and-controls">Step 2: Solve for Trim State and Controls</h4>
-<p><strong>Optimization Problem</strong>:
-<div class="highlight"><pre><span></span><code>Find: x_trim, u_trim
-Such that: f(x_trim, u_trim) = 0  (dynamics satisfied)
-           g(x_trim, u_trim) = 0  (trim constraints satisfied)
-</code></pre></div></p>
+<p><strong>Optimization Problem</strong>:</p>
+<div class="arithmatex">\[\\text{Find: } x_{\\text{trim}}, u_{\\text{trim}}$$
+$$\\text{Such that: } f(x_{\\text{trim}}, u_{\\text{trim}}) = 0 \\quad \\text{(dynamics satisfied)}$$
+$$g(x_{\\text{trim}}, u_{\\text{trim}}) = 0 \\quad \\text{(trim constraints satisfied)}\]</div>
 <h4 id="step-3-linearize-around-trim-point">Step 3: Linearize Around Trim Point</h4>
-<p><strong>Compute Jacobians</strong>:
-<div class="highlight"><pre><span></span><code>A = ∂f/∂x |_(x_trim, u_trim)
-B = ∂f/∂u |_(x_trim, u_trim)
-</code></pre></div></p>
-<p><strong>Result</strong>: Linear system ẋ = Ax + Bu valid near trim point</p>
+<p><strong>Compute Jacobians</strong>:</p>
+<div class="arithmatex">\[A = \\frac{\\partial f}{\\partial x} \\bigg|_{(x_{\\text{trim}}, u_{\\text{trim}})}$$
+$$B = \\frac{\\partial f}{\\partial u} \\bigg|_{(x_{\\text{trim}}, u_{\\text{trim}})}\]</div>
+<p><strong>Result</strong>: Linear system \(\dot{x} = Ax + Bu\) valid near trim point</p>
 <h4 id="step-4-design-kalman-filter">Step 4: Design Kalman Filter</h4>
 <ul>
 <li>Use linear A and B matrices</li>
@@ -2929,69 +2954,73 @@ B = ∂f/∂u |_(x_trim, u_trim)
 <hr />
 <h2 id="rocket-specific-state-estimation">🚀 Rocket-Specific State Estimation</h2>
 <h3 id="typical-state-vector">Typical State Vector</h3>
-<div class="highlight"><pre><span></span><code>x = [
-    θ, φ, ψ,           // Euler angles (pitch, roll, yaw)
-    p, q, r,           // Angular rates (body frame)
-    x, y, z,           // Position (navigation frame)  
-    u, v, w,           // Velocity (body frame)
-    b_gx, b_gy, b_gz,  // Gyroscope biases
-    b_ax, b_ay, b_az,  // Accelerometer biases
-]
-</code></pre></div>
+<div class="arithmatex">\[x = \\begin{bmatrix}
+\\theta, \\phi, \\psi \\\\ 
+p, q, r \\\\
+x, y, z \\\\  
+u, v, w \\\\
+b_{gx}, b_{gy}, b_{gz} \\\\
+b_{ax}, b_{ay}, b_{az}
+\\end{bmatrix}
+\\begin{matrix}
+\\text{// Euler angles (pitch, roll, yaw)} \\\\
+\\text{// Angular rates (body frame)} \\\\
+\\text{// Position (navigation frame)} \\\\
+\\text{// Velocity (body frame)} \\\\
+\\text{// Gyroscope biases} \\\\
+\\text{// Accelerometer biases}
+\\end{matrix}\]</div>
 <h3 id="sensor-models">Sensor Models</h3>
 <h4 id="imu-measurements">IMU Measurements</h4>
-<p><strong>Accelerometers</strong>:
-<div class="highlight"><pre><span></span><code>a_meas = R_bn * (a_nav + g_nav) + b_a + v_a
-</code></pre></div>
-Where:
-- <strong>a_meas</strong>: Measured acceleration
-- <strong>R_bn</strong>: Body-to-navigation rotation matrix
-- <strong>g_nav</strong>: Gravity vector
-- <strong>b_a</strong>: Accelerometer bias
-- <strong>v_a</strong>: Measurement noise</p>
-<p><strong>Gyroscopes</strong>:
-<div class="highlight"><pre><span></span><code>ω_meas = ω_body + b_g + v_g
-</code></pre></div></p>
+<p><strong>Accelerometers</strong>:</p>
+<div class="arithmatex">\[a_{\text{meas}} = R_{bn} \cdot (a_{\text{nav}} + g_{\text{nav}}) + b_a + v_a\]</div>
+<p>Where:</p>
+<ul>
+<li><strong><span class="arithmatex">\(a_{\text{meas}}\)</span></strong>: Measured acceleration</li>
+<li><strong><span class="arithmatex">\(R_{bn}\)</span></strong>: Body-to-navigation rotation matrix</li>
+<li><strong><span class="arithmatex">\(g_{\text{nav}}\)</span></strong>: Gravity vector</li>
+<li><strong><span class="arithmatex">\(b_a\)</span></strong>: Accelerometer bias</li>
+<li><strong><span class="arithmatex">\(v_a\)</span></strong>: Measurement noise</li>
+</ul>
+<p><strong>Gyroscopes</strong>:</p>
+<div class="arithmatex">\[\omega_{\text{meas}} = \omega_{\text{body}} + b_g + v_g\]</div>
 <h4 id="gps-measurements">GPS Measurements</h4>
-<div class="highlight"><pre><span></span><code>pos_meas = [x, y, z]&#39; + v_gps
-vel_meas = [u, v, w]&#39; + v_gps_vel
-</code></pre></div>
+<div class="arithmatex">\[\text{pos}_{\text{meas}} = \begin{bmatrix} x \\ y \\ z \end{bmatrix} + v_{\text{gps}}$$
+$$\text{vel}_{\text{meas}} = \begin{bmatrix} u \\ v \\ w \end{bmatrix} + v_{\text{gps\_vel}}\]</div>
 <h3 id="extended-kalman-filter-implementation">Extended Kalman Filter Implementation</h3>
-<p><strong>Prediction Step</strong> (nonlinear):
-<div class="highlight"><pre><span></span><code>x̂⁻ = f(x̂, u, dt)     // Integrate nonlinear dynamics
-P⁻ = FPF&#39; + Q         // F = Jacobian of f
-</code></pre></div></p>
-<p><strong>Update Step</strong> (linear in measurements):
-<div class="highlight"><pre><span></span><code>K = P⁻H&#39;(HP⁻H&#39; + R)⁻¹
-x̂ = x̂⁻ + K(y - h(x̂⁻))
-P = (I - KH)P⁻
-</code></pre></div></p>
-<p>Where <strong>h(x)</strong> is the nonlinear measurement model.</p>
+<p><strong>Prediction Step</strong> (nonlinear):</p>
+<div class="arithmatex">\[\\hat{x}^- = f(\\hat{x}, u, dt) \\quad \\text{// Integrate nonlinear dynamics}$$
+$$P^- = FPF^T + Q \\quad \\text{// F = Jacobian of f}\]</div>
+<p><strong>Update Step</strong> (linear in measurements):</p>
+<div class="arithmatex">\[K = P^-H^T(HP^-H^T + R)^{-1}$$
+$$\\hat{x} = \\hat{x}^- + K(y - h(\\hat{x}^-))$$
+$$P = (I - KH)P^-\]</div>
+<p>Where \(h(x)\) is the nonlinear measurement model.</p>
 <hr />
 <h2 id="learning-objectives">🎯 Learning Objectives</h2>
 <h3 id="theoretical-mastery">Theoretical Mastery</h3>
 <ul>
-<li>[ ] Understand Bayesian approach to state estimation</li>
-<li>[ ] Explain Kalman filter prediction and update steps</li>
-<li>[ ] Describe Extended Kalman Filter for nonlinear systems</li>
-<li>[ ] Understand sensor fusion and optimal weighting</li>
-<li>[ ] Explain bias estimation and calibration concepts</li>
+<li>Understand Bayesian approach to state estimation</li>
+<li>Explain Kalman filter prediction and update steps</li>
+<li>Describe Extended Kalman Filter for nonlinear systems</li>
+<li>Understand sensor fusion and optimal weighting</li>
+<li>Explain bias estimation and calibration concepts</li>
 </ul>
 <h3 id="mathematical-competency">Mathematical Competency</h3>
 <ul>
-<li>[ ] Derive Kalman filter equations for simple systems</li>
-<li>[ ] Set up measurement models for common sensors</li>
-<li>[ ] Compute Jacobians for linearization</li>
-<li>[ ] Design Q and R matrices based on physical understanding</li>
-<li>[ ] Analyze filter performance and tuning</li>
+<li>Derive Kalman filter equations for simple systems</li>
+<li>Set up measurement models for common sensors</li>
+<li>Compute Jacobians for linearization</li>
+<li>Design Q and R matrices based on physical understanding</li>
+<li>Analyze filter performance and tuning</li>
 </ul>
 <h3 id="practical-implementation">Practical Implementation</h3>
 <ul>
-<li>[ ] Implement Kalman filter for rocket state estimation</li>
-<li>[ ] Handle sensor calibration and bias estimation</li>
-<li>[ ] Apply flight mechanics to sensor modeling</li>
-<li>[ ] Use trim point analysis for linearization</li>
-<li>[ ] Debug and tune filter performance</li>
+<li>Implement Kalman filter for rocket state estimation</li>
+<li>Handle sensor calibration and bias estimation</li>
+<li>Apply flight mechanics to sensor modeling</li>
+<li>Use trim point analysis for linearization</li>
+<li>Debug and tune filter performance</li>
 </ul>
 <hr />
 <h2 id="hands-on-activities">🛠️ Hands-On Activities</h2>
@@ -3008,18 +3037,19 @@ P = (I - KH)P⁻
 <h3 id="activity-3-rocket-state-estimation">Activity 3: Rocket State Estimation</h3>
 <p><strong>System</strong>: Full 6-DOF rocket with IMU and GPS
 <strong>Objective</strong>: Implement Extended Kalman Filter
-<strong>Components</strong>: 
-- Nonlinear dynamics model
-- IMU and GPS measurement models
-- Bias estimation for sensors
-- Real-time implementation considerations</p>
+<strong>Components</strong>:</p>
+<ul>
+<li>Nonlinear dynamics model</li>
+<li>IMU and GPS measurement models</li>
+<li>Bias estimation for sensors</li>
+<li>Real-time implementation considerations</li>
+</ul>
 <hr />
 <h2 id="integration-with-control-systems">🔗 Integration with Control Systems</h2>
 <h3 id="lqg-linear-quadratic-gaussian-control">LQG (Linear Quadratic Gaussian) Control</h3>
 <p><strong>Concept</strong>: Combine LQR control with Kalman filter state estimation
-<strong>Structure</strong>: 
-<div class="highlight"><pre><span></span><code>Sensors → Kalman Filter → State Estimate → LQR Controller → Actuators
-</code></pre></div>
+<strong>Structure</strong>:</p>
+<p><span class="arithmatex">\(<span class="arithmatex">\(\text{Sensors} \rightarrow \text{Kalman Filter} \rightarrow \text{State Estimate} \rightarrow \text{LQR Controller} \rightarrow \text{Actuators}\)</span>\)</span>
 <strong>Separation Principle</strong>: Can design estimator and controller independently</p>
 <h3 id="practical-considerations">Practical Considerations</h3>
 <ul>
@@ -3032,47 +3062,63 @@ P = (I - KH)P⁻
 <h2 id="common-challenges-and-solutions">🚨 Common Challenges and Solutions</h2>
 <h3 id="challenge-1-filter-divergence">Challenge 1: Filter Divergence</h3>
 <p><strong>Problem</strong>: Estimated state drifts away from true state
-<strong>Causes</strong>: 
-- Poor model accuracy
-- Incorrect Q/R tuning
-- Numerical issues</p>
-<p><strong>Solutions</strong>:
-- Improve system model fidelity
-- Increase process noise (Q) if model is uncertain
-- Use square root filtering for numerical stability
-- Implement innovation monitoring</p>
+<strong>Causes</strong>:</p>
+<ul>
+<li>Poor model accuracy</li>
+<li>Incorrect Q/R tuning</li>
+<li>Numerical issues</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Improve system model fidelity</li>
+<li>Increase process noise (Q) if model is uncertain</li>
+<li>Use square root filtering for numerical stability</li>
+<li>Implement innovation monitoring</li>
+</ul>
 <h3 id="challenge-2-sensor-bias-estimation">Challenge 2: Sensor Bias Estimation</h3>
 <p><strong>Problem</strong>: Difficult to distinguish between true motion and sensor bias
-<strong>Causes</strong>:
-- Insufficient excitation
-- Observability issues
-- Conflicting sensor information</p>
-<p><strong>Solutions</strong>:
-- Design flight maneuvers for bias observability
-- Use multiple sensor types for redundancy
-- Implement bias estimation with appropriate time constants
-- Apply Allan variance analysis for characterization</p>
+<strong>Causes</strong>:</p>
+<ul>
+<li>Insufficient excitation</li>
+<li>Observability issues</li>
+<li>Conflicting sensor information</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Design flight maneuvers for bias observability</li>
+<li>Use multiple sensor types for redundancy</li>
+<li>Implement bias estimation with appropriate time constants</li>
+<li>Apply Allan variance analysis for characterization</li>
+</ul>
 <h3 id="challenge-3-attitude-singularities">Challenge 3: Attitude Singularities</h3>
 <p><strong>Problem</strong>: Euler angles have singularities (gimbal lock)
-<strong>Causes</strong>:
-- Pitch angle approaches ±90°
-- Mathematical representation breakdown</p>
-<p><strong>Solutions</strong>:
-- Use quaternions for attitude representation
-- Switch between Euler angle sets dynamically
-- Implement modified Rodrigues parameters
-- Design flight profiles to avoid singularities</p>
+<strong>Causes</strong>:</p>
+<ul>
+<li>Pitch angle approaches ±90°</li>
+<li>Mathematical representation breakdown</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Use quaternions for attitude representation</li>
+<li>Switch between Euler angle sets dynamically</li>
+<li>Implement modified Rodrigues parameters</li>
+<li>Design flight profiles to avoid singularities</li>
+</ul>
 <h3 id="challenge-4-computational-burden">Challenge 4: Computational Burden</h3>
 <p><strong>Problem</strong>: Real-time constraints on flight computer
-<strong>Causes</strong>:
-- Large state vectors
-- Nonlinear measurement updates
-- Matrix inversions</p>
-<p><strong>Solutions</strong>:
-- Use reduced-order filters when possible
-- Implement efficient matrix operations
-- Consider distributed filtering architectures
-- Apply measurement decimation strategies</p>
+<strong>Causes</strong>:</p>
+<ul>
+<li>Large state vectors</li>
+<li>Nonlinear measurement updates</li>
+<li>Matrix inversions</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ul>
+<li>Use reduced-order filters when possible</li>
+<li>Implement efficient matrix operations</li>
+<li>Consider distributed filtering architectures</li>
+<li>Apply measurement decimation strategies</li>
+</ul>
 <hr />
 <h2 id="advanced-state-estimation-topics">🎯 Advanced State Estimation Topics</h2>
 <h3 id="unscented-kalman-filter-ukf">Unscented Kalman Filter (UKF)</h3>
@@ -3092,11 +3138,13 @@ P = (I - KH)P⁻
 <strong>Application</strong>: Changing flight conditions, sensor degradation</p>
 <h3 id="fault-detection-and-isolation">Fault Detection and Isolation</h3>
 <p><strong>Objective</strong>: Detect and isolate sensor failures
-<strong>Methods</strong>: 
-- Innovation-based detection
-- Multiple model approaches
-- Parity space methods
-<strong>Critical for</strong>: Flight safety and mission success</p>
+<strong>Methods</strong>:</p>
+<ul>
+<li>Innovation-based detection</li>
+<li>Multiple model approaches</li>
+<li>Parity space methods
+<strong>Critical for</strong>: Flight safety and mission success</li>
+</ul>
 <hr />
 <h2 id="research-and-development-opportunities">🔬 Research and Development Opportunities</h2>
 <h3 id="current-gnc-challenges">Current GNC Challenges</h3>
@@ -3117,35 +3165,35 @@ P = (I - KH)P⁻
 <h2 id="self-assessment-checklist">🎯 Self-Assessment Checklist</h2>
 <h3 id="conceptual-understanding">Conceptual Understanding</h3>
 <ul>
-<li>[ ] Can explain Bayesian approach to estimation in simple terms</li>
-<li>[ ] Understand why Kalman filter is "optimal" and limitations of optimality</li>
-<li>[ ] Can describe difference between prediction and update steps physically</li>
-<li>[ ] Know when to use EKF vs. UKF vs. particle filters</li>
-<li>[ ] Understand sensor fusion and information weighting</li>
+<li>Can explain Bayesian approach to estimation in simple terms</li>
+<li>Understand why Kalman filter is "optimal" and limitations of optimality</li>
+<li>Can describe difference between prediction and update steps physically</li>
+<li>Know when to use EKF vs. UKF vs. particle filters</li>
+<li>Understand sensor fusion and information weighting</li>
 </ul>
 <h3 id="mathematical-competency_1">Mathematical Competency</h3>
 <ul>
-<li>[ ] Can derive Kalman filter equations for simple systems</li>
-<li>[ ] Know how to linearize nonlinear dynamics around trim points</li>
-<li>[ ] Can set up measurement models for IMU and GPS</li>
-<li>[ ] Understand covariance propagation and uncertainty quantification</li>
-<li>[ ] Can analyze observability and controllability</li>
+<li>Can derive Kalman filter equations for simple systems</li>
+<li>Know how to linearize nonlinear dynamics around trim points</li>
+<li>Can set up measurement models for IMU and GPS</li>
+<li>Understand covariance propagation and uncertainty quantification</li>
+<li>Can analyze observability and controllability</li>
 </ul>
 <h3 id="implementation-skills">Implementation Skills</h3>
 <ul>
-<li>[ ] Can implement linear Kalman filter from scratch</li>
-<li>[ ] Know how to tune Q and R matrices systematically</li>
-<li>[ ] Can handle practical issues like initialization and numerical stability</li>
-<li>[ ] Understand real-time implementation constraints</li>
-<li>[ ] Can debug filter performance problems</li>
+<li>Can implement linear Kalman filter from scratch</li>
+<li>Know how to tune Q and R matrices systematically</li>
+<li>Can handle practical issues like initialization and numerical stability</li>
+<li>Understand real-time implementation constraints</li>
+<li>Can debug filter performance problems</li>
 </ul>
 <h3 id="system-integration">System Integration</h3>
 <ul>
-<li>[ ] Know how to combine state estimation with LQR control</li>
-<li>[ ] Understand sensor calibration procedures and bias estimation</li>
-<li>[ ] Can apply flight mechanics to rocket state estimation</li>
-<li>[ ] Know how to handle coordinate transformations</li>
-<li>[ ] Understand safety and fault tolerance requirements</li>
+<li>Know how to combine state estimation with LQR control</li>
+<li>Understand sensor calibration procedures and bias estimation</li>
+<li>Can apply flight mechanics to rocket state estimation</li>
+<li>Know how to handle coordinate transformations</li>
+<li>Understand safety and fault tolerance requirements</li>
 </ul>
 <hr />
 <h2 id="mastery-indicators">🏆 Mastery Indicators</h2>
@@ -3192,11 +3240,13 @@ P = (I - KH)P⁻
 <li><strong>Testing is Essential</strong>: Simulation and hardware validation required</li>
 </ol>
 <h3 id="career-relevance">Career Relevance</h3>
-<p>State estimation skills are valuable across industries:
-- <strong>Aerospace</strong>: Aircraft, spacecraft, and UAV navigation
-- <strong>Automotive</strong>: Self-driving cars and advanced driver assistance
-- <strong>Robotics</strong>: Mobile robots, manipulators, and autonomous systems
-- <strong>Industrial</strong>: Process monitoring and predictive maintenance</p>
+<p>State estimation skills are valuable across industries:</p>
+<ul>
+<li><strong>Aerospace</strong>: Aircraft, spacecraft, and UAV navigation</li>
+<li><strong>Automotive</strong>: Self-driving cars and advanced driver assistance</li>
+<li><strong>Robotics</strong>: Mobile robots, manipulators, and autonomous systems</li>
+<li><strong>Industrial</strong>: Process monitoring and predictive maintenance</li>
+</ul>
 <hr />
 <h2 id="next-steps">🚀 Next Steps</h2>
 <h3 id="immediate-actions">Immediate Actions</h3>
