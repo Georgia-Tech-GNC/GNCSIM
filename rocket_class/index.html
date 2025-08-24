@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#montecarlo-class-documentation" class="md-skip">
+        <a href="#rocket-class-documentation" class="md-skip">
           Skip to content
         </a>
       
@@ -466,81 +466,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#setters" class="md-nav__link">
+  <a href="#setters-and-getters" class="md-nav__link">
     <span class="md-ellipsis">
-      Setters
+      Setters and Getters
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#getters" class="md-nav__link">
+  <a href="#getthrust" class="md-nav__link">
     <span class="md-ellipsis">
-      Getters
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generatelhssamples" class="md-nav__link">
-    <span class="md-ellipsis">
-      generateLhsSamples
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#runmontecarlo" class="md-nav__link">
-    <span class="md-ellipsis">
-      runMonteCarlo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#evaluatemontecarlo" class="md-nav__link">
-    <span class="md-ellipsis">
-      evaluateMonteCarlo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#savetocsv" class="md-nav__link">
-    <span class="md-ellipsis">
-      saveToCSV
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#loadfromcsv" class="md-nav__link">
-    <span class="md-ellipsis">
-      loadFromCSV
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#splitlhs" class="md-nav__link">
-    <span class="md-ellipsis">
-      splitLHS
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plotmontecarlo-static" class="md-nav__link">
-    <span class="md-ellipsis">
-      plotMonteCarlo (Static)
+      getThrust
     </span>
   </a>
   
@@ -969,81 +906,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#setters" class="md-nav__link">
+  <a href="#setters-and-getters" class="md-nav__link">
     <span class="md-ellipsis">
-      Setters
+      Setters and Getters
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#getters" class="md-nav__link">
+  <a href="#getthrust" class="md-nav__link">
     <span class="md-ellipsis">
-      Getters
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generatelhssamples" class="md-nav__link">
-    <span class="md-ellipsis">
-      generateLhsSamples
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#runmontecarlo" class="md-nav__link">
-    <span class="md-ellipsis">
-      runMonteCarlo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#evaluatemontecarlo" class="md-nav__link">
-    <span class="md-ellipsis">
-      evaluateMonteCarlo
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#savetocsv" class="md-nav__link">
-    <span class="md-ellipsis">
-      saveToCSV
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#loadfromcsv" class="md-nav__link">
-    <span class="md-ellipsis">
-      loadFromCSV
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#splitlhs" class="md-nav__link">
-    <span class="md-ellipsis">
-      splitLHS
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plotmontecarlo-static" class="md-nav__link">
-    <span class="md-ellipsis">
-      plotMonteCarlo (Static)
+      getThrust
     </span>
   </a>
   
@@ -1088,338 +962,162 @@
 
 
 
-<h1 id="montecarlo-class-documentation"><code>MonteCarlo</code> Class Documentation</h1>
-<p>The <code>MonteCarlo</code> class is designed to run Monte Carlo simulations for rocket flight. It uses Latin Hypercube Sampling (LHS) to generate various initial conditions and parameters that are tested for performance and constraint satisfaction.</p>
+<h1 id="rocket-class-documentation"><code>Rocket</code> Class Documentation</h1>
+<p>The <code>Rocket</code> class represents a physical rocket with defined geometry, mass distribution, and motor parameters. It also provides methods to retrieve these parameters and compute thrust at any given time during the motor burn.</p>
 <hr />
 <h2 id="class-overview">Class Overview</h2>
-<div class="highlight"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">MonteCarlo</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">handle</span>
+<div class="highlight"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">Rocket</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">handle</span>
 <span class="w">    </span><span class="k">...</span>
 <span class="k">end</span>
 </code></pre></div>
 <ul>
-<li><strong>Inheritance</strong>: Inherits from MATLAB’s built-in <code>handle</code> class, meaning changes to object properties inside methods persist outside the methods.</li>
-<li><strong>Purpose</strong>: Automate the setup, execution, and evaluation of multiple flight simulations under different parameter draws.</li>
+<li><strong>Inheritance</strong>: Inherits from MATLAB’s built-in <code>handle</code> class, meaning it is passed by reference.</li>
+<li><strong>Purpose</strong>: Consolidate rocket-specific properties (mass, inertia, CG location, motor data) into one class. Users typically do not swap motors across different instances; the class assumes a single motor-rocket pairing.</li>
 </ul>
 <hr />
 <h2 id="properties">Properties</h2>
-<p>Although many of these properties are private, they are configured using public setter methods.</p>
 <ul>
 <li>
-<p><strong><code>runGaussianLHS</code> (boolean)</strong><br />
-  Indicates whether Gaussian (normal) distributions should be used for LHS.</p>
+<p><strong><code>wetMass</code> (double, kg)</strong><br />
+  Mass of the rocket with a fully loaded motor. Used to compute total mass at liftoff.</p>
 </li>
 <li>
-<p><strong><code>runUniformLHS</code> (boolean)</strong><br />
-  Indicates whether uniform distributions should be used for LHS.</p>
+<p><strong><code>dryMass</code> (double, kg)</strong><br />
+  Mass of the rocket after all propellant is burned.</p>
 </li>
 <li>
-<p><strong><code>runCustomLHS</code> (boolean)</strong><br />
-  Indicates whether a custom (pre-generated) LHS matrix will be provided.</p>
+<p><strong><code>wetMOI</code> (3×3 matrix, kg·m²)</strong><br />
+  Inertia tensor when rocket is fully fueled. Must be symmetric and positive definite.</p>
 </li>
 <li>
-<p><strong><code>numRuns</code> (integer)</strong><br />
-  Number of Monte Carlo runs to generate and simulate.</p>
+<p><strong><code>dryMOI</code> (3×3 matrix, kg·m²)</strong><br />
+  Inertia tensor after propellant burnout. Must be square with positive diagonal.</p>
 </li>
 <li>
-<p><strong><code>odeSolverMaxTime</code> (numeric)</strong><br />
-  Maximum wall-clock time allowed for each simulation.</p>
+<p><strong><code>initialCG</code> (double, m)</strong><br />
+  Distance from nose tip to center of gravity when fully loaded.</p>
 </li>
 <li>
-<p><strong><code>lhsSamples</code> (matrix, NxM)</strong><br />
-  The Latin Hypercube Sample matrix: <code>N = numRuns</code>, <code>M = number of parameters</code>.</p>
+<p><strong><code>finalCG</code> (double, m)</strong><br />
+  Distance from nose tip to CG after burnout.</p>
 </li>
 <li>
-<p><strong><code>evaluate_checkTermination</code> (boolean)</strong><br />
-  Flags simulations that terminate early as failed runs.</p>
+<p><strong><code>CP</code> (double, m)</strong><br />
+  Distance from nose tip to center of pressure. Typically fixed for a given geometry.</p>
 </li>
 <li>
-<p><strong><code>evaluate_checkRoll</code> (boolean)</strong><br />
-  Enables evaluation of roll angle constraints.</p>
+<p><strong><code>length</code> (double, m)</strong><br />
+  Physical length of the rocket, nose to tail.</p>
 </li>
 <li>
-<p><strong><code>evaluate_checkPitch</code> (boolean)</strong><br />
-  Enables evaluation of pitch angle constraints.</p>
+<p><strong><code>diameter</code> (double, m)</strong><br />
+  Diameter of the main rocket body.</p>
 </li>
 <li>
-<p><strong><code>evaluate_checkYaw</code> (boolean)</strong><br />
-  Enables evaluation of yaw angle constraints.</p>
+<p><strong><code>radius</code> (double, m)</strong><br />
+  Half the diameter. Used in geometry-based calculations.</p>
 </li>
 <li>
-<p><strong><code>evaluate_checkAoA</code> (boolean)</strong><br />
-  Enables evaluation of angle-of-attack constraints.</p>
+<p><strong><code>burnTime</code> (double, s)</strong><br />
+  Time from ignition to motor burnout. Used for thrust and mass interpolation.</p>
 </li>
 <li>
-<p><strong><code>evaluate_rollRange</code> (cell)</strong><br />
-  Acceptable roll angle ranges over specific time intervals.</p>
+<p><strong><code>thrustCurve</code> (n×2 matrix)</strong><br />
+<code>[time, thrust]</code> data points defining the motor’s thrust profile.</p>
 </li>
 <li>
-<p><strong><code>evaluate_pitchRange</code> (cell)</strong><br />
-  Acceptable pitch angle ranges over time.</p>
+<p><strong><code>mainChuteCd</code> (double)</strong><br />
+  Drag coefficient of the main parachute.</p>
 </li>
 <li>
-<p><strong><code>evaluate_yawRange</code> (cell)</strong><br />
-  Acceptable yaw angle ranges over time.</p>
+<p><strong><code>mainChuteArea</code> (double, m²)</strong><br />
+  Reference area of the main parachute.</p>
 </li>
 <li>
-<p><strong><code>evaluate_AoARange</code> (cell)</strong><br />
-  Acceptable AoA ranges over time.</p>
+<p><strong><code>drogueChuteCd</code> (double)</strong><br />
+  Drag coefficient of the drogue parachute.</p>
 </li>
 <li>
-<p><strong><code>wetMass_3sigma</code> (numeric)</strong><br />
-  3σ deviation for rocket wet mass.</p>
-</li>
-<li>
-<p><strong><code>dryMass_3sigma</code> (numeric)</strong><br />
-  3σ deviation for rocket dry mass.</p>
-</li>
-<li>
-<p><strong><code>wetRollMOI_3sigma</code>, <code>wetPitchMOI_3sigma</code>, <code>wetYawMOI_3sigma</code> (numeric)</strong><br />
-  3σ deviation for moments of inertia in the wet state.</p>
-</li>
-<li>
-<p><strong><code>dryRollMOI_3sigma</code>, <code>dryPitchMOI_3sigma</code>, <code>dryYawMOI_3sigma</code> (numeric)</strong><br />
-  3σ deviation for MOIs in the dry state.</p>
-</li>
-<li>
-<p><strong><code>initialCG_3sigma</code>, <code>finalCG_3sigma</code> (numeric)</strong><br />
-  3σ deviation for center of gravity (initial and final).</p>
-</li>
-<li>
-<p><strong><code>burnTime_3sigma</code> (numeric)</strong><br />
-  3σ deviation for motor burn time.</p>
-</li>
-<li>
-<p><strong><code>thrustCurve_3sigma</code> (numeric)</strong><br />
-  3σ deviation for thrust curve data.</p>
+<p><strong><code>drogueChuteArea</code> (double, m²)</strong><br />
+  Reference area of the drogue parachute.</p>
 </li>
 </ul>
 <hr />
 <h2 id="methods">Methods</h2>
-<h3 id="constructor"><strong>Constructor</strong></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">MonteCarlo</span><span class="p">()</span>
+<h3 id="constructor">Constructor</h3>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">Rocket</span><span class="p">()</span>
+<span class="w">    </span><span class="c">% Constructs a new Rocket object with default (uninitialized) properties.</span>
 <span class="k">end</span>
 </code></pre></div>
 <ul>
-<li><strong>Description</strong>: Instantiates a MonteCarlo object with default property values.</li>
-<li>
-<p><strong>Usage</strong>:</p>
-<div class="highlight"><pre><span></span><code><span class="n">mc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">MonteCarlo</span><span class="p">();</span>
+<li><strong>Description</strong>: Instantiates a new <code>Rocket</code> object. Properties must be set with setter methods before use.</li>
+</ul>
+<hr />
+<h3 id="setters-and-getters">Setters and Getters</h3>
+<p>Each property has a corresponding setter and getter that validates input (e.g., positive values, matrix shape).</p>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="n">myRocket</span><span class="p">.</span><span class="n">set_wetMass</span><span class="p">(</span><span class="mf">30.0</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_dryMass</span><span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_wetMOI</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_dryMOI</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">1.5</span><span class="p">]);</span>
+<span class="k">...</span>
+<span class="nb">disp</span><span class="p">(</span><span class="n">myRocket</span><span class="p">.</span><span class="n">get_wetMass</span><span class="p">());</span>
 </code></pre></div>
-</li>
-</ul>
-<hr />
-<h3 id="setters"><strong>Setters</strong></h3>
-<p>These methods perform validation on inputs before assigning values to the object’s private properties.</p>
 <ul>
-<li>
-<p><code>set_numRuns(obj, value)</code><br />
-    Ensures value is a nonnegative integer.</p>
-</li>
-<li>
-<p><code>set_runGaussianLHS(obj, value)</code><br />
-Enables or disables Gaussian LHS.</p>
-</li>
-<li>
-<p><code>set_runCustomLHS(obj, value)</code><br />
-Enables use of custom LHS matrix.</p>
-</li>
-<li>
-<p><code>set_runUniformLHS(obj, value)</code><br />
-Enables or disables uniform LHS.</p>
-</li>
-<li>
-<p><code>set_wetMass_3sigma(obj, value)</code>, <code>set_dryMass_3sigma(obj, value)</code>, etc.<br />
-Assigns 3σ deviations for mass, MOI, CG, etc.</p>
-</li>
-<li>
-<p><code>set_thrustCurve_3sigma(obj, value)</code><br />
-Sets the 3σ deviation for the thrust curve.</p>
-</li>
-<li>
-<p><code>set_lhsSamples(obj, value)</code><br />
-Assigns the user-provided LHS matrix.</p>
-</li>
-<li>
-<p><code>set_odeSolverMaxTime(obj, value)</code><br />
-Assigns the max solver time.</p>
-</li>
-<li>
-<p><code>set_evaluate_checkTermination(obj, value)</code>, <code>set_evaluate_checkRoll(obj, value)</code>, etc.<br />
-Used to control which flight constraints get evaluated.</p>
-</li>
-<li>
-<p><code>set_evaluate_rollRange(obj, value)</code>, <code>set_evaluate_pitchRange(obj, value)</code>, etc.<br />
-Assigns time intervals and acceptable angle ranges (as cell arrays).</p>
-</li>
+<li>Setters enforce numeric types, matrix size, and nonnegativity.</li>
+<li>Getters return current property values.</li>
 </ul>
 <hr />
-<h3 id="getters"><strong>Getters</strong></h3>
-<ul>
-<li>
-<p><code>get_lhsSamples(obj)</code><br />
-    Returns the <code>lhsSamples</code> matrix. Throws an error if empty.</p>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>lhsSamples<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">get_lhsSamples</span><span class="p">(</span>obj<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
-</code></pre></div>
-</li>
-</ul>
-<hr />
-<h3 id="generatelhssamples"><code>generateLhsSamples</code></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">generateLhsSamples</span><span class="p">(</span>obj, RocketObj<span class="p">)</span>
+<h3 id="getthrust"><code>getThrust</code></h3>
+<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>currentThrust<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">getThrust</span><span class="p">(</span>obj, t<span class="p">)</span>
 <span class="w">    </span><span class="k">...</span>
 <span class="k">end</span>
 </code></pre></div>
 <ul>
 <li><strong>Inputs</strong>:</li>
-<li><code>RocketObj</code>: Rocket object containing nominal parameters</li>
-<li><strong>Description</strong>:</li>
-<li>Generates the LHS matrix using one of three modes:<ul>
-<li>Gaussian: Uses 3σ deviations and <code>lhsnorm</code></li>
-<li>Uniform: Samples [0, 1] range</li>
-<li>Custom: Requires <code>lhsSamples</code> to be preloaded</li>
-</ul>
-</li>
-</ul>
-<hr />
-<h3 id="runmontecarlo"><code>runMonteCarlo</code></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>logMonteCarlo<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">runMonteCarlo</span><span class="p">(</span>obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
-</code></pre></div>
-<ul>
-<li><strong>Inputs</strong>:</li>
-<li><code>FlightObj</code>: Flight simulation object</li>
-<li><code>RocketObj</code>: Rocket properties object</li>
-<li><code>EnvironmentObj</code>: Environment object (e.g. wind)</li>
-<li><code>AerodynamicsObj</code>: Aerodynamics object</li>
-<li><code>TrimPointObj</code>: Trim points or control law info</li>
+<li><code>t</code> (double): Time since ignition in seconds</li>
 <li><strong>Output</strong>:</li>
-<li><code>logMonteCarlo</code>: Array of structs containing results for each simulation</li>
+<li><code>currentThrust</code> (double): Thrust in Newtons at time <code>t</code></li>
 <li><strong>Description</strong>:</li>
-<li>Runs all simulations in parallel (<code>parfor</code>)</li>
-<li>Injects sample parameters into each rocket instance</li>
-<li>Uses <code>FlightObj.runFlight(...)</code> to simulate</li>
+<li>Returns 0 if <code>t &gt; burnTime</code></li>
+<li>If <code>t</code> matches a value in <code>thrustCurve</code>, return it directly</li>
+<li>Otherwise, interpolates linearly between the surrounding points</li>
 </ul>
-<hr />
-<h3 id="evaluatemontecarlo"><code>evaluateMonteCarlo</code></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">[logMonteCarlo, performance] = evaluateMonteCarlo</span><span class="p">(</span>obj, logMonteCarlo<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
+<p><strong>Usage:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="n">thrustVal</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">myRocket</span><span class="p">.</span><span class="n">getThrust</span><span class="p">(</span><span class="mf">2.5</span><span class="p">);</span><span class="w"> </span><span class="c">% Thrust at 2.5 seconds</span>
 </code></pre></div>
-<ul>
-<li><strong>Inputs</strong>:</li>
-<li><code>logMonteCarlo</code>: Simulation logs to evaluate</li>
-<li><strong>Outputs</strong>:</li>
-<li><code>logMonteCarlo</code>: Updated with pass/fail flags</li>
-<li><code>performance</code>: Optional summary statistics</li>
-<li><strong>Description</strong>:</li>
-<li>Compares run results against:<ul>
-<li>ODE termination flags</li>
-<li>Roll, pitch, yaw constraints</li>
-<li>AoA constraints</li>
-</ul>
-</li>
-</ul>
-<hr />
-<h3 id="savetocsv"><code>saveToCSV</code></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">saveToCSV</span><span class="p">(</span>obj, filename<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
-</code></pre></div>
-<ul>
-<li><strong>Inputs</strong>:</li>
-<li><code>filename</code>: Path to save <code>.csv</code> file</li>
-<li><strong>Description</strong>:</li>
-<li>Exports 3σ parameters and config to CSV for recordkeeping</li>
-</ul>
-<hr />
-<h3 id="loadfromcsv"><code>loadFromCSV</code></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">loadFromCSV</span><span class="p">(</span>obj, filename<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
-</code></pre></div>
-<ul>
-<li><strong>Inputs</strong>:</li>
-<li><code>filename</code>: Path to a <code>.csv</code> file</li>
-<li><strong>Description</strong>:</li>
-<li>Imports saved parameters and updates object properties</li>
-</ul>
-<hr />
-<h3 id="splitlhs"><code>splitLHS</code></h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span>splittedLHS<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">splitLHS</span><span class="p">(</span>obj, nParts, outFolder<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
-</code></pre></div>
-<ul>
-<li><strong>Inputs</strong>:</li>
-<li><code>nParts</code>: Number of chunks to divide LHS into</li>
-<li><code>outFolder</code>: Directory to save chunks as <code>.mat</code> files</li>
-<li><strong>Output</strong>:</li>
-<li><code>splittedLHS</code>: Cell array of LHS partitions</li>
-<li><strong>Description</strong>:</li>
-<li>Splits the <code>lhsSamples</code> matrix for distributed simulation</li>
-<li>Requires <code>lhsSamples</code> to be non-empty and divisible</li>
-</ul>
-<hr />
-<h3 id="plotmontecarlo-static"><code>plotMonteCarlo</code> (Static)</h3>
-<div class="highlight"><pre><span></span><code><span class="k">function</span><span class="w"> </span><span class="nf">plotMonteCarlo</span><span class="p">(</span>logMonteCarlo<span class="p">)</span>
-<span class="w">    </span><span class="k">...</span>
-<span class="k">end</span>
-</code></pre></div>
-<ul>
-<li><strong>Inputs</strong>:</li>
-<li><code>logMonteCarlo</code>: Monte Carlo results to visualize</li>
-<li><strong>Description</strong>:</li>
-<li>Plots:<ul>
-<li>3D final trajectory distribution</li>
-<li>Yaw angle evolution with ±1σ and ±3σ bounds</li>
-<li>AoA and other quantities (optional)</li>
-</ul>
-</li>
-</ul>
 <hr />
 <h2 id="typical-usage-workflow">Typical Usage Workflow</h2>
 <div class="highlight"><pre><span></span><code><span class="c">% Instantiate</span>
-<span class="n">mc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">MonteCarlo</span><span class="p">();</span>
+<span class="n">myRocket</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Rocket</span><span class="p">();</span>
 
-<span class="c">% Set parameters</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">set_numRuns</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">set_runGaussianLHS</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">set_odeSolverMaxTime</span><span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+<span class="c">% Set properties</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_wetMass</span><span class="p">(</span><span class="mf">30.0</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_dryMass</span><span class="p">(</span><span class="mf">20.0</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_wetMOI</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_dryMOI</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">1.5</span><span class="p">]);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_initialCG</span><span class="p">(</span><span class="mf">1.2</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_finalCG</span><span class="p">(</span><span class="mf">1.5</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_length</span><span class="p">(</span><span class="mf">2.0</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_diameter</span><span class="p">(</span><span class="mf">0.15</span><span class="p">);</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_thrustCurve</span><span class="p">(</span><span class="n">thrustData</span><span class="p">);</span><span class="w"> </span><span class="c">% Nx2 [time, thrust]</span>
+<span class="n">myRocket</span><span class="p">.</span><span class="n">set_burnTime</span><span class="p">(</span><span class="mf">5.0</span><span class="p">);</span>
 
-<span class="c">% Generate samples</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">generateLhsSamples</span><span class="p">(</span><span class="n">myRocket</span><span class="p">);</span>
-
-<span class="c">% OR load custom LHS</span>
-<span class="n">customLHS</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">...</span><span class="c">;</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">set_lhsSamples</span><span class="p">(</span><span class="n">customLHS</span><span class="p">);</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">set_runCustomLHS</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
-
-<span class="c">% Run simulation</span>
-<span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mc</span><span class="p">.</span><span class="n">runMonteCarlo</span><span class="p">(</span><span class="n">myFlight</span><span class="p">,</span><span class="w"> </span><span class="n">myRocket</span><span class="p">,</span><span class="w"> </span><span class="n">myEnv</span><span class="p">,</span><span class="w"> </span><span class="n">myAero</span><span class="p">,</span><span class="w"> </span><span class="n">myTrim</span><span class="p">);</span>
-
-<span class="c">% Evaluate results</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">set_evaluate_checkRoll</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
-<span class="n">results</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mc</span><span class="p">.</span><span class="n">evaluateMonteCarlo</span><span class="p">(</span><span class="n">results</span><span class="p">);</span>
-
-<span class="c">% Plot</span>
-<span class="n">MonteCarlo</span><span class="p">.</span><span class="n">plotMonteCarlo</span><span class="p">(</span><span class="n">results</span><span class="p">);</span>
-
-<span class="c">% Save/load</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">saveToCSV</span><span class="p">(</span><span class="s">&#39;params.csv&#39;</span><span class="p">);</span>
-<span class="n">mc</span><span class="p">.</span><span class="n">loadFromCSV</span><span class="p">(</span><span class="s">&#39;params.csv&#39;</span><span class="p">);</span>
+<span class="c">% Retrieve parameters</span>
+<span class="nb">disp</span><span class="p">(</span><span class="n">myRocket</span><span class="p">.</span><span class="n">get_length</span><span class="p">());</span>
+<span class="n">F</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">myRocket</span><span class="p">.</span><span class="n">getThrust</span><span class="p">(</span><span class="mf">3.0</span><span class="p">);</span>
+<span class="nb">fprintf</span><span class="p">(</span><span class="s">&quot;Thrust at 3.0 s: %.2f N\n&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="p">);</span>
 </code></pre></div>
 <hr />
 <h2 id="conclusion">Conclusion</h2>
-<p>The <code>MonteCarlo</code> class provides a systematic way to:</p>
+<p>The <code>Rocket</code> class centralizes all physical and motor-related parameters of a rocket. It defines:</p>
 <ul>
-<li>Define parameter uncertainty (mass, CG, MOI, thrust, etc.)</li>
-<li>Run parallel simulations for statistical robustness</li>
-<li>Evaluate whether simulations satisfy flight constraints</li>
-<li>Organize and export results for deeper analysis</li>
+<li>Wet/dry mass and inertia tensors</li>
+<li>Center of gravity and pressure locations</li>
+<li>Geometry and parachute specs</li>
+<li>Thrust curve lookup via <code>getThrust()</code></li>
 </ul>
-<p>It is essential for robust flight design, verification, and risk-aware performance evaluation.</p>
+<p>This class provides clean access to flight-critical parameters, which can be used downstream in simulation classes like <code>Flight</code> or <code>MonteCarlo</code>, ensuring consistency and accuracy across the modeling workflow.</p>
 
 
 
