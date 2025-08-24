@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
+         <loc>https://github.gatech.edu/pages/gnc/GNCSIM/</loc>
+         <lastmod>2025-08-24</lastmod>
+    </url>
+    <url>
          <loc>https://github.gatech.edu/pages/gnc/GNCSIM/aerodynamics_class/</loc>
          <lastmod>2025-08-24</lastmod>
     </url>
@@ -22,10 +26,6 @@
     </url>
     <url>
          <loc>https://github.gatech.edu/pages/gnc/GNCSIM/git_onboarding_instructions/</loc>
-         <lastmod>2025-08-24</lastmod>
-    </url>
-    <url>
-         <loc>https://github.gatech.edu/pages/gnc/GNCSIM/gncsim_homepage/</loc>
          <lastmod>2025-08-24</lastmod>
     </url>
     <url>
