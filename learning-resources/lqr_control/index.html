@@ -1964,97 +1964,120 @@
 <h3 id="the-optimal-control-problem">The Optimal Control Problem</h3>
 <p>LQR solves this question: <strong>"What control input minimizes a mathematical cost function while satisfying system dynamics?"</strong></p>
 <h4 id="system-model-state-space">System Model (State-Space)</h4>
-<div class="highlight"><pre><span></span><code>ẋ = Ax + Bu    (System dynamics)
-y = Cx + Du    (Measurement equation)
-</code></pre></div>
-<p>Where:
-- <strong>x</strong>: State vector (positions, velocities, angles, angular rates)
-- <strong>u</strong>: Control input vector (jet vane deflections)
-- <strong>A, B, C, D</strong>: System matrices describing dynamics</p>
+<div class="arithmatex">\[\dot{x} = Ax + Bu \quad \text{(System dynamics)}$$
+$$y = Cx + Du \quad \text{(Measurement equation)}\]</div>
+<p>Where:</p>
+<ul>
+<li><strong>x</strong>: State vector (positions, velocities, angles, angular rates)</li>
+<li><strong>u</strong>: Control input vector (jet vane deflections)</li>
+<li><strong>A, B, C, D</strong>: System matrices describing dynamics</li>
+</ul>
 <h4 id="cost-function">Cost Function</h4>
-<div class="highlight"><pre><span></span><code>J = ∫₀^∞ (x&#39;Qx + u&#39;Ru) dt
-</code></pre></div>
-<p>Where:
-- <strong>Q</strong>: State weighting matrix (how much you care about each state)
-- <strong>R</strong>: Control weighting matrix (how much you care about control effort)
-- <strong>J</strong>: Total cost to minimize</p>
+<div class="arithmatex">\[J = \int_0^\infty (x^T Q x + u^T R u) \, dt\]</div>
+<p>Where:</p>
+<ul>
+<li><strong>Q</strong>: State weighting matrix (how much you care about each state)</li>
+<li><strong>R</strong>: Control weighting matrix (how much you care about control effort)</li>
+<li><strong>J</strong>: Total cost to minimize</li>
+</ul>
 <h4 id="optimal-control-law">Optimal Control Law</h4>
-<p>The LQR solution is always linear state feedback:
-<div class="highlight"><pre><span></span><code>u = -Kx
-</code></pre></div></p>
-<p>Where <strong>K</strong> is the optimal gain matrix computed by solving the Riccati equation.</p>
+<p>The LQR solution is always linear state feedback:</p>
+<div class="arithmatex">\[u = -Kx\]</div>
+<p>Where \(K\) is the optimal gain matrix computed by solving the Riccati equation.</p>
 <h3 id="physical-interpretation">Physical Interpretation</h3>
-<p><strong>Q Matrix</strong>: "How much do I care about each state?"
-- Large Q values → tight control of those states
-- Small Q values → relaxed control, allow more deviation</p>
-<p><strong>R Matrix</strong>: "How expensive is control effort?"
-- Large R → gentle, conservative control
-- Small R → aggressive, high-energy control</p>
-<p><strong>K Matrix</strong>: The optimal compromise between performance and control effort
-- Automatically balances Q and R requirements
-- Provides mathematically optimal feedback gains</p>
+<p><strong>Q Matrix</strong>: "How much do I care about each state?"</p>
+<ul>
+<li>Large Q values → tight control of those states</li>
+<li>Small Q values → relaxed control, allow more deviation</li>
+</ul>
+<p><strong>R Matrix</strong>: "How expensive is control effort?"</p>
+<ul>
+<li>Large R → gentle, conservative control</li>
+<li>Small R → aggressive, high-energy control</li>
+</ul>
+<p><strong>K Matrix</strong>: The optimal compromise between performance and control effort</p>
+<ul>
+<li>Automatically balances Q and R requirements</li>
+<li>Provides mathematically optimal feedback gains</li>
+</ul>
 <hr />
 <h2 id="required-learning-resources">📚 Required Learning Resources</h2>
 <h3 id="core-lqr-theory">Core LQR Theory</h3>
 <h4 id="primary-video-sequence">Primary Video Sequence</h4>
 <p>Work through these in order to build understanding:</p>
-<p><strong>1. <a href="https://www.youtube.com/watch?v=FXSpHy8LvmY">What is Pole Placement (Full State Feedback) | State Space, Part 2</a></strong>
-- <strong>Focus</strong>: Understand full state feedback concept
-- <strong>Key concepts</strong>: How state feedback differs from output feedback (PID)
-- <strong>Why important</strong>: LQR is a special case of full state feedback</p>
-<p><strong>2. <a href="https://www.youtube.com/watch?v=BYvTEfNAi38">A Conceptual Approach to Controllability and Observability | State Space, Part 3</a></strong>
-- <strong>Focus</strong>: When is LQR possible and meaningful?
-- <strong>Key concepts</strong>: Controllability matrix, observability matrix
-- <strong>Why important</strong>: LQR only works for controllable systems</p>
-<p><strong>3. <a href="https://www.youtube.com/watch?v=E_RDCFOlJx4">What Is Linear Quadratic Regulator (LQR) Optimal Control? | State Space, Part 4</a></strong>
-- <strong>Focus</strong>: Core LQR theory and intuition
-- <strong>Key concepts</strong>: Cost function, Q/R matrices, optimality
-- <strong>Why important</strong>: This is the heart of what we're implementing</p>
+<p><strong>1. <a href="https://www.youtube.com/watch?v=FXSpHy8LvmY">What is Pole Placement (Full State Feedback) | State Space, Part 2</a></strong></p>
+<ul>
+<li><strong>Focus</strong>: Understand full state feedback concept</li>
+<li><strong>Key concepts</strong>: How state feedback differs from output feedback (PID)</li>
+<li><strong>Why important</strong>: LQR is a special case of full state feedback</li>
+</ul>
+<p><strong>2. <a href="https://www.youtube.com/watch?v=BYvTEfNAi38">A Conceptual Approach to Controllability and Observability | State Space, Part 3</a></strong></p>
+<ul>
+<li><strong>Focus</strong>: When is LQR possible and meaningful?</li>
+<li><strong>Key concepts</strong>: Controllability matrix, observability matrix</li>
+<li><strong>Why important</strong>: LQR only works for controllable systems</li>
+</ul>
+<p><strong>3. <a href="https://www.youtube.com/watch?v=E_RDCFOlJx4">What Is Linear Quadratic Regulator (LQR) Optimal Control? | State Space, Part 4</a></strong></p>
+<ul>
+<li><strong>Focus</strong>: Core LQR theory and intuition</li>
+<li><strong>Key concepts</strong>: Cost function, Q/R matrices, optimality</li>
+<li><strong>Why important</strong>: This is the heart of what we're implementing</li>
+</ul>
 <h4 id="detailed-implementation-resources">Detailed Implementation Resources</h4>
-<p><strong>4. <a href="https://www.youtube.com/watch?v=oQDi3Giv-DI&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=26">Controllability of a Linear System: The Controllability Matrix and the PBH Test</a></strong>
-- <strong>Focus</strong>: Mathematical tests for controllability
-- <strong>Key concepts</strong>: PBH test, controllability matrix rank
-- <strong>Application</strong>: Verify our jet vanes system is controllable</p>
-<p><strong>5. <a href="https://www.youtube.com/watch?v=1zIIcYfp5QA&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=27">Introduction to Full State Feedback Control</a></strong>
-- <strong>Focus</strong>: General state feedback framework
-- <strong>Key concepts</strong>: Pole placement, closed-loop eigenvalues
-- <strong>Connection</strong>: How LQR fits into broader state feedback theory</p>
-<p><strong>6. <a href="https://www.youtube.com/watch?v=wEevt2a4SKI&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=29">Introduction to Linear Quadratic Regulator (LQR) Control</a></strong>
-- <strong>Focus</strong>: Practical LQR implementation
-- <strong>Key concepts</strong>: Riccati equation, MATLAB implementation
-- <strong>Application</strong>: How to actually compute LQR gains</p>
+<p><strong>4. <a href="https://www.youtube.com/watch?v=oQDi3Giv-DI&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=26">Controllability of a Linear System: The Controllability Matrix and the PBH Test</a></strong></p>
+<ul>
+<li><strong>Focus</strong>: Mathematical tests for controllability</li>
+<li><strong>Key concepts</strong>: PBH test, controllability matrix rank</li>
+<li><strong>Application</strong>: Verify our jet vanes system is controllable</li>
+</ul>
+<p><strong>5. <a href="https://www.youtube.com/watch?v=1zIIcYfp5QA&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=27">Introduction to Full State Feedback Control</a></strong></p>
+<ul>
+<li><strong>Focus</strong>: General state feedback framework</li>
+<li><strong>Key concepts</strong>: Pole placement, closed-loop eigenvalues</li>
+<li><strong>Connection</strong>: How LQR fits into broader state feedback theory</li>
+</ul>
+<p><strong>6. <a href="https://www.youtube.com/watch?v=wEevt2a4SKI&amp;list=PLxdnSsBqCrrF9KOQRB9ByfB0EUMwnLO9o&amp;index=29">Introduction to Linear Quadratic Regulator (LQR) Control</a></strong></p>
+<ul>
+<li><strong>Focus</strong>: Practical LQR implementation</li>
+<li><strong>Key concepts</strong>: Riccati equation, MATLAB implementation</li>
+<li><strong>Application</strong>: How to actually compute LQR gains</li>
+</ul>
 <hr />
 <h2 id="lqr-for-rocket-control">🚀 LQR for Rocket Control</h2>
 <h3 id="jet-vanes-system-model">Jet Vanes System Model</h3>
-<p>For our rocket, the state vector typically includes:
-<div class="highlight"><pre><span></span><code>x = [θ, φ, ψ, p, q, r, x, y, z, u, v, w]&#39;
-</code></pre></div></p>
-<p>Where:
-- <strong>θ, φ, ψ</strong>: Euler angles (pitch, roll, yaw)
-- <strong>p, q, r</strong>: Angular rates
-- <strong>x, y, z</strong>: Position
-- <strong>u, v, w</strong>: Velocities</p>
-<p>Control inputs:
-<div class="highlight"><pre><span></span><code>u = [δ₁, δ₂, δ₃, δ₄]&#39;
-</code></pre></div>
-Where <strong>δᵢ</strong> are the four jet vane deflection angles.</p>
+<p>For our rocket, the state vector typically includes:</p>
+<div class="arithmatex">\[x = [\theta, \phi, \psi, p, q, r, x, y, z, u, v, w]^T\]</div>
+<p>Where:</p>
+<ul>
+<li><strong>θ, φ, ψ</strong>: Euler angles (pitch, roll, yaw)</li>
+<li><strong>p, q, r</strong>: Angular rates</li>
+<li><strong>x, y, z</strong>: Position</li>
+<li><strong>u, v, w</strong>: Velocities</li>
+</ul>
+<p>Control inputs:</p>
+<div class="arithmatex">\[u = [\delta_1, \delta_2, \delta_3, \delta_4]^T\]</div>
+<p>Where <span class="arithmatex">\(\delta_i\)</span> are the four jet vane deflection angles.</p>
 <h3 id="design-process">Design Process</h3>
 <h4 id="step-1-system-linearization">Step 1: System Linearization</h4>
 <ul>
 <li>Start with nonlinear rocket dynamics</li>
 <li>Find trim points (equilibrium conditions)</li>
 <li>Linearize around trim points using Jacobians</li>
-<li>Results in linear state-space model: ẋ = Ax + Bu</li>
+<li>Results in linear state-space model: <span class="arithmatex">\(\dot{x} = Ax + Bu\)</span></li>
 </ul>
 <h4 id="step-2-lqr-weight-selection">Step 2: LQR Weight Selection</h4>
-<p><strong>Q Matrix Design</strong> (State Penalties):
-- Attitude errors: High weights for tight pointing control
-- Position errors: Medium weights for trajectory following
-- Rate errors: Moderate weights to prevent excessive motion</p>
-<p><strong>R Matrix Design</strong> (Control Penalties):
-- Balance control authority vs. actuator wear
-- Consider power consumption and actuator limits
-- Prevent chattering and high-frequency commands</p>
+<p><strong>Q Matrix Design</strong> (State Penalties):</p>
+<ul>
+<li>Attitude errors: High weights for tight pointing control</li>
+<li>Position errors: Medium weights for trajectory following</li>
+<li>Rate errors: Moderate weights to prevent excessive motion</li>
+</ul>
+<p><strong>R Matrix Design</strong> (Control Penalties):</p>
+<ul>
+<li>Balance control authority vs. actuator wear</li>
+<li>Consider power consumption and actuator limits</li>
+<li>Prevent chattering and high-frequency commands</li>
+</ul>
 <h4 id="step-3-gain-computation">Step 3: Gain Computation</h4>
 <ul>
 <li>Solve Algebraic Riccati Equation (ARE)</li>
@@ -2074,116 +2097,138 @@ Where <strong>δᵢ</strong> are the four jet vane deflection angles.</p>
 <p>By completing this section, you should master:</p>
 <h3 id="theoretical-understanding">Theoretical Understanding</h3>
 <ul>
-<li>[ ] Explain the LQR optimal control problem in physical terms</li>
-<li>[ ] Understand the role of Q and R matrices in design</li>
-<li>[ ] Describe how LQR relates to pole placement</li>
-<li>[ ] Explain controllability and its importance</li>
-<li>[ ] Understand the Riccati equation conceptually</li>
+<li>Explain the LQR optimal control problem in physical terms</li>
+<li>Understand the role of Q and R matrices in design</li>
+<li>Describe how LQR relates to pole placement</li>
+<li>Explain controllability and its importance</li>
+<li>Understand the Riccati equation conceptually</li>
 </ul>
 <h3 id="mathematical-competency">Mathematical Competency</h3>
 <ul>
-<li>[ ] Set up the LQR problem for a given system</li>
-<li>[ ] Choose appropriate Q and R matrices for design objectives</li>
-<li>[ ] Verify system controllability</li>
-<li>[ ] Compute LQR gains using mathematical tools</li>
-<li>[ ] Analyze closed-loop performance and stability</li>
+<li>Set up the LQR problem for a given system</li>
+<li>Choose appropriate Q and R matrices for design objectives</li>
+<li>Verify system controllability</li>
+<li>Compute LQR gains using mathematical tools</li>
+<li>Analyze closed-loop performance and stability</li>
 </ul>
 <h3 id="practical-application">Practical Application</h3>
 <ul>
-<li>[ ] Design LQR controller for rocket attitude control</li>
-<li>[ ] Handle implementation issues (saturation, noise, discretization)</li>
-<li>[ ] Tune Q and R for desired performance</li>
-<li>[ ] Compare LQR vs. PID performance</li>
-<li>[ ] Understand when LQR is appropriate vs. other methods</li>
+<li>Design LQR controller for rocket attitude control</li>
+<li>Handle implementation issues (saturation, noise, discretization)</li>
+<li>Tune Q and R for desired performance</li>
+<li>Compare LQR vs. PID performance</li>
+<li>Understand when LQR is appropriate vs. other methods</li>
 </ul>
 <hr />
 <h2 id="hands-on-learning-activities">🛠️ Hands-On Learning Activities</h2>
 <h3 id="activity-1-simple-lqr-design">Activity 1: Simple LQR Design</h3>
-<p><strong>System</strong>: Double integrator (simplified rocket attitude)
-<div class="highlight"><pre><span></span><code>ẋ₁ = x₂        (angle)
-ẋ₂ = u         (angular acceleration)
-</code></pre></div></p>
-<p><strong>Tasks</strong>:
-1. Write state-space matrices A and B
-2. Choose Q and R matrices
-3. Compute LQR gains
-4. Simulate step response
-5. Compare different Q and R choices</p>
-<p><strong>Learning Goals</strong>:
-- Build intuition for Q/R selection
-- See how LQR gains depend on weights
-- Compare to PID performance</p>
+<p><strong>System</strong>: Double integrator (simplified rocket attitude)</p>
+<div class="arithmatex">\[\dot{x}_1 = x_2 \quad \text{(angle)}$$
+$$\dot{x}_2 = u \quad \text{(angular acceleration)}\]</div>
+<p><strong>Tasks</strong>:</p>
+<ol>
+<li>Write state-space matrices A and B</li>
+<li>Choose Q and R matrices</li>
+<li>Compute LQR gains</li>
+<li>Simulate step response</li>
+<li>Compare different Q and R choices</li>
+</ol>
+<p><strong>Learning Goals</strong>:</p>
+<ul>
+<li>Build intuition for Q/R selection</li>
+<li>See how LQR gains depend on weights</li>
+<li>Compare to PID performance</li>
+</ul>
 <h3 id="activity-2-rocket-attitude-control">Activity 2: Rocket Attitude Control</h3>
 <p><strong>System</strong>: 6-DOF rocket attitude dynamics</p>
-<p><strong>Tasks</strong>:
-1. Use linearized rocket model around hover trim point
-2. Design Q matrix emphasizing attitude control
-3. Design R matrix balancing control effort
-4. Compute and analyze LQR gains
-5. Simulate attitude control performance
-6. Add disturbances and assess robustness</p>
-<p><strong>Learning Goals</strong>:
-- Work with realistic system complexity
-- Handle multiple inputs and outputs
-- See LQR performance on actual rocket dynamics</p>
+<p><strong>Tasks</strong>:</p>
+<ol>
+<li>Use linearized rocket model around hover trim point</li>
+<li>Design Q matrix emphasizing attitude control</li>
+<li>Design R matrix balancing control effort</li>
+<li>Compute and analyze LQR gains</li>
+<li>Simulate attitude control performance</li>
+<li>Add disturbances and assess robustness</li>
+</ol>
+<p><strong>Learning Goals</strong>:</p>
+<ul>
+<li>Work with realistic system complexity</li>
+<li>Handle multiple inputs and outputs</li>
+<li>See LQR performance on actual rocket dynamics</li>
+</ul>
 <h3 id="activity-3-performance-comparison">Activity 3: Performance Comparison</h3>
 <p><strong>Objective</strong>: Compare LQR vs. PID for same system</p>
-<p><strong>Tasks</strong>:
-1. Design PID controller for rocket attitude
-2. Design LQR controller for same system
-3. Compare step responses
-4. Compare disturbance rejection
-5. Analyze robustness to model uncertainties
-6. Evaluate computational requirements</p>
-<p><strong>Learning Goals</strong>:
-- Understand when LQR advantages are worth the complexity
-- See performance trade-offs between methods
-- Build engineering judgment for controller selection</p>
+<p><strong>Tasks</strong>:</p>
+<ol>
+<li>Design PID controller for rocket attitude</li>
+<li>Design LQR controller for same system</li>
+<li>Compare step responses</li>
+<li>Compare disturbance rejection</li>
+<li>Analyze robustness to model uncertainties</li>
+<li>Evaluate computational requirements</li>
+</ol>
+<p><strong>Learning Goals</strong>:</p>
+<ul>
+<li>Understand when LQR advantages are worth the complexity</li>
+<li>See performance trade-offs between methods</li>
+<li>Build engineering judgment for controller selection</li>
+</ul>
 <hr />
 <h2 id="advanced-lqr-concepts">🔬 Advanced LQR Concepts</h2>
 <h3 id="lqr-with-integral-action-lqi">LQR with Integral Action (LQI)</h3>
 <p><strong>Problem</strong>: Pure LQR has no steady-state error rejection for constant disturbances</p>
-<p><strong>Solution</strong>: Augment system with integrator states
-<div class="highlight"><pre><span></span><code>x_aug = [x; ∫e dt]
-</code></pre></div></p>
+<p><strong>Solution</strong>: Augment system with integrator states</p>
+<div class="arithmatex">\[x_{\text{aug}} = \begin{bmatrix} x \\ \int e \, dt \end{bmatrix}\]</div>
 <p><strong>Result</strong>: LQI combines LQR optimality with integral action</p>
 <h3 id="gain-scheduling">Gain Scheduling</h3>
 <p><strong>Problem</strong>: Rocket dynamics change dramatically during flight</p>
-<p><strong>Solution</strong>: Design multiple LQR controllers for different flight conditions
-- Hover phase: Different A, B matrices
-- Ascent phase: Different linearization point
-- Transition smoothly between controllers</p>
+<p><strong>Solution</strong>: Design multiple LQR controllers for different flight conditions</p>
+<ul>
+<li>Hover phase: Different A, B matrices</li>
+<li>Ascent phase: Different linearization point</li>
+<li>Transition smoothly between controllers</li>
+</ul>
 <h3 id="robust-lqr">Robust LQR</h3>
 <p><strong>Problem</strong>: Model uncertainties can degrade performance</p>
-<p><strong>Extensions</strong>:
-- H∞ control for worst-case robustness
-- μ-synthesis for structured uncertainties
-- Adaptive LQR for parameter variations</p>
+<p><strong>Extensions</strong>:</p>
+<ul>
+<li><span class="arithmatex">\(H_\infty\)</span> control for worst-case robustness</li>
+<li>μ-synthesis for structured uncertainties</li>
+<li>Adaptive LQR for parameter variations</li>
+</ul>
 <hr />
 <h2 id="lqr-design-philosophy">🎨 LQR Design Philosophy</h2>
 <h3 id="the-art-of-weight-selection">The Art of Weight Selection</h3>
-<p><strong>Q Matrix Guidelines</strong>:
-- Start with identity, then iterate
-- Higher values → tighter control of those states
-- Balance different units (angles vs. positions vs. rates)
-- Consider coupled effects between states</p>
-<p><strong>R Matrix Guidelines</strong>:
-- Start with identity scaled by actuator limits
-- Higher values → more conservative control
-- Balance multiple actuators appropriately
-- Consider actuator bandwidth and power limits</p>
-<p><strong>Iterative Design Process</strong>:
-1. Start with reasonable initial weights
-2. Simulate closed-loop performance
-3. Identify performance shortcomings
-4. Adjust weights systematically
-5. Re-simulate and evaluate
-6. Repeat until satisfied</p>
+<p><strong>Q Matrix Guidelines</strong>:</p>
+<ul>
+<li>Start with identity, then iterate</li>
+<li>Higher values → tighter control of those states</li>
+<li>Balance different units (angles vs. positions vs. rates)</li>
+<li>Consider coupled effects between states</li>
+</ul>
+<p><strong>R Matrix Guidelines</strong>:</p>
+<ul>
+<li>Start with identity scaled by actuator limits</li>
+<li>Higher values → more conservative control</li>
+<li>Balance multiple actuators appropriately</li>
+<li>Consider actuator bandwidth and power limits</li>
+</ul>
+<p><strong>Iterative Design Process</strong>:</p>
+<ol>
+<li>Start with reasonable initial weights</li>
+<li>Simulate closed-loop performance</li>
+<li>Identify performance shortcomings</li>
+<li>Adjust weights systematically</li>
+<li>Re-simulate and evaluate</li>
+<li>Repeat until satisfied</li>
+</ol>
 <h3 id="engineering-judgment">Engineering Judgment</h3>
-<p>LQR is mathematically optimal, but optimality depends on your choices:
-- <strong>Model accuracy</strong>: LQR is only as good as your linear model
-- <strong>Weight selection</strong>: No automatic way to choose Q and R
-- <strong>Implementation constraints</strong>: Real systems have limits LQR doesn't know about</p>
+<p>LQR is mathematically optimal, but optimality depends on your choices:</p>
+<ul>
+<li><strong>Model accuracy</strong>: LQR is only as good as your linear model</li>
+<li><strong>Weight selection</strong>: No automatic way to choose Q and R</li>
+<li><strong>Implementation constraints</strong>: Real systems have limits LQR doesn't know about</li>
+</ul>
 <hr />
 <h2 id="common-pitfalls-and-solutions">🚨 Common Pitfalls and Solutions</h2>
 <h3 id="pitfall-1-poor-weight-selection">Pitfall 1: Poor Weight Selection</h3>
@@ -2210,27 +2255,27 @@ Where <strong>δᵢ</strong> are the four jet vane deflection angles.</p>
 <h2 id="self-assessment-checklist">🎯 Self-Assessment Checklist</h2>
 <h3 id="conceptual-mastery">Conceptual Mastery</h3>
 <ul>
-<li>[ ] Can explain why LQR is "optimal" and what that means</li>
-<li>[ ] Understand the physical meaning of Q and R matrices  </li>
-<li>[ ] Can describe the relationship between LQR and pole placement</li>
-<li>[ ] Know when LQR is appropriate vs. other control methods</li>
-<li>[ ] Understand controllability and its importance</li>
+<li>Can explain why LQR is "optimal" and what that means</li>
+<li>Understand the physical meaning of Q and R matrices  </li>
+<li>Can describe the relationship between LQR and pole placement</li>
+<li>Know when LQR is appropriate vs. other control methods</li>
+<li>Understand controllability and its importance</li>
 </ul>
 <h3 id="mathematical-competency_1">Mathematical Competency</h3>
 <ul>
-<li>[ ] Can set up LQR problem from system dynamics</li>
-<li>[ ] Know how to check controllability</li>
-<li>[ ] Can interpret Riccati equation solution</li>
-<li>[ ] Understand closed-loop eigenvalue placement</li>
-<li>[ ] Can analyze stability and performance mathematically</li>
+<li>Can set up LQR problem from system dynamics</li>
+<li>Know how to check controllability</li>
+<li>Can interpret Riccati equation solution</li>
+<li>Understand closed-loop eigenvalue placement</li>
+<li>Can analyze stability and performance mathematically</li>
 </ul>
 <h3 id="practical-skills">Practical Skills</h3>
 <ul>
-<li>[ ] Can design LQR controller for multi-variable system</li>
-<li>[ ] Know how to choose Q and R matrices systematically</li>
-<li>[ ] Can implement LQR in simulation and hardware</li>
-<li>[ ] Understand gain scheduling and robust design</li>
-<li>[ ] Can compare LQR vs. classical control performance</li>
+<li>Can design LQR controller for multi-variable system</li>
+<li>Know how to choose Q and R matrices systematically</li>
+<li>Can implement LQR in simulation and hardware</li>
+<li>Understand gain scheduling and robust design</li>
+<li>Can compare LQR vs. classical control performance</li>
 </ul>
 <hr />
 <h2 id="integration-with-gnc-systems">🔗 Integration with GNC Systems</h2>
