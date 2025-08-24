@@ -336,7 +336,7 @@
   
   
   <span class="md-ellipsis">
-    Flight CLass
+    Flight Class
     
   </span>
   
@@ -666,15 +666,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#team-structure-collaboration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Team Structure &amp; Collaboration
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#choose-your-learning-path" class="md-nav__link">
     <span class="md-ellipsis">
       🎯 Choose Your Learning Path
@@ -702,24 +693,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#software-learning-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      💻 Software Learning Path
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hardwareavionics-learning-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⚡ Hardware/Avionics Learning Path
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#learning-strategy-recommendations" class="md-nav__link">
     <span class="md-ellipsis">
       🎯 Learning Strategy Recommendations
@@ -733,15 +706,6 @@
   <a href="#universal-principles" class="md-nav__link">
     <span class="md-ellipsis">
       Universal Principles
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#time-commitment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Time Commitment Options
     </span>
   </a>
   
@@ -905,15 +869,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#team-structure-collaboration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Team Structure &amp; Collaboration
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#choose-your-learning-path" class="md-nav__link">
     <span class="md-ellipsis">
       🎯 Choose Your Learning Path
@@ -941,24 +896,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#software-learning-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      💻 Software Learning Path
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#hardwareavionics-learning-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⚡ Hardware/Avionics Learning Path
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#learning-strategy-recommendations" class="md-nav__link">
     <span class="md-ellipsis">
       🎯 Learning Strategy Recommendations
@@ -972,15 +909,6 @@
   <a href="#universal-principles" class="md-nav__link">
     <span class="md-ellipsis">
       Universal Principles
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#time-commitment-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Time Commitment Options
     </span>
   </a>
   
@@ -1020,42 +948,27 @@
 <h2 id="why-this-matters">Why This Matters</h2>
 <p>Controls is a difficult subject that requires a lot of prerequisite knowledge to meaningfully contribute to a project such as the jet vanes rocket we're building. The GNC (Guidance, Navigation, and Control) team works on complex rocket control systems that demand interdisciplinary knowledge spanning mathematics, engineering, and computer science.</p>
 <p>Taking the time to learn these fundamentals will benefit you not only as a member of GNC, but also as a student and for your resume. At Georgia Tech, the traditional path to controls knowledge requires taking PHYS 2211, COE 2001, AE 2220/MATH 2552, AE 3530, and finally AE 3531 - meaning it takes at least two years from physics to reach control theory. This bootcamp condenses that knowledge into focused, practical learning paths.</p>
-<h2 id="team-structure-collaboration">Team Structure &amp; Collaboration</h2>
-<p>We work as a specialized team where different members can focus on different areas:</p>
-<ul>
-<li><strong>Controls people</strong> assume they are working with an accurate state estimate</li>
-<li><strong>State estimation people</strong> don't worry about how to orient the rocket, merely determining the rocket's orientation at a given time</li>
-<li><strong>Software people</strong> bridge hardware and controls, making algorithms actually run</li>
-<li><strong>Avionics people</strong> design and build the electronic systems that power everything</li>
-</ul>
-<p>This division allows for specialization while maintaining system-level thinking.</p>
 <hr />
 <h2 id="choose-your-learning-path">🎯 Choose Your Learning Path</h2>
 <pre class="mermaid"><code>flowchart TD
     Start([New GNC Member]) --&gt; Assessment{What interests you most?}
 
-    Assessment --&gt; Controls[🎮 Controls&lt;br/&gt;Making rockets respond to commands&lt;br/&gt;LQR Implementation]
+    Assessment --&gt; Controls[🎮 Controls&lt;br/&gt;Making rockets respond to commands&lt;br/&gt;PID Implementation&lt;br/&gt;LQR Implementation]
     Assessment --&gt; State[📡 State Estimation&lt;br/&gt;Knowing where the rocket is&lt;br/&gt;Kalman Filtering]
-    Assessment --&gt; Software[💻 Software&lt;br/&gt;Embedded systems &amp; flight software&lt;br/&gt;STM32 Programming]
-    Assessment --&gt; Hardware[⚡ Avionics/Electrical&lt;br/&gt;Electronic system design&lt;br/&gt;PCB &amp; Sensors]
 
-    Controls --&gt; ControlsFlow[See Controls Flowchart]
-    State --&gt; StateFlow[See State Estimation Flowchart]
-    Software --&gt; SoftwareFlow[See Software Flowchart]
-    Hardware --&gt; HardwareFlow[See Hardware Flowchart]
+    Controls --&gt; ControlsFlow[See Controls Flowchart Below]
+    State --&gt; StateFlow[See State Estimation Flowchart Below]
 
     style Controls fill:#e3f2fd
-    style State fill:#f3e5f5
-    style Software fill:#e8f5e8
-    style Hardware fill:#fff3e0</code></pre>
+    style State fill:#f3e5f5</code></pre>
 <hr />
 <h2 id="controls-learning-path">🎮 Controls Learning Path</h2>
-<p><strong>Goal</strong>: Implement Linear Quadratic Regulator (LQR) control for jet vanes rocket</p>
+<p><strong>Goal</strong>: Learn from the ground-up until Linear Quadratic Regulator (LQR) control</p>
 <pre class="mermaid"><code>flowchart TD
-    A[📚 Mathematical Foundation&lt;br/&gt;Differential Equations &amp; Laplace&lt;br/&gt;~2-3 weeks] --&gt; B[🔄 Transfer Functions&lt;br/&gt;System representation in s-domain&lt;br/&gt;~1-2 weeks]
-    B --&gt; C[🎛️ PID Control&lt;br/&gt;Closed-loop control basics&lt;br/&gt;~1-2 weeks]
-    C --&gt; D[📊 State-Space Representation&lt;br/&gt;Matrix form for computation&lt;br/&gt;~2-3 weeks]
-    D --&gt; E[🎯 LQR Control&lt;br/&gt;Optimal full-state feedback&lt;br/&gt;~2-4 weeks]
+    A[📚 Mathematical Foundation&lt;br/&gt;Differential Equations &amp; Laplace] --&gt; B[🔄 Transfer Functions&lt;br/&gt;System representation in s-domain]
+    B --&gt; C[🎛️ PID Control&lt;br/&gt;Closed-loop control basics]
+    C --&gt; D[📊 State-Space Representation&lt;br/&gt;Matrix form for computation]
+    D --&gt; E[🎯 LQR Control&lt;br/&gt;Optimal full-state feedback]
 
     style A fill:#e1f5fe
     style E fill:#c8e6c9
@@ -1065,16 +978,15 @@
     C --&gt; C1[Understanding PID playlist&lt;br/&gt;Closed-loop concepts&lt;br/&gt;Tuning methods]
     D --&gt; D1[State-space equations&lt;br/&gt;Transfer function conversion&lt;br/&gt;Matrix representation]
     E --&gt; E1[Pole placement&lt;br/&gt;Controllability/Observability&lt;br/&gt;LQR optimal control]</code></pre>
-<p><strong>Prerequisites</strong>: Calculus, basic linear algebra, some programming experience<br />
-<strong>Total Time</strong>: 8-14 weeks of consistent study</p>
+<p><strong>Prerequisites</strong>: Calculus, basic linear algebra, some programming experience  </p>
 <hr />
 <h2 id="state-estimation-learning-path">📡 State Estimation Learning Path</h2>
 <p><strong>Goal</strong>: Accurately determine rocket position, velocity, orientation using noisy sensor data</p>
 <pre class="mermaid"><code>flowchart TD
-    A[📊 Probability Foundation&lt;br/&gt;Statistics &amp; uncertainty&lt;br/&gt;~1-2 weeks] --&gt; B[🔍 Kalman Filter Theory&lt;br/&gt;Optimal state estimation&lt;br/&gt;~3-4 weeks]
-    B --&gt; C[🛠️ Sensor Calibration&lt;br/&gt;Unbiasing &amp; drift correction&lt;br/&gt;~2-3 weeks]
-    C --&gt; D[✈️ Flight Mechanics&lt;br/&gt;Rocket dynamics &amp; motion&lt;br/&gt;~3-4 weeks]
-    D --&gt; E[🎯 Linearization &amp; Trim&lt;br/&gt;Making nonlinear systems linear&lt;br/&gt;~2-3 weeks]
+    A[📊 Probability Foundation&lt;br/&gt;Statistics &amp; uncertainty] --&gt; B[🔍 Kalman Filter Theory&lt;br/&gt;Optimal state estimation]
+    B --&gt; C[🛠️ Sensor Calibration&lt;br/&gt;Unbiasing &amp; drift correction]
+    C --&gt; D[✈️ Flight Mechanics&lt;br/&gt;Rocket dynamics &amp; motion]
+    D --&gt; E[🎯 Linearization &amp; Trim&lt;br/&gt;Making nonlinear systems linear]
 
     style A fill:#e1f5fe
     style E fill:#c8e6c9
@@ -1084,42 +996,7 @@
     C --&gt; C1[Turn-on bias correction&lt;br/&gt;Drift compensation&lt;br/&gt;Sensor fusion techniques]
     D --&gt; D1[Euler angles&lt;br/&gt;Equations of motion&lt;br/&gt;Flat Earth approximation]
     E --&gt; E1[Trim point optimization&lt;br/&gt;Jacobian linearization&lt;br/&gt;LQR integration prep]</code></pre>
-<p><strong>Prerequisites</strong>: Probability/statistics, linear algebra, Python programming, sensor basics<br />
-<strong>Total Time</strong>: 11-16 weeks of consistent study</p>
-<hr />
-<h2 id="software-learning-path">💻 Software Learning Path</h2>
-<p><strong>Goal</strong>: Bridge hardware and controls through embedded programming</p>
-<pre class="mermaid"><code>flowchart TD
-    A[🔧 Programming Fundamentals&lt;br/&gt;C, Linux, Git basics&lt;br/&gt;~3-4 weeks] --&gt; B[🖥️ Embedded Programming&lt;br/&gt;STM32 &amp; bare-metal&lt;br/&gt;~4-6 weeks]
-    B --&gt; C[📡 Hardware Interface&lt;br/&gt;Protocols &amp; sensors&lt;br/&gt;~3-4 weeks]
-    C --&gt; D[⚙️ Advanced Systems&lt;br/&gt;RTOS &amp; architecture&lt;br/&gt;~4+ weeks]
-
-    style A fill:#e1f5fe
-    style D fill:#c8e6c9
-
-    A --&gt; A1[C programming syntax&lt;br/&gt;Linux command line&lt;br/&gt;Git version control&lt;br/&gt;Microcontroller intro]
-    B --&gt; B1[STM32 platform&lt;br/&gt;Bare-metal programming&lt;br/&gt;Digital design&lt;br/&gt;Memory management]
-    C --&gt; C1[SPI/I2C/UART protocols&lt;br/&gt;GPIO operations&lt;br/&gt;IMU integration&lt;br/&gt;Sensor interfacing]
-    D --&gt; D1[Real-time operating systems&lt;br/&gt;Computer architecture&lt;br/&gt;Performance optimization&lt;br/&gt;System debugging]</code></pre>
-<p><strong>Prerequisites</strong>: Basic programming, command line comfort, willingness to learn C<br />
-<strong>Total Time</strong>: 14+ weeks (phases 1-3 most critical)</p>
-<hr />
-<h2 id="hardwareavionics-learning-path">⚡ Hardware/Avionics Learning Path</h2>
-<p><strong>Goal</strong>: Design and build electronic systems for rocket control</p>
-<pre class="mermaid"><code>flowchart TD
-    A[⚡ Electrical Fundamentals&lt;br/&gt;Circuit analysis basics&lt;br/&gt;~2-3 weeks] --&gt; B[🔌 Component Design&lt;br/&gt;Selection &amp; integration&lt;br/&gt;~3-4 weeks]
-    B --&gt; C[📟 PCB Development&lt;br/&gt;Layout &amp; manufacturing&lt;br/&gt;~4-6 weeks]
-    C --&gt; D[🧪 Testing &amp; Integration&lt;br/&gt;System validation&lt;br/&gt;~Ongoing]
-
-    style A fill:#e1f5fe
-    style D fill:#c8e6c9
-
-    A --&gt; A1[Ohm's law applications&lt;br/&gt;Voltage/current analysis&lt;br/&gt;Power calculations&lt;br/&gt;Basic components]
-    B --&gt; B1[Sensor selection&lt;br/&gt;Power management&lt;br/&gt;Signal conditioning&lt;br/&gt;Interface design]
-    C --&gt; C1[PCB layout software&lt;br/&gt;Design rules&lt;br/&gt;Manufacturing constraints&lt;br/&gt;Assembly planning]
-    D --&gt; D1[Functional testing&lt;br/&gt;Environmental validation&lt;br/&gt;System integration&lt;br/&gt;Flight certification]</code></pre>
-<p><strong>Prerequisites</strong>: Basic electricity concepts, mathematical comfort, hands-on interest<br />
-<strong>Total Time</strong>: Highly project-dependent, best learned through direct involvement</p>
+<p><strong>Prerequisites</strong>: Probability/statistics, linear algebra, Python programming, sensor basics  </p>
 <hr />
 <h2 id="learning-strategy-recommendations">🎯 Learning Strategy Recommendations</h2>
 <h3 id="universal-principles">Universal Principles</h3>
@@ -1128,12 +1005,6 @@
 <li><strong>Implement in code</strong> - Don't just watch videos, write and test examples</li>
 <li><strong>Ask for guidance</strong> - Engage with team leads, but work to figure out answers yourself</li>
 <li><strong>Start small projects</strong> - Apply knowledge immediately to reinforce learning</li>
-</ul>
-<h3 id="time-commitment-options">Time Commitment Options</h3>
-<ul>
-<li><strong>Intensive</strong>: 10-15 hours/week → Complete primary path in one semester</li>
-<li><strong>Balanced</strong>: 5-8 hours/week → Complete over two semesters</li>
-<li><strong>Casual</strong>: 2-4 hours/week → Complete over academic year</li>
 </ul>
 <h3 id="success-factors">Success Factors</h3>
 <p>Your learning is a function of how much effort you put into it. Team members who actively engage with leads, take good notes, and implement concepts in code learn exponentially faster than those who try to go it alone.</p>
