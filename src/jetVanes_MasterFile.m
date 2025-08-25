@@ -373,8 +373,8 @@ variations_cell_arr = {
 TrimPointsObj.set_reference_states(time_arr, variations_cell_arr);
 
 %% RunFlight
-FlightObj.set_runClosedLoop(false); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(false);
+FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
+FlightObj.set_applyWind(true);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
