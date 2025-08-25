@@ -5,10 +5,10 @@ Please follow the [git setup](git_onboarding_instructions.md) guide first if you
 
 ## Table of Contents
 
+- [Basic Workflow](#basic-workflow)
 - [What is Git?](#what-is-git)
 - [Understanding Git Concepts](#understanding-git-concepts)
 - [Getting Started with a Project](#getting-started-with-a-project)
-- [Basic Workflow](#basic-workflow)
 - [Branching](#branching)
 - [Working with Remote Repositories](#working-with-remote-repositories)
 - [Fetching and Pulling](#fetching-and-pulling)
@@ -17,6 +17,42 @@ Please follow the [git setup](git_onboarding_instructions.md) guide first if you
 - [Common Scenarios](#common-scenarios)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+## Basic Workflow
+
+**This is the standard workflow all team members should follow.** Each step uses Git commands that are explained in detail in the sections below:
+
+```bash
+# 1. Fetch latest changes from remote
+git fetch origin
+
+# 2. Check which branch you're currently on
+git branch
+# or for more detail:
+git status
+
+# 3. If on a feature branch, rebase on main to stay up-to-date
+git checkout main
+git pull origin main
+git checkout your-feature-branch
+git rebase main
+
+# 4. Make changes to your files (edit, create, delete)
+
+# 5. See what changed
+git diff
+
+# 6. Add changes to staging area
+git add filename.txt           # Add specific file
+git add .                      # Add all changes
+git add *.js                   # Add all JavaScript files
+
+# 7. Commit the changes
+git commit -m "Describe what you changed"
+
+# 8. Push to remote repository
+git push
+```
 
 ## What is Git?
 
@@ -61,42 +97,6 @@ Files in Git can be in different states:
 ## Getting Started with a Project
 
 Follow the [git setup](git_onboarding_instructions.md) to clone GNCSIM to your local machine. 
-
-## Basic Workflow
-
-**This is the standard workflow all team members should follow.** Each step uses Git commands that are explained in detail in the sections below:
-
-```bash
-# 1. Fetch latest changes from remote
-git fetch origin
-
-# 2. Check which branch you're currently on
-git branch
-# or for more detail:
-git status
-
-# 3. If on a feature branch, rebase on main to stay up-to-date
-git checkout main
-git pull origin main
-git checkout your-feature-branch
-git rebase main
-
-# 4. Make changes to your files (edit, create, delete)
-
-# 5. See what changed
-git diff
-
-# 6. Add changes to staging area
-git add filename.txt           # Add specific file
-git add .                      # Add all changes
-git add *.js                   # Add all JavaScript files
-
-# 7. Commit the changes
-git commit -m "Describe what you changed"
-
-# 8. Push to remote repository
-git push
-```
 
 ## Branching
 
