@@ -147,11 +147,29 @@ git branch -vv
 
 Assuming your branch is already tracking the remote (see above):
 ```bash
+# Make sure you are on the branch
+git checkout feature-branch
+
 # Fetch all changes from remote (safe - doesn't change your code)
 git fetch
 
 # Merge all changes from remote into your branch:
 git pull
+```
+
+To pull a branch that's on the remote (but not on your local computer yet)
+```bash
+# Fetch all remote branches
+git fetch origin
+
+# See all remote branches
+git branch -r
+
+# Checkout to the branch you want (git should set automatic tracking)
+git checkout feature-branch
+
+# Pull all changes (once in the branch)
+git pull 
 ```
 
 ### When to Use Each
@@ -184,6 +202,12 @@ You can make many commits locally before pushing them all at once to the remote 
 ### Making Good Commits
 
 ```bash
+# Make sure you are in the right branch
+git branch 
+
+# Check which files are untracked, tracked, staged, and ready to commit 
+git status
+
 # Add specific files
 git add file1.js file2.css
 
