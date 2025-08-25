@@ -1655,24 +1655,35 @@ Please follow the <a href="../git_onboarding_instructions/">git setup</a> guide 
 <h2 id="getting-started-with-a-project">Getting Started with a Project</h2>
 <p>Follow the <a href="../git_onboarding_instructions/">git setup</a> to clone GNCSIM to your local machine. </p>
 <h2 id="basic-workflow">Basic Workflow</h2>
-<p>The fundamental Git workflow looks like this:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># 1. Check current status</span>
+<p><strong>This is the standard workflow all team members should follow.</strong> Each step uses Git commands that are explained in detail in the sections below:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Fetch latest changes from remote</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+
+<span class="c1"># 2. Check which branch you&#39;re currently on</span>
+git<span class="w"> </span>branch
+<span class="c1"># or for more detail:</span>
 git<span class="w"> </span>status
 
-<span class="c1"># 2. Make changes to your files (edit, create, delete)</span>
+<span class="c1"># 3. If on a feature branch, rebase on main to stay up-to-date</span>
+git<span class="w"> </span>checkout<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
+git<span class="w"> </span>checkout<span class="w"> </span>your-feature-branch
+git<span class="w"> </span>rebase<span class="w"> </span>main
 
-<span class="c1"># 3. See what changed</span>
+<span class="c1"># 4. Make changes to your files (edit, create, delete)</span>
+
+<span class="c1"># 5. See what changed</span>
 git<span class="w"> </span>diff
 
-<span class="c1"># 4. Add changes to staging area</span>
+<span class="c1"># 6. Add changes to staging area</span>
 git<span class="w"> </span>add<span class="w"> </span>filename.txt<span class="w">           </span><span class="c1"># Add specific file</span>
 git<span class="w"> </span>add<span class="w"> </span>.<span class="w">                      </span><span class="c1"># Add all changes</span>
 git<span class="w"> </span>add<span class="w"> </span>*.js<span class="w">                   </span><span class="c1"># Add all JavaScript files</span>
 
-<span class="c1"># 5. Commit the changes</span>
+<span class="c1"># 7. Commit the changes</span>
 git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Describe what you changed&quot;</span>
 
-<span class="c1"># 6. Push to remote repository</span>
+<span class="c1"># 8. Push to remote repository</span>
 git<span class="w"> </span>push
 </code></pre></div>
 <h2 id="branching">Branching</h2>
@@ -1721,11 +1732,27 @@ git<span class="w"> </span>branch<span class="w"> </span>-vv
 <li><strong>Pull:</strong> Downloads changes AND merges them into your current branch</li>
 </ul>
 <p>Assuming your branch is already tracking the remote (see above):
-<div class="highlight"><pre><span></span><code><span class="c1"># Fetch all changes from remote (safe - doesn&#39;t change your code)</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Make sure you are on the branch</span>
+git<span class="w"> </span>checkout<span class="w"> </span>feature-branch
+
+<span class="c1"># Fetch all changes from remote (safe - doesn&#39;t change your code)</span>
 git<span class="w"> </span>fetch
 
 <span class="c1"># Merge all changes from remote into your branch:</span>
 git<span class="w"> </span>pull
+</code></pre></div></p>
+<p>To pull a branch that's on the remote (but not on your local computer yet)
+<div class="highlight"><pre><span></span><code><span class="c1"># Fetch all remote branches</span>
+git<span class="w"> </span>fetch<span class="w"> </span>origin
+
+<span class="c1"># See all remote branches</span>
+git<span class="w"> </span>branch<span class="w"> </span>-r
+
+<span class="c1"># Checkout to the branch you want (git should set automatic tracking)</span>
+git<span class="w"> </span>checkout<span class="w"> </span>feature-branch
+
+<span class="c1"># Pull all changes (once in the branch)</span>
+git<span class="w"> </span>pull<span class="w"> </span>
 </code></pre></div></p>
 <h3 id="when-to-use-each">When to Use Each</h3>
 <ul>
@@ -1759,7 +1786,13 @@ git<span class="w"> </span>pull
 </ul>
 <p>You can make many commits locally before pushing them all at once to the remote repository.</p>
 <h3 id="making-good-commits">Making Good Commits</h3>
-<div class="highlight"><pre><span></span><code><span class="c1"># Add specific files</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># Make sure you are in the right branch</span>
+git<span class="w"> </span>branch<span class="w"> </span>
+
+<span class="c1"># Check which files are untracked, tracked, staged, and ready to commit </span>
+git<span class="w"> </span>status
+
+<span class="c1"># Add specific files</span>
 git<span class="w"> </span>add<span class="w"> </span>file1.js<span class="w"> </span>file2.css
 
 <span class="c1"># Add all changes in current directory</span>
