@@ -64,26 +64,37 @@ Follow the [git setup](git_onboarding_instructions.md) to clone GNCSIM to your l
 
 ## Basic Workflow
 
-The fundamental Git workflow looks like this:
+**This is the standard workflow all team members should follow.** Each step uses Git commands that are explained in detail in the sections below:
 
 ```bash
-# 1. Check current status
+# 1. Fetch latest changes from remote
+git fetch origin
+
+# 2. Check which branch you're currently on
+git branch
+# or for more detail:
 git status
 
-# 2. Make changes to your files (edit, create, delete)
+# 3. If on a feature branch, rebase on main to stay up-to-date
+git checkout main
+git pull origin main
+git checkout your-feature-branch
+git rebase main
 
-# 3. See what changed
+# 4. Make changes to your files (edit, create, delete)
+
+# 5. See what changed
 git diff
 
-# 4. Add changes to staging area
+# 6. Add changes to staging area
 git add filename.txt           # Add specific file
 git add .                      # Add all changes
 git add *.js                   # Add all JavaScript files
 
-# 5. Commit the changes
+# 7. Commit the changes
 git commit -m "Describe what you changed"
 
-# 6. Push to remote repository
+# 8. Push to remote repository
 git push
 ```
 
