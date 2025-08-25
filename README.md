@@ -4,5 +4,5 @@ GNC Simulation, Integration, and Modeling (GNCSIM) is the future of how GNC perf
 
 ## Documentation
 
-The [GNCSIM Documentation](https://gtvault.sharepoint.com/:f:/s/gnc/Es1GMQJQkK1IlyImzKzuF2cBYLz4-xXhQ_Y9vMDLjO26Zw?e=yQhzuy) is available on the GNC SharePoint.
+The [GNCSIM Documentation](https://github.gatech.edu/pages/gnc/GNCSIM) is available on the GNCSIM GitHub Pages.
 
