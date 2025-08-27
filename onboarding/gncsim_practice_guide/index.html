@@ -1204,11 +1204,13 @@
 <h1 id="gncsim-practice-guide">GNCSIM Practice Guide</h1>
 <h2 id="overview">Overview</h2>
 <p>Welcome to GNCSIM! This guide will walk you through your first hands-on experience with our rocket simulation system. You'll learn how to run the Jet Vanes Rocket (JVR) simulation, modify parameters, and submit your first practice pull request.</p>
-<p><strong>Learning Objectives:</strong>
-- Understand the GNCSIM simulation workflow
-- Run the JVR master file successfully
-- Modify simulation parameters and observe effects
-- Practice our Git workflow with a pull request</p>
+<p><strong>Learning Objectives:</strong></p>
+<ul>
+<li>Understand the GNCSIM simulation workflow</li>
+<li>Run the JVR master file successfully</li>
+<li>Modify simulation parameters and observe effects</li>
+<li>Practice our Git workflow with a pull request</li>
+</ul>
 <hr />
 <h2 id="prerequisites">📋 Prerequisites</h2>
 <p>Before starting this practice task, make sure you've completed:</p>
@@ -1285,12 +1287,16 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 </li>
 <li>Run the clear section, the initialize simulation, and the run flight sections one after the other (right click -&gt; run section)</li>
 </ol>
-<p><strong>Expected Results:</strong>
-- Simulation dashboard plots showing rocket trajectory
-- Flight data logged to console
-- No errors (if you get errors, ask for help!)</p>
-<p><strong>⚠️ Important Notes:</strong>
-- Runs might take up to ~350s </p>
+<p><strong>Expected Results:</strong></p>
+<ul>
+<li>Simulation dashboard plots showing rocket trajectory</li>
+<li>Flight data logged to console</li>
+<li>No errors (if you get errors, ask for help!)</li>
+</ul>
+<p><strong>⚠️ Important Notes:</strong></p>
+<ul>
+<li>Runs might take up to ~350s </li>
+</ul>
 <h3 id="step-4-explore-and-modify-parameters">Step 4: Explore and Modify Parameters</h3>
 <p>Now experiment with different parameters to see their effects:</p>
 <h4 id="experiment-1-rocket-mass-properties"><strong>Experiment 1: Rocket Mass Properties</strong></h4>
@@ -1301,9 +1307,11 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <span class="c">% Try a heavier rocket:</span>
 <span class="n">wet_mass</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">50.0</span><span class="p">;</span><span class="w">  </span><span class="c">% Heavier rocket</span>
 </code></pre></div>
-<p><strong>Questions to explore:</strong>
-- How does increased mass affect maximum altitude?
-- Does the rocket trajectory change significantly?</p>
+<p><strong>Questions to explore:</strong></p>
+<ul>
+<li>How does increased mass affect maximum altitude?</li>
+<li>Does the rocket trajectory change significantly?</li>
+</ul>
 <h4 id="experiment-2-increase-wind-strength-first"><strong>Experiment 2: Increase Wind Strength First</strong></h4>
 <p>In <code>setupEnvironment()</code> function, increase wind conditions:</p>
 <div class="highlight"><pre><span></span><code><span class="c">% Original values</span>
@@ -1323,10 +1331,12 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <span class="nb">log</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">FlightObj</span><span class="p">.</span><span class="n">runFlight</span><span class="p">(</span><span class="n">Doof</span><span class="p">,</span><span class="w"> </span><span class="n">EnvironmentObj</span><span class="p">,</span><span class="w"> </span><span class="n">AeroObj</span><span class="p">,</span><span class="w"> </span><span class="n">TrimPointsObj</span><span class="p">);</span>
 <span class="n">FlightObj</span><span class="p">.</span><span class="n">plot_sim_dashboard</span><span class="p">(</span><span class="nb">log</span><span class="p">,</span><span class="w"> </span><span class="n">Doof</span><span class="p">,</span><span class="w"> </span><span class="n">EnvironmentObj</span><span class="p">);</span>
 </code></pre></div>
-<p><strong>Questions to explore:</strong>
-- How well does the control system handle strong wind?
-- What happens to the rocket when there's no control system but strong wind?
-- How much does the rocket deviate from its intended path without control?</p>
+<p><strong>Questions to explore:</strong></p>
+<ul>
+<li>How well does the control system handle strong wind?</li>
+<li>What happens to the rocket when there's no control system but strong wind?</li>
+<li>How much does the rocket deviate from its intended path without control?</li>
+</ul>
 <h3 id="step-5-commit-your-changes">Step 5: Commit Your Changes</h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Check what you&#39;ve changed</span>
 git<span class="w"> </span>status
@@ -1348,34 +1358,48 @@ git<span class="w"> </span>push
 <hr />
 <h2 id="understanding-your-results">🔍 Understanding Your Results</h2>
 <h3 id="common-observations">Common Observations</h3>
-<p><strong>Mass Changes:</strong>
-- Heavier rockets typically reach lower altitudes
-- Mass affects acceleration and overall flight performance</p>
-<p><strong>Control System Effects:</strong>
-- Without control, rockets are much more sensitive to disturbances
-- Wind can cause significant trajectory deviations in uncontrolled flight</p>
-<p><strong>Wind Effects:</strong>
-- Strong winds dramatically affect rocket trajectory when controls are disabled
-- Demonstrates the importance of active control systems for stable flight</p>
+<p><strong>Mass Changes:</strong></p>
+<ul>
+<li>Heavier rockets typically reach lower altitudes</li>
+<li>Mass affects acceleration and overall flight performance</li>
+</ul>
+<p><strong>Control System Effects:</strong></p>
+<ul>
+<li>Without control, rockets are much more sensitive to disturbances</li>
+<li>Wind can cause significant trajectory deviations in uncontrolled flight</li>
+</ul>
+<p><strong>Wind Effects:</strong></p>
+<ul>
+<li>Strong winds dramatically affect rocket trajectory when controls are disabled</li>
+<li>Demonstrates the importance of active control systems for stable flight</li>
+</ul>
 <h3 id="troubleshooting">Troubleshooting</h3>
 <p><strong>Common Issues:</strong></p>
 <ol>
-<li><strong>"Variable not defined" errors</strong></li>
-<li>Make sure you're in the right directory</li>
+<li>
+<p><strong>"Variable not defined" errors</strong></p>
+</li>
+<li>
+<p>Make sure you're in the right directory</p>
+</li>
 <li>
 <p>Check that all paths are set correctly</p>
 </li>
 <li>
 <p><strong>Simulation crashes</strong></p>
 </li>
-<li>Try smaller time steps</li>
+<li>
+<p>Try smaller time steps</p>
+</li>
 <li>
 <p>Check for extreme parameter values</p>
 </li>
 <li>
 <p><strong>Simulation takes forever</strong></p>
 </li>
-<li>First run generates trim points (be patient!)</li>
+<li>
+<p>First run generates trim points (be patient!)</p>
+</li>
 <li>Subsequent runs should be faster</li>
 </ol>
 <hr />
