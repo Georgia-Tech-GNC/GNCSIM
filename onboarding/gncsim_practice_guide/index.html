@@ -630,39 +630,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#getting-started-with-gncsim" class="md-nav__link">
-    <span class="md-ellipsis">
-      🚀 Getting Started with GNCSIM
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🚀 Getting Started with GNCSIM">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-is-gncsim" class="md-nav__link">
-    <span class="md-ellipsis">
-      What is GNCSIM?
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#key-components" class="md-nav__link">
-    <span class="md-ellipsis">
-      Key Components
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#your-practice-task" class="md-nav__link">
     <span class="md-ellipsis">
       🎯 Your Practice Task
@@ -1018,39 +985,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#getting-started-with-gncsim" class="md-nav__link">
-    <span class="md-ellipsis">
-      🚀 Getting Started with GNCSIM
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🚀 Getting Started with GNCSIM">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-is-gncsim" class="md-nav__link">
-    <span class="md-ellipsis">
-      What is GNCSIM?
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#key-components" class="md-nav__link">
-    <span class="md-ellipsis">
-      Key Components
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#your-practice-task" class="md-nav__link">
     <span class="md-ellipsis">
       🎯 Your Practice Task
@@ -1220,26 +1154,6 @@
 <li><strong><a href="../matlab_onboarding/">MATLAB Onboarding</a></strong> - MATLAB setup and basics</li>
 </ol>
 <hr />
-<h2 id="getting-started-with-gncsim">🚀 Getting Started with GNCSIM</h2>
-<h3 id="what-is-gncsim">What is GNCSIM?</h3>
-<p>GNCSIM is our <strong>Guidance, Navigation, and Control Simulation</strong> system for rocket flight analysis. It simulates:</p>
-<ul>
-<li><strong>Rocket dynamics</strong> (mass properties, thrust curves, aerodynamics)</li>
-<li><strong>Environmental conditions</strong> (wind, atmosphere)</li>
-<li><strong>Control systems</strong> (PID/LQR controllers, jet vanes)</li>
-<li><strong>Monte Carlo analysis</strong> (uncertainty quantification)</li>
-</ul>
-<h3 id="key-components">Key Components</h3>
-<p>The simulation consists of several main objects:</p>
-<ul>
-<li><strong>Rocket</strong>: Mass properties, geometry, thrust curve</li>
-<li><strong>Aerodynamics</strong>: Forces and moments acting on rocket</li>
-<li><strong>Environment</strong>: Atmospheric conditions, wind</li>
-<li><strong>Flight</strong>: Simulation settings, initial conditions</li>
-<li><strong>TrimPoints</strong>: Linearized models for control design</li>
-<li><strong>MonteCarlo</strong>: Uncertainty analysis</li>
-</ul>
-<hr />
 <h2 id="your-practice-task">🎯 Your Practice Task</h2>
 <h3 id="step-1-create-your-practice-branch">Step 1: Create Your Practice Branch</h3>
 <p>Follow our standard Git workflow:</p>
@@ -1277,7 +1191,7 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <h3 id="step-3-run-the-base-simulation">Step 3: Run the Base Simulation</h3>
 <ol>
 <li>
-<p><strong>Open MATLAB</strong> and navigate to the GNCSIM/src directory</p>
+<p><strong>Open MATLAB</strong> and navigate to the GNCSIM/src/ directory</p>
 </li>
 <li>
 <p><strong>Run the simulation</strong>:</p>
@@ -1285,7 +1199,7 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <li>
 <p>Navigate to the jetVanes_MasterFile.m</p>
 </li>
-<li>Run the clear section, the initialize simulation, and the run flight sections one after the other (right click -&gt; run section)</li>
+<li>Run the "clear" section, the "initialize simulation", and the "run flight" sections one after the other (right click -&gt; run section)</li>
 </ol>
 <p><strong>Expected Results:</strong></p>
 <ul>
@@ -1378,29 +1292,25 @@ git<span class="w"> </span>push
 <ol>
 <li>
 <p><strong>"Variable not defined" errors</strong></p>
-</li>
-<li>
-<p>Make sure you're in the right directory</p>
-</li>
-<li>
-<p>Check that all paths are set correctly</p>
+<ul>
+<li>Make sure you're in the right directory</li>
+<li>Check that all paths are set correctly</li>
+</ul>
 </li>
 <li>
 <p><strong>Simulation crashes</strong></p>
-</li>
-<li>
-<p>Try smaller time steps</p>
-</li>
-<li>
-<p>Check for extreme parameter values</p>
+<ul>
+<li>Try smaller time steps</li>
+<li>Check for extreme parameter values</li>
+</ul>
 </li>
 <li>
 <p><strong>Simulation takes forever</strong></p>
-</li>
-<li>
-<p>First run generates trim points (be patient!)</p>
-</li>
+<ul>
+<li>First run generates trim points (be patient!)</li>
 <li>Subsequent runs should be faster</li>
+</ul>
+</li>
 </ol>
 <hr />
 <p>Welcome to the team! 🚀</p>
