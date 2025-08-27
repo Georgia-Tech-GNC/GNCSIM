@@ -11,6 +11,10 @@
         <link rel="canonical" href="https://github.gatech.edu/pages/gnc/GNCSIM/onboarding/gncsim_practice_guide/">
       
       
+        <link rel="prev" href="../matlab_onboarding/">
+      
+      
+        <link rel="next" href="../../learning-resources/main_flowcharts/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -18,7 +22,7 @@
     
     
       
-        <title>GNCSIM Practice Guide - GNCSIM Wiki</title>
+        <title>Running GNCSIM - GNCSIM Wiki</title>
       
     
     
@@ -103,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              GNCSIM Practice Guide
+              Running GNCSIM
             
           </span>
         </div>
@@ -446,18 +450,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -473,7 +479,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Onboarding
@@ -553,10 +559,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../gncsim_practice_guide.md" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Running GNCSIM
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -567,6 +595,212 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      📋 Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-with-gncsim" class="md-nav__link">
+    <span class="md-ellipsis">
+      🚀 Getting Started with GNCSIM
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🚀 Getting Started with GNCSIM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-gncsim" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is GNCSIM?
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Components
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#your-practice-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      🎯 Your Practice Task
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🎯 Your Practice Task">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-your-practice-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Create Your Practice Branch
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-understanding-the-jvr-master-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Understanding the JVR Master File
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-run-the-base-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Run the Base Simulation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-explore-and-modify-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Explore and Modify Parameters
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 4: Explore and Modify Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#experiment-1-rocket-mass-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experiment 1: Rocket Mass Properties
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#experiment-2-increase-wind-strength-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experiment 2: Increase Wind Strength First
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#experiment-3-turn-off-control-system-with-strong-wind" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experiment 3: Turn Off Control System with Strong Wind
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-commit-your-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Commit Your Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-7-submit-practice-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 7: Submit Practice Pull Request
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-your-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔍 Understanding Your Results
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔍 Understanding Your Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-observations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Observations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
