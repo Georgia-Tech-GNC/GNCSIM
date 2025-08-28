@@ -36,6 +36,7 @@ nav:
     - Git Installation and Setup: onboarding/git_onboarding_instructions.md
     - Git Usage Guide: onboarding/git_guide.md
     - MATLAB Resources: onboarding/matlab_onboarding.md
+    - Running GNCSIM: onboarding/gncsim_practice_guide.md
 - Learning Resources:
     - Learning Tree: learning-resources/main_flowcharts.md
     - Math Foundations: learning-resources/math_foundations.md 
