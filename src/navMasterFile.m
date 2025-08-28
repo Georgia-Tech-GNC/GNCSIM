@@ -11,7 +11,7 @@ gyro = Sensor.Gyro(gyroBias, gyroRange, gyroNoise_density, gyroSampling_rate);
 refLLA = [33.776, -84.399, 306];
 gps = Sensor.GPS(refLLA);
 
-dt = [];
+dt = 0.01;
 x0 = [0;0;0;0;0;0];
 P0 = 0.01 .* eye(6);
 sigma_a = 10;
@@ -35,16 +35,23 @@ dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q
             0,                        0, 0,                        1, 0,                        0
             0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
             0,                        0, 0,                        0, 0,                        1];
-dhdx = [1 0 0 0 0 0;
+
+dhdx = @(x)[1 0 0 0 0 0;
             0 0 1 0 0 0;
             0 0 0 0 1 0];
 
 navObj = Navigation(x0, P0, q0, Q, R, f, dfdx, h, dhdx, accelerometer, gyro, gps);
-%%
+%% Load trajectory data
 load('data/6dof_traj.mat') % Generates struct of flight simulation data named "log"
 
-%%
+%% Run main navigation
 ts = log.loggedData.time;
+log.loggedData.x = zeros(6, length(ts));
+log.loggedData.x(:,1) = x0;
+
+log.loggedData.q = zeros(4, length(ts));
+log.loggedData.q(:,1) = q0;
+
 for i = 1:length(ts)-1
 
     t = ts(i);
@@ -52,9 +59,29 @@ for i = 1:length(ts)-1
     navObj = navObj.readSensors(log, t);
     navObj = navObj.runAttitudeEstimation(dt);
     navObj = navObj.runEKF(dt);
-
+    
+    log.loggedData.x(:,i+1) = navObj.EKF_x;
+    log.loggedData.q(:,i+1) = navObj.q_current;
 end
 
+%% Plotting
+
+figure(1); clf
+plot3(log.loggedData.x(2, :), log.loggedData.x(3,:), log.loggedData.x(1,:));
+title('EKF Estimated Traj')
+
+figure(2); clf
+plot3(log.loggedData.posFlat(:,2), log.loggedData.posFlat(:,3), log.loggedData.posFlat(:,1))
+title('Actual Traj')
+
+figure(3); clf
+hold on
+plot(ts, log.loggedData.q(2,:))
+plot(ts, log.loggedData.q(3,:))
+plot(ts, log.loggedData.q(4,:))
+legend('q_1', 'q_2', 'q_3')
+xlabel('Time (s)')
+ylabel('Quaternion Components Ignoring q_0')
 %% What we need to convert from old code
 
 % function f = state_transition_fn(ekf,atdf,sensor)
@@ -93,7 +120,8 @@ function [x_tplus1] = state_transition_fn(x_n, q_current, accel_body,dt)
     f3 = x_n(3) + velFlat_n(2)*dt;
     f4 = x_n(4) + dt*accel_body(2);
     f5 = x_n(5) + velFlat_n(3)*dt;
-    f6 = x_n(6) + dt*accel_body(3);    
+    f6 = x_n(6) + dt*accel_body(3);   
     x_tplus1 = [f1;f2;f3;f4;f5;f6];
 
 end
+

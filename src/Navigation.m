@@ -24,7 +24,7 @@ classdef Navigation
     
     methods
         %Constructor
-        function obj = Navigation(initialState,initialCovariance, initialQuaternion, processNoise, measurementNoise, f, dfdx, h, dhdx, accelerometer, gyro, gps)         
+        function obj = Navigation(initialState,initialCovariance, initialQuaternion, processNoise, measurementNoise, f, dfdx, h, dhdx,accelerometer, gyro, gps)         
             obj.EKF_x = initialState;
             obj.EKF_P = initialCovariance;
             obj.EKF_Q = processNoise; 
@@ -44,7 +44,7 @@ classdef Navigation
                 % Prediction Step
                 
                 obj.EKF_x = obj.f(obj.EKF_x, obj.q_current, obj.accelForStep, dt);
-                obj.EKF_P = obj.predict_covariance();
+                obj.EKF_P = obj.predict_covariance(dt);
                 
                 % Update Step
                 obj.z = obj.gpsDataForStep';
@@ -83,8 +83,8 @@ classdef Navigation
         end
         
         % Predict Covariance
-        function P_next = predict_covariance(obj)
-            F = obj.dfdx(obj.EKF_x, obj.q_current);
+        function P_next = predict_covariance(obj, dt)
+            F = obj.dfdx(dt, obj.q_current);
             P_next = F * obj.EKF_P * F' + obj.EKF_Q;
         end
         
@@ -106,16 +106,12 @@ classdef Navigation
             posFlat = log.loggedData.posFlat;
             velBody = log.loggedData.velBody;
             velFlat = Sensor.quat_rotate( conj(q_bf), velBody );
-            obj.gpsDataForStep = obj.gps.readGPS(posFlat,velFlat);
-            % gpsDataForStep = interp1(t_ref, gpsData,t,'linear', 'extrap');
+            gpsData = obj.gps.readGPS(posFlat,velFlat);
+            obj.gpsDataForStep = interp1(t_ref, gpsData,t,'linear', 'extrap');
 
         end
 
-    end
-        
-    methods(Static)
-
-        function [q_delt] = gyroToInstantaneousRotationQuat(wx, wy, wz, timeStep)
+        function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz, timeStep)
 
             omegaVec = [wx wy wz];
             
@@ -133,16 +129,16 @@ classdef Navigation
             
             q_delt = [q_delt_s; q_delt_x; q_delt_y; q_delt_z];
             
-            end
+           end
             
-            function [quat_new]= quatMulitply(q1,q2)
+           function [quat_new]= quatMulitply(obj, q1,q2)
             
             q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
             q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
             
             quat_new = [q_s_new; q_ang_new];
             
-            end
+           end
             
             
     end
