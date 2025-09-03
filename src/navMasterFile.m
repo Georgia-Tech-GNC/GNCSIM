@@ -93,7 +93,7 @@ function [x_tplus1] = state_transition_fn(x_n, q_current, accel_body,dt)
     f3 = x_n(3) + velFlat_n(2)*dt;
     f4 = x_n(4) + dt*accel_body(2);
     f5 = x_n(5) + velFlat_n(3)*dt;
-    f6 = x_n(6) + dt*accel_body(3);   
+    f6 = x_n(6) + dt*accel_body(3);    
     x_tplus1 = [f1;f2;f3;f4;f5;f6];
 
 end

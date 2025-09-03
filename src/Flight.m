@@ -275,8 +275,8 @@ classdef Flight < handle
                 %}
                 % End Euler Propagation
                 
-                %[traj.t, traj.x] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
-                [traj.t, traj.x] = obj.timestepper(initial_state, obj.get_tStep(), local_tSpan, Rocket, Environment, Aerodynamics, ControlObj);
+                [traj.t, traj.x] = ode45(@(t,x) rocketModel(t, x, Rocket, Environment, obj, Aerodynamics, ControlObj), local_tSpan, initial_state, obj.odeOptions);
+                %[traj.t, traj.x] = obj.timestepper(initial_state, obj.get_tStep(), local_tSpan, Rocket, Environment, Aerodynamics, ControlObj);
 
                 prevFinalState = traj.x(end, :)';
              
@@ -866,7 +866,7 @@ classdef Flight < handle
                     passed_half = true;
                 end
                 if i >= 0.75*length(tspan) & ~passed_threequarter
-                    disp('Simulation 75% complete')
+                    disp('Simulation 75% complete.')
                     passed_threequarter = true;
                 end
             end
