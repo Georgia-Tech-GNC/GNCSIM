@@ -108,7 +108,7 @@ This is the definitive resource for learning Kalman filtering. **Work through th
 
 - **Chapter 1**: The g-h Filter (intuitive introduction)
 - **Chapter 2**: Discrete Bayes Filter (probability fundamentals)
-- **Chapter 3**: Least Squares Filter (mathematical foundation)
+- **Chapter 3**: Probabilities, Gaussians, and Bayes' Theorem (mathematical foundation)
 
 **Chapters 4-6: Core Kalman Theory**
 
