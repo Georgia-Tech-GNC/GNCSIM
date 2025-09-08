@@ -13,6 +13,6 @@ Explain briefly the purpose of this issue.
 
 ### Practical Outcomes
 
-- List practical outcomes to be met to close this issue
-- Ex: required features, specific improvements, etc 
-- ...
+- [ ] List practical outcomes to be met to close this issue
+- [ ] Ex: required features, specific improvements, etc 
+- [ ] ...

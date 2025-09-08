@@ -1,3 +1,5 @@
+# `Aerodynamics` Class Documentation
+
 The `Aerodynamics` class encapsulates aerodynamic models for calculating aerodynamic forces and moments on a rocket in body coordinates. It is designed to be flexible: by assigning user-defined function handles, you can adapt it to different aerodynamic scenarios, from simple approximations to CFD-based data.
 
 ---

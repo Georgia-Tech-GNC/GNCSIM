@@ -5,18 +5,44 @@ theme:
   name: material
   logo: img/logo.jfif
   palette:
-  primary: indigo
-  accent: amber
+    primary: indigo
+    accent: amber
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
 - Home: index.md
 - GNCSIM Documentation:
-    - Aerodynamics Class: aerodynamics_class.md
-    - Environment Class: environment_class.md
-    - Flight CLass: flight_class.md
-    - Monte Carlo Class: monte_carlo_class.md
-    - Rocket Class: rocket_class.md
-    - Trim Batch Class: trim_batch_class.md
-    - Trim Point Class: trim_point_class.md
-- Onboarding: onboarding.md
+    - Overview and Class Diagram: gncsim-documentation/class_diagram.md
+    - Aerodynamics Class: gncsim-documentation/aerodynamics_class.md
+    - Environment Class: gncsim-documentation/environment_class.md
+    - Flight Class: gncsim-documentation/flight_class.md
+    - Monte Carlo Class: gncsim-documentation/monte_carlo_class.md
+    - Rocket Class: gncsim-documentation/rocket_class.md
+    - Trim Batch Class: gncsim-documentation/trim_batch_class.md
+    - Trim Point Class: gncsim-documentation/trim_point_class.md
+- Onboarding:
+    - Git Installation and Setup: onboarding/git_onboarding_instructions.md
+    - Git Usage Guide: onboarding/git_guide.md
+    - MATLAB Resources: onboarding/matlab_onboarding.md
+    - Running GNCSIM: onboarding/gncsim_practice_guide.md
+- Learning Resources:
+    - Learning Tree: learning-resources/main_flowcharts.md
+    - Math Foundations: learning-resources/math_foundations.md 
+    - PID Control: learning-resources/pid_control.md
+    - LQR Control: learning-resources/lqr_control.md
+    - State Estimation: learning-resources/state_estimation.md
+
+
 
