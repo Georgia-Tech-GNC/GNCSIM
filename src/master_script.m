@@ -59,6 +59,8 @@ motor_params.tc = [0.0, 0.457288;
     13.5895, 106.0499;
     14.6754, 12.60914;
     16.1354, 0.0;];
+motor_params.mass = 0.4;  % [kg]
+motor_params.x_ref = -1;  % [m]
 
 
 %% Create rocket dynamics object
@@ -89,7 +91,9 @@ nav_params.acc_noise = 0.01;
 nav = Navigation(nav_params);
 
 %% Flight
-flight = Flight(rocket_dyn, controller, environment, nav);
+flight_params.sim_time = 20;  % length of simulation [s]
+flight_params.dt = 0.01;  % time step [s]
+flight = Flight(rocket_dyn, controller, environment, nav, flight_params);
 
 x0 = "inital_conditions";
 flight.run(x0)

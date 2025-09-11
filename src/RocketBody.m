@@ -16,6 +16,15 @@ classdef RocketBody < handle
 			obj.body_length = params.body_length;
 			obj.rocket_diameter = params.rocket_diameter;
 		end
+        
+        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
+           % Computes forces and moments for body 
+           F_b = [0, 0, 0];
+           M_b = [0, 0, 0];
+        end
+
+		function compute_buildup(obj)
+		end
 
 	end
 end

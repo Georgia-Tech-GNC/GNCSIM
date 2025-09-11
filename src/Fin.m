@@ -1,10 +1,12 @@
-classdef Fin < AeroComponent
+classdef Fin < handle
 	properties
 		fin_params {double}
+        is_prime  {boolean}
+        name
+        num_alpha
 		alpha  % range of alpha values
 		mach  % range of mach numbers
 		aero  % DATCOM cell array of aerodynamic data
-		is_prime  % Flag to indicate if this is a primary component
 		symmetric_fin  % This is a variable that holds the primary component
 		% If is_prime is True then symmetric_comp is empty. If is_prime is
 		% False then symmetric_fin is type Fin that holds the symmetric Fin
@@ -12,20 +14,23 @@ classdef Fin < AeroComponent
 	methods
 		% Constructor for the Fin class
 		function obj = Fin(name, is_prime, fin_params)
-			% Call the superclass (AeroComponent)
-			obj@AeroComponent(name, is_prime);
 			
-			% Now you can initialize the subclass's own properties
-			obj.fin_params = fin_params;
+            obj.name = name;
+            obj.is_prime = is_prime;
+            obj.fin_params = fin_params;
 			
 			% number of angle of attack points
 			obj.num_alpha = 11;
 			obj.alpha = linspace(-15, 15, obj.num_alpha);
-			
-		end
+        end
 
-		function compute_buildup(obj, mach)
-			obj.mach = mach;
+        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
+           % Computes forces and moments for body 
+           F_b = [0, 0, 0];
+           M_b = [0, 0, 0];
+        end
+
+		function compute_buildup(obj)
 		end
 	end
 end
