@@ -6,6 +6,11 @@ classdef RocketDynamics
 		rocket_params
 		motor_params
 		controller 
+
+        mass_wet
+        mass_dry
+        moi_wet
+        moi_dry
 	end
 
 	methods
@@ -14,6 +19,11 @@ classdef RocketDynamics
 			obj.fins = fins;
 			obj.rocket_params = rocket_params;
 			obj.motor_params = motor_params;
+        end
+
+        function calc_mass_moi(obj)
+            % TODO: Calculate mass and moi
+            % https://phys.libretexts.org/Bookshelves/Classical_Mechanics/Variational_Principles_in_Classical_Mechanics_(Cline)/13%3A_Rigid-body_Rotation/13.08%3A_Parallel-Axis_Theorem
         end
 
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)

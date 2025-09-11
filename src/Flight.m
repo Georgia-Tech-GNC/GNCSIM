@@ -17,6 +17,12 @@ classdef Flight
             obj.environment = environment;
             obj.nav = nav;
             obj.flight_params = flight_params;
+            
+            obj.rocket_dyn.calc_moi()
+        end
+
+        function calc_moi()
+            
         end
 
         function run_sim(x0)
