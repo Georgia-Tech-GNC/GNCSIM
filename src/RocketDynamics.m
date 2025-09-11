@@ -5,6 +5,7 @@ classdef RocketDynamics
 		fins
 		rocket_params
 		motor_params
+		controller 
 	end
 
 	methods
