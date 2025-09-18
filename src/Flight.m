@@ -49,7 +49,7 @@ classdef Flight
             end
         end
 
-        function traj_x = propagate_dynamics(obj, x0)
+        function [t_arr, x_arr] = propagate_dynamics(obj, x0)
             % This function propagates the dynamics using RK4
 
             x = x0';
