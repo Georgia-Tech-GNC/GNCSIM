@@ -1,6 +1,6 @@
 classdef Fin < handle
 	properties
-		fin_params {double}
+		fin_params
         is_prime  {boolean}
         name
         num_alpha

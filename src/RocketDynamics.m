@@ -32,7 +32,10 @@ classdef RocketDynamics
             [F_b_fins, M_b_fins] = obj.fins.get_forces_and_moments(state, disturbances);
             F_b = F_b_body + F_b_fins;
             M_b = M_b_body + M_b_fins;
+        end
 
+        function moi = get_moi(obj, mass)
+            moi = mass * eye(3);
         end
 
 		function draw(obj)
