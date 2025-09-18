@@ -18,7 +18,7 @@ classdef RocketBody < handle
 		end
         
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
-           % Computes forces and moments for body 
+           % Computes aero forces and moments for body 
            F_b = [0, 0, 0];
            M_b = [0, 0, 0];
         end
