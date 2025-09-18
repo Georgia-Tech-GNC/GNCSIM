@@ -17,12 +17,8 @@ classdef RocketFins
             end
 		end
 
-<<<<<<< HEAD
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
             % get aero forces and moments in the body frame 
-=======
-		function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
->>>>>>> 7d1b07c956b62f70e6df4c7c08750be66b782307
 			F_b = [0, 0, 0];
 			M_b = [0, 0, 0];
 			for ii=1:obj.num_fins
