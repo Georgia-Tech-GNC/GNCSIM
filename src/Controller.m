@@ -1,20 +1,9 @@
 classdef (Abstract) Controller
     properties
-        controllerID
-        referenceStatesArr
+        actuator_list
     end
+
     methods (Abstract)
-            optimalControl = compute_controls(obj, currentStatesVec, referenceStatesVec, t) % Returns control input
-            obj = set_controllerID(obj, controllerID) % Sets the Controller ID
-            goalReferenceState = computeGoals(t) % Gets the goal reference state based on the time
-            
+        [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, motor_params);
     end
-
-    methods
-        % Get controller ID
-        function id = getControllerID(obj)
-            id = obj.controllerID;
-        end
-    end
-
 end
