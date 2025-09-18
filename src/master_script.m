@@ -26,6 +26,14 @@ x_fin_ref = total_length - rocket_params.cg_x - fin_params.root_chord;  % [m]
 % set location of where to put fins
 fin_params.translation = [x_fin_ref, body_params.rocket_diameter / 2, 0];  % [m]
 
+mass_0 = 20;
+pos_0 = [0, 0, 0];
+vel_0 = [0, 0, 0];
+quat_0 = [1, 0, 0 ,0];
+omega_0 = [0, 0, 0];
+state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
+
+
 %% Motor
 motor_params.tc = [0.0, 0.457288;
     0.152, 0.314574;
@@ -70,34 +78,39 @@ fins = RocketFins(fin_params);
 rocket_dyn = RocketDynamics(body, fins, rocket_params, motor_params);
 rocket_dyn.draw()
 
+
+
 % Run DATCOM and compute aerodynamics
 % Note that you can also load and save lookup tables
-rocket_dyn.compute_buildup()
-rocket_dyn.draw_buildup()
+%rocket_dyn.compute_buildup()
+%rocket_dyn.draw_buildup()
 %rocket_dyn.save_buildup()
 %rocket_dyn.save_buildup_figs()
 %rocket_dyn.load_buildup_figs()
 
 %% Environment
-environment_params.x1 = -1;
-environment_params.x2 = -1;
-environment = Environment(environment_params);
+%environment_params.x1 = -1;
+%environment_params.x2 = -1;
+%environment = Environment(environment_params);
 
 %% Controller
-controller = FinTabsController(rocket_dyn);
+%controller = FinTabsController(rocket_dyn);
 
 %% Navigation
-nav_params.acc_noise = 0.01;
-nav = Navigation(nav_params);
+%nav_params.acc_noise = 0.01;
+%nav = Navigation(nav_params);
 
 %% Flight
 flight_params.sim_time = 20;  % length of simulation [s]
 flight_params.dt = 0.01;  % time step [s]
+
+nav = -1;
+environment = -1;
+controller = -1;
 flight = Flight(rocket_dyn, controller, environment, nav, flight_params);
 
-x0 = "inital_conditions";
-flight.run(x0)
-flight.draw_traj()
+[t, x] = flight.propigate_dynamics(state_0);
+%flight.draw_traj()
 
 %% add monte_carlo object to 
 monte_carlo_params.set_wetRollMOI_3sigma = 1;

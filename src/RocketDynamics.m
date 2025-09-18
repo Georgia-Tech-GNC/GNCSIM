@@ -30,10 +30,18 @@ classdef RocketDynamics
             % computes forces and moments 
             [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
             [F_b_fins, M_b_fins] = obj.fins.get_forces_and_moments(state, disturbances);
+<<<<<<< HEAD
             [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params);
             F_b = F_b_body + F_b_fins + F_b_controller;
             M_b = M_b_body + M_b_fins + M_b_controller;
+=======
+            F_b = F_b_body + F_b_fins;
+            M_b = M_b_body + M_b_fins;
+        end
+>>>>>>> 7d1b07c956b62f70e6df4c7c08750be66b782307
 
+        function moi = get_moi(obj, mass)
+            moi = mass * eye(3);
         end
 
 		function draw(obj)
