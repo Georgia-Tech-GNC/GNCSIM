@@ -38,10 +38,10 @@ classdef Flight
             traj_x = x0';
             x = x0';
             for ii = 2:length(tspan)
-                k1 = rocketModel(x);
-                k2 = rocketModel(x + (k1')*obj.dt/2);
-                k3 = rocketModel(x + (k2')*obj.dt/2);
-                k4 = rocketModel(x + (k3')*obj.dt);
+                k1 = obj.rocketModel(x);
+                k2 = obj.rocketModel(x + (k1')*obj.dt/2);
+                k3 = obj.rocketModel(x + (k2')*obj.dt/2);
+                k4 = obj.rocketModel(x + (k3')*obj.dt);
 
                 x_next = x + obj.dt*((1/6)*k1' + (1/3)*k2' + (1/3)*k3' + (1/6)*k4');
                 traj_x = [traj_x; x_next];
