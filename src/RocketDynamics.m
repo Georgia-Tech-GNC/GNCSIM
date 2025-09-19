@@ -5,6 +5,7 @@ classdef RocketDynamics < handle
 		rocket_params
 		motor_params
 		controller 
+        sensors
 
         mass_wet
         mass_dry
@@ -21,15 +22,21 @@ classdef RocketDynamics < handle
         end
 
         function calc_mass_moi(obj)
-            % TODO: Calculate mass and moi
+            % TODO: Calculate mass and moi based on geometry
             % https://phys.libretexts.org/Bookshelves/Classical_Mechanics/Variational_Principles_in_Classical_Mechanics_(Cline)/13%3A_Rigid-body_Rotation/13.08%3A_Parallel-Axis_Theorem
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
-            % computes forces and moments 
-            [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
-            [F_b_fins, M_b_fins] = obj.fins.get_forces_and_moments(state, disturbances);
-            %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params);
+        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time)
+            % TODO: Calculate CG based on time
+            
+            % computes aero forces and moments 
+            [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances, CG);
+            [F_b_fins, M_b_fins] = obj.fins.get_forces_and_moments(state, disturbances, CG);
+
+            %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
+            %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
+            %TODO: [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params);
+
             F_b = F_b_body + F_b_fins; %+ F_b_controller;
             M_b = M_b_body + M_b_fins; %+ M_b_controller;
         end
