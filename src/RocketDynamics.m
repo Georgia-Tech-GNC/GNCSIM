@@ -1,4 +1,4 @@
-classdef RocketDynamics
+classdef RocketDynamics < handle
 	properties
 		body
 		fins

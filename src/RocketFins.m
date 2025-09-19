@@ -1,5 +1,4 @@
-
-classdef RocketFins
+classdef RocketFins < handle
 	properties
 		fin_params
 		num_fins

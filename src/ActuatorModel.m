@@ -1,4 +1,4 @@
-classdef (Abstract) ActuatorModel
+classdef (Abstract) ActuatorModel < handle
     properties
         location %used to compute moment wrt CG
         q_ba % quaternion of actuator frame wrt body frame

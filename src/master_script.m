@@ -2,7 +2,6 @@
 clear; clc; close all;
 
 %% Instantiate Objects
-
 rocket_dyn = setup_rocket();
 rocket_dyn.draw();
 
@@ -16,7 +15,7 @@ quat_0 = [1, 0, 0 ,0];
 omega_0 = [0, 0, 0];
 state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
 
-[t, x] = flight.propagate_dynamics(state_0);
+[t, x] = flight.run_sim();
 %flight.draw_traj()
 
 %% Functions

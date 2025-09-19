@@ -1,4 +1,4 @@
-classdef (Abstract) Controller
+classdef (Abstract) Controller < handle
     properties
         actuator_list
     end
