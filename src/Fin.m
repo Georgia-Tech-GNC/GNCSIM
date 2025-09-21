@@ -12,7 +12,7 @@ classdef Fin < handle
 		% False then symmetric_fin is type Fin that holds the symmetric Fin
 	end
 	methods
-		% Constructor for the Fin class
+		% Constructor
 		function obj = Fin(name, is_prime, fin_params)
 			
             obj.name = name;

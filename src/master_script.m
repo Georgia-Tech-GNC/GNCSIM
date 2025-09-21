@@ -13,7 +13,6 @@ flight = setup_flight(rocket_dyn);
 
 %% Run Flight
 
-
 [t, x] = flight.run_sim();
 %flight.draw_traj()
 
@@ -128,7 +127,7 @@ function flight = setup_flight(rocket_dyn)
     quat_0 = [1, 0, 0 ,0];
     omega_0 = [0, 0, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
-    flight_params.x0 = state_0
+    flight_params.x0 = state_0;
     
     nav = -1;
     environment = -1;
