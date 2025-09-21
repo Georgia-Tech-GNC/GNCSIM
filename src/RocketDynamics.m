@@ -47,7 +47,13 @@ classdef RocketDynamics < handle
 
 		function draw(obj)
 			% TODO: draw rocket
-		end
+        end
+
+        function compute_buildup(obj)
+            %obj.body.compute_buildup()
+            obj.fins.compute_buildup()
+        end
+
 	end
 end
 

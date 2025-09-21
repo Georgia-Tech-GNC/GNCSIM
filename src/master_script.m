@@ -5,15 +5,14 @@ clear; clc; close all;
 rocket_dyn = setup_rocket();
 rocket_dyn.draw();
 
+run_DATCOM(rocket_dyn)
+
+
+
 flight = setup_flight(rocket_dyn);
 
 %% Run Flight
-mass_0 = 20;
-pos_0 = [0, 0, 0];
-vel_0 = [0, 0, 0];
-quat_0 = [1, 0, 0 ,0];
-omega_0 = [0, 0, 0];
-state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
+
 
 [t, x] = flight.run_sim();
 %flight.draw_traj()
@@ -90,10 +89,10 @@ function rocket_dyn = setup_rocket()
 end
 
 
-function run_DATCOM()
+function run_DATCOM(rocket_dyn)
     % Run DATCOM and compute aerodynamics
     % Note that you can also load and save lookup tables
-    %rocket_dyn.compute_buildup()
+    rocket_dyn.compute_buildup()
     %rocket_dyn.draw_buildup()
     %rocket_dyn.save_buildup()
     %rocket_dyn.save_buildup_figs()
@@ -121,6 +120,15 @@ function flight = setup_flight(rocket_dyn)
     % Flight
     flight_params.sim_time = 20;  % length of simulation [s]
     flight_params.dt = 0.01;  % time step [s]
+
+    
+    mass_0 = 20;
+    pos_0 = [0, 0, 0];
+    vel_0 = [0, 0, 0];
+    quat_0 = [1, 0, 0 ,0];
+    omega_0 = [0, 0, 0];
+    state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
+    flight_params.x0 = state_0
     
     nav = -1;
     environment = -1;
