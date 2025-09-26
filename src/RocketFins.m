@@ -20,23 +20,23 @@ classdef RocketFins < handle
             end
 		end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
+        function [F_c, M_c] = get_forces_and_moments(obj, state, disturbances)
             % get aero forces and moments in the body frame 
-			F_b = [0, 0, 0];
-			M_b = [0, 0, 0];
+			F_c = [0, 0, 0];
+			M_c = [0, 0, 0];
 			for ii=1:obj.num_fins
-				[F_b_fin, M_b_fin] = obj.fins(ii).get_forces_and_moments(state, disturbances);
-				F_b = F_b + F_b_fin;
-				M_b = M_b + M_b_fin;
+				[~,~,F_c_fin, M_c_fin] = obj.fins(ii).get_forces_and_moments(state, disturbances);
+				F_c = F_c + F_c_fin;
+				M_c = M_c + M_c_fin;
 			end
         end
 
         function compute_buildup(obj)
-            root_chord  = 3.0;      % [m] Chord length at the wing root
-            tip_chord   = 1.0;      % [m] Chord length at the wing tip
-            semi_span   = 6.0;      % [m] Span of one wing (from centerline to tip)
-            sweep_deg   = 15.0;     % [deg] Leading-edge sweep angle
-            wing_apex_x = 0.0;      % [m] X-location of the wing's leading edge at the root
+            root_chord  = obj.fin_params.root_chord;      % [m] Chord length at the wing root
+            tip_chord   = obj.fin_params.tip_chord;      % [m] Chord length at the wing tip
+            semi_span   = obj.fin_params.semi_span;      % [m] Span of one wing (from centerline to tip)
+            sweep_deg   = obj.fin_params.sweep_deg;     % [deg] Leading-edge sweep angle
+            wing_apex_x = obj.fin_params.wing_apex_x;      % [m] X-location of the wing's leading edge at the root
 
             mach_numbers = [0.2, 0.4, 0.6];  % Array of Mach numbers to test
             altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet

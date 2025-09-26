@@ -37,6 +37,9 @@ function rocket_dyn = setup_rocket()
     fin_params.tip_chord = 0.17;  % [m]
     fin_params.fin_height = 0.144;  % [m]
     fin_params.sweep_length = 0.033;  % [m]
+    fin_params.sweep_deg= 15.0;  % [deg]
+    fin_params.semi_span = 6.0;  % [m]
+    fin_params.wing_apex_x = 0.0; % [m]
     
     % get the distance along body
     x_fin_ref = total_length - rocket_params.cg_x - fin_params.root_chord;  % [m]
