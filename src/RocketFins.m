@@ -6,6 +6,7 @@ classdef RocketFins < handle
     end
 
 	methods
+        % Constructor
 		function obj = RocketFins(fin_params)
 			obj.fin_params = fin_params;
 			obj.num_fins = fin_params.num_fins;
