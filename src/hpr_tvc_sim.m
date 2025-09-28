@@ -21,10 +21,19 @@ legend('wx', 'wy', 'wz');
 title('Angular Velocities (rad/s)');
 
 % Convert quaternions to Euler angles and plot
+% Replace your Euler angle conversion section with:
 euler_angles = zeros(3, length(t_arr));
 for i = 1:length(t_arr)
     quat = x_arr(1:4, i)';
-    euler_angles(:, i) = quat2eul(quat, 'ZYX')';
+    euler = quat2eul(quat, 'ZYX');
+    
+    % Unwrap angles to remove discontinuities
+    if i > 1
+        euler = unwrap([euler_angles(:, i-1)'; euler]);
+        euler = euler(2, :);
+    end
+    
+    euler_angles(:, i) = euler';
 end
 
 subplot(3,1,3);
@@ -37,12 +46,14 @@ function x_dot = dynamics(x)
 	% Inertia matrix (kg*m^2) - scaled for larger rocket
 	Ib = diag([5, 5, 2.5]);
 
-	M_a = [0; -7.5; 0]; %Nm
+	M_a = [0; -2.755; 0]; %Nm
 
     T = 35;  %N
     max_deflection = 10; %deg
 
-	M_T = [0; 35 .* sin(deg2rad(max_deflection)); 0]; %Nm
+    thrust_moment = T .* sin(deg2rad(max_deflection))
+
+	M_T = [0; thrust_moment; 0]; %Nm
 	M_b = M_a + M_T;
 
 	q0 = x(1);
@@ -91,6 +102,10 @@ function [x_arr, t_arr] = rk4(f, x0, t0, dt, steps)
 	    
 	    x_arr(:, i+1) = x + (k1 + 2*k2 + 2*k3 + k4)/6;
 	    t_arr(i+1) = t + dt;
+
+        % Normalize quaternion after each step
+        quat_norm = norm(x_arr(1:4, i+1));
+        x_arr(1:4, i+1) = x_arr(1:4, i+1) / quat_norm;
 	end
 	
 end
