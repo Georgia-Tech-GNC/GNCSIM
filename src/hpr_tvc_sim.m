@@ -44,14 +44,14 @@ xlabel('Time (s)');
 
 function x_dot = dynamics(x)
 	% Inertia matrix (kg*m^2) - scaled for larger rocket
-	Ib = diag([5, 5, 2.5]);
+	Ib = diag([0.2, 0.2, 0.0036]);
 
 	M_a = [0; -2.755; 0]; %Nm
 
     T = 35;  %N
-    max_deflection = 10; %deg
+    max_deflection = 17; %deg
 
-    thrust_moment = T .* sin(deg2rad(max_deflection))
+    thrust_moment = T .* sin(deg2rad(max_deflection)) .* 0.291846
 
 	M_T = [0; thrust_moment; 0]; %Nm
 	M_b = M_a + M_T;
