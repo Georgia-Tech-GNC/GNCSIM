@@ -3,11 +3,9 @@ clear; clc; close all;
 
 %% Instantiate Objects
 rocket_dyn = setup_rocket();
-rocket_dyn.draw();
+%rocket_dyn.draw();
 
 run_DATCOM(rocket_dyn)
-
-
 
 flight = setup_flight(rocket_dyn);
 

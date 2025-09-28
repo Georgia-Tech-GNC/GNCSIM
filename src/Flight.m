@@ -34,8 +34,8 @@ classdef Flight < handle
             % This function propagates the dynamics using RK4
             
             % Need setters for this
-            x = obj.flight_params.x0';
-            N = obj.total_time / obj.dt;
+            x = obj.flight_params.x0(:);
+            N = obj.flight_params.sim_time / obj.dt;
 
             t_arr = zeros(1,N);
             x_arr = zeros(14, N);
@@ -60,7 +60,8 @@ classdef Flight < handle
             disturbances.wind = 0;
             
             [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.current_time);
-            
+            %F_b = [0, 0, 0];
+            %M_b = [0, 0, 0];
             x_dot = obj.flat_earth_EOM(state, F_b, M_b);
         end
 
@@ -79,7 +80,7 @@ classdef Flight < handle
             ];
 
             q = quat;
-            C_B_I = Utils.get_rotation_matrix_from_quat(q);
+            C_B_I = Utils.dir_cosine_matlab(q);
             C_I_B = C_B_I.';
 
             g = [0;0;-9.81];

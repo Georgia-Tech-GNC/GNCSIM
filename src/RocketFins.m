@@ -33,14 +33,14 @@ classdef RocketFins < handle
         end
 
         function compute_buildup(obj)
-            root_chord  = obj.fin_params.root_chord;      % [m] Chord length at the wing root
+            root_chord  = obj.fin_params.root_chord;     % [m] Chord length at the wing root
             tip_chord   = obj.fin_params.tip_chord;      % [m] Chord length at the wing tip
             semi_span   = obj.fin_params.semi_span;      % [m] Span of one wing (from centerline to tip)
-            sweep_deg   = obj.fin_params.sweep_deg;     % [deg] Leading-edge sweep angle
-            wing_apex_x = obj.fin_params.wing_apex_x;      % [m] X-location of the wing's leading edge at the root
+            sweep_deg   = obj.fin_params.sweep_deg;      % [deg] Leading-edge sweep angle
+            wing_apex_x = obj.fin_params.wing_apex_x;    % [m] X-location of the wing's leading edge at the root
 
-            mach_numbers = [0.2, 0.4, 0.6];  % Array of Mach numbers to test
-            altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet
+            mach_numbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
+            altitudes_ft = [0, 5000];       % Array of altitudes in feet
             alphas_deg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
             airfoil_naca = 'NACA 0012';

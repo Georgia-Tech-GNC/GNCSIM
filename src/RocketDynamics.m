@@ -1,7 +1,7 @@
 classdef RocketDynamics < handle
 	properties
 		body
-		fins
+		rocket_fins
 		rocket_params
 		motor_params
 		controller 
@@ -14,9 +14,9 @@ classdef RocketDynamics < handle
 	end
 
 	methods
-		function obj = RocketDynamics(body, fins, rocket_params, motor_params)
+		function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params)
 			obj.body = body;
-			obj.fins = fins;
+			obj.rocket_fins = rocket_fins;
 			obj.rocket_params = rocket_params;
 			obj.motor_params = motor_params;
         end
@@ -29,21 +29,26 @@ classdef RocketDynamics < handle
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time)
             % TODO: Calculate CG based on time (below is just an idea)
             
-            body_length = obj.aero.blref;
-            CG_i = 2.433; % Add this and CG_f as inputs with thrust in master_script?
-            CG_f = 2.34;
-            dur = 13.1; % Also input this with thrust data?
-            CG = ((CG_f - CG_i)/dur)*(t) + CG_i;
+            %body_length = obj.aero.blref;
+            %CG_i = 2.433; % Add this and CG_f as inputs with thrust in master_script?
+            %CG_f = 2.34;
+            %dur = 13.1; % Also input this with thrust data?
+            %CG = ((CG_f - CG_i)/dur)*(t) + CG_i;
             
             % computes aero forces and moments 
-            [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances, CG);
-            [F_b_fins, M_b_fins] = obj.fins.get_forces_and_moments(state, disturbances, CG);
+            %[F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances, CG);
+            [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
 
             %TODO: state_estimate = obj.navigation.get_state_estimate(state, disturbances)
             %TODO: [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params);
 
             F_b = F_b_body + F_b_fins; %+ F_b_controller;
             M_b = M_b_body + M_b_fins; %+ M_b_controller;
+        end
+
+        function compute_buildup(obj)
+            %obj.body.compute_buildup()  Not implmented yet
+            obj.rocket_fins.compute_buildup()
         end
 
         function moi = get_moi(obj, mass)
@@ -83,11 +88,6 @@ classdef RocketDynamics < handle
                 patch(finX, finCoords(1,:), finCoords(2,:), [0.6 0.6 0.6]);
             end
             camlight; lighting gouraud
-        end
-
-        function compute_buildup(obj)
-            %obj.body.compute_buildup()
-            obj.fins.compute_buildup()
         end
 
 	end

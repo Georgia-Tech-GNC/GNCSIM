@@ -52,6 +52,34 @@ classdef Utils
             q(3) = sy * cr * cp - cy * sr * sp;  % y component
             q(4) = cy * cr * sp + sy * sr * cp;  % z component
         end
+
+        function dcm = dir_cosine_matlab(q)
+            % dir_cosine_matlab: Converts a quaternion to a direction cosine matrix.
+            %
+            % This function returns a 3x3 matrix that represents a rotation
+            % from an INERTIAL frame to a BODY frame, based on the input quaternion.
+            %
+            % INPUT:
+            %   q - A 4-element column or row vector representing the quaternion [q0; q1; q2; q3],
+            %       where q0 is the scalar part.
+            %
+            % OUTPUT:
+            %   dcm - A 3x3 direction cosine matrix (rotation matrix).
+            %
+        
+            % Ensure q is a column vector for consistent indexing, though MATLAB handles both
+            q = q(:);
+        
+            % Note: MATLAB uses 1-based indexing, so Python's q[0] is q(1) in MATLAB.
+            q0 = q(1); % Scalar part
+            q1 = q(2); % Vector part x
+            q2 = q(3); % Vector part y
+            q3 = q(4); % Vector part z
+        
+            dcm = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
+                    2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
+                    2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
+        end
     end
 end
 
