@@ -1,0 +1,1461 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.gatech.edu/pages/gnc/GNCSIM/onboarding/gncsim_practice_guide/">
+      
+      
+        <link rel="prev" href="../matlab_onboarding/">
+      
+      
+        <link rel="next" href="../../learning-resources/main_flowcharts/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Running GNCSIM - GNCSIM Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gncsim-practice-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GNCSIM Wiki" class="md-header__button md-logo" aria-label="GNCSIM Wiki" data-md-component="logo">
+      
+  <img src="../../img/logo.jfif" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GNCSIM Wiki
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running GNCSIM
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GNCSIM Wiki" class="md-nav__button md-logo" aria-label="GNCSIM Wiki" data-md-component="logo">
+      
+  <img src="../../img/logo.jfif" alt="logo">
+
+    </a>
+    GNCSIM Wiki
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    GNCSIM Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            GNCSIM Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/class_diagram/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview and Class Diagram
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/aerodynamics_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Aerodynamics Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/environment_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Environment Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/flight_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Flight Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/monte_carlo_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Monte Carlo Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/rocket_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Rocket Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/trim_batch_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Trim Batch Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gncsim-documentation/trim_point_class/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Trim Point Class
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Onboarding
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Onboarding
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git_onboarding_instructions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Git Installation and Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Git Usage Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matlab_onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MATLAB Resources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Running GNCSIM
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Running GNCSIM
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-master-file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Master File Structure
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Understanding the Master File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#master-file-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      Master File Location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-initialization-phase-lines-4-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Initialization Phase (Lines 4-18)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-flight-simulation-phase-lines-20-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Flight Simulation Phase (Lines 20-24)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-monte-carlo-analysis-phase-lines-26-35" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Monte Carlo Analysis Phase (Lines 26-35)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-your-first-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Your First Simulation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Your First Simulation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-open-matlab" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Open MATLAB
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-check-your-working-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Check Your Working Directory
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-modify-monte-carlo-settings-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Modify Monte Carlo Settings (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-run-the-master-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Run the Master File
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-should-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      What Should Happen
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-simulation-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Simulation Components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Understanding the Simulation Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-classes-located-in-src" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Classes (Located in src/)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-simulation-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Simulation Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-your-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifying Your Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Verifying Your Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#success-indicators" class="md-nav__link">
+    <span class="md-ellipsis">
+      Success Indicators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-issues-and-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues and Solutions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Help
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Learning Resources
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Learning Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-resources/main_flowcharts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Learning Tree
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-resources/math_foundations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Math Foundations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-resources/pid_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PID Control
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-resources/lqr_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    LQR Control
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../learning-resources/state_estimation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    State Estimation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-master-file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Master File Structure
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Understanding the Master File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#master-file-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      Master File Location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-initialization-phase-lines-4-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Initialization Phase (Lines 4-18)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-flight-simulation-phase-lines-20-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Flight Simulation Phase (Lines 20-24)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-monte-carlo-analysis-phase-lines-26-35" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Monte Carlo Analysis Phase (Lines 26-35)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-your-first-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Your First Simulation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Your First Simulation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-open-matlab" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Open MATLAB
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-check-your-working-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Check Your Working Directory
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-modify-monte-carlo-settings-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Modify Monte Carlo Settings (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-run-the-master-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Run the Master File
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-should-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      What Should Happen
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-simulation-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Simulation Components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Understanding the Simulation Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-classes-located-in-src" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Classes (Located in src/)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-simulation-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Simulation Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-your-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verifying Your Setup
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Verifying Your Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#success-indicators" class="md-nav__link">
+    <span class="md-ellipsis">
+      Success Indicators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-issues-and-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues and Solutions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Help
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="gncsim-practice-guide">GNCSIM Practice Guide</h1>
+<p>A hands-on guide for new team members to get started with GNCSIM simulations and verify their setup is working correctly.</p>
+<p><strong>Prerequisites:</strong> Complete the <a href="../git_onboarding_instructions/">git setup guide</a> first to ensure you have GNCSIM cloned and can access the repository.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#what-is-gncsim">What is GNCSIM?</a></li>
+<li><a href="#understanding-the-master-file-structure">Understanding the Master File Structure</a></li>
+<li><a href="#running-your-first-simulation">Running Your First Simulation</a></li>
+<li><a href="#understanding-the-simulation-components">Understanding the Simulation Components</a></li>
+<li><a href="#verifying-your-setup">Verifying Your Setup</a></li>
+<li><a href="#next-steps">Next Steps</a></li>
+</ul>
+<h2 id="understanding-the-master-file-structure">Understanding the Master File Structure</h2>
+<p>The heart of GNCSIM is the "master file" - a MATLAB script that orchestrates an entire simulation. Let's examine the Jet Vanes Rocket (JVR) master file as our example.</p>
+<h3 id="master-file-location">Master File Location</h3>
+<p>Navigate to: <code>src/jetVanes_MasterFile.m</code></p>
+<p>This file demonstrates the standard GNCSIM workflow:</p>
+<h3 id="1-initialization-phase-lines-4-18">1. <strong>Initialization Phase</strong> (Lines 4-18)</h3>
+<div class="highlight"><pre><span></span><code><span class="c">% Initialize rocket parameters</span>
+<span class="p">[</span><span class="n">Doof</span><span class="p">,</span><span class="w"> </span><span class="n">doof_params</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">setupRocket</span><span class="p">();</span>
+
+<span class="c">% Initialize aerodynamic parameters</span>
+<span class="p">[</span><span class="n">AeroObj</span><span class="p">,</span><span class="w"> </span><span class="n">aero_forces_moments</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">setupAerodynamics</span><span class="p">();</span>
+
+<span class="c">% Initialize environment parameters</span>
+<span class="n">EnvironmentObj</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">setupEnvironment</span><span class="p">();</span>
+
+<span class="c">% Initialize flight parameters</span>
+<span class="n">FlightObj</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">setupFlight</span><span class="p">();</span>
+
+<span class="c">% Generate trim points</span>
+<span class="n">TrimPointsObj</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">generateTrimPoints</span><span class="p">(</span><span class="k">...</span><span class="c">);</span>
+</code></pre></div>
+<h3 id="2-flight-simulation-phase-lines-20-24">2. <strong>Flight Simulation Phase</strong> (Lines 20-24)</h3>
+<div class="highlight"><pre><span></span><code><span class="n">FlightObj</span><span class="p">.</span><span class="n">set_runClosedLoop</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span><span class="w"> </span><span class="c">% Enable controlled flight</span>
+<span class="n">FlightObj</span><span class="p">.</span><span class="n">set_applyWind</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="nb">log</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">FlightObj</span><span class="p">.</span><span class="n">runFlight</span><span class="p">(</span><span class="n">Doof</span><span class="p">,</span><span class="w"> </span><span class="n">EnvironmentObj</span><span class="p">,</span><span class="w"> </span><span class="n">AeroObj</span><span class="p">,</span><span class="w"> </span><span class="n">TrimPointsObj</span><span class="p">);</span>
+<span class="n">FlightObj</span><span class="p">.</span><span class="n">plot_sim_dashboard</span><span class="p">(</span><span class="nb">log</span><span class="p">,</span><span class="w"> </span><span class="n">Doof</span><span class="p">,</span><span class="w"> </span><span class="n">EnvironmentObj</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="3-monte-carlo-analysis-phase-lines-26-35">3. <strong>Monte Carlo Analysis Phase</strong> (Lines 26-35)</h3>
+<div class="highlight"><pre><span></span><code><span class="n">MonteCarloObj</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">setupMonteCarlo</span><span class="p">(</span><span class="n">EnvironmentObj</span><span class="p">,</span><span class="w"> </span><span class="n">FlightObj</span><span class="p">,</span><span class="w"> </span><span class="n">Doof</span><span class="p">);</span>
+<span class="n">logMonteCarlo</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">MonteCarloObj</span><span class="p">.</span><span class="n">runMonteCarlo</span><span class="p">(</span><span class="k">...</span><span class="c">);</span>
+<span class="p">[</span><span class="n">MonteCarloObj</span><span class="p">,</span><span class="w"> </span><span class="n">logMonteCarlo</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">evaluateMonteCarlo</span><span class="p">(</span><span class="n">MonteCarloObj</span><span class="p">,</span><span class="w"> </span><span class="n">logMonteCarlo</span><span class="p">);</span>
+<span class="n">MonteCarloObj</span><span class="p">.</span><span class="n">plotMonteCarlo</span><span class="p">(</span><span class="n">logMonteCarlo</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="running-your-first-simulation">Running Your First Simulation</h2>
+<p>Now let's run the JVR simulation to verify everything works correctly.</p>
+<h3 id="step-1-open-matlab">Step 1: Open MATLAB</h3>
+<ol>
+<li>Launch MATLAB on your computer</li>
+<li>Navigate to your GNCSIM directory: <code>C:\Users\[your-username]\Documents\GitHub\GNCSIM\src</code></li>
+</ol>
+<h3 id="step-2-check-your-working-directory">Step 2: Check Your Working Directory</h3>
+<p>In the MATLAB command window, verify you're in the correct location:
+<div class="highlight"><pre><span></span><code><span class="nb">pwd</span>
+</code></pre></div>
+You should see a path ending with <code>\GNCSIM\src</code></p>
+<h3 id="step-3-modify-monte-carlo-settings-recommended">Step 3: Modify Monte Carlo Settings (Recommended)</h3>
+<p>Before running the simulation, reduce the number of Monte Carlo runs for faster execution:</p>
+<ol>
+<li>Open <code>jetVanes_MasterFile.m</code> in MATLAB editor</li>
+<li>Find line 427: <code>MonteCarloObj.set_numRuns(100);</code></li>
+<li>Change it to: <code>MonteCarloObj.set_numRuns(4);</code></li>
+<li>Save the file</li>
+</ol>
+<h3 id="step-4-run-the-master-file">Step 4: Run the Master File</h3>
+<p>Execute the jet vanes master file:
+<div class="highlight"><pre><span></span><code><span class="n">jetVanes_MasterFile</span>
+</code></pre></div></p>
+<h3 id="what-should-happen">What Should Happen</h3>
+<p>The simulation will run through several phases:</p>
+<ol>
+<li><strong>Initialization</strong>: MATLAB will set up all simulation objects</li>
+<li><strong>Flight Simulation</strong>: You'll see progress as the simulation runs</li>
+<li><strong>Dashboard Plot</strong>: After the flight simulation, one comprehensive dashboard window will appear with multiple subplots showing:</li>
+<li>3D trajectory</li>
+<li>Velocity and acceleration profiles</li>
+<li>Control system inputs</li>
+<li>Vehicle attitude and orientation</li>
+<li><strong>Monte Carlo</strong>: 4 simulation runs with parameter variations (if you modified the setting)</li>
+<li><strong>Monte Carlo Results</strong>: Two additional plot windows will appear:</li>
+<li>3D trajectory plot showing all 4 Monte Carlo runs</li>
+<li>Euler angle plot showing attitude variations across runs</li>
+</ol>
+<p><strong>Expected Runtime</strong>: ~ 2 minutes depending on your computer</p>
+<h2 id="understanding-the-simulation-components">Understanding the Simulation Components</h2>
+<p>While the simulation runs, let's understand what each component does:</p>
+<h3 id="core-classes-located-in-src">Core Classes (Located in <code>src/</code>)</h3>
+<ol>
+<li><strong>Rocket.m</strong> - Defines vehicle properties</li>
+<li>Mass properties (wet/dry mass, moments of inertia)</li>
+<li>Geometry (diameter, length, center of gravity)</li>
+<li>Thrust curve data</li>
+<li>
+<p>Parachute characteristics</p>
+</li>
+<li>
+<p><strong>Aerodynamics.m</strong> - Handles aerodynamic forces and moments</p>
+</li>
+<li>Drag, lift, and side forces</li>
+<li>Pitching, rolling, and yawing moments</li>
+<li>
+<p>Angle of attack dependencies</p>
+</li>
+<li>
+<p><strong>Environment.m</strong> - Models environmental conditions</p>
+</li>
+<li>Atmospheric properties vs altitude</li>
+<li>Wind models</li>
+<li>
+<p>Launch site location</p>
+</li>
+<li>
+<p><strong>Flight.m</strong> - Controls simulation execution</p>
+</li>
+<li>Integration time steps</li>
+<li>Simulation duration</li>
+<li>Control system activation</li>
+<li>
+<p>Initial conditions</p>
+</li>
+<li>
+<p><strong>TrimPoints.m</strong> - Generates linearized control points</p>
+</li>
+<li>Creates reference trajectories</li>
+<li>Computes control gains</li>
+<li>
+<p>Handles trajectory variations</p>
+</li>
+<li>
+<p><strong>MonteCarlo.m</strong> - Performs statistical analysis</p>
+</li>
+<li>Parameter uncertainty modeling</li>
+<li>Latin Hypercube Sampling</li>
+<li>Performance evaluation</li>
+</ol>
+<h3 id="key-simulation-features">Key Simulation Features</h3>
+<p><strong>Flight Profile</strong>: The simulation uses OpenRocket-generated flight data (<code>Flight Profile/JVR_sim.csv</code>) as a reference trajectory.</p>
+<p><strong>Control System</strong>: The rocket uses a linear-quadratic regulator (LQR) to maintain trajectory following.</p>
+<p><strong>Monte Carlo Analysis</strong>: Tests system robustness by varying parameters like:
+- Mass properties (~10% typical)
+- Thrust curve variations
+- Environmental conditions
+- Initial state uncertainties</p>
+<h2 id="verifying-your-setup">Verifying Your Setup</h2>
+<p>After running the simulation, verify everything worked correctly:</p>
+<h3 id="success-indicators">Success Indicators</h3>
+<ol>
+<li><strong>No Error Messages</strong>: The simulation completed without MATLAB errors</li>
+<li><strong>Three Plot Windows Total</strong>:</li>
+<li><strong>Flight Dashboard</strong>: One comprehensive window with multiple subplots showing trajectory, velocities, control inputs, and attitude</li>
+<li><strong>Monte Carlo 3D Trajectory</strong>: Shows all 4 simulation runs overlaid in 3D space</li>
+<li><strong>Monte Carlo Euler Angles</strong>: Shows attitude angle variations across the 4 runs</li>
+<li><strong>Console Output</strong>: MATLAB displayed progress messages during execution</li>
+</ol>
+<h3 id="common-issues-and-solutions">Common Issues and Solutions</h3>
+<p><strong>"Cannot find file 'JVR_sim.csv'"</strong>
+- Solution: Ensure you're running from the <code>src/</code> directory
+- Check that <code>Flight Profile/JVR_sim.csv</code> exists</p>
+<p><strong>"Undefined function or variable"</strong>
+- Solution: Make sure all GNCSIM class files are in your MATLAB path
+- Try running <code>addpath(genpath(pwd))</code> from the GNCSIM root directory</p>
+<p><strong>Simulation crashes or produces unrealistic results</strong>
+- Check MATLAB version compatibility (R2019b or newer recommended)
+- Verify all required toolboxes are installed (Control Systems, Symbolic Math). The required toolboxes are listed in the onboarding canvas on slack.</p>
+<p><strong>Plots don't appear</strong>
+- Try <code>figure</code> command to bring windows to front
+- Check if plots are minimized in taskbar</p>
+<hr />
+<p>Congratulations! You've successfully run your first GNCSIM simulation.</p>
+<h2 id="getting-help">Getting Help</h2>
+<p>If you encounter issues:</p>
+<ol>
+<li><strong>Check Documentation</strong>: <a href="https://github.gatech.edu/pages/gnc/GNCSIM">GNCSIM GitHub Pages</a></li>
+<li><strong>Ask Team Members</strong>: Old members are familiar with common setup issues</li>
+<li><strong>Review Git Guide</strong>: Many problems stem from incorrect repository setup</li>
+<li><strong>MATLAB Help</strong>: Use <code>help [function_name]</code> for built-in MATLAB functions</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
