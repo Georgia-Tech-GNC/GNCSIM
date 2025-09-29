@@ -5,7 +5,7 @@ clear; clc; close all;
 % Initialize rocket parameters
 [Doof, doof_params] = setupRocket();
 
-% Initialize aerodynamic parameters
+% Initialize aerodynamic parameters 
 [AeroObj, aero_forces_moments] = setupAerodynamics();
 
 % Initialize environment parameters

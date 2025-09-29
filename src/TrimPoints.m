@@ -803,7 +803,7 @@ classdef TrimPoints < handle
             hold off;
         end
 
-        function [K, x0, u0] = LQR_configuration_selector(obj, x, t)
+        function [K, x0, u0, A, B] = LQR_configuration_selector(obj, x, t)
             % Author: Karsten Caillet
 
             % LQR_configuration_selector Selects the appropriate LQR configuration based on the current state and time.
@@ -847,6 +847,11 @@ classdef TrimPoints < handle
             if ~any(ind)
                 K = zeros(size([obj.trimmed_points(1).K]));
                 x0 = zeros(size(x));
+                %% ADDED: default A, B, u0 and early return to avoid indexing empty set
+                A  = zeros(size(obj.trimmed_points(1).A));
+                B  = zeros(size(obj.trimmed_points(1).B));
+                u0 = zeros(3,1);
+                return
             end
         
             % Calculate the differences for the matching rows
@@ -863,9 +868,23 @@ classdef TrimPoints < handle
             K_sublist = {obj.trimmed_points(ind).K};
             K = K_sublist{min_index};
 
+            idx_candidates = find(ind);             % indices in the full array with rounded time match
+            idx_full       = idx_candidates(min_index);
+
+            % Optional: hand back A, B directly
+            A = obj.trimmed_points(idx_full).A;
+            B = obj.trimmed_points(idx_full).B;
+
             % Find the matching time index in reference_state struct
             t_values = round([obj.reference_states.time]);  % Extract all t values into an array
             ind = (t_values == t);  % Compare t_values to t
+
+            %% ADDED: guard if no matching reference state; keep K,A,B and return defaults for x0,u0
+            if ~any(ind)
+                x0 = zeros(size(x));
+                u0 = zeros(3,1);
+                return
+            end
             
             % Construct x0 (reference state vector)
             reference_states_index = logical([1 1 1 1 1 1 0 1 1 1 0 0 0]); % Getting u, v, w, p, q, r, q1, q2, q3
@@ -874,6 +893,7 @@ classdef TrimPoints < handle
             % Construct u0 (reference control vector)
             u0 = obj.reference_states(ind).states(end-2:end); % Getting reference controls for the correct second
         end
+
 
         function del_u = compute_controls(obj, K, del_x)
             del_u = -K*del_x;
