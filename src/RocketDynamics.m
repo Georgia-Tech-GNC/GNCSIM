@@ -38,6 +38,8 @@ classdef RocketDynamics < handle
             % computes aero forces and moments 
             %[F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances, CG);
             [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
+            F_b_body = [0, 0, 0];
+            M_b_body = [0, 0 ,0];
 
             %TODO: state_estimate = obj.navigation.get_state_estimate(state, disturbances)
             %TODO: [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params);

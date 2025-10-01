@@ -31,7 +31,7 @@ classdef Fin < handle
 
            % Rotation from inertial to body using quaternion
            q = state(8:11);
-           Utils.dir_cosine_matlab(q)
+           R_ib = Utils.dir_cosine_matlab(q);
 
            % Body frame velocity
            v_i = state(5:7);
@@ -40,7 +40,7 @@ classdef Fin < handle
 
            % Rotation from body frame to component (fin) frame
            delta = obj.fin_params.angle;
-           R_bc = [1, 0, 0; 0, cosd(delta), -sind(delta); 0, sind(delta, cosd(delta))];
+           R_bc = [1, 0, 0; 0, cosd(delta), -sind(delta); 0, sind(delta), cosd(delta)];
 
            % Component frame velocity and ang vel
            w_b = state(12:14);
@@ -53,11 +53,11 @@ classdef Fin < handle
            a = 343; % Speed of sound approximation (TODO: Replace with better approximation)
            M = v_a/a;
            AoA = atan2d(v_c(3),v_c(1));
-           beta = asind(v_c(2)/v_a);
+           beta = asind(v_c(2)/(v_a + 0.001));
            
            pos = state(2:4);
            altitude = pos(3);  % z componet of position
-           [cL, cY, cD, cl, cm, cn] = aero_interp(M, AoA, altitude);
+           [cL, cY, cD, cl, cm, cn] = obj.aero_interp(M, AoA, altitude);
 
            S = obj.aero.sref;
            b = obj.aero.blref;
@@ -87,20 +87,27 @@ classdef Fin < handle
            M_b = R_cb*M_c;
         end
 
-        function [cL, cY, cD, cl, cm, cn] = aero_interp(mach, AoA_deg, alt_m)
+        function [cL, cY, cD, cl, cm, cn] = aero_interp(obj, mach, AoA_deg, alt_m)
             alt_ft = alt_m / 0.3048;
-            cL = interp3(obj.aero.mach, obj.aero.alpha, obj.aero.alt, obj.aero.cL, ...
-                              mach, AoA_deg, alt_ft, 'linear', 'extrap');
-            cY = interp3(obj.aero.mach, obj.aero.alpha, obj.aero.alt, obj.aero.cY, ...
-                              mach, AoA_deg, alt_ft, 'linear', 'extrap');
-            cD = interp3(obj.aero.mach, obj.aero.alpha, obj.aero.alt, obj.aero.cD, ...
-                              mach, AoA_deg, alt_ft, 'linear', 'extrap');
-            cl = interp3(obj.aero.mach, obj.aero.alpha, obj.aero.alt, obj.aero.cl, ...
-                              mach, AoA_deg, alt_ft, 'linear', 'extrap');
-            cm = interp3(obj.aero.mach, obj.aero.alpha, obj.aero.alt, obj.aero.cm, ...
-                              mach, AoA_deg, alt_ft, 'linear', 'extrap');
-            cn = interp3(obj.aero.mach, obj.aero.alpha, obj.aero.alt, obj.aero.cn, ...
-                              mach, AoA_deg, alt_ft, 'linear', 'extrap');
+            %disp(size(obj.aero.alpha))
+            %disp(size(obj.aero.mach))
+            %disp(size(obj.aero.alt))
+
+            cL_F = griddedInterpolant({obj.aero.alpha(:), obj.aero.mach(:), obj.aero.alt(:)}, ...
+                        obj.aero.cl, "linear");
+            cL = cL_F(AoA_deg, mach, alt_ft);
+
+            cD_F = griddedInterpolant({obj.aero.alpha(:), obj.aero.mach(:), obj.aero.alt(:)}, ...
+                        obj.aero.cd, "linear");
+            cD = cD_F(AoA_deg, mach, alt_ft);
+            
+            cm_F = griddedInterpolant({obj.aero.alpha(:), obj.aero.mach(:), obj.aero.alt(:)}, ...
+                        obj.aero.cm, "linear");
+            cm = 0;
+
+            cl = 0;
+            cY = 0;
+            cn = 0;
         end
 	end
 end

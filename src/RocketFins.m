@@ -23,8 +23,8 @@ classdef RocketFins < handle
 
         function [F_c, M_c] = get_forces_and_moments(obj, state, disturbances)
             % get aero forces and moments in the body frame 
-			F_c = [0, 0, 0];
-			M_c = [0, 0, 0];
+			F_c = [0, 0, 0].';
+			M_c = [0, 0, 0].';
 			for ii=1:obj.num_fins
 				[~,~,F_c_fin, M_c_fin] = obj.fins(ii).get_forces_and_moments(state, disturbances);
 				F_c = F_c + F_c_fin;
@@ -40,7 +40,7 @@ classdef RocketFins < handle
             wing_apex_x = obj.fin_params.wing_apex_x;    % [m] X-location of the wing's leading edge at the root
 
             mach_numbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
-            altitudes_ft = [0, 5000];       % Array of altitudes in feet
+            altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet
             alphas_deg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
             airfoil_naca = 'NACA 0012';

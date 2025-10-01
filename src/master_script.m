@@ -124,7 +124,7 @@ function flight = setup_flight(rocket_dyn)
     
     mass_0 = 20;
     pos_0 = [0, 0, 0];
-    vel_0 = [0, 0, 0];
+    vel_0 = [0, 0, 100];
     quat_0 = [1, 0, 0 ,0];
     omega_0 = [0, 0, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
