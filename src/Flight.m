@@ -68,9 +68,9 @@ classdef Flight < handle
         function [state_dot] = flat_earth_EOM(obj, state, F_b, M_b)   
             mass = state(1);
             %pos = state(2:4);  % not needed
-            vel = state(5:7).';
-            quat = state(8:11).';
-            omega = state(12:14).';
+            vel = state(5:7);
+            quat = state(8:11);
+            omega = state(12:14);
 
             mat_omega = [
                 0, -omega(1), -omega(2), -omega(3);
@@ -85,15 +85,15 @@ classdef Flight < handle
 
             g = [0;0;-9.81];
 
-            F_I = (C_I_B * F_b.') + mass * g;
+            F_I = (C_I_B * F_b) + mass * g;
             Ib = obj.rocket_dyn.get_moi(mass);
             
             mass_dot = 0;
             pos_dot = vel;
             vel_dot = F_I / mass;
             quat_dot = 0.5 * mat_omega * quat;
-            omega_dot = Ib\(M_b.' - cross(omega, Ib*omega));
-            state_dot = [mass_dot; pos_dot; vel_dot; quat_dot; omega_dot].';
+            omega_dot = Ib\(M_b - cross(omega, Ib*omega));
+            state_dot = [mass_dot; pos_dot; vel_dot; quat_dot; omega_dot];
         end
 
         function plotFlight(t_arr, x_arr)

@@ -35,7 +35,7 @@ function rocket_dyn = setup_rocket()
     fin_params.fin_height = 0.144;  % [m]
     fin_params.sweep_length = 0.033;  % [m]
     fin_params.sweep_deg= 15.0;  % [deg]
-    fin_params.semi_span = 6.0;  % [m]
+    fin_params.semi_span = 0.6;  % [m]
     fin_params.wing_apex_x = 0.0; % [m]
     
     % get the distance along body
@@ -124,7 +124,7 @@ function flight = setup_flight(rocket_dyn)
     
     mass_0 = 20;
     pos_0 = [0, 0, 0];
-    vel_0 = [0, 0, 100];
+    vel_0 = [100, 0, 0];
     quat_0 = [1, 0, 0 ,0];
     omega_0 = [0, 0, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
