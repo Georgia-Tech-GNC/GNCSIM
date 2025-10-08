@@ -133,13 +133,13 @@ Next the velocity must be converted to every componet frame. For the body this r
 
 $$
 \begin{equation}
-\boldsymbol{C}_{BC} = C(\delta)C(\theta)
+\boldsymbol{C}_{BC} = R_y(\delta)R_x(\theta)
 \end{equation}
 $$
 
 $$
 \begin{equation}
-\boldsymbol{C}_{BC} = 
+\boldsymbol{C}_{BC}(\delta, \theta) = 
 \begin{bmatrix}
 \cos\delta & 0 & -\sin\delta \\
 0 & 1 & 0 \\
@@ -153,12 +153,61 @@ $$
 \end{equation}
 $$
 
-### Fin Implmentation with DATCOM
+Assuming there are four fins each with zero control deflection $\delta$, the rotation matrix for each fin would be when $\delta=0^\circ$ and $\theta=0^\circ$, $\theta=90^\circ$, $\theta=180^\circ$, and $\theta=270^\circ$. It is important to note that the rotation around the x-axis $\theta$ remains static as it represents the placement of the fins, whereas the control deflection $\delta$ may be dynamic as it represents control deflection of the fin.
+
+From this, the component velocity and angular rate can be found using the formula below.
+
+$$
+\begin{equation}
+v_C = \boldsymbol{C}_{BC}(\delta, \theta)(v_B + \omega \times r_{BC})
+\end{equation}
+$$
+
+$$
+\begin{equation}
+w_C = \boldsymbol{C}_{BC}(\delta, \theta)w_B
+\end{equation}
+$$
+
+$r_{BC}$ represents the translation vector from the center of mass to the component reference location. $v_C$ and $\omega_C$ represent the velocity and angular rate of the fin.
+
+Now that the componet velocity is known the aerodynamic forces and moments can be calculated. To do this the angle of attack, side slip and mach number must be known. The formulas for them can be found below with $u$, $v$, and $w$ representing the x, y and z componet of velocity and $a$ is the speed of sound, assumed to be 343 m/s.
+
+$$
+\begin{equation}
+M=\frac{\sqrt{u^2+v^2+w^2}}{a}
+\end{equation}
+$$
+$$
+\begin{equation}
+\alpha=\text{atan2}(w,u)
+\end{equation}
+$$
+$$
+\begin{equation}
+\beta=\text{asin}\left( \frac{v}{\sqrt{u^2+v^2+w^2}} \right)
+\end{equation}
+$$
+
+Once $\alpha$, $\beta$ and $M$ are known this can be used to calcuale lift drag and pitching moment. To do this DATCOM is used get the coeffient data from current state of $\alpha$, $\beta$ and $M$.
+
+$$
+\begin{equation}
+[c_l, c_d, c_m] = \text{aero}(\alpha, \beta, M)
+\end{equation}
+$$
+
+### DATCOM Buildup for Fin
 
 
+### DATCOM Buildup for Body
 
-### Body Implmentation with DATCOM
+
+### Fin Example with DATCOM
 
 
+### Body Example with DATCOM
+
+### Simulation
 
 
