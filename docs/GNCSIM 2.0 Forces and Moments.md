@@ -25,8 +25,7 @@ where:
 
 The total number of states in the system is 14, which includes 1 for mass, 3 for position, velocity and angular rate and 4 for quaternion.
 
----
-### Equations of Motion (no control)
+### Equations of Motion
 
 Almost all dynamical systems can be written in the form of $\dot{\mathbf{x}}=f(\mathbf{x},\mathbf{u},t)$ and rockets are no exeption. This formula is saying that the derivatave of the state vector $\dot{\mathbf{x}}$ is a function of the current state $\mathbf{x}$, our control $\mathbf{u}$ and time $t$.
 
@@ -39,24 +38,28 @@ $$
 \dot{m} = f(t)
 \end{equation}
 $$
+
 $$
 % Position
 \begin{equation}
 \dot{p}_I = v_I
 \end{equation}
 $$
+
 $$
 % Velocity
 \begin{equation}
 \dot{v}_I = \frac{1}{m} \left( \mathbf{C}_{BI}(q) F_b \right) + g
 \end{equation}
 $$
+
 $$
 % Quaternion
 \begin{equation}
 \dot{q} = \frac{1}{2} \boldsymbol{\Omega}(\omega) q
 \end{equation}
 $$
+
 $$
 % Angular Velocity
 \begin{equation}
@@ -64,13 +67,11 @@ $$
 \end{equation}
 $$
 
-
-
 where:
 * $f(t)$ is the motor burn rate as function of time.
 * $F_b$ is the sum of external forces in the body frame.
 * $M_b$ is the sum of external moments (torques) in the body frame.
-* $\mathbf{g} = [0, 0, -9.81]^T$ is the gravitational acceleration vector in the inertial frame.
+* $g = [0, 0, -9.81]^T$ is the gravitational acceleration vector in the inertial frame.
 * $\mathbf{C}_{IB}$ is the direction cosine matrix that transforms vectors from the inertial frame to the body frame (it is the transpose of $\mathbf{C}_{BI}$). $\mathbf{C}_{BI}=\mathbf{C}_{IB}^T$
 
 $$
@@ -171,42 +172,48 @@ $$
 
 $r_{BC}$ represents the translation vector from the center of mass to the component reference location. $v_C$ and $\omega_C$ represent the velocity and angular rate of the fin.
 
-Now that the componet velocity is known the aerodynamic forces and moments can be calculated. To do this the angle of attack, side slip and mach number must be known. The formulas for them can be found below with $u$, $v$, and $w$ representing the x, y and z componet of velocity and $a$ is the speed of sound, assumed to be 343 m/s.
+Now that the componet velocity is known the aerodynamic forces and moments can be calculated. To do this the angle of attack, mach number and altitude (in feet) must be known. The formulas for them can be found below with $u$, $v$, and $w$ representing the x, y and z componet of velocity and $a$ is the speed of sound, assumed to be 343 m/s.
+
+
+$$
+\begin{equation}
+\alpha=\text{atan2}(w,u)
+\end{equation}
+$$
 
 $$
 \begin{equation}
 M=\frac{\sqrt{u^2+v^2+w^2}}{a}
 \end{equation}
 $$
-$$
-\begin{equation}
-\alpha=\text{atan2}(w,u)
-\end{equation}
-$$
-$$
-\begin{equation}
-\beta=\text{asin}\left( \frac{v}{\sqrt{u^2+v^2+w^2}} \right)
-\end{equation}
-$$
-
-Once $\alpha$, $\beta$ and $M$ are known this can be used to calcuale lift drag and pitching moment. To do this DATCOM is used get the coeffient data from current state of $\alpha$, $\beta$ and $M$.
 
 $$
 \begin{equation}
-[c_l, c_d, c_m] = \text{aero}(\alpha, \beta, M)
+h_{ft}=h \times 3.28084
 \end{equation}
 $$
+
+Once $\alpha$, $M$ and $h$ are known this can be used to calcuale lift drag and pitching moment. To do this DATCOM is used get the coeffient data from current state of $\alpha$, $M$ and $h$. Getting this lookup table is convered in another section.
+
+$$
+\begin{equation}
+[c_l, c_d, c_m] = \text{aero}(\alpha, M, h_{ft})
+\end{equation}
+$$
+
+Converting the 
 
 ### DATCOM Buildup for Fin
 
 
 ### DATCOM Buildup for Body
-
+TODO
 
 ### Fin Example with DATCOM
 
 
 ### Body Example with DATCOM
+TODO
 
 ### Simulation
 
