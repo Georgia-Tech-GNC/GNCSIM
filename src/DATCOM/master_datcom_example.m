@@ -4,9 +4,9 @@ clear; clc; close all;
 
 % USER-DEFINED INPUTS
 % --- Wing Geometry ---
-root_chord  = 3.0;      % [m] Chord length at the wing root
-tip_chord   = 1.0;      % [m] Chord length at the wing tip
-semi_span   = 6.0;      % [m] Span of one wing (from centerline to tip)
+root_chord  = 0.203;      % [m] Chord length at the wing root
+tip_chord   = 0.17;      % [m] Chord length at the wing tip
+semi_span   = 0.144;      % [m] Span of one wing (from centerline to tip)
 sweep_deg   = 15.0;     % [deg] Leading-edge sweep angle
 dihedral_deg = 0.0;     % [deg] Dihedral angle (upward angle of the wings)
 wing_apex_x = 0.0;      % [m] X-location of the wing's leading edge at the root
@@ -29,7 +29,6 @@ alphas_deg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of at
 
 % --- Output Filename ---
 datcom_filename = 'datcom_example.dat';
-
 
 % =========================================================================
 % SECTION 2: CALCULATE WING VERTEX COORDINATES FOR PLOTTING
@@ -79,7 +78,7 @@ title('Generated Wing Geometry');
 xlabel('X - Longitudinal Axis (ft)');
 ylabel('Y - Spanwise Axis (ft)');
 zlabel('Z - Vertical Axis (ft)');
-grid on;
+grid off;
 axis equal; % Ensures the aspect ratio is realistic
 view(30, 25); % Set a nice 3D viewing angle
 hold off;

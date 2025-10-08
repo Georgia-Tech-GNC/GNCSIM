@@ -3,6 +3,8 @@ classdef RocketFins < handle
 		fin_params
 		num_fins
 		fins  % array of fin objects
+		fin_faces = [1, 2, 3, 4];
+		fin_vertices
     end
 
 	methods
@@ -35,9 +37,10 @@ classdef RocketFins < handle
         function compute_buildup(obj)
             root_chord  = obj.fin_params.root_chord;     % [m] Chord length at the wing root
             tip_chord   = obj.fin_params.tip_chord;      % [m] Chord length at the wing tip
-            semi_span   = obj.fin_params.semi_span;      % [m] Span of one wing (from centerline to tip)
+            semi_span   = obj.fin_params.fin_span;       % [m] Span of one wing (from centerline to tip)
             sweep_deg   = obj.fin_params.sweep_deg;      % [deg] Leading-edge sweep angle
-            wing_apex_x = obj.fin_params.wing_apex_x;    % [m] X-location of the wing's leading edge at the root
+            %wing_apex_x = obj.fin_params.wing_apex_x;    % [m] X-location of the wing's leading edge at the root
+			wing_apex_x = 0;
 
             mach_numbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
             altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet
@@ -63,8 +66,7 @@ classdef RocketFins < handle
             v4 = [x_tip_le + tip_chord, semi_span, z_tip];
             
             % Assemble vertices and faces for the right wing patch
-            right_wing_vertices = [v1; v2; v4; v3];
-            right_wing_faces = [1, 2, 3, 4];
+            obj.fin_vertices = [v1; v2; v4; v3];
 
             % Wing span (for a single panel, this is just the semi-span)
             blref = semi_span;
@@ -174,6 +176,25 @@ classdef RocketFins < handle
             for ii=1:length(obj.fins)
                 obj.fins(ii).aero = aero;
             end
+		end
+
+		function draw_fin(obj)
+			figure('Name', '3D Wing Geometry');
+			hold on;
+			
+			% Plot the right wing
+			patch('Vertices', obj.fin_vertices, 'Faces', obj.fin_faces, ...
+      			'FaceColor', [0.5, 0.7, 0.9], 'EdgeColor', 'k', 'LineWidth', 1.5);
+			
+			% Formatting the plot
+			title('Generated Wing Geometry');
+			xlabel('X - Longitudinal Axis (ft)');
+			ylabel('Y - Spanwise Axis (ft)');
+			zlabel('Z - Vertical Axis (ft)');
+			grid off;
+			axis off equal;
+			view(30, 25);
+			hold off;
 		end
 	end
 end

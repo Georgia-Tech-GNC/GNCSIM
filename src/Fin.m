@@ -89,9 +89,6 @@ classdef Fin < handle
 
         function [cL, cY, cD, cl, cm, cn] = aero_interp(obj, mach, AoA_deg, alt_m)
             alt_ft = alt_m / 0.3048;
-            %disp(size(obj.aero.alpha))
-            %disp(size(obj.aero.mach))
-            %disp(size(obj.aero.alt))
 
             cL_F = griddedInterpolant({obj.aero.alpha(:), obj.aero.mach(:), obj.aero.alt(:)}, ...
                         obj.aero.cl, "linear");
