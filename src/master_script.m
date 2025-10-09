@@ -16,6 +16,8 @@ flight.rocket_dyn.rocket_fins.draw_fin()
 [t, x] = flight.run_sim();
 %flight.draw_traj()
 
+flight.plotFlight(t, x);
+
 %% Functions
 function rocket_dyn = setup_rocket()
     % Vehicle Properties
