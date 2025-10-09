@@ -190,7 +190,7 @@ Once $\alpha$, $M$ and $h$ are known this can be used to calculate lift drag and
 
 $$
 \begin{equation}
-[c_n, c_a, c_m] = \text{aero}(\alpha, M, h_)
+[c_n, c_a, c_m] = \text{aero}(\alpha, M, h)
 \end{equation}
 $$
 
@@ -338,6 +338,7 @@ The flight conditions defines the condition grid, also known as the combinations
 * *NMACH=3.0*: There are 3 mach numbers (in this case 0.2, 0.4 and 0.6).
 * *NALT=3.0*: There are 3 altitudes (in this case 0, 5km and 10km).
 * *NALPHA=11.0*: There are 11 angle of attack in degrees.
+* *LOOP=2.0*: DATCOM will loop over Mach and altitude combinations (a grid sweep)
  
 It is important to note that the conditions can be chosen from MATLAB and are not hard coded.
 
@@ -391,6 +392,8 @@ NEXT CASE
 
 ### DATCOM Buildup for Body
 TODO
+
+### Control and Trim Points
 
 ### Class Structure
 TODO
