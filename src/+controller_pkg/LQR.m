@@ -95,12 +95,12 @@ classdef LQR < Controller
             del_u = -K*del_x;
         end
         
-        function [F_b, M_b] = get_forces_and_moments(state, disturbances, motor_params, CG, breakPoints, time)
+        function [F_b, M_b] = get_forces_and_moments(state, rocket, CG, breakPoints, time)
                 [K, x0, u0] = selectGain(obj, state, time, breakPoints, referenceStates);
                 del_x = state - x0;
                 del_u = compute_controls(obj, K, del_x);
                 u = del_u + u0;
-               [F_b, M_b] = obj.actuator.get_forces_and_moments(obj, u, state, disturbances, CG, motor_params);
+               [F_b, M_b] = obj.actuator.get_forces_and_moments(obj, u, rocket, CG);
         end
     end
 end

@@ -2,23 +2,29 @@ classdef RocketDynamics < handle
 	properties
 		body
 		rocket_fins
-		rocket_params
 		motor_params
 		controller 
         navigation
 
-        mass_wet
-        mass_dry
-        moi_wet
-        moi_dry
+        mass_wet (1,1) double {mustBePositive}
+        mass_dry (1,1) double {mustBePositive}
+        moi_wet (3,3) double {mustBePositive}
+        moi_dry (3,3) double {mustBePositive}
+        CG_wet (1,1) double {mustBePositive}
+        CG_dry (1,1) double {mustBePositive}
 	end
 
 	methods
-		function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params)
-			obj.body = body;
-			obj.rocket_fins = rocket_fins;
-			obj.rocket_params = rocket_params;
-			obj.motor_params = motor_params;
+        function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params)
+            obj.body = body;
+            obj.rocket_fins = rocket_fins;
+            obj.motor_params = motor_params;
+            obj.mass_wet = rocket_params.mass_wet;
+            obj.mass_dry = rocket_params.mass_dry;
+            obj.moi_wet = rocket_params.moi_wet;
+            obj.moi_dry = rocket_params.moi_dry;
+            obj.CG_wet = rocket_params.CG_wet;
+            obj.CG_dry = rocket_params.CG_dry;
         end
 
         function calc_mass_moi(obj)
@@ -26,14 +32,17 @@ classdef RocketDynamics < handle
             % https://phys.libretexts.org/Bookshelves/Classical_Mechanics/Variational_Principles_in_Classical_Mechanics_(Cline)/13%3A_Rigid-body_Rotation/13.08%3A_Parallel-Axis_Theorem
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time)
-            % TODO: Calculate CG based on time (below is just an idea)
-            
+        function interp_CG_mass(t)
+            % TODO: interpolate CG and mass based on flight time, use
+            % CG_wet, CG_dry
             %body_length = obj.aero.blref;
             %CG_i = 2.433; % Add this and CG_f as inputs with thrust in master_script?
             %CG_f = 2.34;
             %dur = 13.1; % Also input this with thrust data?
             %CG = ((CG_f - CG_i)/dur)*(t) + CG_i;
+        end
+
+        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, breakPoints)
             
             % computes aero forces and moments 
             %[F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances, CG);
@@ -43,18 +52,14 @@ classdef RocketDynamics < handle
 
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
             %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
-            [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params, CG, breakPoints, time);
-            F_b = F_b_body + F_b_fins; + F_b_controller;
-            M_b = M_b_body + M_b_fins; + M_b_controller;
+            [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
+            F_b = F_b_body + F_b_fins + F_b_controller;
+            M_b = M_b_body + M_b_fins + M_b_controller;
         end
 
         function compute_buildup(obj)
             %obj.body.compute_buildup()  Not implmented yet
             obj.rocket_fins.compute_buildup()
-        end
-
-        function moi = get_moi(obj, mass)
-            moi = mass * eye(3);
         end
 
 		function draw(obj)
@@ -92,6 +97,5 @@ classdef RocketDynamics < handle
             camlight; lighting gouraud
         end
 
-	end
+    end
 end
-

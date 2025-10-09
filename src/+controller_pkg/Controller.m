@@ -1,6 +1,6 @@
 classdef (Abstract) Controller < handle
     properties
-        actuator_list
+        actuator
     end
 
     methods (Abstract)

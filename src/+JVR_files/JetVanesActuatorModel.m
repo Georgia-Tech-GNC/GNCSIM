@@ -1,23 +1,20 @@
-classdef JetVanesActuatorModel < ActuatorModel
+classdef JetVanesActuatorModel < controller_pkg.ActuatorModel
 
-    properties (Access = private)
+    properties
+        location;
+        q_ba;
         MT;
         biasAng;
         jetAngs;
         servoAngs;
         sideForces;
+        r24;
     end
 
     methods
-        function obj = JetVanesActuatorModel(motor_params)
-        obj.biasAng = motor_params.biasAng;
-        obj.r24 = motor_params.r24;
-
-        end
         
-        function [F_b, M_b] = get_forces_and_moments(obj, controlInput, disturbances, CG)
-                 body_length = motor_params.body_length;
-                 r = body_length - CG;
+        function [F_b, M_b] = get_forces_and_moments(obj, controlInput, rocket, CG)
+                 r = obj.location - CG;
                  obj.jetAngs = obj.jetAngs + controlInput + obj.biasAng;
                  vaneDefFile = readtable('VaneDeflectionAngles.xlsx');
                  vane_Deflection_Angle = cell2mat(vaneDefFile(2:end, 1));
@@ -38,30 +35,30 @@ classdef JetVanesActuatorModel < ActuatorModel
         end
         
 
-        %Getters
-        function [thrustMoment] = get_MT(obj)
-            thrustMoment = obj.MT;
-        end
-
-        function [bias] = get_biasAng(obj)
-            bias = obj.biasAng;
-        end
-
-        function [jetAngs] = get_jetAngs(obj)
-            jetAngs = obj.jetAngs;
-        end
-
-        function [servoAngs] = get_servoAngs(obj)
-            servoAngs = obj.servoAngs;
-        end
-
-        function [sideForces] = get_sideForces(obj)
-            sideForces = obj.sideForces;
-        end
-
-        %Setters
-        function obj = set_biasAng(obj,newBiasAng)
-            obj.biasAng = newBiasAng;
-        end
+        % %Getters
+        % function [thrustMoment] = get_MT(obj)
+        %     thrustMoment = obj.MT;
+        % end
+        % 
+        % function [bias] = get_biasAng(obj)
+        %     bias = obj.biasAng;
+        % end
+        % 
+        % function [jetAngs] = get_jetAngs(obj)
+        %     jetAngs = obj.jetAngs;
+        % end
+        % 
+        % function [servoAngs] = get_servoAngs(obj)
+        %     servoAngs = obj.servoAngs;
+        % end
+        % 
+        % function [sideForces] = get_sideForces(obj)
+        %     sideForces = obj.sideForces;
+        % end
+        % 
+        % %Setters
+        % function obj = set_biasAng(obj,newBiasAng)
+        %     obj.biasAng = newBiasAng;
+        % end
     end
 end
