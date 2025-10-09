@@ -13,7 +13,7 @@ flight.rocket_dyn.rocket_fins.draw_fin()
 
 %% Run Flight
 
-%[t, x] = flight.run_sim();
+[t, x] = flight.run_sim();
 %flight.draw_traj()
 
 %% Functions

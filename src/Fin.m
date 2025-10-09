@@ -100,8 +100,8 @@ classdef Fin < handle
             
             cm_F = griddedInterpolant({obj.aero.alpha(:), obj.aero.mach(:), obj.aero.alt(:)}, ...
                         obj.aero.cm, "linear");
-            cm = 0;
-
+            cm = cm_F(AoA_deg, mach, alt_ft);
+            
             cl = 0;
             cY = 0;
             cn = 0;

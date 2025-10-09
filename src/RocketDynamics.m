@@ -49,7 +49,7 @@ classdef RocketDynamics < handle
         end
 
         function compute_buildup(obj)
-            %obj.body.compute_buildup()  Not implmented yet
+            obj.body.compute_buildup()  %Not implmented yet
             obj.rocket_fins.compute_buildup()
         end
 
