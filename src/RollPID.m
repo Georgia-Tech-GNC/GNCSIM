@@ -1,5 +1,5 @@
 
-classdef RollPID
+classdef RollPID < handle
 
     properties
         Kp % Proportional gain
