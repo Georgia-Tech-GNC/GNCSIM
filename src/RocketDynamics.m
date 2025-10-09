@@ -41,11 +41,11 @@ classdef RocketDynamics < handle
             F_b_body = [0, 0, 0].';
             M_b_body = [0, 0 ,0].';
 
-            %TODO: state_estimate = obj.navigation.get_state_estimate(state, disturbances)
-            %TODO: [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params);
-
-            F_b = F_b_body + F_b_fins; %+ F_b_controller;
-            M_b = M_b_body + M_b_fins; %+ M_b_controller;
+            %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
+            %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
+            [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, disturbances, obj.motor_params, CG, breakPoints, time);
+            F_b = F_b_body + F_b_fins; + F_b_controller;
+            M_b = M_b_body + M_b_fins; + M_b_controller;
         end
 
         function compute_buildup(obj)
