@@ -43,7 +43,7 @@ classdef RollPID < handle
             config.reference_roll = obj.referenceRoll;
         end
 
-        % Loop Step Function
+        % Iterative Step Function
         function torque = step(obj, current_roll, desired_alpha, t)
             error = obj.referenceRoll(t) - current_roll;
             obj.integral = obj.integral + error; % Update integral term
