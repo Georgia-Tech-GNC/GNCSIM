@@ -3,15 +3,15 @@ classdef RocketDynamics < handle
 		body
 		rocket_fins
 		motor_params
-		controller 
+		controller
         navigation
 
-        mass_wet (1,1) double {mustBePositive}
-        mass_dry (1,1) double {mustBePositive}
-        moi_wet (3,3) double {mustBePositive}
-        moi_dry (3,3) double {mustBePositive}
-        CG_wet (1,1) double {mustBePositive}
-        CG_dry (1,1) double {mustBePositive}
+        mass_wet (1,1) double {mustBePositive} = 1
+        mass_dry (1,1) double {mustBePositive} = 1
+        moi_wet (3,3) double {mustBePositive} = eye(3)
+        moi_dry (3,3) double {mustBePositive} = eye(3)
+        CG_wet (1,1) double {mustBePositive} = 1
+        CG_dry (1,1) double {mustBePositive} = 1
 	end
 
 	methods
@@ -58,7 +58,7 @@ classdef RocketDynamics < handle
         end
 
         function compute_buildup(obj)
-            obj.body.compute_buildup()  %Not implmented yet
+            obj.body.compute_buildup()
             obj.rocket_fins.compute_buildup()
         end
 

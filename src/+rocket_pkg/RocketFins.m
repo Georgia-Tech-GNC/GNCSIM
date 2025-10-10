@@ -14,11 +14,11 @@ classdef RocketFins < handle
 			obj.num_fins = fin_params.num_fins;
             
             fin_params.angle = 0;
-            main_fin = Fin("fin", true, fin_params);  % master fin
+            main_fin = rocket_pkg.Fin("fin", true, fin_params);  % master fin
             obj.fins = main_fin;
             for ii=1:obj.num_fins - 1
                 fin_params.angle = (360 / obj.num_fins) * ii;
-                fin = Fin("fin", true, fin_params);
+                fin = rocket_pkg.Fin("fin", true, fin_params);
                 obj.fins = [obj.fins, fin];
             end
 		end
