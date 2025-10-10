@@ -1,9 +1,11 @@
 classdef DatcomManager < handle
 	properties
 		fileID
+		flight_con_params
 	end
 	methods
-		function obj = DatcomManager()
+		function obj = DatcomManager(flight_con_params)
+			obj.flight_con_params = flight_con_params;
 		end
 
 		function open_datcom(obj, datcom_filename)
@@ -13,10 +15,10 @@ classdef DatcomManager < handle
 			end
 		end
 
-		function add_flight_condition(obj, flight_con_params)
-			mach_numbers = flight_con_params.mach_numbers;
-            altitudes_ft = flight_con_params.altitudes_ft;
-            alphas_deg   = flight_con_params.alphas_deg;
+		function add_flight_condition(obj)
+			mach_numbers = obj.flight_con_params.mach_numbers;
+            altitudes_ft = obj.flight_con_params.altitudes_ft;
+            alphas_deg   = obj.flight_con_params.alphas_deg;
 			
 			if ~isempty(mach_numbers)
                 fprintf(obj.fileID, ' $FLTCON NMACH=%.1f, MACH(1)=%.4f,\n', length(mach_numbers), mach_numbers(1));

@@ -2,6 +2,7 @@
 classdef RocketBody < handle
 	properties
 		body_params
+		flight_con_params
 		nose_cone_length {mustBeNumeric}
 		ogive_radius    {mustBeNumeric}
 		body_length     {mustBeNumeric}
@@ -9,8 +10,9 @@ classdef RocketBody < handle
 	end
 
 	methods
-		function obj = RocketBody(body_params)
+		function obj = RocketBody(body_params, flight_con_params)
 			obj.body_params = body_params;
+			obj.flight_con_params = flight_con_params;
 			obj.nose_cone_length = body_params.nose_cone_length;
 			obj.ogive_radius = body_params.ogive_radius;
 			obj.body_length = body_params.body_length;
