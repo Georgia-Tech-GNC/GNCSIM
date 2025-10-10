@@ -1349,15 +1349,14 @@ You should see a path ending with <code>\GNCSIM\src</code></p>
 <li>
 <p><strong>TrimPoints.m</strong> - Generates linearized control points</p>
 <ul>
-<li>Creates reference trajectories</li>
+<li>Linearizes the trajectory to use linear controllers</li>
 <li>Computes control gains</li>
-<li>Handles trajectory variations</li>
+<li>Creates reference trajectories</li>
 </ul>
 </li>
 <li>
 <p><strong>MonteCarlo.m</strong> - Performs statistical analysis
          - Parameter uncertainty modeling
-         - Latin Hypercube Sampling
          - Performance evaluation</p>
 </li>
 </ol>
@@ -1368,7 +1367,7 @@ You should see a path ending with <code>\GNCSIM\src</code></p>
 <ul>
 <li>Mass properties (~10% typical)</li>
 <li>Thrust curve variations</li>
-<li>Environmental conditions</li>
+<li>Environmental conditions (wind)</li>
 <li>Initial state uncertainties</li>
 </ul>
 <h2 id="verifying-your-setup">Verifying Your Setup</h2>
@@ -1376,10 +1375,12 @@ You should see a path ending with <code>\GNCSIM\src</code></p>
 <h3 id="success-indicators">Success Indicators</h3>
 <ol>
 <li><strong>No Error Messages</strong>: The simulation completed without MATLAB errors</li>
-<li><strong>Three Plot Windows Total</strong>:</li>
+<li><strong>Three Plot Windows Total</strong>:<ul>
 <li><strong>Flight Dashboard</strong>: One comprehensive window with multiple subplots showing trajectory, velocities, control inputs, and attitude</li>
 <li><strong>Monte Carlo 3D Trajectory</strong>: Shows all 4 simulation runs overlaid in 3D space</li>
 <li><strong>Monte Carlo Euler Angles</strong>: Shows attitude angle variations across the 4 runs</li>
+</ul>
+</li>
 <li><strong>Console Output</strong>: MATLAB displayed progress messages during execution</li>
 </ol>
 <h3 id="common-issues-and-solutions">Common Issues and Solutions</h3>
