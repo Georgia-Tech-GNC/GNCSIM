@@ -1384,18 +1384,32 @@ You should see a path ending with <code>\GNCSIM\src</code></p>
 <li><strong>Console Output</strong>: MATLAB displayed progress messages during execution</li>
 </ol>
 <h3 id="common-issues-and-solutions">Common Issues and Solutions</h3>
-<p><strong>"Cannot find file 'JVR_sim.csv'"</strong>
-- Solution: Ensure you're running from the <code>src/</code> directory
-- Check that <code>Flight Profile/JVR_sim.csv</code> exists</p>
-<p><strong>"Undefined function or variable"</strong>
-- Solution: Make sure all GNCSIM class files are in your MATLAB path
-- Try running <code>addpath(genpath(pwd))</code> from the GNCSIM root directory</p>
-<p><strong>Simulation crashes or produces unrealistic results</strong>
-- Check MATLAB version compatibility (R2019b or newer recommended)
-- Verify all required toolboxes are installed (Control Systems, Symbolic Math). The required toolboxes are listed in the onboarding canvas on slack.</p>
-<p><strong>Plots don't appear</strong>
-- Try <code>figure</code> command to bring windows to front
-- Check if plots are minimized in taskbar</p>
+<p><strong>"Cannot find file 'JVR_sim.csv'"</strong></p>
+<ul>
+<li>Solution: Ensure you're running from the <code>src/</code> directory</li>
+<li>Check that <code>Flight Profile/JVR_sim.csv</code> exists</li>
+</ul>
+<p><strong>"Undefined function or variable"</strong></p>
+<ul>
+<li>Solution: Make sure all GNCSIM class files are in your MATLAB path</li>
+<li>Try running <code>addpath(genpath(pwd))</code> from the GNCSIM root directory</li>
+</ul>
+<p><strong>Simulation crashes or produces unrealistic results</strong></p>
+<ul>
+<li>Check MATLAB version compatibility (R2023b or newer recommended)</li>
+<li>Verify all required toolboxes are installed:</li>
+<li>Aerospace Toolbox</li>
+<li>Control Systems Toolbox</li>
+<li>Statistics and Machine Learning Toolbox</li>
+<li>Navigation Toolbox</li>
+<li>Parallel Computing Toolbox</li>
+<li>Symbolic Math Toolbox</li>
+</ul>
+<p><strong>Plots don't appear</strong></p>
+<ul>
+<li>Try <code>figure</code> command to bring windows to front</li>
+<li>Check if plots are minimized in taskbar</li>
+</ul>
 <hr />
 <p>Congratulations! You've successfully run your first GNCSIM simulation.</p>
 <h2 id="getting-help">Getting Help</h2>
