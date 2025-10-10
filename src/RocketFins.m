@@ -179,21 +179,19 @@ classdef RocketFins < handle
 		end
 
 		function draw_fin(obj)
-			figure('Name', '3D Wing Geometry');
+			figure('Name', 'Fin Geometry');
 			hold on;
-			
-			% Plot the right wing
-			patch('Vertices', obj.fin_vertices, 'Faces', obj.fin_faces, ...
-      			'FaceColor', [0.5, 0.7, 0.9], 'EdgeColor', 'k', 'LineWidth', 1.5);
+
+			plot([obj.fin_vertices(:, 1); obj.fin_vertices(1, 1)], [obj.fin_vertices(:, 2); obj.fin_vertices(1, 2)], 'k-')
 			
 			% Formatting the plot
 			title('Generated Wing Geometry');
-			xlabel('X - Longitudinal Axis (ft)');
-			ylabel('Y - Spanwise Axis (ft)');
-			zlabel('Z - Vertical Axis (ft)');
-			grid off;
-			axis off equal;
-			view(30, 25);
+			xlabel('X - Longitudinal Axis (m)');
+			ylabel('Y - Spanwise Axis (m)');
+			%zlabel('Z - Vertical Axis (ft)');
+			grid on;
+			axis equal;
+			%view(30, 25);
 			hold off;
 		end
 	end
