@@ -8,8 +8,8 @@ classdef RocketDynamics < handle
 
         mass_wet (1,1) double {mustBePositive} = 1
         mass_dry (1,1) double {mustBePositive} = 1
-        moi_wet (3,3) double {mustBePositive} = eye(3)
-        moi_dry (3,3) double {mustBePositive} = eye(3)
+        moi_wet (3,3) double = eye(3)
+        moi_dry (3,3) double = eye(3)
         CG_wet (1,1) double {mustBePositive} = 1
         CG_dry (1,1) double {mustBePositive} = 1
 	end

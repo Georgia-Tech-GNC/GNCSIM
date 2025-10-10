@@ -127,14 +127,16 @@ classdef RocketBody < handle
 
             status = system(command);
             disp('DATCOM execution finished.');
+		end
 
+		function draw_body(obj)
             figure;
-            plot(body_stations_x, body_radii, 'b-o');
+            plot(body_stations_x, body_radii, 'k-');
             hold on;
-            plot(body_stations_x, -body_radii, 'b-o'); % Plot the bottom half
+            plot(body_stations_x, -body_radii, 'k-');
             axis equal;
             grid on;
-        end
+		end
 	end
 end
 
