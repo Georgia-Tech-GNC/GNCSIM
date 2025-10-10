@@ -103,6 +103,36 @@ function EnvironmentObj = setup_environment()
     EnvironmentObj.set_vm_3sigma(0.01) % m/s
 end
 
+function [AeroObj, aero_forces_moments] = setupAerodynamics()
+    AeroObj = Aerodynamics();
+    syms u v w rho CG p r
+    Vars = [u v w rho CG p r];
+    
+    FAx_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*sin(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(v/u));
+    FAy_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
+    FAz_b_sym = 0;
+    MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
+    MAy_b_sym = 0;
+    MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
+    
+    FAx_b_func = matlabFunction(FAx_b_sym, vars=Vars);
+    FAy_b_func = matlabFunction(FAy_b_sym, vars=Vars);
+    FAz_b_func = matlabFunction(FAz_b_sym, vars=Vars);
+    MAx_b_func = matlabFunction(MAx_b_sym, vars=Vars);
+    MAy_b_func = matlabFunction(MAy_b_sym, vars=Vars);
+    MAz_b_func = matlabFunction(MAz_b_sym, vars=Vars);
+    
+    AeroObj.set_FAx_func(FAx_b_func);
+    AeroObj.set_FAy_func(FAy_b_func);
+    AeroObj.set_FAz_func(FAz_b_func);
+    AeroObj.set_MAx_func(MAx_b_func);
+    AeroObj.set_MAy_func(MAy_b_func);
+    AeroObj.set_MAz_func(MAz_b_func);
+
+    aero_forces_moments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
+end
+
+
 % PORTED FROM GNCSIM 1.0 - WILL NEED TO CHANGE TO ACCODOMODATE OPTIMAL TRAJ
 function TrimPointsObj = generateTrimPoints(aero_forces_moments, rocket_params, FlightObj, AeroObj, RocketObj, EnvironmentObj)
     % Unpack rocket parameters
