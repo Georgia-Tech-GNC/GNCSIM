@@ -240,7 +240,7 @@
   
   
   <span class="md-ellipsis">
-    GNCSIM Documentation
+    GNCSIM 1.0 Documentation
     
   </span>
   
@@ -251,7 +251,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            GNCSIM Documentation
+            GNCSIM 1.0 Documentation
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1293,76 +1293,84 @@ You should see a path ending with <code>\GNCSIM\src</code></p>
 <ol>
 <li><strong>Initialization</strong>: MATLAB will set up all simulation objects</li>
 <li><strong>Flight Simulation</strong>: You'll see progress as the simulation runs</li>
-<li><strong>Dashboard Plot</strong>: After the flight simulation, one comprehensive dashboard window will appear with multiple subplots showing:</li>
+<li><strong>Dashboard Plot</strong>: After the flight simulation, one comprehensive dashboard window will appear with multiple subplots showing:<ul>
 <li>3D trajectory</li>
 <li>Velocity and acceleration profiles</li>
 <li>Control system inputs</li>
 <li>Vehicle attitude and orientation</li>
+</ul>
+</li>
 <li><strong>Monte Carlo</strong>: 4 simulation runs with parameter variations (if you modified the setting)</li>
-<li><strong>Monte Carlo Results</strong>: Two additional plot windows will appear:</li>
+<li><strong>Monte Carlo Results</strong>: Two additional plot windows will appear:<ul>
 <li>3D trajectory plot showing all 4 Monte Carlo runs</li>
 <li>Euler angle plot showing attitude variations across runs</li>
+</ul>
+</li>
 </ol>
 <p><strong>Expected Runtime</strong>: ~ 2 minutes depending on your computer</p>
 <h2 id="understanding-the-simulation-components">Understanding the Simulation Components</h2>
 <p>While the simulation runs, let's understand what each component does:</p>
 <h3 id="core-classes-located-in-src">Core Classes (Located in <code>src/</code>)</h3>
 <ol>
-<li><strong>Rocket.m</strong> - Defines vehicle properties</li>
+<li>
+<p><strong>Rocket.m</strong> - Defines vehicle properties</p>
+<ul>
 <li>Mass properties (wet/dry mass, moments of inertia)</li>
 <li>Geometry (diameter, length, center of gravity)</li>
 <li>Thrust curve data</li>
-<li>
-<p>Parachute characteristics</p>
+<li>Parachute characteristics</li>
+</ul>
 </li>
 <li>
 <p><strong>Aerodynamics.m</strong> - Handles aerodynamic forces and moments</p>
-</li>
+<ul>
 <li>Drag, lift, and side forces</li>
 <li>Pitching, rolling, and yawing moments</li>
-<li>
-<p>Angle of attack dependencies</p>
+<li>Angle of attack dependencies</li>
+</ul>
 </li>
 <li>
 <p><strong>Environment.m</strong> - Models environmental conditions</p>
-</li>
+<ul>
 <li>Atmospheric properties vs altitude</li>
 <li>Wind models</li>
-<li>
-<p>Launch site location</p>
+<li>Launch site location</li>
+</ul>
 </li>
 <li>
 <p><strong>Flight.m</strong> - Controls simulation execution</p>
-</li>
+<ul>
 <li>Integration time steps</li>
 <li>Simulation duration</li>
 <li>Control system activation</li>
-<li>
-<p>Initial conditions</p>
+<li>Initial conditions</li>
+</ul>
 </li>
 <li>
 <p><strong>TrimPoints.m</strong> - Generates linearized control points</p>
-</li>
+<ul>
 <li>Creates reference trajectories</li>
 <li>Computes control gains</li>
-<li>
-<p>Handles trajectory variations</p>
+<li>Handles trajectory variations</li>
+</ul>
 </li>
 <li>
-<p><strong>MonteCarlo.m</strong> - Performs statistical analysis</p>
+<p><strong>MonteCarlo.m</strong> - Performs statistical analysis
+         - Parameter uncertainty modeling
+         - Latin Hypercube Sampling
+         - Performance evaluation</p>
 </li>
-<li>Parameter uncertainty modeling</li>
-<li>Latin Hypercube Sampling</li>
-<li>Performance evaluation</li>
 </ol>
 <h3 id="key-simulation-features">Key Simulation Features</h3>
 <p><strong>Flight Profile</strong>: The simulation uses OpenRocket-generated flight data (<code>Flight Profile/JVR_sim.csv</code>) as a reference trajectory.</p>
 <p><strong>Control System</strong>: The rocket uses a linear-quadratic regulator (LQR) to maintain trajectory following.</p>
-<p><strong>Monte Carlo Analysis</strong>: Tests system robustness by varying parameters like:
-- Mass properties (~10% typical)
-- Thrust curve variations
-- Environmental conditions
-- Initial state uncertainties</p>
+<p><strong>Monte Carlo Analysis</strong>: Tests system robustness by varying parameters like:</p>
+<ul>
+<li>Mass properties (~10% typical)</li>
+<li>Thrust curve variations</li>
+<li>Environmental conditions</li>
+<li>Initial state uncertainties</li>
+</ul>
 <h2 id="verifying-your-setup">Verifying Your Setup</h2>
 <p>After running the simulation, verify everything worked correctly:</p>
 <h3 id="success-indicators">Success Indicators</h3>
