@@ -1,6 +1,7 @@
 
 clear; clc; close all;
 
+
 %% Instantiate Objects
 rocket_dyn = setup_rocket();
 %rocket_dyn.draw();
@@ -13,8 +14,10 @@ flight.rocket_dyn.rocket_fins.draw_fin()
 
 %% Run Flight
 
-%[t, x] = flight.run_sim();
+[t, x] = flight.run_sim();
 %flight.draw_traj()
+
+flight.plotFlight(t, x);
 
 %% Functions
 function rocket_dyn = setup_rocket()
@@ -40,6 +43,14 @@ function rocket_dyn = setup_rocket()
     %fin_params.sweep_length = 0.033;  % [m]
     %fin_params.semi_span = 0.6;  % [m]
     %fin_params.wing_apex_x = 0.0; % [m]
+
+    % Set wet mass
+    rocket_params.mass_wet = 1;
+    rocket_params.mass_dry = 1;
+    rocket_params.moi_wet = eye(3);
+    rocket_params.moi_dry = eye(3);
+    rocket_params.CG_wet = 1;
+    rocket_params.CG_dry = 1;
     
     % get the distance along body
     x_fin_ref = total_length - rocket_params.cg_x - fin_params.root_chord;  % [m]
@@ -85,10 +96,10 @@ function rocket_dyn = setup_rocket()
     
     
     % Create rocket dynamics object
-    body = RocketBody(body_params);
-    fins = RocketFins(fin_params);
+    body = rocket_pkg.RocketBody(body_params);
+    fins = rocket_pkg.RocketFins(fin_params);
     
-    rocket_dyn = RocketDynamics(body, fins, rocket_params, motor_params);
+    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
 end
 
 

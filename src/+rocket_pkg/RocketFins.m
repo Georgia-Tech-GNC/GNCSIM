@@ -14,11 +14,11 @@ classdef RocketFins < handle
 			obj.num_fins = fin_params.num_fins;
             
             fin_params.angle = 0;
-            main_fin = Fin("fin", true, fin_params);  % master fin
+            main_fin = rocket_pkg.Fin("fin", true, fin_params);  % master fin
             obj.fins = main_fin;
             for ii=1:obj.num_fins - 1
                 fin_params.angle = (360 / obj.num_fins) * ii;
-                fin = Fin("fin", true, fin_params);
+                fin = rocket_pkg.Fin("fin", true, fin_params);
                 obj.fins = [obj.fins, fin];
             end
 		end
@@ -39,8 +39,8 @@ classdef RocketFins < handle
             tip_chord   = obj.fin_params.tip_chord;      % [m] Chord length at the wing tip
             semi_span   = obj.fin_params.fin_span;       % [m] Span of one wing (from centerline to tip)
             sweep_deg   = obj.fin_params.sweep_deg;      % [deg] Leading-edge sweep angle
-            %wing_apex_x = obj.fin_params.wing_apex_x;    % [m] X-location of the wing's leading edge at the root
 			wing_apex_x = 0;
+            xcg = 0;
 
             mach_numbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
             altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet
@@ -83,16 +83,6 @@ classdef RocketFins < handle
             fileID = fopen(datcom_filename, 'w');
             if fileID == -1
                 error('Could not open file for writing.');
-            end
-            % Longitudinal position of the CG (moment reference point)
-            if exist('x_cg_override', 'var')
-                xcg = x_cg_override;
-            else
-                % Default: Place CG at the quarter-chord point of the MAC
-                % Note: This is a simplified calculation for x_mac_le for a tapered, swept wing.
-                y_mac = (semi_span/3) * ( (1 + 2*taper_ratio)/(1+taper_ratio) );
-                x_mac_le = wing_apex_x + y_mac * tan(sweep_rad);
-                xcg = x_mac_le + 0.25 * cbarr;
             end
 
             if ~isempty(mach_numbers)

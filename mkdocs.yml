@@ -23,7 +23,7 @@ extra_javascript:
 
 nav:
 - Home: index.md
-- GNCSIM Documentation:
+- GNCSIM 1.0 Documentation:
     - Overview and Class Diagram: gncsim-documentation/class_diagram.md
     - Aerodynamics Class: gncsim-documentation/aerodynamics_class.md
     - Environment Class: gncsim-documentation/environment_class.md
