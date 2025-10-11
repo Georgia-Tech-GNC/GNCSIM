@@ -91,14 +91,14 @@ The simulation will run through several phases:
 1. **Initialization**: MATLAB will set up all simulation objects
 2. **Flight Simulation**: You'll see progress as the simulation runs
 3. **Dashboard Plot**: After the flight simulation, one comprehensive dashboard window will appear with multiple subplots showing:
-   - 3D trajectory
-   - Velocity and acceleration profiles
-   - Control system inputs
-   - Vehicle attitude and orientation
+      - 3D trajectory
+      - Velocity and acceleration profiles
+      - Control system inputs
+      - Vehicle attitude and orientation
 4. **Monte Carlo**: 4 simulation runs with parameter variations (if you modified the setting)
 5. **Monte Carlo Results**: Two additional plot windows will appear:
-   - 3D trajectory plot showing all 4 Monte Carlo runs
-   - Euler angle plot showing attitude variations across runs
+      - 3D trajectory plot showing all 4 Monte Carlo runs
+      - Euler angle plot showing attitude variations across runs
 
 **Expected Runtime**: ~ 2 minutes depending on your computer
 
@@ -109,36 +109,35 @@ While the simulation runs, let's understand what each component does:
 ### Core Classes (Located in `src/`)
 
 1. **Rocket.m** - Defines vehicle properties
-   - Mass properties (wet/dry mass, moments of inertia)
-   - Geometry (diameter, length, center of gravity)
-   - Thrust curve data
-   - Parachute characteristics
+      - Mass properties (wet/dry mass, moments of inertia)
+      - Geometry (diameter, length, center of gravity)
+      - Thrust curve data
+      - Parachute characteristics
 
 2. **Aerodynamics.m** - Handles aerodynamic forces and moments
-   - Drag, lift, and side forces
-   - Pitching, rolling, and yawing moments
-   - Angle of attack dependencies
+      - Drag, lift, and side forces
+      - Pitching, rolling, and yawing moments
+      - Angle of attack dependencies
 
 3. **Environment.m** - Models environmental conditions
-   - Atmospheric properties vs altitude
-   - Wind models
-   - Launch site location
+      - Atmospheric properties vs altitude
+      - Wind models
+      - Launch site location
 
 4. **Flight.m** - Controls simulation execution
-   - Integration time steps
-   - Simulation duration
-   - Control system activation
-   - Initial conditions
+      - Integration time steps
+      - Simulation duration
+      - Control system activation
+      - Initial conditions
 
 5. **TrimPoints.m** - Generates linearized control points
-   - Creates reference trajectories
-   - Computes control gains
-   - Handles trajectory variations
+      - Linearizes the trajectory to use linear controllers
+      - Computes control gains
+      - Creates reference trajectories
 
 6. **MonteCarlo.m** - Performs statistical analysis
-   - Parameter uncertainty modeling
-   - Latin Hypercube Sampling
-   - Performance evaluation
+         - Parameter uncertainty modeling
+         - Performance evaluation
 
 ### Key Simulation Features
 
@@ -147,9 +146,10 @@ While the simulation runs, let's understand what each component does:
 **Control System**: The rocket uses a linear-quadratic regulator (LQR) to maintain trajectory following.
 
 **Monte Carlo Analysis**: Tests system robustness by varying parameters like:
+
 - Mass properties (~10% typical)
 - Thrust curve variations
-- Environmental conditions
+- Environmental conditions (wind)
 - Initial state uncertainties
 
 ## Verifying Your Setup
@@ -160,26 +160,37 @@ After running the simulation, verify everything worked correctly:
 
 1. **No Error Messages**: The simulation completed without MATLAB errors
 2. **Three Plot Windows Total**:
-   - **Flight Dashboard**: One comprehensive window with multiple subplots showing trajectory, velocities, control inputs, and attitude
-   - **Monte Carlo 3D Trajectory**: Shows all 4 simulation runs overlaid in 3D space
-   - **Monte Carlo Euler Angles**: Shows attitude angle variations across the 4 runs
+      - **Flight Dashboard**: One comprehensive window with multiple subplots showing trajectory, velocities, control inputs, and attitude
+      - **Monte Carlo 3D Trajectory**: Shows all 4 simulation runs overlaid in 3D space
+      - **Monte Carlo Euler Angles**: Shows attitude angle variations across the 4 runs
 3. **Console Output**: MATLAB displayed progress messages during execution
 
 ### Common Issues and Solutions
 
 **"Cannot find file 'JVR_sim.csv'"**
+
 - Solution: Ensure you're running from the `src/` directory
 - Check that `Flight Profile/JVR_sim.csv` exists
 
 **"Undefined function or variable"**
+
 - Solution: Make sure all GNCSIM class files are in your MATLAB path
 - Try running `addpath(genpath(pwd))` from the GNCSIM root directory
 
 **Simulation crashes or produces unrealistic results**
-- Check MATLAB version compatibility (R2019b or newer recommended)
-- Verify all required toolboxes are installed (Control Systems, Symbolic Math). The required toolboxes are listed in the onboarding canvas on slack.
+
+- Check MATLAB version compatibility (R2023b or newer recommended)
+- Verify all required toolboxes are installed:
+
+      - Aerospace Toolbox
+      - Control Systems Toolbox
+      - Statistics and Machine Learning Toolbox
+      - Navigation Toolbox
+      - Parallel Computing Toolbox
+      - Symbolic Math Toolbox
 
 **Plots don't appear**
+
 - Try `figure` command to bring windows to front
 - Check if plots are minimized in taskbar
 
