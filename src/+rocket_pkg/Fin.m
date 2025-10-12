@@ -39,7 +39,8 @@ classdef Fin < handle
            % Converting back to body frame
            R_cb = R_bc';
            F_b = R_cb*F_c;
-           M_b = R_cb*M_c;
+           M_b_ross = cross(r_cb.', F_c);
+           M_b = R_cb*M_c + M_b_ross(:);
 		end
 	end
 end

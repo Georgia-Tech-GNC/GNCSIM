@@ -52,7 +52,7 @@ function rocket_dyn = setup_rocket()
     rocket_params.CG_dry = 1;
     
     % get the distance along body
-    x_fin_ref = total_length - rocket_params.cg_x - fin_params.root_chord;  % [m]
+    x_fin_ref = total_length - fin_params.root_chord;  % [m]
     
     % set location of where to put fins
     fin_params.translation = [x_fin_ref, body_params.rocket_diameter / 2, 0];  % [m]   
