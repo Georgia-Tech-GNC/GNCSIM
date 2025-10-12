@@ -2,29 +2,19 @@
 
 ## Overview
 
-PID (Proportional-Integral-Derivative) control is a fundamental control strategy that forms the backbone of most industrial control systems. Understanding PID is essential because it teaches you the core concepts of closed-loop control that underlie all control systems.
-
-## Why Learn PID Control?
-
-**Foundation of Control Theory**: PID introduces you to closed-loop control, feedback, and system response concepts that are universal across all control methods.
-
-**Industry Standard**: Over 95% of industrial control systems use some form of PID control. Understanding it makes you valuable in any controls-related career.
-
-**Intuitive Learning**: PID is relatively simple to understand conceptually, making it an excellent stepping stone to more advanced control techniques like LQR.
-
-**GNC Heritage**: We've successfully used PID on our gimbaled rocket launches, so understanding it helps you appreciate our team's control systems evolution.
+PID (Proportional-Integral-Derivative) control is a fundamental control strategy that forms the backbone of most industrial control systems. Understanding PID is essential because it teaches you the core concepts of closed-loop control that underlie all control systems. 
 
 ---
 
-## 🎛️ Core PID Concepts
+## Core PID Concepts
 
 ### The Control Problem
 Imagine you want your rocket to point in a specific direction:
 
-- **Setpoint**: Where you want the rocket to point (reference)
-- **Process Variable**: Where the rocket is actually pointing (measured output)
-- **Error**: The difference between where you want to be and where you are
-- **Control Output**: The command sent to actuators (like gimbal motors)
+- **Setpoint**: What orientation you want the rocket to have
+- **Process Variable**: How the rocket is actually oriented
+- **Error**: The difference between how you want to be oriented, and how you're actually oriented
+- **Control Output**: The command sent to actuators (like gimbal motors) to correct for the error
 
 ### The Three Components
 
