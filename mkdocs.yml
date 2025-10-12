@@ -25,6 +25,7 @@ nav:
 - Home: index.md
 - GNCSIM 1.0 Documentation:
     - Overview and Class Diagram: gncsim-documentation/class_diagram.md
+    - GNCSIM 2.0 Class Diagram: gncsim-documentation/class_diagram_gncsim2.md
     - Aerodynamics Class: gncsim-documentation/aerodynamics_class.md
     - Environment Class: gncsim-documentation/environment_class.md
     - Flight Class: gncsim-documentation/flight_class.md
