@@ -1,4 +1,5 @@
-% Main Authors: Hridai Ambati
+% Main Authors: Hridai Ambati (ported from GNCSIM 1.0, might need to tweak
+% stuff)
 classdef Environment
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here

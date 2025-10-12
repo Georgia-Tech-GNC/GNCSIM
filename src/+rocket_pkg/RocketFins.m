@@ -1,0 +1,158 @@
+classdef RocketFins < rocket_pkg.DatcomManager
+	% ROCKETFINS Manages the geometry, forces, and moments for a cluster
+	% of equally-spaced fins on a rocket. Inherits from DatcomManager
+	% to facilitate DATCOM analysis.
+
+	properties
+		fin_params		% Structure containing fin geometry parameters
+		num_fins		% Total number of fins
+		fins			% Array of individual rocket_pkg.Fin objects
+		fin_vertices	% (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
+    end
+
+	methods
+        % Constructor
+		function obj = RocketFins(fin_params, flight_con_params)
+			% Call superclass constructor (required for inheritance)
+			obj = obj@rocket_pkg.DatcomManager(flight_con_params)
+
+			obj.fin_params = fin_params;
+			obj.num_fins = fin_params.num_fins;
+			translation = fin_params.translation;
+            
+			% Create and space the individual Fin objects
+            fin_params.angle = 0;
+            main_fin = rocket_pkg.Fin("fin", fin_params);  % master fin
+            obj.fins = main_fin;
+
+            for ii=1:obj.num_fins - 1
+
+				% Calculate angle for current fin
+                fin_params.angle = (360 / obj.num_fins) * ii;
+				fin_params.translation = Utils.fin_dcm(0, fin_params.angle) * translation(:);
+
+                fin = rocket_pkg.Fin("fin", fin_params);
+                obj.fins = [obj.fins, fin];
+            end
+		end
+
+        function [F_c, M_c] = get_forces_and_moments(obj, state, disturbances)
+            % Calculates the total aerodynamic forces and moments in the body frame 
+			F_c = [0, 0, 0].';
+			M_c = [0, 0, 0].';
+
+			% Sum contributions from all individual fins
+			for ii=1:obj.num_fins
+				[~,~,F_c_fin, M_c_fin] = obj.fins(ii).get_forces_and_moments(state, disturbances);
+				F_c = F_c + F_c_fin;
+				M_c = M_c + M_c_fin;
+			end
+        end
+
+        function compute_buildup(obj)
+			% Generates the DATCOM input file, runs the executable, and loads the data
+			
+			% Geometry Setup
+            root_chord  = obj.fin_params.root_chord;     % [m] Chord length at the wing root
+            tip_chord   = obj.fin_params.tip_chord;      % [m] Chord length at the wing tip
+            semi_span   = obj.fin_params.fin_span;       % [m] Span of one wing (from centerline to tip)
+            sweep_deg   = obj.fin_params.sweep_deg;      % [deg] Leading-edge sweep angle
+			translation = obj.fin_params.translation;    % [m] Refrance position in body frame
+			wing_apex_x = 0;
+            xcg = 0;  % TODO: change this to body cg
+
+            airfoil_naca = 'NACA 0012';
+            datcom_filename = 'FIN.dat';
+
+            % Convert angles to radians for MATLAB's trig functions
+            sweep_rad = deg2rad(sweep_deg);
+            dihedral_rad = 0;
+            
+            % Calculate Reference Geometry
+			v1 = [wing_apex_x, 0, 0];
+            v2 = [wing_apex_x + root_chord, 0, 0];
+            x_tip_le = wing_apex_x + semi_span * tan(sweep_rad);
+            z_tip = semi_span * tan(dihedral_rad);
+            v3 = [x_tip_le, semi_span, z_tip];
+            v4 = [x_tip_le + tip_chord, semi_span, z_tip];
+            
+            % Assemble vertices and faces for the right wing patch
+            obj.fin_vertices = [v1; v2; v4; v3];
+
+            % Wing span (for a single panel, this is just the semi-span)
+            blref = semi_span;
+            
+            % Taper ratio (lambda)
+            taper_ratio = tip_chord / root_chord;
+            
+            % Wing area (area of one trapezoid)
+            sref = semi_span * (root_chord + tip_chord) / 2;
+            
+            % Mean Aerodynamic Chord (MAC)
+            cbarr = (2/3) * root_chord * (1 + taper_ratio + taper_ratio^2) / (1 + taper_ratio);
+			
+			% Open DATCOM file
+			obj.open_datcom(datcom_filename)
+			
+			% Adds flight conditions section into DATCOM file
+			obj.add_flight_condition()
+            
+            % Write $OPTINS Namelist
+            fprintf(obj.fileID, ' $OPTINS SREF=%.4f, CBARR=%.4f, BLREF=%.4f$\n', sref, cbarr, blref);
+            
+            % Write $SYNTHS Namelist
+            fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', wing_apex_x, xcg);
+            
+            % Write $WGPLNF Namelist
+            fprintf(obj.fileID, ' $WGPLNF CHRDR=%.4f, CHRDTP=%.4f, SSPN=%.4f, SSPNE=%.4f,\n', ...
+                root_chord, tip_chord, semi_span, semi_span);
+
+			% Write sweep angle and dihedral angle (should be zero) 
+            fprintf(obj.fileID, ' SAVSI=%.4f, DHDADI=%.4f, TYPE=1.0$\n', sweep_deg, 0);
+			
+			% Write NACA airfoil type (should be symetric
+			fprintf(obj.fileID, 'NACA W 4 %s\n', airfoil_naca);
+            
+            % Write Case Control
+            fprintf(obj.fileID, 'CASEID GENERATED WING-ONLY ANALYSIS\n');
+            fprintf(obj.fileID, 'NEXT CASE\n');
+            
+            % Close DATCOM file
+            obj.close_datcom();
+            
+			% Run the .exe DATCOM file
+			obj.run_datcom(datcom_filename)
+            
+			% Import DATCOM Data
+            aero_cell = datcomimport('datcom.out');
+            aero = aero_cell{1};
+			
+			% Takes DATCOM aero data and adds it to each fin object
+            for ii=1:length(obj.fins)
+                obj.fins(ii).aero = aero;
+            end
+		end
+
+		function draw_fin(obj)
+			% Plots the 2D planform of the single reference fin.
+			
+			figure('Name', 'Fin Geometry');
+			hold on;
+            
+			% Plot the four vertices (X vs Y), connecting the last point to the first
+			plot([obj.fin_vertices(:, 1); obj.fin_vertices(1, 1)], ...
+                 [obj.fin_vertices(:, 2); obj.fin_vertices(1, 2)], 'k-')
+			
+			% Formatting the plot
+			title('Generated Wing Geometry');
+			xlabel('X - Longitudinal Axis (m)');
+			ylabel('Y - Spanwise Axis (m)');
+            
+			% Ensure axes have equal scaling for correct visual proportion
+			grid on;
+			axis equal;
+			hold off;
+		end
+	end
+end
+
