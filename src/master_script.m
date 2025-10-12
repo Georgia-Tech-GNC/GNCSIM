@@ -10,14 +10,13 @@ run_DATCOM(rocket_dyn)
 
 flight = setup_flight(rocket_dyn);
 
-flight.rocket_dyn.rocket_fins.draw_fin()
+%flight.rocket_dyn.draw()
 
 %% Run Flight
-
-[t, x] = flight.run_sim();
+%[t, x] = flight.run_sim();
 %flight.draw_traj()
 
-flight.plotFlight(t, x);
+%flight.plotFlight(t, x);
 
 %% Functions
 function rocket_dyn = setup_rocket()
@@ -40,9 +39,9 @@ function rocket_dyn = setup_rocket()
     fin_params.fin_span = 0.144;  % [m]
 	fin_params.sweep_deg = 15.0;  % [deg]
 
-    %fin_params.sweep_length = 0.033;  % [m]
-    %fin_params.semi_span = 0.6;  % [m]
-    %fin_params.wing_apex_x = 0.0; % [m]
+    flight_con_params.mach_numbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
+    flight_con_params.altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet
+    flight_con_params.alphas_deg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
     % Set wet mass
     rocket_params.mass_wet = 1;
@@ -93,11 +92,10 @@ function rocket_dyn = setup_rocket()
         16.1354, 0.0;];
     motor_params.mass = 0.4;  % [kg]
     motor_params.x_ref = -1;  % [m]
-    
-    
+
     % Create rocket dynamics object
-    body = rocket_pkg.RocketBody(body_params);
-    fins = rocket_pkg.RocketFins(fin_params);
+    body = rocket_pkg.RocketBody(body_params, flight_con_params);
+    fins = rocket_pkg.RocketFins(fin_params, flight_con_params);
     
     rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
 end

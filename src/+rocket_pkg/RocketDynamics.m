@@ -59,7 +59,7 @@ classdef RocketDynamics < handle
 
         function compute_buildup(obj)
             obj.body.compute_buildup()
-            obj.rocket_fins.compute_buildup()
+            %obj.rocket_fins.compute_buildup()
         end
 
 		function draw(obj)
@@ -67,7 +67,9 @@ classdef RocketDynamics < handle
             
             figure; hold on; axis equal
             xlabel('X'); ylabel('Y'); zlabel('Z');
-            view(3); grid on
+
+			D_body = obj.body.body_params.rocket_diameter;
+			%L_body = 
             
             % Body (cylinder)
             [Xb, Yb, Zb] = cylinder(D_body/2, 50);

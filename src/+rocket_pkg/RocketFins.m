@@ -18,18 +18,20 @@ classdef RocketFins < rocket_pkg.DatcomManager
 
 			obj.fin_params = fin_params;
 			obj.num_fins = fin_params.num_fins;
+			translation = fin_params.translation;
             
 			% Create and space the individual Fin objects
             fin_params.angle = 0;
-            main_fin = rocket_pkg.Fin("fin", true, fin_params);  % master fin
+            main_fin = rocket_pkg.Fin("fin", fin_params);  % master fin
             obj.fins = main_fin;
 
             for ii=1:obj.num_fins - 1
 
 				% Calculate angle for current fin
                 fin_params.angle = (360 / obj.num_fins) * ii;
+				fin_params.translation = Utils.fin_dcm(0, fin_params.angle) * translation(:);
 
-                fin = rocket_pkg.Fin("fin", true, fin_params);
+                fin = rocket_pkg.Fin("fin", fin_params);
                 obj.fins = [obj.fins, fin];
             end
 		end
@@ -67,7 +69,6 @@ classdef RocketFins < rocket_pkg.DatcomManager
             dihedral_rad = 0;
             
             % Calculate Reference Geometry
-
 			v1 = [wing_apex_x, 0, 0];
             v2 = [wing_apex_x + root_chord, 0, 0];
             x_tip_le = wing_apex_x + semi_span * tan(sweep_rad);

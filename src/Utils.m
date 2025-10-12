@@ -53,8 +53,8 @@ classdef Utils
             q(4) = cy * cr * sp + sy * sr * cp;  % z component
         end
 
-        function dcm = dir_cosine_matlab(q)
-            % dir_cosine_matlab: Converts a quaternion to a direction cosine matrix.
+        function dcm = dir_cosine(q)
+            % dir_cosine: Converts a quaternion to a direction cosine matrix.
             %
             % This function returns a 3x3 matrix that represents a rotation
             % from an INERTIAL frame to a BODY frame, based on the input quaternion.
@@ -67,10 +67,9 @@ classdef Utils
             %   dcm - A 3x3 direction cosine matrix (rotation matrix).
             %
         
-            % Ensure q is a column vector for consistent indexing, though MATLAB handles both
+            % Ensure q is a column vector 
             q = q(:);
-        
-            % Note: MATLAB uses 1-based indexing, so Python's q[0] is q(1) in MATLAB.
+
             q0 = q(1); % Scalar part
             q1 = q(2); % Vector part x
             q2 = q(3); % Vector part y
@@ -79,7 +78,40 @@ classdef Utils
             dcm = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
                     2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
-        end
+		end
+
+		function dcm = fin_dcm(delta_deg, theta_deg)
+			% fin_dcm: Generates a rotation matrix based on fin location
+			% angle (theta) and fin deflection(delta)
+			%
+    		% INPUT:
+    		%   delta_deg - Fin deflection angle in degrees
+			%   theta_deg - rotation angle along x axis representing fin
+			%   location in degrees
+			%
+    		% OUTPUT:
+    		%   dcm - A 3x3 direction cosine matrix (rotation matrix).
+    		%
+			% Convert the angles from degrees to radians
+			delta = deg2rad(delta_deg);
+			theta = deg2rad(theta_deg);
+			
+			% Define the first rotation matrix (Rotation about the Y-axis by delta: R_y(delta))
+			R_y_delta = [
+				cos(delta),  0,          -sin(delta);
+				0,           1,          0;
+				sin(delta),  0,          cos(delta)
+			];
+			
+			% Define the second rotation matrix (Rotation about the X-axis by theta: R_x(theta))
+			R_x_theta = [
+				1,           0,          0;
+				0,           cos(theta), sin(theta);
+				0,           -sin(theta), cos(theta)
+			];
+			% Compute DCM
+			dcm = R_y_delta * R_x_theta;
+		end
     end
 end
 
