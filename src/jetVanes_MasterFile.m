@@ -18,17 +18,18 @@ FlightObj = setupFlight();
 TrimPointsObj = generateTrimPoints(aero_forces_moments, doof_params, FlightObj, AeroObj, Doof, EnvironmentObj);
 
 %% Run Flight
-FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(true);
-log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
-FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
+% FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
+% FlightObj.set_applyWind(true);
+% log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
+% FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
 %% Run Monte Carlo
 % Setup Monte Carlo
 MonteCarloObj = setupMonteCarlo(EnvironmentObj, FlightObj, Doof);
 % Setup Split Monte Carlo, requires pregenerated lhsChunk
 % MonteCarloObj = setupSplitMonteCarlo(lhsChunk);
-logMonteCarlo = MonteCarloObj.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj);
+runSweep = true;
+logMonteCarlo = MonteCarloObj.runMonteCarlo(FlightObj, Doof, EnvironmentObj, AeroObj, TrimPointsObj, runSweep);
 
 %% Evaluate & Plot Monte Carlo results
 [MonteCarloObj, logMonteCarlo] = evaluateMonteCarlo(MonteCarloObj, logMonteCarlo);
@@ -424,8 +425,13 @@ function MonteCarloObj = setupMonteCarlo(EnvironmentObj, FlightObj, Doof)
 
     % Set hyperparameters
     MonteCarloObj.set_runGaussianLHS(true);
-    MonteCarloObj.set_numRuns(100);
+    MonteCarloObj.set_numRuns(8);
     MonteCarloObj.set_odeSolverMaxTime(150); % kills ode after x seconds
+
+    % Set sweep values
+    MonteCarloObj.set_sweepParam("vm_mean");
+    MonteCarloObj.set_rangeParaminit(0);
+    MonteCarloObj.set_rangeParamend(5);
 
     % Set 3sigma values 
     MonteCarloObj.set_wetMass_3sigma(4.0912994);
@@ -444,8 +450,7 @@ function MonteCarloObj = setupMonteCarlo(EnvironmentObj, FlightObj, Doof)
     MonteCarloObj.set_burnTime_3sigma(1.31);
     MonteCarloObj.set_thrustCurve_3sigma(100);
 
-    EnvironmentObj.set_vm_mean(0);
-    EnvironmentObj.set_vm_3sigma(15);
+    MonteCarloObj.set_vm_3sigma(15);
 
     % Saving parameters in CSV for future use
     MonteCarloObj.saveToCSV('monteCarloParameters.csv')
@@ -455,7 +460,7 @@ function MonteCarloObj = setupMonteCarlo(EnvironmentObj, FlightObj, Doof)
     FlightObj.set_applyWind(true);
 
     % Genereate Latin Hypercube Samples 
-    MonteCarloObj.generateLhsSamples(Doof);
+    MonteCarloObj.generateLhsSamples(Doof, EnvironmentObj);
 
 % Splits LHS in x parts and saves to folder
 % splittedLHS = monteCarlo.splitLHS(10, 'LHS_splits'); 

@@ -317,6 +317,16 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
     wbf_b_dot = Ib\(M_b - cross(wbf_b, Ib*wbf_b)); % inv(A)*b == A\b
 %   wbf_b_dot = inv(Ib) * (M_b - cross(wbf_b, Ib*wbf_b)); % slower
     %wbf_b_dot = inv(Ib) * (M_b - cross(wbf_b, Ib*wbf_b)); % slower
+
+    launchRailHeight = 4; % meters
+
+    if px < launchRailHeight
+        % We assume there are no rotations nor v,w wind velocity in the
+        % launch rail 
+        v_b_dot(2:3) = 0;        
+        wbf_b_dot = zeros(3,1);
+        q_bf_dot = zeros(4,1);
+    end
     
     % stack components
     xDot = [p_f_dot; v_b_dot; q_bf_dot; wbf_b_dot];

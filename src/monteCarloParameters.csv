@@ -10,3 +10,4 @@ initialCG_3sigma,0.2419762
 finalCG_3sigma,0.2314814
 burnTime_3sigma,1.31
 thrustCurve_3sigma,100
+vm_3sigma,15

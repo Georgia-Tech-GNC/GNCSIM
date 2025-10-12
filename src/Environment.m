@@ -1,5 +1,5 @@
 % Main Authors: Hridai Ambati
-classdef Environment
+classdef Environment < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -31,6 +31,12 @@ classdef Environment
             [obj.alts, obj.wind_vec] = get_AR1(obj.vm_mean, sigma_AR1, alpha, obj.max_altitude, obj.step_size);
             % plot(obj.wind_vec, obj.alts, 'LineWidth', 1);
 
+        end
+
+        function obj = regenerateWindProfile(obj)
+            alpha = 0.9999;
+            sigma_AR1 = (obj.vm_3sigma/3) * sqrt(1 - alpha^2);
+            [obj.alts, obj.wind_vec] = get_AR1(obj.vm_mean, sigma_AR1, alpha, obj.max_altitude, obj.step_size);
         end
         
         function windspeed = get_windspeed(obj, alt)

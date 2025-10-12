@@ -4,11 +4,15 @@ classdef MonteCarlo < handle
     properties (Access = private)
         % Monte Carlo Simulation Hyperparameters and variables
         runGaussianLHS;  % boolean (Use Gaussian LHS)
-        runUniformLHS;   % boolean (Use Uniform LHS)
         runCustomLHS;    % boolean (Use user-provided LHS)
         numRuns;         % integer
         odeSolverMaxTime; 
         lhsSamples;      % stores the actual NxM LHS sample matrix
+
+        % Sweep functionality
+        sweepParam;
+        rangeParaminit;
+        rangeParamend;
 
         % Monte Carlo Pass/Fail parameters
         evaluate_checkTermination = false;
@@ -34,6 +38,9 @@ classdef MonteCarlo < handle
         finalCG_3sigma;
         burnTime_3sigma;
         thrustCurve_3sigma;
+
+        % Environment parameters
+        vm_3sigma;
     end
 
     methods
@@ -57,9 +64,19 @@ classdef MonteCarlo < handle
             obj.runCustomLHS = value;
         end
 
-        function obj = set_runUniformLHS(obj, value)
-            validateattributes(value, {'logical'}, {'scalar'}, 'set_runUniformLHS', 'runUniformLHS');
-            obj.runUniformLHS = value;
+        function obj = set_sweepParam(obj, value)
+            validateattributes(value, {'string'}, {'scalartext'}, 'set_sweepParam', 'sweepParam');
+            obj.sweepParam = value;
+        end
+
+        function obj = set_rangeParaminit(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_rangeParaminit', 'rangeParaminit');
+            obj.rangeParaminit = value;
+        end
+        
+        function obj = set_rangeParamend(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_rangeParamend', 'rangeParamend');
+            obj.rangeParamend = value;
         end
 
         function obj = set_wetMass_3sigma(obj, value)
@@ -120,6 +137,11 @@ classdef MonteCarlo < handle
         function obj = set_thrustCurve_3sigma(obj, value)
             validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_thrustCurve_3sigma', 'thrustCurve_3sigma');
             obj.thrustCurve_3sigma = value;
+        end
+
+        function obj = set_vm_3sigma(obj, value)
+            validateattributes(value, {'numeric'}, {'scalar', 'nonnegative'}, 'set_vm_3sigma', 'vm_3sigma');
+            obj.vm_3sigma = value;
         end
 
         function obj = set_lhsSamples(obj, value)
@@ -185,7 +207,7 @@ classdef MonteCarlo < handle
             lhsSamples = obj.lhsSamples;
         end
         
-        function generateLhsSamples(obj, RocketObj)
+        function generateLhsSamples(obj, RocketObj, EnvironmentObj)
             % Setting up LHS parameters  
             if obj.runGaussianLHS
                 thrustCurve = RocketObj.get_thrustCurve();
@@ -201,7 +223,8 @@ classdef MonteCarlo < handle
                     RocketObj.get_initialCG(), ...         % Initial CG (m)
                     RocketObj.get_finalCG(), ...           % Final CG (m)
                     RocketObj.get_burnTime(), ...          % Burn time (s)
-                    thrustCurve_mu                         % Flattened thrust curve (s, N)
+                    thrustCurve_mu,...                     % Flattened thrust curve (s, N)
+                    EnvironmentObj.get_vm_mean()           % Mean wind velocity (m/s)
                     ];
 
                 sigma = [
@@ -216,24 +239,17 @@ classdef MonteCarlo < handle
                     obj.initialCG_3sigma, ...
                     obj.finalCG_3sigma, ...
                     obj.burnTime_3sigma, ...
-                    obj.thrustCurve_3sigma
+                    obj.thrustCurve_3sigma, ...
+                    obj.vm_3sigma
                     ];
-
+                
                 sigma = (sigma ./ 3).^2; % Converting from 3sigma to variance.
 
-                repetitions = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, length(RocketObj.thrustCurve(:,2))];
+                repetitions = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, length(RocketObj.thrustCurve(:,2)), 1];
                 sigma = diag(repelem(sigma, repetitions)); % Creating the covariance matrix for mu
 
                 obj.lhsSamples = lhsnorm(mu, sigma, obj.numRuns);
-            elseif obj.runUniformLHS
-                % Example: Uniform LHS generation (user must define bounds)
-                % For demonstration, suppose the dimension is the same as "mu" above:
-                nVars = 11 + length(RocketObj.get_thrustCurve(:,2)); 
-                % Generate an NxM LHS in [0,1], then you can scale it as needed
-                design = lhsdesign(obj.numRuns, nVars);
-                % ... scale 'design' to the relevant ranges ...
-                % Here, just store it so you can see how you'd do your own uniform scaling
-                obj.lhsSamples = design;  
+
             elseif obj.runCustomLHS
                 if isempty(obj.lhsSamples)
                     error("Please set lhsSamples with a correct Latin Hypercube Sample matrix.")
@@ -244,7 +260,7 @@ classdef MonteCarlo < handle
         end
 
         % Function that runs MonteCarlo for numRuns
-        function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj)
+        function logMonteCarlo = runMonteCarlo(obj, FlightObj, RocketObj, EnvironmentObj, AerodynamicsObj, TrimPointObj, runSweep)
             FlightObj.set_odeSolverMaxTime(obj.odeSolverMaxTime);
             thrustCurve = RocketObj.get_thrustCurve();
             
@@ -258,40 +274,93 @@ classdef MonteCarlo < handle
             end
             
             tic;
-
-            % Parallel loop
-            parfor i = 1:size(obj.lhsSamples, 1)
-                % Making copy of objects to avoid broadcasting issues
-                RocketObjIter = RocketObj; 
-                FlightObjCopy = FlightObj; 
-                objCopy = obj;  
-                thrustCurveCopy = thrustCurve;
-
-                % Assign random variables to RocketObjIter
-                RocketObjIter.set_wetMass(objCopy.lhsSamples(i,1));
-                RocketObjIter.set_dryMass(objCopy.lhsSamples(i,2));
-                RocketObjIter.set_initialCG(objCopy.lhsSamples(i,9)); 
-                RocketObjIter.set_finalCG(objCopy.lhsSamples(i,10)); 
-                
-                wetRollMOI = abs(objCopy.lhsSamples(i,3)); 
-                wetPitchMOI = abs(objCopy.lhsSamples(i,4)); 
-                wetYawMOI = abs(objCopy.lhsSamples(i,5)); 
-                dryRollMOI = abs(objCopy.lhsSamples(i,6));
-                dryPitchMOI = abs(objCopy.lhsSamples(i,7));
-                dryYawMOI = abs(objCopy.lhsSamples(i,8));
-                
-                RocketObjIter.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
-                RocketObjIter.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
-                RocketObjIter.set_burnTime(objCopy.lhsSamples(i,11));
-                thrustCurveCopy(:,2) = objCopy.lhsSamples(i,12:end); 
-                RocketObjIter.set_thrustCurve(thrustCurveCopy);
-                
-                % Run the flight simulation
-                log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObj, AerodynamicsObj, TrimPointObj);
             
-                % Store the results
-                logMonteCarlo(i).loggedData = log;
+            % Check if sweep parameter is activated
+            if runSweep == true
+                parfor i = 1:obj.numRuns
 
+                    % Making copy of objects to avoid broadcasting issues
+                    objCopy = obj;  
+                    RocketObjIter = RocketObj; 
+                    FlightObjCopy = FlightObj; 
+                    EnvironmentObjCopy = EnvironmentObj;
+
+                    % Modifiy only the selected parameter
+                    sweepValue = objCopy.rangeParaminit + (i-1)*((objCopy.rangeParamend-objCopy.rangeParaminit)/(objCopy.numRuns-1));
+                    switch objCopy.sweepParam
+                        case 'wetMass'
+                            RocketObjIter.set_wetMass(sweepValue);
+                        case 'dryMass'
+                            RocketObjIter.set_dryMass(sweepValue);
+                        case 'initialCG'
+                            RocketObjIter.set_initialCG(sweepValue);
+                        case 'finalCG'
+                            RocketObjIter.set_initialCG(sweepValue);
+                        case 'wetRollMOI'
+                            RocketObjIter.set_wetMOI([sweepValue 0 0; 0 abs(RocketObjIter.wetMOI(2,2)) 0; 0 0 abs(RocketObjIter.wetMOI(3,3))]);       
+                        case 'wetPitchMOI'
+                            RocketObjIter.set_wetMOI([abs(RocketObjIter.wetMOI(1,1)) 0 0; 0 sweepValue 0; 0 0 abs(RocketObjIter.wetMOI(3,3))]);                            
+                        case 'wetYawMOI'
+                            RocketObjIter.set_wetMOI([abs(RocketObjIter.wetMOI(1,1)) 0 0; 0 abs(RocketObjIter.wetMOI(2,2)) 0; 0 0 sweepValue]);
+                        case 'dryRollMOI'
+                            RocketObjIter.set_dryMOI([sweepValue 0 0; 0 abs(RocketObjIter.dryMOI(2,2)) 0; 0 0 abs(RocketObjIter.dryMOI(3,3))]);                            
+                        case 'dryPitchMOI'
+                            RocketObjIter.set_dryMOI([abs(RocketObjIter.dryMOI(1,1)) 0 0; 0 sweepValue 0; 0 0 abs(RocketObjIter.dryMOI(3,3))]);                            
+                        case 'dryYawMOI'
+                            RocketObjIter.set_dryMOI([abs(RocketObjIter.dryMOI(1,1)) 0 0; 0 abs(RocketObjIter.dryMOI(2,2)) 0; 0 0 sweepValue]);
+                        case 'burnTime'
+                            RocketObjIter.set_burnTime(sweepValue);
+                        case 'vm_mean'
+                            EnvironmentObjCopy.set_vm_mean(sweepValue);
+                            EnvironmentObjCopy.set_vm_3sigma(obj.vm_3sigma);
+                            EnvironmentObjCopy.regenerateWindProfile();
+                    end
+                    
+                    EnvironmentObjCopy
+                    % Run Simulation
+                    log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObjCopy, AerodynamicsObj, TrimPointObj);
+                    logMonteCarlo(i).loggedData = log;
+                    paramName = char(objCopy.sweepParam);
+                    logMonteCarlo(i).(paramName) = sweepValue;
+                end
+            else
+                % Parallel loop
+                parfor i = 1:size(obj.lhsSamples, 1)
+                    % Making copy of objects to avoid broadcasting issues
+                    RocketObjIter = RocketObj; 
+                    FlightObjCopy = FlightObj; 
+                    objCopy = obj;  
+                    thrustCurveCopy = thrustCurve;
+                    EnvironmentObjCopy = EnvironmentObj;
+
+                    % Assign random variables to RocketObjIter
+                    RocketObjIter.set_wetMass(objCopy.lhsSamples(i,1));
+                    RocketObjIter.set_dryMass(objCopy.lhsSamples(i,2));
+                    RocketObjIter.set_initialCG(objCopy.lhsSamples(i,9)); 
+                    RocketObjIter.set_finalCG(objCopy.lhsSamples(i,10)); 
+                    
+                    wetRollMOI = abs(objCopy.lhsSamples(i,3)); 
+                    wetPitchMOI = abs(objCopy.lhsSamples(i,4)); 
+                    wetYawMOI = abs(objCopy.lhsSamples(i,5)); 
+                    dryRollMOI = abs(objCopy.lhsSamples(i,6));
+                    dryPitchMOI = abs(objCopy.lhsSamples(i,7));
+                    dryYawMOI = abs(objCopy.lhsSamples(i,8));
+                    
+                    RocketObjIter.set_wetMOI([wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI]);
+                    RocketObjIter.set_dryMOI([dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI]);
+                    RocketObjIter.set_burnTime(objCopy.lhsSamples(i,11));
+                    nThrust = length(thrustCurve(:,2));
+                    thrustCurveCopy(:,2) = objCopy.lhsSamples(i,12:11+nThrust); 
+                    RocketObjIter.set_thrustCurve(thrustCurveCopy);
+                    EnvironmentObjCopy.set_vm_mean(objCopy.lhsSamples(i,12+nThrust));
+
+                    % Run the flight simulation
+                    log = FlightObjCopy.runFlight(RocketObjIter, EnvironmentObjCopy, AerodynamicsObj, TrimPointObj);
+                
+                    % Store the results
+                    logMonteCarlo(i).loggedData = log;
+    
+                end
             end
 
             timeFor = toc;
@@ -377,6 +446,8 @@ classdef MonteCarlo < handle
                     end
                 end
             end  
+            
+            
 
             % Check if AoA is within bounds
             if obj.evaluate_checkAoA
@@ -388,8 +459,9 @@ classdef MonteCarlo < handle
                             for k = 1:length(time_indices)
                                 if aoa(time_indices(k)) < obj.evaluate_AoARange{j}{2}(1) || aoa(time_indices(k)) > obj.evaluate_AoARange{j}{2}(2)
                                     logMonteCarlo(i).pass = false;
+                                    disp(class(obj.evaluate_AoARange{j}{1}));
                                     fprintf('Index %d: AoA condition from second %d to %d, failed (found aoa = %.2f), setting pass to false.\n', i,...
-                                        obj.evaluate_AoARange{j}{1}(1), obj.evaluate_AoARange{j}{1}{end}, aoa(time_indices(k)));
+                                        obj.evaluate_AoARange{j}{1}(1), obj.evaluate_AoARange{j}{1}(end), aoa(time_indices(k)));
                                     break;
                                 end
                             end
@@ -402,7 +474,7 @@ classdef MonteCarlo < handle
         end
 
          % Save all parameters to a CSV file
-        function saveToCSV(obj, filename)
+         function saveToCSV(obj, filename)
             % Collect all properties into a structure
             paramStruct = struct( ...
                 'wetMass_3sigma', obj.wetMass_3sigma, ...
@@ -416,7 +488,8 @@ classdef MonteCarlo < handle
                 'initialCG_3sigma', obj.initialCG_3sigma, ...
                 'finalCG_3sigma', obj.finalCG_3sigma, ...
                 'burnTime_3sigma', obj.burnTime_3sigma, ...
-                'thrustCurve_3sigma', obj.thrustCurve_3sigma);
+                'thrustCurve_3sigma', obj.thrustCurve_3sigma,...
+                'vm_3sigma', obj.vm_3sigma);
     
             % Convert structure to cell array for CSV saving
             paramNames = fieldnames(paramStruct);
@@ -498,7 +571,7 @@ classdef MonteCarlo < handle
             end
         end
     end
-        
+
     methods (Static)
 
         function plotMonteCarlo(logMonteCarlo)
@@ -508,14 +581,25 @@ classdef MonteCarlo < handle
             % Subplot for trajectories
             plot3(0,0,0,'o','MarkerSize',10)
             hold on
+
+            baseColor = [0 1 0]; % color base (verde)
+
             for i = 1:num_MonteCarloRuns
-                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2),logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
-                    logMonteCarlo(i).loggedData.loggedData.posFlat(end,1),'x','MarkerSize', 10)
+                % factor de intensidad de 0 (claro) a 1 (oscuro)
+                intensity = i / num_MonteCarloRuns;
+                trajColor = intensity * baseColor + (1 - intensity) * [1 1 1];
+                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(end,2), ...
+                      logMonteCarlo(i).loggedData.loggedData.posFlat(end,3), ...
+                      logMonteCarlo(i).loggedData.loggedData.posFlat(end,1), ...
+                      'x', 'MarkerSize', 10, 'Color', trajColor)
                 hold on
-                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2),logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
-                    logMonteCarlo(i).loggedData.loggedData.posFlat(:,1))
+                plot3(logMonteCarlo(i).loggedData.loggedData.posFlat(:,2), ...
+                      logMonteCarlo(i).loggedData.loggedData.posFlat(:,3), ...
+                      logMonteCarlo(i).loggedData.loggedData.posFlat(:,1), ...
+                      'Color', trajColor)
                 hold on
             end
+                      
             grid on
            % title('\textbf{Closed Loop Trajectories for 1000 MonteCarlo Samples}', 'Interpreter', 'latex')
             xlabel('\textbf{Flat Earth Y (m)}', 'Interpreter', 'latex')
