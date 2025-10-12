@@ -27,19 +27,30 @@ classdef RocketDynamics < handle
             obj.CG_dry = rocket_params.CG_dry;
         end
 
-        function calc_mass_moi(obj)
-            % TODO: Calculate mass and moi based on geometry
-            % https://phys.libretexts.org/Bookshelves/Classical_Mechanics/Variational_Principles_in_Classical_Mechanics_(Cline)/13%3A_Rigid-body_Rotation/13.08%3A_Parallel-Axis_Theorem
-        end
-
-        function interp_CG_mass(t)
-            % TODO: interpolate CG and mass based on flight time, use
-            % CG_wet, CG_dry
-            %body_length = obj.aero.blref;
-            %CG_i = 2.433; % Add this and CG_f as inputs with thrust in master_script?
-            %CG_f = 2.34;
-            %dur = 13.1; % Also input this with thrust data?
-            %CG = ((CG_f - CG_i)/dur)*(t) + CG_i;
+        function [m, CG, moi] = interp_mass_CG_MOI(t)
+            % Need to pass in thrust curve somehow
+            tc = obj.motor_params.tc;
+            totalThrust = trapz(tc(1:2:end-1),tc(2:2:end)); 
+            if t < burnTime
+                % Proportionality constants
+                k_mass = (obj.mass_wet-obj.mass_dry)/totalThrust;
+                k_CG = (obj.CG_wet-obj.CG_dry)/totalThrust;
+                k_moi = (obj.moi_wet-obj.moi_dry)/totalThrust;
+                % Time + cumulative thrust calculations
+                curr_t = tc(tc(1:2:end-1) < t);
+                t_stop = curr_t(end); % Last tc point included in calculation
+                t_last = tc(find(tc == t_stop));
+                T_slope = (tc(t_last+3)-tc(t_last+1))/(tc(t_last+2)-tc(t_last));
+                cum_T = trapz(tc(1:2:t_last),tc(2:2:t_last+1)) + T_slope*(tc(t_last+2)-t_last);
+                % Thrust-based interpolation
+                m = obj.mass_wet - k_mass * cum_T;
+                CG = obj.CG_wet - k_CG * cum_T;
+                moi = obj.moi_wet - k_moi * cum_T;
+            else
+                m = obj.mass_dry;
+                CG = obj.CG_dry;
+                moi = obj.moi_dry;
+            end
         end
 
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, breakPoints)

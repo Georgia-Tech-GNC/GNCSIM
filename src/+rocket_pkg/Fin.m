@@ -33,7 +33,7 @@ classdef Fin < handle
            r_cb = -obj.fin_params.translation;
            v_c = R_bc*(v_b + cross(w_b, r_cb));
 			
-		   % Get componet forces and moments based on 
+		   % Get component forces and moments based on 
 		   [F_c, M_c] = Utils.get_forces_and_moments(state, v_c, obj.aero);
 
            % Converting back to body frame

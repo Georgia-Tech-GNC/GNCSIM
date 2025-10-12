@@ -83,7 +83,7 @@ classdef DatcomManager < handle
                 command = sprintf('echo %s | %s', datcom_filename, executable_name);
             elseif isunix
 				% --- Unix / macOS ---
-                disp("imagine being on mac. could not be me")
+                disp("imagine being on mac. could not be me.")
             end
 			
 			% Run DATCOM and display completion message
