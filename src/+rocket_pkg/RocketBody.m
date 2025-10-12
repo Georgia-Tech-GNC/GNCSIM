@@ -52,7 +52,7 @@ classdef RocketBody < rocket_pkg.DatcomManager
             n_nose_points = 10;   % Number of points defining the nose cone
             n_body_points = 5;    % Number of points defining the cylindrical body
             datcom_filename = 'BODY.dat';
-			xcg = 0.36;           % [m] Center of gravity location (temporary value)
+			xcg = 0.6;           % [m] Center of gravity location (temporary value)
             
 			% Generate body geometry
             total_length = obj.body_params.body_length + obj.body_params.nose_cone_length;

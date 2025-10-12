@@ -51,8 +51,8 @@ classdef RocketDynamics < handle
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
             %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
             %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
-            F_b = F_b_body ;
-            M_b = M_b_body ;
+            F_b = F_b_fins + F_b_body;
+            M_b = M_b_fins + M_b_body;
 			%F_b = F_b_fins;
 			%M_b = M_b_fins;
         end
