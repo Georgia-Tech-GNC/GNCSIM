@@ -45,59 +45,59 @@ classdef RocketDynamics < handle
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, breakPoints)
             
             % computes aero forces and moments 
-            %[F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances, CG);
             [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
-            F_b_body = [0, 0, 0].';
-            M_b_body = [0, 0 ,0].';
-
+            [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
+            
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
             %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
-            [F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
-            F_b = F_b_body + F_b_fins + F_b_controller;
-            M_b = M_b_body + M_b_fins + M_b_controller;
+            %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
+            F_b = F_b_body ;
+            M_b = M_b_body ;
+			%F_b = F_b_fins;
+			%M_b = M_b_fins;
         end
 
         function compute_buildup(obj)
             obj.body.compute_buildup()
-            %obj.rocket_fins.compute_buildup()
+            obj.rocket_fins.compute_buildup()
         end
 
 		function draw(obj)
 			% TODO: draw rocket (rough draft below, need to get access to rocket size parameters)
             
-            figure; hold on; axis equal
-            xlabel('X'); ylabel('Y'); zlabel('Z');
-
-			D_body = obj.body.body_params.rocket_diameter;
-			%L_body = 
-            
-            % Body (cylinder)
-            [Xb, Yb, Zb] = cylinder(D_body/2, 50);
-            Zb = Zb * L_body;
-            surf(Xb, Yb, Zb, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none');
-            
-            % Nose (cone)
-            [Xn, Yn, Zn] = cylinder([D_body/2 0], 50);
-            Zn = Zn * L_nose + L_body;
-            surf(Xn, Yn, Zn, 'FaceColor', [0.9 0.7 0.7], 'EdgeColor', 'none');
-            
-            % Fins
-            theta = linspace(0, 2*pi, n_fins+1);
-            for i = 1:n_fins
-                % Fin coordinates in XY-plane
-                finX = [L_body-0.1*L_body, L_body-0.1*L_body, L_body-L_fin];
-                finY = [D_body/2, D_body/2+H_fin, D_body/2];
-                finZ = [0, 0, 0];
-                
-                % Rotate fin around Z-axis
-                R = [cos(theta(i)) -sin(theta(i)); sin(theta(i)) cos(theta(i))];
-                finCoords = R * [finY; finZ];
-                
-                % Draw fin (patch)
-                patch(finX, finCoords(1,:), finCoords(2,:), [0.6 0.6 0.6]);
-            end
-            camlight; lighting gouraud
-        end
+        %     figure; hold on; axis equal
+        %     xlabel('X'); ylabel('Y'); zlabel('Z');
+		% 
+		% 	D_body = obj.body.body_params.rocket_diameter;
+		% 	%L_body = 
+		% 
+        %     % Body (cylinder)
+        %     [Xb, Yb, Zb] = cylinder(D_body/2, 50);
+        %     Zb = Zb * L_body;
+        %     surf(Xb, Yb, Zb, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none');
+		% 
+        %     % Nose (cone)
+        %     [Xn, Yn, Zn] = cylinder([D_body/2 0], 50);
+        %     Zn = Zn * L_nose + L_body;
+        %     surf(Xn, Yn, Zn, 'FaceColor', [0.9 0.7 0.7], 'EdgeColor', 'none');
+		% 
+        %     % Fins
+        %     theta = linspace(0, 2*pi, n_fins+1);
+        %     for i = 1:n_fins
+        %         % Fin coordinates in XY-plane
+        %         finX = [L_body-0.1*L_body, L_body-0.1*L_body, L_body-L_fin];
+        %         finY = [D_body/2, D_body/2+H_fin, D_body/2];
+        %         finZ = [0, 0, 0];
+		% 
+        %         % Rotate fin around Z-axis
+        %         R = [cos(theta(i)) -sin(theta(i)); sin(theta(i)) cos(theta(i))];
+        %         finCoords = R * [finY; finZ];
+		% 
+        %         % Draw fin (patch)
+        %         patch(finX, finCoords(1,:), finCoords(2,:), [0.6 0.6 0.6]);
+        %     end
+        %     camlight; lighting gouraud
+		end
 
     end
 end

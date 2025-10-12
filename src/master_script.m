@@ -13,7 +13,7 @@ flight = setup_flight(rocket_dyn);
 %flight.rocket_dyn.draw()
 
 %% Run Flight
-%[t, x] = flight.run_sim();
+[t, x] = flight.run_sim();
 %flight.draw_traj()
 
 %flight.plotFlight(t, x);
@@ -40,7 +40,7 @@ function rocket_dyn = setup_rocket()
 	fin_params.sweep_deg = 15.0;  % [deg]
 
     flight_con_params.mach_numbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
-    flight_con_params.altitudes_ft = [0, 5000, 10000];       % Array of altitudes in feet
+    flight_con_params.altitudes = [0, 5000, 10000];       % Array of altitudes in feet
     flight_con_params.alphas_deg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
     % Set wet mass
@@ -130,15 +130,14 @@ end
 
 function flight = setup_flight(rocket_dyn)
     % Flight
-    flight_params.sim_time = 20;  % length of simulation [s]
+    flight_params.sim_time = 2;  % length of simulation [s]
     flight_params.dt = 0.01;  % time step [s]
 
-    
     mass_0 = 20;
-    pos_0 = [0, 0, 0];
+    pos_0 = [0, 0, 5000];
     vel_0 = [100, 0, 0];
     quat_0 = [1, 0, 0 ,0];
-    omega_0 = [0, 0, 0];
+    omega_0 = [0, .1, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
     flight_params.x0 = state_0;
     

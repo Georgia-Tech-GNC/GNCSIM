@@ -36,16 +36,16 @@ classdef RocketFins < rocket_pkg.DatcomManager
             end
 		end
 
-        function [F_c, M_c] = get_forces_and_moments(obj, state, disturbances)
+        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances)
             % Calculates the total aerodynamic forces and moments in the body frame 
-			F_c = [0, 0, 0].';
-			M_c = [0, 0, 0].';
+			F_b = [0, 0, 0].';
+			M_b = [0, 0, 0].';
 
 			% Sum contributions from all individual fins
 			for ii=1:obj.num_fins
-				[~,~,F_c_fin, M_c_fin] = obj.fins(ii).get_forces_and_moments(state, disturbances);
-				F_c = F_c + F_c_fin;
-				M_c = M_c + M_c_fin;
+				[F_b_fin, M_b_fin] = obj.fins(ii).get_forces_and_moments(state, disturbances);
+				F_b = F_b + F_b_fin;
+				M_b = M_b + M_b_fin;
 			end
         end
 
@@ -58,26 +58,16 @@ classdef RocketFins < rocket_pkg.DatcomManager
             semi_span   = obj.fin_params.fin_span;       % [m] Span of one wing (from centerline to tip)
             sweep_deg   = obj.fin_params.sweep_deg;      % [deg] Leading-edge sweep angle
 			translation = obj.fin_params.translation;    % [m] Refrance position in body frame
-			wing_apex_x = 0;
-            xcg = 0;  % TODO: change this to body cg
+            xcg = 0;  % Keep at zero
 
             airfoil_naca = 'NACA 0012';
             datcom_filename = 'FIN.dat';
 
             % Convert angles to radians for MATLAB's trig functions
             sweep_rad = deg2rad(sweep_deg);
-            dihedral_rad = 0;
             
-            % Calculate Reference Geometry
-			v1 = [wing_apex_x, 0, 0];
-            v2 = [wing_apex_x + root_chord, 0, 0];
-            x_tip_le = wing_apex_x + semi_span * tan(sweep_rad);
-            z_tip = semi_span * tan(dihedral_rad);
-            v3 = [x_tip_le, semi_span, z_tip];
-            v4 = [x_tip_le + tip_chord, semi_span, z_tip];
-            
-            % Assemble vertices and faces for the right wing patch
-            obj.fin_vertices = [v1; v2; v4; v3];
+			% Calculate Reference Geometry
+            obj.calculate_ref_geometry(root_chord, tip_chord, semi_span, sweep_rad)
 
             % Wing span (for a single panel, this is just the semi-span)
             blref = semi_span;
@@ -101,7 +91,7 @@ classdef RocketFins < rocket_pkg.DatcomManager
             fprintf(obj.fileID, ' $OPTINS SREF=%.4f, CBARR=%.4f, BLREF=%.4f$\n', sref, cbarr, blref);
             
             % Write $SYNTHS Namelist
-            fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', wing_apex_x, xcg);
+            fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', 0, xcg);
             
             % Write $WGPLNF Namelist
             fprintf(obj.fileID, ' $WGPLNF CHRDR=%.4f, CHRDTP=%.4f, SSPN=%.4f, SSPNE=%.4f,\n', ...
@@ -112,10 +102,6 @@ classdef RocketFins < rocket_pkg.DatcomManager
 			
 			% Write NACA airfoil type (should be symetric
 			fprintf(obj.fileID, 'NACA W 4 %s\n', airfoil_naca);
-            
-            % Write Case Control
-            fprintf(obj.fileID, 'CASEID GENERATED WING-ONLY ANALYSIS\n');
-            fprintf(obj.fileID, 'NEXT CASE\n');
             
             % Close DATCOM file
             obj.close_datcom();
@@ -131,6 +117,18 @@ classdef RocketFins < rocket_pkg.DatcomManager
             for ii=1:length(obj.fins)
                 obj.fins(ii).aero = aero;
             end
+		end
+
+		function calculate_ref_geometry(obj, root_chord, tip_chord, semi_span, sweep_rad)
+			% Calculate Reference Geometry
+			v1 = [0, 0, 0];
+            v2 = [root_chord, 0, 0];
+            x_tip_le = semi_span * tan(sweep_rad);
+            v3 = [x_tip_le, semi_span, 0];
+            v4 = [x_tip_le + tip_chord, semi_span, 0];
+
+			% Assemble vertices and faces for the right wing patch
+            obj.fin_vertices = [v1; v2; v4; v3];
 		end
 
 		function draw_fin(obj)

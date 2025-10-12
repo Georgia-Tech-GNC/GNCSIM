@@ -60,8 +60,6 @@ classdef Flight < handle
             disturbances.wind = 0;
             
             [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.current_time);
-            %F_b = [0, 0, 0];
-            %M_b = [0, 0, 0];
             x_dot = obj.flat_earth_EOM(state, F_b, M_b);
         end
 
@@ -80,13 +78,15 @@ classdef Flight < handle
             ];
 
             q = quat;
-            C_B_I = Utils.dir_cosine_matlab(q);
+            C_B_I = Utils.dir_cosine(q);
             C_I_B = C_B_I.';
 
-            g = [0;0;-9.81];
+            %g = [0;0;-9.81];
+			g = [0;0;0];
 
             F_I = (C_I_B * F_b) + mass * g;
-            Ib = obj.rocket_dyn.get_moi(mass);
+            %Ib = obj.rocket_dyn.get_moi(mass);  % TODO
+			Ib = 10 * eye(3);
             
             mass_dot = 0;
             pos_dot = vel;
