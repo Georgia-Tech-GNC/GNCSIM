@@ -15,7 +15,7 @@ classdef Navigation
         R
         K
         q
-        
+        qBI
         refLLA
         sampleRate
         gpsVerticalAccuracy
@@ -25,18 +25,18 @@ classdef Navigation
     end
 
     methods
-        function obj = Navigation(state)
-
-
+        function obj = Navigation(dt, state)
+                
+            obj.x = state(1:6);
             
         end
 
         %% EKF Functions
 
-        function obj = ekf(obj,inputArg)
+        function obj = ekf(obj)
 
             % Predict Step
-            obj.predictState() % acceleration, either rotate before, or do it after
+            obj.predictState(inertialAcc) % acceleration, either rotate before, or do it after
             obj.P = obj.predictCovariance();
 
             % Update Step
@@ -47,12 +47,15 @@ classdef Navigation
 
         end
 
-        function obj = predictState(obj)
+        function obj = predictState(obj, inertialAcc)
 
-            obj.x(1) = obj.x(1) + obj.x(4)*obj.dt + ;
-            obj.x(2) = obj.x(2) + obj.x(5)*obj.dt;
-            obj.x(3) = obj.x(3) + obj.x(6)*obj.dt;
-            obj.x()
+            obj.x(1) = obj.x(1) + obj.x(4)*obj.dt + inertialAcc(1) * ((obj.dt^2)/2);
+            obj.x(2) = obj.x(2) + obj.x(5)*obj.dt + inertialAcc(2) * ((obj.dt^2)/2);
+            obj.x(3) = obj.x(3) + obj.x(6)*obj.dt + inertialAcc(3) * ((obj.dt^2)/2);
+            obj.x(4) = obj.x(4) + inertialAcc(1) * obj.dt; 
+            obj.x(5) = obj.x(5) + inertialAcc(2) * obj.dt;
+            obj.x(6) = obj.x(6) + inertialAcc(3) * obj.dt;
+
         end
 
         function K = kalmanGain(obj)
@@ -81,28 +84,6 @@ classdef Navigation
             F = obj.dfdx(obj.dt, obj.q);
             P_prior = F * obj.P * F' + obj.Q;
 
-        end
-
-        %% Sensor Functions
-
-        function gpsRawData = GPS(obj)
-
-            gps = gpsSensor('SampleRate', obj.sampleRate, ...
-                            'ReferenceLocation', obj.refLLA, ...
-                            'PositionInputFormat', 'Geodetic', ...
-                            'VerticalPositionAccuracy', obj.gpsVerticalAccuracy, ...
-                            'HorizontalPositionAccuracy', obj.gpsHorizontalAccuracy);
-
-            [gpsRawData] = gps(obj.x(1:3),obj.x(4:6));
-
-        end
-
-        function gyroRawData = Gyro(obj)
-            % Return raw gyro data
-        end
-
-        function accRawData = Accelerometer(obj)
-            % Return raw accelerometer data in body frame
         end
 
         %% Frame Transformation Functions
@@ -145,14 +126,9 @@ classdef Navigation
 
         end
 
-        function [lat, lon, alt] = x2GPS(obj)
-
-            refECEF = LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));
-            
-
+        function [inertialAcc] = accBodytoInertial(accBody)
+            inertialAcc = Utils.quatrotate(conj(qBI), accBody) + [0,0,9.81];
         end
-
-        
 
     end
 end
