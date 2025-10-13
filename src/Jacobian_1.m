@@ -33,38 +33,53 @@ function [A, B] = Jacobian_1()
 
     rho = 0.0023769 .* (1 - 6.877e-6 .* x).^4.25588;
 
-    R = [2*(q0^2+q1^2)-1, 2*(q1*q2-q0*q3), 2*(q1*q3+q0*q2); 2*(q1*q2+q0*q3), 2*(q0^2+q2^2)-1, 2*(q2*q3-q0*q1); 2*(q1*q3-q0*q2), 2*(q2*q3+q0*q1), 2*(q0^2+q3^2)-1];
+    %R = [2*(q0^2+q1^2)-1, 2*(q1*q2-q0*q3), 2*(q1*q3+q0*q2); 2*(q1*q2+q0*q3), 2*(q0^2+q2^2)-1, 2*(q2*q3-q0*q1); 2*(q1*q3-q0*q2), 2*(q2*q3+q0*q1), 2*(q0^2+q3^2)-1];
     % R = [1 - 2*(q2^2 + q3^2),     2*(q1*q2 - q0*q3),     2*(q1*q3 + q0*q2);
     %  2*(q1*q2 + q0*q3),       1 - 2*(q1^2 + q3^2),   2*(q2*q3 - q0*q1);
     %  2*(q1*q3 - q0*q2),       2*(q2*q3 + q0*q1),     1 - 2*(q1^2 + q2^2)];
 
+    R = [ ...
+    q0^2 + q1^2 - q2^2 - q3^2,   2*(q1*q2 + q0*q3),     2*(q1*q3 - q0*q2);
+    2*(q1*q2 - q0*q3),           q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 + q0*q1);
+    2*(q1*q3 + q0*q2),           2*(q2*q3 - q0*q1),     q0^2 - q1^2 - q2^2 + q3^2 ...
+    ];
+
     inv_R = inv(R);
+
+    
+    
+   
+    
+   
+
 
     m  = piecewise(t < burn_time, wet_mass - ((wet_mass - dry_mass)/burn_time)*t, dry_mass);
     CG = piecewise(t < burn_time, initial_CG - ((initial_CG - final_CG)/burn_time)*t, final_CG);
 
-    % if t < burnTime
-    %     m = wetMass - ((wetMass - dryMass)/burnTime) * t;
-    %     CG = CG0 - ((CG0 - finalCG)/burnTime) * t;
-    %     Ib = wetMOI - ((wetMOI - dryMOI)/burnTime) .* t;
-    % else
-    %     m = dryMass;
-    %     CG = finalCG;
-    %     Ib = dryMOI;
-    % end
+   
 
     rocket_params = [wet_mass, dry_mass, initial_CG, final_CG, ...
                      Ixx, dryRollMOI, Iyy, dryPitchMOI, ...
                      Izz, dryYawMOI, burn_time];
 
+    V = sqrt(u.^2 + v.^2 + w.^2 + 1e-12);
+    % V = max(V, 1e-6);         % avoid division by zero / tiny V
+
+    % arg = r.*(10.3264 - 3.281*CG) ./ (3.281 .* V);
+    % arg_clamped = max(-1, min(1, arg));
+    % theta = asin(arg_clamped);
+    asin_arg = r*(10.3264-(3.281*CG))/(3.281*(V));
+    asin_expansion_5 = asin_arg + (asin_arg^3)/6 + 3*(asin_arg^5) / 40; 
+    alpha = v/u;
+    
     
 
-    FAx_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*sin(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(v/u));
-    FAy_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
+    FAx_b_sym = (1/0.225)*(((0.64181 .* ((alpha)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(asin_arg))*sin(alpha) + ((0.00253 * ((alpha)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(alpha));
+    FAy_b_sym = (1/0.225)*(((0.64181 .* ((alpha)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(asin_arg))*-1*cos(alpha) + ((0.00253 * ((alpha)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(alpha));
     FAz_b_sym = 0;
     MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
     MAy_b_sym = 0;
-    MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
+    MAz_b_sym = 1.36*((((alpha)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((alpha)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
     
     
     
@@ -72,9 +87,9 @@ function [A, B] = Jacobian_1()
     aero_forces_moments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
 
 
-    EOM_no_aero = [u*inv_R(1,1) + v*inv_R(1,2) + w*inv_R(1,3) - xdot,
-        u*inv_R(2,1) + v*inv_R(2,2) + w*inv_R(2,3) - ydot,
-        u*inv_R(3,1) + v*inv_R(3,2) + w*inv_R(3,3) - zdot,
+    EOM_no_aero = [u*R(1,1) + v*R(1,2) + w*R(1,3) - xdot, % inv_R or something else?
+        u*R(2,1) + v*R(2,2) + w*R(2,3) - ydot,
+        u*R(3,1) + v*R(3,2) + w*R(3,3) - zdot,
         (1/m)*(m*g*(1-2*(q0^2+q1^2)) + 0.95*T) + r*v - q*w - udot,
         -2*g*(q1*q2 + q0*q3) + p*w - r*u - vdot,
         -2*g*(q1*q3 - q0*q2) + q*u - p*v - wdot,
@@ -107,9 +122,11 @@ function [A, B] = Jacobian_1()
                      0,
                      0]; 
 
+  
+
    
 
-    nonlinear_EOM = EOM_no_aero + EOM_only_aero;
+    nonlinear_EOM = EOM_no_aero; % + EOM_only_aero; % remove second term to test w/o aero
     
     F = nonlinear_EOM;
 

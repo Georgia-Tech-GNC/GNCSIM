@@ -1,19 +1,24 @@
-function [x_new] = RK4_propagate(x,u,A,B,delta_t,dt)
+function x_next = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun)
+% One RK4 step for x' = eom_fun(x,u,t,T(t))
+% x_next = x + dt * RK4(...)
+    T1 = thrust_fun(t);
+    k1 = eom_fun(x,              u, t,           T1);
 
-steps = delta_t / dt - 1;
+    T2 = thrust_fun(t + 0.5*dt);
+    k2 = eom_fun(x + 0.5*dt*k1,  u, t + 0.5*dt, T2);
 
+    k3 = eom_fun(x + 0.5*dt*k2,  u, t + 0.5*dt, T2);
 
+    T4 = thrust_fun(t + dt);
+    k4 = eom_fun(x + dt*k3,      u, t + dt,     T4);
 
-    F1 = A*x + B*u;
-    F2 = A*(x + 0.5*dt*F1) + B*u;
-    F3 = A*(x + 0.5*dt*F2) + B*u;
-    F4 = A*(x + dt*F3)     + B*u;
-
-    if any(~isfinite(F1)) || any(~isfinite(F2)) || any(~isfinite(F3)) || any(~isfinite(F4))
-        error('RK4 produced non-finite stage at t-step.');
+    if any(~isfinite([k1; k2; k3; k4]))
+        error('RK4 produced non-finite stage at t=%.6f.', t);
     end
 
-    x = x + (dt/6) * (F1 + 2*F2 + 2*F3 + F4);
+    x_next = x + (dt/6) * (k1 + 2*k2 + 2*k3 + k4);
 
-
-x_new = x;
+    % Optional: keep quaternion unit length (cheap, helps stability)
+    % q = x_next(10:13); qn = norm(q);
+    % if qn > 0, x_next(10:13) = q / qn; end
+end

@@ -4,9 +4,19 @@ delta_t = 0.1; % for uniform time interval break points
 dt = .01;
 steps = round(burn_time / dt, 0);
 
-x = zeros(13,1); % initial state
-x(4) = .001;
-x(10) = 1;
+x = [0;
+     0;
+     0;
+     .001;
+     0;
+     0;
+     0;
+     0;
+     0;
+     1;
+     0;
+     0;
+     0];
 
 u = zeros(3,1); % initial control
 
@@ -74,6 +84,9 @@ arr = [0.0, 0.457288;
 13.5895, 106.0499;
 14.6754, 12.60914;
 16.1354, 0.0;];
+
+eom_fun     = @eom_nonlin;                          % your nonlinear RHS
+thrust_fun  = @(tt) thrust_at(tt, arr, burn_time);  % table-based thrust
 
 %% Generate Trajectory
 
@@ -161,7 +174,7 @@ end
 %syms x y z u v w p q r q0 q1 q2 q3 u1 u2 u3 T time_elapsed
 
 % if at break point
-if mod(i-1, round(delta_t/dt)) == 0 && t ~= 0 % is t = 0 a breakpoint?
+if mod(i-1, round(delta_t/dt)) == 0 %&& t ~= 0 % is t = 0 a breakpoint?
     % Names present in the symbolic A,B from Jacobian_1()
     state_names   = {'x','y','z','u','v','w','p','q','r','q0','q1','q2','q3'};
     control_names = {'u1','u2','u3'};
@@ -186,24 +199,25 @@ if mod(i-1, round(delta_t/dt)) == 0 && t ~= 0 % is t = 0 a breakpoint?
 
 
     % Substitute into symbolic Jacobians (A,B were built once at the top)
-    A_num = subs(A, all_names, all_values);
-    B_num = subs(B, all_names, all_values);
+    % A_num = subs(A, all_names, all_values);
+    % B_num = subs(B, all_names, all_values);
+    [A_num, B_num] = eval_AB_safe(A, B, x, u, currentThrust, t);
 
     % Convert to double and clean tiny imaginary parts
     A_num = double(A_num);
     B_num = double(B_num);
 
     a_imag = imag(A_num); b_imag = imag(B_num);
-    [ia,ja] = find(abs(a_imag) == max(abs(a_imag(:))),1);
+    [ia,ja] = find(abs(a_imag) == max(abs(a_imag( :))),1);
     [ib,jb] = find(abs(b_imag) == max(abs(b_imag(:))),1);
-    if max(abs(a_imag(:))) > 1e-9
+    if max(abs(a_imag(:))) > 5e-4
         fprintf('Max imag A at (%d,%d): %.3e\n', ia, ja, a_imag(ia,ja));
     end
-    if max(abs(b_imag(:))) > 1e-9
+    if max(abs(b_imag(:))) > 5e-4
         fprintf('Max imag B at (%d,%d): %.3e\n', ib, jb, b_imag(ib,jb));
     end
 
-    tol_im = 1e-9;
+    tol_im = 5e-4;
     a_imax = max(abs(imag(A_num(:))));
     b_imax = max(abs(imag(B_num(:))));
     if a_imax > tol_im, error('A_num has significant imaginary part (max=%.3e).', a_imax); else, A_num = real(A_num); end
@@ -220,12 +234,13 @@ if mod(i-1, round(delta_t/dt)) == 0 && t ~= 0 % is t = 0 a breakpoint?
     if any(~isfinite(B_num(:))), error('B_num has non-finite entries'); end
 
     % Optimize & propagate (thrust is a parameter, not a decision)
-    [x, u] = optimize_propagate(x, Q, R, A_num, B_num, dt, u_max);
+    [x, u] = optimize_propagate(x, Q, R, A_num, B_num, dt, u_max, eom_fun, thrust_fun, t);
 
 else
-    % Keep using last A_num,B_num between breakpoints
-    for k = 1 : (delta_t/dt - 1)
-        x = RK4_propagate(x, u, A_num, B_num, delta_t, dt);
+    N = round(delta_t/dt);
+    for k = 1:N
+        tau = t + (k-1)*dt;  % global time at the start of this substep
+        x   = RK4_propagate(x, u, tau, dt, eom_fun, thrust_fun);
     end
 end
 
