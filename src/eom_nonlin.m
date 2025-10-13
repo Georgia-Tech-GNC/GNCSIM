@@ -44,13 +44,13 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     
 
     % --- mass & CG vs time: identical piecewise ---
-    if t < burnTime
-        m = wetMass - ((wetMass - dryMass)/burnTime) * t;
-        CG = CG0 - ((CG0 - finalCG)/burnTime) * t;
-        Ib = wetMOI - ((wetMOI - dryMOI)/burnTime) .* t;
+    if t < burn_time
+        m = wet_mass - ((wet_mass - dry_mass)/burn_time) * t;
+        CG = initial_CG - ((initial_CG - final_CG)/burn_time) * t;
+        Ib = wetMOI - ((wetMOI - dryMOI)/burn_time) .* t;
     else
-        m = dryMass;
-        CG = finalCG;
+        m = dry_mass;
+        CG = final_CG;
         Ib = dryMOI;
     end
 
@@ -80,6 +80,9 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     % FAx = 0;
     % FAy = 0;
     % FAz = 0;
+    % MAx = 0;
+    % MAy = 0;
+    % MAz = 0;
     
     % --------------------
     % Kinematics (match your use of inv_R)

@@ -128,7 +128,7 @@ function [A, B] = Jacobian_1()
 
    
 
-    nonlinear_EOM = EOM_no_aero; % + EOM_only_aero; % remove second term to test w/o aero
+    nonlinear_EOM = EOM_no_aero + EOM_only_aero; % remove second term to test w/o aero
     
     F = nonlinear_EOM;
 
