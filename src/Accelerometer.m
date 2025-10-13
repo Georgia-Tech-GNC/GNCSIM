@@ -1,4 +1,4 @@
-classdef Accelerometer < handle
+classdef Accelerometer < Sensor
     
     properties 
         name = "Accelerometer"
@@ -19,7 +19,7 @@ classdef Accelerometer < handle
         angVelB
         qBI
         leverArm
-        f
+        bias
         SF
         VRW
 
@@ -27,26 +27,38 @@ classdef Accelerometer < handle
 
     methods
 
-        function obj = Accelerometer(state, stateDot, leverArm, f, SF, VRW)
-            [obj.accelB] = stateDot(4:6); % Need to check
-            [obj.qBI] = state(7:10);
-            [obj.angVelB] = state(11:13);
+        function obj = Accelerometer(leverArm, VRW, SF, bias)
+
+            obj@Sensor()
             obj.leverArm = leverArm;
-            obj.f = f;
             obj.SF = SF;
-            obj.VRW
+            obj.bias = bias;
+            obj.VRW = VRW;
 
         end
 
-        function [accelIMU] = accLeverArm(obj)
-            % a = w x v (Velocity of IMU relative to CG or -CG)+ w x (w x r CG->IMU)
-            velCG = 0; % Need to add
-            accelIMU = obj.accelB - Utils.quatRotate(obj.qBI,cross(obj.angVelB, velCG) + cross(obj.angVelB, cross(obj.angVelB, obj.leverArm)));                
+        function accelIMU = accLeverArm(obj)
+            % Lever-arm corrected acceleration
+            w = obj.angVelB;
+            r = obj.leverArm;
+            velCG = zeros(3,1); % Placeholder for future coupling term
+            correction = cross(w, velCG) + cross(w, cross(w, r));
+            accelIMU = obj.accelB - Utils.quatRotate(obj.qBI, correction);
         end
 
-        function [noisyAccel] = addNoise(obj, accelIMU)
-            noise = obj.VRW .* sqrt(obj.f) .* randn(3);
-            noisyAccel = (1 + obj.SF) .* accelIMU + bias + noise;
+        function noisyAccel = addNoise(obj, accelIMU)
+            % Add noise, bias, and scale factor
+            noise = obj.VRW .* sqrt(obj.outputRate) .* randn(3,1);
+            noisyAccel = (1 + obj.SF) .* accelIMU + obj.bias + noise;
+        end
+
+        function measurement = getMeasurement(obj, state, stateDot, currentTime)
+            obj.qBI = state(7:10);
+            obj.angVelB = state(11:13);
+            obj.accelB = stateDot(4:6); 
+
+            accelIMU = obj.accLeverArm();
+            measurement = obj.addNoise(accelIMU);
         end
     end
 end

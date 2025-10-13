@@ -16,8 +16,8 @@ classdef GPS < Sensor
 
     properties
         refLLA
-        bodyVel
-        inertialPos
+        velB
+        posI
         gps    
     end
 
@@ -25,13 +25,13 @@ classdef GPS < Sensor
 
     methods
 
-        function obj = GPS(refLLA, state)
+        function obj = GPS(refLLA,)
         
             obj@Sensor()
             obj.refLLA = refLLA;
             obj.inertialPos = state(1:3);
             obj.bodyVel = state(4:6);
-            obj.gps = gpsSensor('SampleRate', obj.sampleRate, ...
+            obj.gps = gpsSensor('SampleRate', obj.outputRate, ...
                                 'ReferenceLocation', obj.refLLA, ...
                                 'PositionInputFormat', 'Geodetic', ...
                                 'VerticalPositionAccuracy', obj.gpsVerticalAccuracy, ...
@@ -39,9 +39,11 @@ classdef GPS < Sensor
         end
 
         function measurement = getMeasurement(obj)
-
+            
+            obj.posI = state(1:3);
+            obj.velB = state(4:6);
             llaPos = NED2lla();
-            [gpsRawData] = obj.gps(llaPos,obj.bodyVel);
+            [measurement] = obj.gps(llaPos,obj.bodyVel);
 
         end
 

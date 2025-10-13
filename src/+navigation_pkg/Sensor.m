@@ -49,6 +49,6 @@ classdef (Abstract) Sensor < handle
     end
     
     methods (Abstract)
-        measurement = getMeasurement(obj, state, currentTime)
+        measurement = getMeasurement(obj, state, stateDot, currentTime)
     end
 end
