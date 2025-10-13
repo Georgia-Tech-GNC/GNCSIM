@@ -20,13 +20,12 @@ function [A, B] = Jacobian_1()
     dry_mass = 32.619994;
     initial_CG = 2.419762;
     final_CG = 2.314814;
-    Ixx = 0.209731;  % Ixx
-    Iyy = 24.655278;  % Iyy
-    Izz = 24.656148;  % Izz
+    wetRollMOI = 0.209731;  % Ixx
+    wetPitchMOI = 24.655278;  % Iyy
+    wetYawMOI = 24.656148;  % Izz
     dryRollMOI = 0.201846;
     dryPitchMOI = 22.301315;
     dryYawMOI = 22.301570;
-
    
 
     burn_time = 13.1;
@@ -42,9 +41,9 @@ function [A, B] = Jacobian_1()
     q0^2 + q1^2 - q2^2 - q3^2,   2*(q1*q2 + q0*q3),     2*(q1*q3 - q0*q2);
     2*(q1*q2 - q0*q3),           q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 + q0*q1);
     2*(q1*q3 + q0*q2),           2*(q2*q3 - q0*q1),     q0^2 - q1^2 - q2^2 + q3^2 ...
-    ];
+    ]; % inertial to body
 
-    inv_R = inv(R);
+    inv_R = inv(R); % body to inertial
 
     
     
@@ -55,6 +54,9 @@ function [A, B] = Jacobian_1()
 
     m  = piecewise(t < burn_time, wet_mass - ((wet_mass - dry_mass)/burn_time)*t, dry_mass);
     CG = piecewise(t < burn_time, initial_CG - ((initial_CG - final_CG)/burn_time)*t, final_CG);
+    Ixx = piecewise(t < burn_time, wetRollMOI - ((wetRollMOI - dryRollMOI)/burn_time)*t, dryRollMOI);
+    Iyy = piecewise(t < burn_time, wetPitchMOI - ((wetPitchMOI - dryPitchMOI)/burn_time)*t, dryPitchMOI);
+    Izz = piecewise(t < burn_time, wetYawMOI - ((wetYawMOI - dryYawMOI)/burn_time)*t, dryYawMOI);
 
    
 
@@ -87,12 +89,12 @@ function [A, B] = Jacobian_1()
     aero_forces_moments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
 
 
-    EOM_no_aero = [u*R(1,1) + v*R(1,2) + w*R(1,3) - xdot, % inv_R or something else?
-        u*R(2,1) + v*R(2,2) + w*R(2,3) - ydot,
-        u*R(3,1) + v*R(3,2) + w*R(3,3) - zdot,
-        (1/m)*(m*g*(1-2*(q0^2+q1^2)) + 0.95*T) + r*v - q*w - udot,
-        -2*g*(q1*q2 + q0*q3) + p*w - r*u - vdot,
-        -2*g*(q1*q3 - q0*q2) + q*u - p*v - wdot,
+    EOM_no_aero = [u*inv_R(1,1) + v*inv_R(1,2) + w*inv_R(1,3) - xdot, % inv_R 
+        u*inv_R(2,1) + v*inv_R(2,2) + w*inv_R(2,3) - ydot,
+        u*inv_R(3,1) + v*inv_R(3,2) + w*inv_R(3,3) - zdot,
+        (1/m)*(R(1,3)*m*g + 0.95*T) + r*v - q*w - udot,
+        R(2,3)*g + p*w - r*u - vdot,
+        R(3,3)*g + q*u - p*v - wdot,
         (1/Ixx)*(u1 + q*r*(Iyy - Izz)) - pdot,
         (1/Iyy)*(u2 + p*r*(Izz - Ixx)) - qdot,
         (1/Izz)*(u3 + p*q*(Ixx - Iyy)) - rdot,
