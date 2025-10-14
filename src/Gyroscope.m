@@ -2,10 +2,10 @@ classdef Gyroscope < Sensor
 
     properties 
         name = "Gyroscope"
-        outputDimension = 3
+        outputDimension = 3;
         noiseCovariance
-        outputRate = 0;           % Hz
-        outputProbability = 1        % 
+        outputRate     % Hz
+        outputProbability        % 
         observationMatrix
     end
 
@@ -19,23 +19,26 @@ classdef Gyroscope < Sensor
         bias
     end
 
-    % Still need to implement sensor error/bias
 
     methods
 
-        function obj = Gyroscope(ARW, bias)
+        function obj = Gyroscope(gyro_params)
         
             obj@Sensor()
-            obj.ARW = ARW;
-            obj.bias = bias;
+            obj.noiseCovariance = gyro_params.noiseCovariance;
+            obj.outputRate = gyro_params.outputRate;
+            obj.outputProbability = gyro_params.outputProbability;
+            obj.observationMatrix = gyro_params.observationMatrix;
+
+            obj.ARW = gyro_params.ARW;
+            obj.bias = gyro_params.bias;
 
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
 
-            obj.w = state(11:13);
-
             if obj.isOutputReady(currentTime)
+                obj.w = state(11:13);
                 measurement = obj.addNoise(); % Add noise
             else
                 measurement = [];

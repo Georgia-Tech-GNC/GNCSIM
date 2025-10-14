@@ -4,8 +4,8 @@ classdef Accelerometer < Sensor
         name = "Accelerometer"
         outputDimension = 3
         noiseCovariance
-        outputRate = 0;           % Hz
-        outputProbability = 1        % 
+        outputRate            % Hz
+        outputProbability       % 
         observationMatrix
     end
 
@@ -27,13 +27,18 @@ classdef Accelerometer < Sensor
 
     methods
 
-        function obj = Accelerometer(leverArm, VRW, SF, bias)
+        function obj = Accelerometer(acc_params)
 
             obj@Sensor()
-            obj.leverArm = leverArm;
-            obj.SF = SF;
-            obj.bias = bias;
-            obj.VRW = VRW;
+            obj.noiseCovariance = acc_params.noiseCovariance;
+            obj.outputRate = acc_params.outputRate;
+            obj.outputProbability = acc_params.outputProbability;
+            obj.observationMatrix = acc_params.observationMatrix;
+
+            obj.leverArm = acc_params.leverArm;
+            obj.SF = acc_params.SF;
+            obj.bias = acc_params.bias;
+            obj.VRW = acc_params.VRW;
 
         end
 
@@ -53,12 +58,16 @@ classdef Accelerometer < Sensor
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            obj.qBI = state(7:10);
-            obj.angVelB = state(11:13);
-            obj.accelB = stateDot(4:6); 
-
-            accelIMU = obj.accLeverArm();
-            measurement = obj.addNoise(accelIMU);
+            if obj.isOutputReady(currentTime)
+                obj.qBI = state(7:10);
+                obj.angVelB = state(11:13);
+                obj.accelB = stateDot(4:6); 
+    
+                accelIMU = obj.accLeverArm();
+                measurement = obj.addNoise(accelIMU);
+            else
+                measurement = [];
+            end
         end
     end
 end

@@ -3,11 +3,11 @@ classdef GPS < Sensor
 
     properties 
         name = "GPS"
-        outputDimension = 3
+        outputDimension = 3;
         noiseCovariance
-        outputRate = 0;           % Hz
-        outputProbability = 1        % 
-        observationMatrix
+        outputRate           % Hz
+        outputProbability         % 
+        observationMatrix 
     end
 
     properties (Constant)
@@ -25,25 +25,33 @@ classdef GPS < Sensor
 
     methods
 
-        function obj = GPS(refLLA,)
+        function obj = GPS(gps_params)
         
             obj@Sensor()
-            obj.refLLA = refLLA;
-            obj.inertialPos = state(1:3);
-            obj.bodyVel = state(4:6);
+            obj.noiseCovariance = gps_params.noiseCovariance;
+            obj.outputRate = gps_params.outputRate;
+            obj.outputProbability = gps_params.outputProbability;
+            obj.observationMatrix = gps_params.observationMatrix;
+
+            obj.refLLA = gps_params.refLLA;
             obj.gps = gpsSensor('SampleRate', obj.outputRate, ...
                                 'ReferenceLocation', obj.refLLA, ...
                                 'PositionInputFormat', 'Geodetic', ...
-                                'VerticalPositionAccuracy', obj.gpsVerticalAccuracy, ...
-                                'HorizontalPositionAccuracy', obj.gpsHorizontalAccuracy);
+                                'VerticalPositionAccuracy', gps_params.verticalAccuracy, ...
+                                'HorizontalPositionAccuracy', gps_params.horizontalAccuracy, ...
+                                'VelocityAccuracy', gps_params.velocityAccuracy);
         end
 
-        function measurement = getMeasurement(obj)
+        function measurement = getMeasurement(obj, state, stateDot, currentTime)
             
-            obj.posI = state(1:3);
-            obj.velB = state(4:6);
-            llaPos = NED2lla();
-            [measurement] = obj.gps(llaPos,obj.bodyVel);
+            if obj.isOutputReady(currentTime)
+                obj.posI = state(1:3);
+                obj.velB = state(4:6);
+                llaPos = NED2lla();
+                measurement = obj.gps(llaPos,obj.bodyVel);
+            else
+                measurement = [];
+            end
 
         end
 

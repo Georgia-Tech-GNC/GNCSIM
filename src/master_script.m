@@ -126,6 +126,57 @@ function nav = setup_navigation()
     % Navigation
     %nav_params.acc_noise = 0.01;
     %nav = Navigation(nav_params);
+
+    acc_params.VRW = -1;
+    acc_params.leverArm = -1;
+    acc_params.SF = -1;
+    acc_params.bias = -1;
+
+    acc_params.noiseCovariance = -1;
+    acc_params.outputRate = -1;
+    acc_params.outputProbability = -1;
+    acc_params.observationMatrix = -1;
+    accelerometer = Accelerometer(acc_params);
+
+    gps_params.refLLA = -1;
+    gps_params.verticalAccuracy = -1;
+    gps_params.horizontalAccuracy = -1;
+    gps_params.velocityAccuracy = -1;
+
+    gps_params.noiseCovariance = -1;
+    gps_params.outputRate = -1;
+    gps_params.outputProbability = -1;
+    gps_params.observationMatrix = -1;
+    gps = GPS(gps_params);
+
+    gyro_params.ARW = -1;
+    gyro_params.bias = -1;
+
+    gyro_params.noiseCovariance = -1;
+    gyro_params.outputRate = -1;
+    gyro_params.outputProbability = -1;
+    gyro_params.observationMatrix = -1;
+    gyroscope = Gyroscope(gyro_params);
+
+    nav_params.dt = .1;
+    nav_params.P = 0.1 * eye(6);
+    nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
+        0,                        1, 0,                        0, 0,                        0
+        0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
+        0,                        0, 0,                        1, 0,                        0
+        0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
+        0,                        0, 0,                        0, 0,                        1];
+
+    sigma_a = 10;
+    nav_params.Q = sigma_a^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
+                     (dt^3)/2,     dt^2,          0,           0,              0,          0;
+                           0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
+                           0,         0,   (dt^3)/2,        dt^2,              0,          0;
+                           0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
+                           0,         0,          0,           0,       (dt^3)/2,      dt^2];    
+
+    nav = Navigation(nav_params, gps, gyroscope, accelerometer);
+    
 end
 
 function flight = setup_flight(rocket_dyn)

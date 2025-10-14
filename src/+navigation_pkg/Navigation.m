@@ -5,38 +5,49 @@ classdef Navigation
     properties
         
         dt
-        x
+        x = zeros(6,1);
         P
-        f
-        h
         dfdx
         dhdx
         Q
         R
-        K
-        q
-        qBI
-        refLLA
-        sampleRate
-        gpsVerticalAccuracy
-        gpsHorizontalAccuracy
-
+        K 
+        q = [1;0;0;0];
+        accelerometer
+        gyroscope
+        gps
 
     end
 
     methods
-        function obj = Navigation(dt, state)
-                
-            obj.x = state(1:6);
+        function obj = Navigation(nav_params, gps, gyroscope, accelerometer)
             
+            obj.dt = nav_params.dt;
+            obj.P = nav_params.P;
+            obj.dfdx = nav_params.dfdx;
+            obj.Q = nav_params.Q;
+            
+            obj.gps = gps;
+            obj.gyroscope = gyroscope;
+            obj.accelerometer = accelerometer;
+            
+        end
+
+        function updatedState = runNavigation(state, stateDot)
+            obj.x = state(1:6);
+            obj.q = state(7:10);
+
         end
 
         %% EKF Functions
 
         function obj = ekf(obj)
 
+            % Sensor Data
+            
+
             % Predict Step
-            obj.predictState(inertialAcc) % acceleration, either rotate before, or do it after
+            obj.predictState(accI) 
             obj.P = obj.predictCovariance();
 
             % Update Step
@@ -47,14 +58,14 @@ classdef Navigation
 
         end
 
-        function obj = predictState(obj, inertialAcc)
+        function obj = predictState(obj, accI)
 
-            obj.x(1) = obj.x(1) + obj.x(4)*obj.dt + inertialAcc(1) * ((obj.dt^2)/2);
-            obj.x(2) = obj.x(2) + obj.x(5)*obj.dt + inertialAcc(2) * ((obj.dt^2)/2);
-            obj.x(3) = obj.x(3) + obj.x(6)*obj.dt + inertialAcc(3) * ((obj.dt^2)/2);
-            obj.x(4) = obj.x(4) + inertialAcc(1) * obj.dt; 
-            obj.x(5) = obj.x(5) + inertialAcc(2) * obj.dt;
-            obj.x(6) = obj.x(6) + inertialAcc(3) * obj.dt;
+            obj.x(1) = obj.x(1) + obj.x(4)*obj.dt + accI(1) * ((obj.dt^2)/2);
+            obj.x(2) = obj.x(2) + obj.x(5)*obj.dt + accI(2) * ((obj.dt^2)/2);
+            obj.x(3) = obj.x(3) + obj.x(6)*obj.dt + accI(3) * ((obj.dt^2)/2);
+            obj.x(4) = obj.x(4) + accI(1) * obj.dt; 
+            obj.x(5) = obj.x(5) + accI(2) * obj.dt; % WRONG WROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOn
+            obj.x(6) = obj.x(6) + accI(3) * obj.dt;
 
         end
 
@@ -86,6 +97,8 @@ classdef Navigation
 
         end
 
+        %% Sensor Data
+        
         %% Frame Transformation Functions
 
         % GPS
@@ -126,8 +139,8 @@ classdef Navigation
 
         end
 
-        function [inertialAcc] = accBodytoInertial(accBody)
-            inertialAcc = Utils.quatrotate(conj(qBI), accBody) + [0,0,9.81];
+        function [accI] = accBodytoInertial(accBody)
+            accI = Utils.quatrotate(conj(qBI), accBody) + [0,0,9.81];
         end
 
     end
