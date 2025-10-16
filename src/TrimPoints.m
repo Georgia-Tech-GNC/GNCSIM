@@ -1,5 +1,5 @@
 % Main Authors: David Reynolds
-classdef TrimPoints < handle
+classdef TrimPoints < handle&Exportable
     % TrimPoint Class for Generating Trim Points
     % This class reads flight data from a CSV file, processes it, and generates trim points
     % based on specified times and variations. It manages batches of trim points and provides
@@ -59,56 +59,82 @@ classdef TrimPoints < handle
     end
 
     methods
-        function obj = TrimPoints(file_path)
-            % Constructor for TrimPoint Class
-            % Initializes the TrimPoint object by reading and processing the flight data.
-            %
-            % Input:
-            %   file_path - String representing the path to the CSV file containing flight data.
-            
-            % Set the file path property
-            obj.file_path = file_path;
-            
-            % Create import options without relying on automatic detection
-            opts = detectImportOptions(obj.file_path, 'ReadVariableNames', false, 'PreserveVariableNames', true);
-            
-            % Set all variable types to character arrays to avoid interpretation issues
-            opts.VariableTypes(:) = {'char'};
-            
-            % Ensure no rows are automatically skipped
-            opts.DataLines = [1, Inf]; % Read all rows
-            
-            % Read the flight data from the CSV file into a table
-            obj.flight_data = readtable(obj.file_path, opts);
-            
-            % Read numerical data from the CSV file into a matrix
-            obj.flight_data_num = readmatrix(obj.file_path);
-            
-            % Remove rows containing NaN values from flight_data_num
-            obj.flight_data_num(any(isnan(obj.flight_data_num), 2), :) = [];
-            
-            % Define required variables to check in the data
-            required_vars = ["# Time (s)", "Total velocity (m/s)", "Thrust (N)"];
-            
-            % Get the size of the flight_data table
-            [obj.num_rows, obj.num_cols] = size(obj.flight_data);
-            
-            % Find the column positions of the required variables in the CSV file
-            obj.column_positions_csv = obj.look_for_data_types(required_vars);
-            
-            % Throw an error if any of the required variables are not found
-            if any(obj.column_positions_csv == -1)
-                missingVarsString = strjoin(required_vars(obj.column_positions_csv == -1), ', ');
-                error("Unable to find the required variables: %s", missingVarsString);
-            end
 
-            % Convert state names to character arrays for compatibility with containers.Map
-            state_keys = cellfun(@char, TrimBatch.state_names, 'UniformOutput', false);
-            state_values = num2cell(TrimBatch.state_index_con);
-            
-            % Create a dictionary (Map) with state names as keys and their indices as values
-            obj.state_dict = containers.Map(state_keys, state_values);  
-        end
+        function restoreFromStruct(obj, s)
+            f = fieldnames(s);
+            mc = metaclass(obj);
+            constProps = {mc.PropertyList([mc.PropertyList.Constant]).Name};
+            for i = 1:numel(f)
+                if ismember(f{i}, constProps)
+                    continue; % skip constants
+                end
+                try
+                    obj.(f{i}) = s.(f{i});
+                catch ME
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
+
+        function obj = TrimPoints(varargin)
+            if nargin == 0
+                % Empty constructor for loading from MAT
+                return
+
+            elseif nargin == 1
+                file_path = varargin{1};
+                % Constructor for TrimPoint Class
+                % Initializes the TrimPoint object by reading and processing the flight data.
+                %
+                % Input:
+                %   file_path - String representing the path to the CSV file containing flight data.
+                
+                % Set the file path property
+                obj.file_path = file_path;
+                
+                % Create import options without relying on automatic detection
+                opts = detectImportOptions(obj.file_path, 'ReadVariableNames', false, 'PreserveVariableNames', true);
+                
+                % Set all variable types to character arrays to avoid interpretation issues
+                opts.VariableTypes(:) = {'char'};
+                
+                % Ensure no rows are automatically skipped
+                opts.DataLines = [1, Inf]; % Read all rows
+                
+                % Read the flight data from the CSV file into a table
+                obj.flight_data = readtable(obj.file_path, opts);
+                
+                % Read numerical data from the CSV file into a matrix
+                obj.flight_data_num = readmatrix(obj.file_path);
+                
+                % Remove rows containing NaN values from flight_data_num
+                obj.flight_data_num(any(isnan(obj.flight_data_num), 2), :) = [];
+                
+                % Define required variables to check in the data
+                required_vars = ["# Time (s)", "Total velocity (m/s)", "Thrust (N)"];
+                
+                % Get the size of the flight_data table
+                [obj.num_rows, obj.num_cols] = size(obj.flight_data);
+                
+                % Find the column positions of the required variables in the CSV file
+                obj.column_positions_csv = obj.look_for_data_types(required_vars);
+                
+                % Throw an error if any of the required variables are not found
+                if any(obj.column_positions_csv == -1)
+                    missingVarsString = strjoin(required_vars(obj.column_positions_csv == -1), ', ');
+                    error("Unable to find the required variables: %s", missingVarsString);
+                end
+    
+                % Convert state names to character arrays for compatibility with containers.Map
+                state_keys = cellfun(@char, TrimBatch.state_names, 'UniformOutput', false);
+                state_values = num2cell(TrimBatch.state_index_con);
+                
+                % Create a dictionary (Map) with state names as keys and their indices as values
+                obj.state_dict = containers.Map(state_keys, state_values);
+            else
+                error('TrimPoints constructor expects either 0 or 1 input argument.');
+            end
+        end % if, elif, else wrap added by Zhanna S
         
         function [controller_ID] = get_controllerID(obj)
             controller_ID = obj.controller_ID;

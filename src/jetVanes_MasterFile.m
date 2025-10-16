@@ -17,6 +17,23 @@ FlightObj = setupFlight();
 % Generate trim points
 TrimPointsObj = generateTrimPoints(aero_forces_moments, doof_params, FlightObj, AeroObj, Doof, EnvironmentObj);
 
+%% Export
+
+Doof.exportToMat('Rocket')
+AeroObj.exportToMat('Aerodynamics')
+EnvironmentObj.exportToMat('Environment')
+FlightObj.exportToMat('Flight')
+TrimPointsObj.exportToMat('TrimPoints')
+
+%% Import example
+% Folder name 'Export_2025-10-15_12'
+
+% Doof = Exportable.loadFromMat('Rocket', 'Export_2025-10-15_12/Rocket.mat')
+% AeroObj = Exportable.loadFromMat('Aerodynamics', 'Export_2025-10-15_12/Aerodynamics.mat')
+% EnvironmentObj = Exportable.loadFromMat('Environment', 'Export_2025-10-15_12/Environment.mat')
+% FlightObj = Exportable.loadFromMat('Flight', 'Export_2025-10-15_12/Flight.mat')
+% TrimPointsObj = Exportable.loadFromMat('TrimPoints', 'Export_2025-10-15_12/TrimPoints.mat')
+
 %% Run Flight
 % FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
 % FlightObj.set_applyWind(true);
@@ -512,7 +529,3 @@ end
 %     logMonteCarlo9';
 %     logMonteCarlo10'
 % ];
-
-
-
-

@@ -130,18 +130,26 @@ classdef Exportable < handle
             % Restore properties
             objStruct = data.objStruct;
             fields = fieldnames(objStruct);
-            successCount = 0;
+            %successCount = 0; commented out because it's irrelevant atm
+         
             
-            for i = 1:length(fields)
-                try
-                    obj.(fields{i}) = objStruct.(fields{i});
-                    successCount = successCount + 1;
-                catch ME
-                    warning('Could not restore property %s: %s', fields{i}, ME.message);
+            % After constructing obj
+            if ismethod(obj, 'restoreFromStruct')
+                obj.restoreFromStruct(objStruct);
+            else
+                % fallback: generic assignment loop
+                fields = fieldnames(objStruct);
+                for i = 1:length(fields)
+                    try
+                        obj.(fields{i}) = objStruct.(fields{i});
+                    catch ME
+                        warning('Could not restore property %s: %s', fields{i}, ME.message);
+                    end
                 end
             end
             
-            fprintf('Successfully restored %d of %d properties\n', successCount, length(fields));
+            %fprintf('Successfully restored %d of %d properties\n',
+            %successCount, length(fields)); commented out because it's irrelevant atm
         end
     end
 end
