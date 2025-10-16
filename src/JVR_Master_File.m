@@ -82,9 +82,9 @@ function rocket_dyn = setup_rocket()
 
 
     % Create rocket dynamics object
-    body = RocketBody(body_params);
+    body = rocket_pkg.RocketBody(body_params);
     
-    rocket_dyn = RocketDynamics(body, fins, rocket_params, motor_params);
+    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
 end
 
 function EnvironmentObj = setup_environment()
@@ -104,7 +104,7 @@ function EnvironmentObj = setup_environment()
 end
 
 function [AeroObj, aero_forces_moments] = setupAerodynamics()
-    AeroObj = Aerodynamics();
+    AeroObj = rocket_pkg.Aerodynamics();
     syms u v w rho CG p r
     Vars = [u v w rho CG p r];
     
@@ -230,7 +230,7 @@ function TrimPointsObj = generateTrimPoints(aero_forces_moments, rocket_params, 
     flight_path = 'Flight Profile\JVR_sim.csv';
     
     % Create a TrimPoints object by initializing it with the specified flight data file
-    TrimPointsObj = TrimPoints(flight_path);
+    TrimPointsObj = controller_pkg.TrimPoints(flight_path);
     
     % Find the time of the "LIFTOFF" event in the flight data
     liftoff_time = TrimPointsObj.find_event_time("LIFTOFF");
@@ -376,7 +376,7 @@ function controller = setup_controller() % Where should I implement trimpoints?
     JetVanesActuator.q_ba = [1, 0, 0, 0];       % unit quaternion
 
     % Create LQR Controller
-    controller = LQR(Q, R, JetVanesActuator);
+    controller = controller_pkg.LQR(Q, R, JetVanesActuator);
 end
 
 function nav = setup_navigation()

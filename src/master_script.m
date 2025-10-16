@@ -1,6 +1,5 @@
-
+%% Master File
 clear; clc; close all;
-
 
 %% Instantiate Objects
 rocket_dyn = setup_rocket();
@@ -136,7 +135,7 @@ function nav = setup_navigation()
     acc_params.outputRate = -1;
     acc_params.outputProbability = -1;
     acc_params.observationMatrix = -1;
-    accelerometer = Accelerometer(acc_params);
+    accelerometer = navigation_pkg.Accelerometer(acc_params);
 
     gps_params.refLLA = -1;
     gps_params.verticalAccuracy = -1;
@@ -147,7 +146,7 @@ function nav = setup_navigation()
     gps_params.outputRate = -1;
     gps_params.outputProbability = -1;
     gps_params.observationMatrix = -1;
-    gps = GPS(gps_params);
+    gps = navigation_pkg.GPS(gps_params);
 
     gyro_params.ARW = -1;
     gyro_params.bias = -1;
@@ -156,7 +155,7 @@ function nav = setup_navigation()
     gyro_params.outputRate = -1;
     gyro_params.outputProbability = -1;
     gyro_params.observationMatrix = -1;
-    gyroscope = Gyroscope(gyro_params);
+    gyroscope = navigation_pkg.Gyroscope(gyro_params);
 
     nav_params.dt = .1;
     nav_params.P = 0.1 * eye(6);
@@ -175,7 +174,7 @@ function nav = setup_navigation()
                            0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
                            0,         0,          0,           0,       (dt^3)/2,      dt^2];    
 
-    nav = Navigation(nav_params, gps, gyroscope, accelerometer);
+    nav = navigation_pkg.Navigation(nav_params, gps, gyroscope, accelerometer);
     
 end
 
@@ -200,7 +199,7 @@ end
 
 function monte_carlo = setup_MonteCarlo()
     monte_carlo_params.set_wetRollMOI_3sigma = 1;
-    monte_carlo = MonteCarlo(flight, monte_carlo_params);
+    monte_carlo = analysis_pkg.MonteCarlo(flight, monte_carlo_params);
 end
 
 
