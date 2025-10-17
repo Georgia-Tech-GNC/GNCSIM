@@ -30,7 +30,7 @@ classdef Flight < handle
             
         %end
 
-        function [t_arr, x_arr] = run_sim(obj)
+        function [t_arr, x_arr, Fb_arr, Mb_arr] = run_sim(obj)
             % This function propagates the dynamics using RK4
             
             % Need setters for this
@@ -39,6 +39,8 @@ classdef Flight < handle
 
             t_arr = zeros(1,N);
             x_arr = zeros(14, N);
+            Fb_arr = zeros(3,N);
+            Mb_arr = zeros(3,N);
 
             for ii = 2:N
                 k1 = obj.rocket_model(x);
@@ -51,6 +53,7 @@ classdef Flight < handle
 
                 t_arr(ii) = obj.current_time;
                 x_arr(:, ii) = x;
+                [Fb_arr(:,ii), Mb_arr(:,ii)] = obj.get_forces_and_moments_wrapper(x);
             end
         end
 
@@ -61,6 +64,14 @@ classdef Flight < handle
             
             [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.current_time);
             x_dot = obj.flat_earth_EOM(state, F_b, M_b);
+        end
+
+        function [F_b, M_b] = get_forces_and_moments_wrapper(obj, state) %Duplicate of rocket_model method to get F_b and M_b
+            h = state(4);
+            %disturbances.wind = obj.environment.get_wind(h);  TODO
+            disturbances.wind = 0;
+            
+            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.current_time);
         end
 
         function [state_dot] = flat_earth_EOM(obj, state, F_b, M_b)   

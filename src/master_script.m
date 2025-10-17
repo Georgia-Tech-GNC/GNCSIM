@@ -12,8 +12,16 @@ flight = setup_flight(rocket_dyn);
 %flight.rocket_dyn.draw()
 
 %% Run Flight
-[t, x] = flight.run_sim();
+[t, x, Fb, Mb] = flight.run_sim();
+
+
+%% Analysis
+n = 1; %For single flight
+analysis = analysis_pkg.Analysis(t, x, n, Fb, Mb);
+analysis.GenerateAllPlots();
+
 %flight.draw_traj()
+
 
 %flight.plotFlight(t, x);
 
@@ -202,7 +210,10 @@ function monte_carlo = setup_MonteCarlo()
     monte_carlo = analysis_pkg.MonteCarlo(flight, monte_carlo_params);
 end
 
-
+function analysis = single_Flight_Analysis()
+    
+    
+end
 
 
 
