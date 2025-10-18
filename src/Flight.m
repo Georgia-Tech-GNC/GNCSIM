@@ -4,22 +4,27 @@ classdef Flight < handle
         rocket_dyn
         controller
         environment
-        nav
+        navigation
+        breakPoints
 
-        flight_params
-        total_time
-        current_time
+        flightParams
+        totalTime
+        currentTime
+        x0
         dt
     end
     methods
-        function obj = Flight(rocket_dyn, controller, environment, nav, flight_params)
+        function obj = Flight(rocket_dyn, controller, environment, navigation, breakPoints, flightParams)
             obj.rocket_dyn = rocket_dyn;
             obj.controller = controller;
             obj.environment = environment;
-            obj.nav = nav;
-            obj.flight_params = flight_params;
+            obj.navigation = navigation;
+            obj.breakPoints = breakPoints;
+            obj.flightParams = flightParams;
 
-            obj.dt = obj.flight_params.dt;
+            obj.dt = obj.flightParams.dt;
+            obj.x0 = obj.flightParams.x0;
+            obj.totalTime = obj.flightParams.totalTime;
             
             %obj.rocket_dyn.calc_moi()
         end
@@ -30,17 +35,17 @@ classdef Flight < handle
             
         %end
 
-        function [t_arr, x_arr, Fb_arr, Mb_arr] = run_sim(obj)
+        function [tArr, xArr, FbArr, MbArr] = runSim(obj)
             % This function propagates the dynamics using RK4
             
             % Need setters for this
-            x = obj.flight_params.x0(:);
-            N = obj.flight_params.sim_time / obj.dt;
+            x = obj.x0(:);
+            N = obj.totalTime / obj.dt;
 
-            t_arr = zeros(1,N);
-            x_arr = zeros(14, N);
-            Fb_arr = zeros(3,N);
-            Mb_arr = zeros(3,N);
+            tArr = zeros(1,N);
+            xArr = zeros(14, N);
+            FbArr = zeros(3,N);
+            MbArr = zeros(3,N);
 
             for ii = 2:N
                 k1 = obj.rocket_model(x);
@@ -48,12 +53,14 @@ classdef Flight < handle
                 k3 = obj.rocket_model(x + (k2)*obj.dt/2);
                 k4 = obj.rocket_model(x + (k3)*obj.dt);
                 
-                obj.current_time = ii * obj.dt;
+                obj.currentTime = ii * obj.dt;
                 x = x + obj.dt*((1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4);
 
-                t_arr(ii) = obj.current_time;
-                x_arr(:, ii) = x;
-                [Fb_arr(:,ii), Mb_arr(:,ii)] = obj.get_forces_and_moments_wrapper(x);
+                tArr(ii) = obj.currentTime;
+                xArr(:, ii) = x;
+
+                % replace by Log Class
+                [FbArr(:,ii), MbArr(:,ii)] = obj.get_forces_and_moments_wrapper(x);
             end
         end
 
@@ -62,19 +69,20 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.get_wind(h);  TODO
             disturbances.wind = 0;
             
-            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.current_time);
-            x_dot = obj.flat_earth_EOM(state, F_b, M_b);
+            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime);
+            x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
-
+        
+        % To avoid -> replace by Log class
         function [F_b, M_b] = get_forces_and_moments_wrapper(obj, state) %Duplicate of rocket_model method to get F_b and M_b
             h = state(4);
             %disturbances.wind = obj.environment.get_wind(h);  TODO
             disturbances.wind = 0;
             
-            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.current_time);
+            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime);
         end
 
-        function [state_dot] = flat_earth_EOM(obj, state, F_b, M_b)   
+        function [state_dot] = flatEarth_EOM(state, F_b, M_b)   
             mass = state(1);
             %pos = state(2:4);  % not needed
             vel = state(5:7);
