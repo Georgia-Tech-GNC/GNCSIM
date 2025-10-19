@@ -124,10 +124,8 @@ classdef RocketBody < rocket_pkg.DatcomManager
             r = obj.body_params.rocket_diameter/2;     % body radius
             x_nose = linspace(0, obj.body_params.nose_cone_length, 100);
             
-            % Ogive profile (tangent ogive formula)
-            % Based on geometry of circle with radius ogive_radius offset so tangent at base
-            x_offset = obj.body_params.ogive_radius - sqrt(Rn^2 - r^2);
-            y_profile = sqrt(obj.body_params.ogive_radius^2 - (obj.body_params.ogive_radius - x_nose - x_offset).^2);
+            % Tangive Ogive profile
+            y_profile = get_nose_radii(obj,x_nose);
             
             % Add cylindrical body after nose
             x_body = linspace(obj.body_params.nose_cone_length, obj.body_params.nose_cone_length + obj.body_params.body_length, 20);
@@ -152,7 +150,7 @@ classdef RocketBody < rocket_pkg.DatcomManager
             xlabel('Length (m)');
             ylabel('Radius (m)');
             zlabel('Z (m)');
-            title(sprintf('Rocket: Ln=%.2f, Rn=%.2f, Lb=%.2f, D=%.2f', Ln, Rn, Lb, D));
+            title(sprintf('Rocket: Nose Cone Length=%.2f, Rocket diameter=%.2f, Body length=%.2f', obj.body_params.nose_cone_length, obj.body_params.rocket_diameter, obj.body_params.body_length));
             camlight headlight; lighting gouraud;
             grid on;
         end

@@ -75,14 +75,13 @@ classdef RocketDynamics < handle
 
 		function draw(obj)
             % ========== ROCKET ==========
-            r_body = obj.body.params;
+            r_body = obj.body.body_params;
             fins = obj.rocket_fins.fin_params;
             r = r_body.rocket_diameter/2;
-            x_nose = linspace(0, r_body.nose_cone_length, 100);
+            x_nose = linspace(r_body.nose_cone_length, 0, 100);
             
             % Tangent ogive nose cone profile
-            x_offset = r_body.ogive_radius - sqrt(r_body.ogive_radius^2 - r^2);
-            y_profile = sqrt(r_body.ogive_radius^2 - (r_body.ogive_radius - x_nose - x_offset).^2);
+            y_profile = obj.body.get_nose_radii(x_nose); 
             
             % Cylindrical body
             x_body = linspace(r_body.nose_cone_length, r_body.nose_cone_length + r_body.body_length, 50);
@@ -122,17 +121,18 @@ classdef RocketDynamics < handle
             
             % For each fin, rotate and position around body
             for i = 1:fins.num_fins
-                theta = 2*pi*(i-1)/fins.num_fins;  % angular position
+                theta2 = 2*pi*(i-1)/fins.num_fins;  % angular position
                 % Rotation matrix around X-axis (rocket axis)
-                Rz = [1 0 0; 0 cos(theta) -sin(theta); 0 sin(theta) cos(theta)];
-                
+                Rz = [1 0 0; 0 cos(theta2) -sin(theta2); 0 sin(theta2) cos(theta2)];
+
                 % Shift fin so its root attaches to rocket body
                 Xf = finX + x_base;
-                Yf = r * ones(size(finX)) + finY * cos(theta);
-                Zf = finY * sin(theta);
+                Yf = r + finY;
+                Zf = zeros(size(finY));
                 
                 % Stack to rotate (not necessary here because we rotate by construction)
-                fin = Rz * [zeros(size(Xf)); Yf; Zf];
+                fin_local = [Xf; Yf; Zf];
+                fin = Rz * fin_local;
                 
                 % Draw fin as patch
                 fill3(Xf, fin(2,:), fin(3,:), finColor, 'FaceAlpha', 0.9, 'EdgeColor', 'k');

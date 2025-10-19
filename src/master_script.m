@@ -34,7 +34,6 @@ function rocket_dyn = setup_rocket()
     
     % Create Body
     body_params.nose_cone_length = 0.61;  % [m]
-    body_params.ogive_radius = 1;  % gives shape of nose cone
     body_params.body_length = 2.03;  % This does not include nose code [m]
     body_params.rocket_diameter = 0.157;  % [m]
     total_length = body_params.body_length + body_params.nose_cone_length;
