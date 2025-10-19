@@ -85,41 +85,71 @@ classdef RocketDynamics < handle
         end
 
 		function draw(obj)
-			% TODO: draw rocket (rough draft below, need to get access to rocket size parameters)
+            % ========== ROCKET ==========
+            r_body = obj.body.body_params;
+            fins = obj.rocket_fins.fin_params;
+            r = r_body.rocket_diameter/2;
+            x_nose = linspace(r_body.nose_cone_length, 0, 100);
             
-        %     figure; hold on; axis equal
-        %     xlabel('X'); ylabel('Y'); zlabel('Z');
-		% 
-		% 	D_body = obj.body.body_params.rocket_diameter;
-		% 	%L_body = 
-		% 
-        %     % Body (cylinder)
-        %     [Xb, Yb, Zb] = cylinder(D_body/2, 50);
-        %     Zb = Zb * L_body;
-        %     surf(Xb, Yb, Zb, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none');
-		% 
-        %     % Nose (cone)
-        %     [Xn, Yn, Zn] = cylinder([D_body/2 0], 50);
-        %     Zn = Zn * L_nose + L_body;
-        %     surf(Xn, Yn, Zn, 'FaceColor', [0.9 0.7 0.7], 'EdgeColor', 'none');
-		% 
-        %     % Fins
-        %     theta = linspace(0, 2*pi, n_fins+1);
-        %     for i = 1:n_fins
-        %         % Fin coordinates in XY-plane
-        %         finX = [L_body-0.1*L_body, L_body-0.1*L_body, L_body-L_fin];
-        %         finY = [D_body/2, D_body/2+H_fin, D_body/2];
-        %         finZ = [0, 0, 0];
-		% 
-        %         % Rotate fin around Z-axis
-        %         R = [cos(theta(i)) -sin(theta(i)); sin(theta(i)) cos(theta(i))];
-        %         finCoords = R * [finY; finZ];
-		% 
-        %         % Draw fin (patch)
-        %         patch(finX, finCoords(1,:), finCoords(2,:), [0.6 0.6 0.6]);
-        %     end
-        %     camlight; lighting gouraud
-		end
+            % Tangent ogive nose cone profile
+            y_profile = obj.body.get_nose_radii(x_nose); 
+            
+            % Cylindrical body
+            x_body = linspace(r_body.nose_cone_length, r_body.nose_cone_length + r_body.body_length, 50);
+            y_body = r * ones(size(x_body));
+            
+            % Combine profile
+            x = [x_nose, x_body];
+            y = [y_profile, y_body];
+            
+            % Revolve a 2D curve (x,y) about the x-axis to form a surface
+            theta = linspace(0, 2*pi, 120);
+            X = repmat(x(:), 1, 120);
+            Y = repmat(y(:), 1, 120).*cos(theta);
+            Z = repmat(y(:), 1, 120).*sin(theta);
+            
+            % Plot body
+            figure; hold on;
+            surf(X, Y, Z, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none');
+            axis equal; grid on;
+            xlabel('Length (m)'); ylabel('Y (m)'); zlabel('Z (m)');
+            title('3D Rocket with Fins');
+            camlight headlight; lighting gouraud;
+            
+            % ========== FINS ==========
+            % Fin base position (at end of body)
+            x_base = r_body.nose_cone_length + r_body.body_length - fins.root_chord;  % where root leading edge starts
+            finColor = [0.2 0.5 0.8];
+            
+            % Define one fin shape in X–Y plane before rotation
+            LE_root = [0, 0];
+            TE_root = [fins.root_chord, 0];
+            LE_tip  = [fins.fin_span * tand(fins.sweep_deg), fins.fin_span];
+            TE_tip  = [LE_tip(1) + fins.tip_chord, fins.fin_span];
+            
+            finX = [LE_root(1), TE_root(1), TE_tip(1), LE_tip(1)];
+            finY = [LE_root(2), TE_root(2), TE_tip(2), LE_tip(2)];
+            
+            % For each fin, rotate and position around body
+            for i = 1:fins.num_fins
+                theta2 = 2*pi*(i-1)/fins.num_fins;  % angular position
+                % Rotation matrix around X-axis (rocket axis)
+                Rz = [1 0 0; 0 cos(theta2) -sin(theta2); 0 sin(theta2) cos(theta2)];
 
+                % Shift fin so its root attaches to rocket body
+                Xf = finX + x_base;
+                Yf = r + finY;
+                Zf = zeros(size(finY));
+                
+                % Stack to rotate (not necessary here because we rotate by construction)
+                fin_local = [Xf; Yf; Zf];
+                fin = Rz * fin_local;
+                
+                % Draw fin as patch
+                fill3(Xf, fin(2,:), fin(3,:), finColor, 'FaceAlpha', 0.9, 'EdgeColor', 'k');
+            end
+            
+            view(30,20);
+        end
     end
 end

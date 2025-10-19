@@ -5,6 +5,7 @@ classdef Navigation
     properties
         
         dt
+        currentTime 
         x = zeros(6,1);
         P
         dfdx
@@ -25,6 +26,10 @@ classdef Navigation
         accelerometer
         gyroscope
         gps
+
+        covHistory = struct('Px', [], 'Py', [], 'Pz', [], ...
+                        'Vx', [], 'Vy', [], 'Vz', [], ...
+                        'time', []);
 
     end
 
@@ -52,6 +57,7 @@ classdef Navigation
             obj.ekf();
             
             updatedState = [obj.x; obj.q; state(11:13)];
+            
 
         end
 
@@ -77,10 +83,25 @@ classdef Navigation
             obj.P = obj.predictCovariance();
 
             % Update Step
-            % sensor data for this step -----------> sensor models
+            % Sensor data called in runNavigation, maybe move it here/
+            % don't auto set z but use observation matrix
             obj.K = kalmanGain();
             obj.x = obj.updateState();
             obj.P = updateCovariance();
+
+            diagP = diag(obj.P);
+            obj.covHistory.Px(end+1) = diagP(1);
+            obj.covHistory.Py(end+1) = diagP(2);
+            obj.covHistory.Pz(end+1) = diagP(3);
+            obj.covHistory.Vx(end+1) = diagP(4);
+            obj.covHistory.Vy(end+1) = diagP(5);
+            obj.covHistory.Vz(end+1) = diagP(6);
+        
+            if isempty(obj.covHistory.time)
+                obj.covHistory.time(1) = 0;
+            else
+                obj.covHistory.time(end+1) = obj.covHistory.time(end) + obj.dt;
+            end
 
         end
 
@@ -127,6 +148,10 @@ classdef Navigation
         %% Sensor Data
         % Need to interp1(extrap) --> Vector of times we got sensor data,
         % vector of sensor data, current time we want to interpolate to
+        function obj = interpolate(obj)
+            
+        end
+
         % 
         function obj = getRawData(obj, state, stateDot)
             obj.z = obj.gps.getMeasurement(state,stateDot); % eventually fix
@@ -195,15 +220,36 @@ classdef Navigation
             
             q_delt = [q_delt_s; q_delt_x; q_delt_y; q_delt_z];
             
-       end
+        end
         
-       function [quat_new]= quatMulitply(obj, q1,q2)
+        function [quat_new]= quatMulitply(obj, q1,q2)
             
             q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
             q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
                 
             quat_new = [q_s_new; q_ang_new];
                 
-       end
+        end
+       %% Plotting
+        function plotCovariances(obj)
+            t = obj.covHistory.time;
+        
+            figure;
+            subplot(2,1,1);
+            plot(t, obj.covHistory.Px, t, obj.covHistory.Py, t, obj.covHistory.Pz, 'LineWidth', 1.5);
+            grid on;
+            xlabel('Time [s]');
+            ylabel('Position Covariance');
+            legend('x', 'y', 'z');
+            title('Position State Covariances');
+        
+            subplot(2,1,2);
+            plot(t, obj.covHistory.Vx, t, obj.covHistory.Vy, t, obj.covHistory.Vz, 'LineWidth', 1.5);
+            grid on;
+            xlabel('Time [s]');
+            ylabel('Velocity Covariance');
+            legend('vx', 'vy', 'vz');
+            title('Velocity State Covariances');
+        end
     end
 end

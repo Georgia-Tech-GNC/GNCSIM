@@ -118,15 +118,42 @@ classdef RocketBody < rocket_pkg.DatcomManager
 		end
 
 		function draw_body(obj)
-			% Plots the 2D cross-section of the rocket body
+            % Draws a 3D rocket with a tangent ogive nose cone and cylindrical body.
 
+            % Derived quantities
+            r = obj.body_params.rocket_diameter/2;     % body radius
+            x_nose = linspace(0, obj.body_params.nose_cone_length, 100);
+            
+            % Tangive Ogive profile
+            y_profile = get_nose_radii(obj,x_nose);
+            
+            % Add cylindrical body after nose
+            x_body = linspace(obj.body_params.nose_cone_length, obj.body_params.nose_cone_length + obj.body_params.body_length, 20);
+            y_body = r * ones(size(x_body));
+            
+            % Combine profiles
+            x = [x_nose, x_body];
+            y = [y_profile, y_body];
+            
+            % Create 3D surface of revolution
+            theta = linspace(0, 2*pi, 100);
+            X = repmat(x(:), 1, 100);
+            Y = repmat(y(:), 1, 100).*cos(theta);
+            Z = repmat(y(:), 1, 100).*sin(theta);
+            
+            % Plot
             figure;
-            plot(body_stations_x, body_radii, 'k-');
+            surf(X, Y, Z, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none');
             hold on;
-            plot(body_stations_x, -body_radii, 'k-');
+            surf(X, -Y, Z, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none'); % mirror
             axis equal;
+            xlabel('Length (m)');
+            ylabel('Radius (m)');
+            zlabel('Z (m)');
+            title(sprintf('Rocket: Nose Cone Length=%.2f, Rocket diameter=%.2f, Body length=%.2f', obj.body_params.nose_cone_length, obj.body_params.rocket_diameter, obj.body_params.body_length));
+            camlight headlight; lighting gouraud;
             grid on;
-		end
+        end
 	end
 end
 
