@@ -1,6 +1,6 @@
 % Main Authors: Patrick Barry
 
-classdef Aerodynamics < handle
+classdef Aerodynamics < handle&Exportable
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -20,6 +20,18 @@ classdef Aerodynamics < handle
             % TODO Future project: Define a default basic aerodynamic model for
             % concept vehicle development
         end
+
+        function restoreFromStruct(obj, s)
+        % Restore all properties from a struct (bypasses SetAccess=private)
+            f = fieldnames(s); % Get all field names from the struct 's'
+            for i = 1:numel(f) % Loop thru each field
+                try
+                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
+                catch ME % Warning if fails so it doesn't crash
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
 
         % Setters
         function obj= set_FAx_func(obj, FAx_function)

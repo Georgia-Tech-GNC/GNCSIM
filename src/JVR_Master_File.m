@@ -4,7 +4,7 @@ clear; clc; close all;
 %% Instantiate Classes
 
 % Rocket Dynamics
-rocketDynamics = setupRocket();
+rocketDynamics = setupRocketDynamics();
 
 % Setup Environment
 environment = setupEnvironment();
@@ -15,7 +15,7 @@ aerodynamics = setupAerodynamics();
 controller = setupController(rocketDynamics);
 
 % Setup BreakPoints
-breakPoints = setupBreakPoints(controller);
+breakPoints = setupBreakPoints(controller); % who the hell is 'BreakPoints': missing defined class file, cannot make exportable
 
 % Setup Navigation
 navigation = setupNavigation();
@@ -32,7 +32,6 @@ flight.plotFlight(t_arr, x_arr);
 n = 1; %For single flight
 analysis = analysis_pkg.Analysis(t, x, n, Fb, Mb);
 analysis.GenerateAllPlots();
-
 
 %% Setup Functions
 
