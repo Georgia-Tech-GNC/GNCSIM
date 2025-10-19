@@ -18,7 +18,7 @@ classdef GPS < Sensor
         refLLA
         velB
         posI
-        gps    
+        gpsBuiltIn    
     end
 
     % Still need to implement sensor error/bias
@@ -34,7 +34,7 @@ classdef GPS < Sensor
             obj.observationMatrix = gps_params.observationMatrix;
 
             obj.refLLA = gps_params.refLLA;
-            obj.gps = gpsSensor('SampleRate', obj.outputRate, ...
+            obj.gpsBuiltIn = gpsSensor('SampleRate', obj.outputRate, ...
                                 'ReferenceLocation', obj.refLLA, ...
                                 'PositionInputFormat', 'Geodetic', ...
                                 'VerticalPositionAccuracy', gps_params.verticalAccuracy, ...
@@ -48,7 +48,7 @@ classdef GPS < Sensor
                 obj.posI = state(1:3);
                 obj.velB = state(4:6);
                 llaPos = NED2lla();
-                measurement = obj.gps(llaPos,obj.bodyVel);
+                measurement = obj.gpsBuiltIn(llaPos,obj.bodyVel);
            % else
                % measurement = [];
            % end

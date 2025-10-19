@@ -5,6 +5,7 @@ classdef Navigation
     properties
         
         dt
+        currentTime 
         x = zeros(6,1);
         P
         dfdx
@@ -82,7 +83,8 @@ classdef Navigation
             obj.P = obj.predictCovariance();
 
             % Update Step
-            % sensor data for this step -----------> sensor models
+            % Sensor data called in runNavigation, maybe move it here/
+            % don't auto set z but use observation matrix
             obj.K = kalmanGain();
             obj.x = obj.updateState();
             obj.P = updateCovariance();
@@ -146,6 +148,10 @@ classdef Navigation
         %% Sensor Data
         % Need to interp1(extrap) --> Vector of times we got sensor data,
         % vector of sensor data, current time we want to interpolate to
+        function obj = interpolate(obj)
+            
+        end
+
         % 
         function obj = getRawData(obj, state, stateDot)
             obj.z = obj.gps.getMeasurement(state,stateDot); % eventually fix
