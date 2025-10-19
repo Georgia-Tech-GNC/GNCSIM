@@ -16,13 +16,12 @@ classdef RollPID < Controller
     methods
 
         % Constructor for RollPID class
-        function obj = RollPID(actuator, Kp, Ki, Kd, Kb, Kf, minTorque, maxTorque)
+        function obj = RollPID(actuator, Kp, Ki, Kd, Kb, minTorque, maxTorque)
             obj.actuator = actuator;
             obj.Kp = Kp;
             obj.Ki = Ki;
             obj.Kd = Kd;
             obj.Kb = Kb;
-            obj.Kf = Kf;
             obj.minTorque = minTorque;
             obj.maxTorque = maxTorque;
             obj.integral = 0;
@@ -66,7 +65,15 @@ classdef RollPID < Controller
             Kb = obj.Kb; 
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, target_state, disturbances, motor_params, CG, ~, time)
+        function [F_b, M_b] = get_forces_and_moments(obj, state, target_state, disturbances, rocket, motor_params, CG, ~, time) 
+            % Pass control output to actutator to calculate forces and moments
+            % NEED TO DOUBLE CHECK INPUTS FOR FUNCTION
+            clamped_torque = computeControls(obj, state, target_state, time);
+            [F_b, M_b] = obj.actuator.get_forces_and_moments(clamped_torque, rocket, motor_params, CG); 
+
+        end
+
+        function [clamped_torque] =  computeControls(obj, state, target_state, time)
             % Roll Error
             error = target_state(6) - state(6); % Assuming roll is 6th position in state
 
@@ -93,12 +100,7 @@ classdef RollPID < Controller
             clamped_torque = max(obj.minTorque, min(torque, obj.maxTorque));
 
             % Anti-Wind Up logic
-            obj.integral = obj.integral + obj.Ki * error * obj.Kb(clamped_torque - torque);
-
-            % Pass control output to actutator to calculate forces and moments
-            % NEED TO DOUBLE CHECK INPUTS FOR FUNCTION
-            [F_b, M_b] = obj.actuator.get_forces_and_moments(torque, motor_params, CG); 
-
+            obj.integral = obj.integral + obj.Ki * error * obj.Kb * (clamped_torque - torque);
         end
 
         % Reset Controller 
