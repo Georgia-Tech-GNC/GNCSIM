@@ -65,11 +65,10 @@ classdef RollPID < Controller
             Kb = obj.Kb; 
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, target_state, ~, rocket, motor_params, CG, ~, time) 
+        function [F_b, M_b] = get_forces_and_moments(obj, state, rocket, CG, target_state, time) 
             % Pass control output to actutator to calculate forces and moments
-            % NEED TO DOUBLE CHECK INPUTS FOR FUNCTION
             clamped_torque = computeControls(obj, state, target_state, time);
-            [F_b, M_b] = obj.actuator.get_forces_and_moments(clamped_torque, rocket, motor_params, CG); 
+            [F_b, M_b] = obj.actuator.get_forces_and_moments(clamped_torque, rocket, CG); 
 
         end
 
