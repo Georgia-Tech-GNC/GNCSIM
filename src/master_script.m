@@ -145,10 +145,10 @@ function nav = setup_navigation()
     acc_params.observationMatrix = -1;
     accelerometer = navigation_pkg.Accelerometer(acc_params);
 
-    gps_params.refLLA = -1;
-    gps_params.verticalAccuracy = -1;
-    gps_params.horizontalAccuracy = -1;
-    gps_params.velocityAccuracy = -1;
+    gps_params.refLLA = [33.776, -84.399, 306];
+    gps_params.verticalAccuracy = 1;
+    gps_params.horizontalAccuracy = 1;
+    gps_params.velocityAccuracy = 1;
 
     gps_params.noiseCovariance = -1;
     gps_params.outputRate = -1;
@@ -166,6 +166,7 @@ function nav = setup_navigation()
     gyroscope = navigation_pkg.Gyroscope(gyro_params);
 
     nav_params.dt = .1;
+    dt = nav_params.dt;
     nav_params.P = 0.1 * eye(6);
     nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
         0,                        1, 0,                        0, 0,                        0

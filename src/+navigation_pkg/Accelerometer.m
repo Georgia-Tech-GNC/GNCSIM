@@ -46,6 +46,7 @@ classdef Accelerometer < Sensor
             % Lever-arm corrected acceleration
             w = obj.angVelB;
             r = obj.leverArm;
+            r = zeros(3,1); % placeholder
             velCG = zeros(3,1); % Placeholder for future coupling term
             correction = cross(w, velCG) + cross(w, cross(w, r));
             accelIMU = obj.accelB - Utils.quatRotate(obj.qBI, correction);
@@ -64,7 +65,7 @@ classdef Accelerometer < Sensor
                 obj.accelB = stateDot(5:7); % Is mdot at index 1? 
     
                 accelIMU = obj.accLeverArm();
-                measurement = obj.addNoise(accelIMU);
+                measurement = accelIMU %obj.addNoise(accelIMU);
           %  else
             %    measurement = [];
           %  end

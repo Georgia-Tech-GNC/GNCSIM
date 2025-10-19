@@ -8,15 +8,20 @@ classdef Navigation
         x = zeros(6,1);
         P
         dfdx
-        dhdx
+        dhdx = @(x)[1 0 0 0 0 0;
+                    0 1 0 0 0 0;
+                    0 0 1 0 0 0];
         Q
-        R
+        R = [8.4 0 0;
+             0 4.2 0;
+             0 0 4.2];
         K 
         q 
         z
-        h = [1;1;1;0;0;0];
+        h = @(x)[x(1);x(2);x(3)];
         gyroRawData
         accRawData
+
         accelerometer
         gyroscope
         gps

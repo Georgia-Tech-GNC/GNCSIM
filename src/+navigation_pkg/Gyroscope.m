@@ -39,9 +39,9 @@ classdef Gyroscope < Sensor
 
            % if obj.isOutputReady(currentTime)
                 obj.w = state(11:13);
-                measurement = obj.addNoise(); % Add noise
+                measurement = obj.w % obj.addNoise(); % Add noise
            % else
-                measurement = [];
+                %measurement = [];
            % end
         end
 
