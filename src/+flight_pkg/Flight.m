@@ -1,10 +1,7 @@
-
 classdef Flight < handle
     properties
         rocket_dyn
-        controller
         environment
-        navigation
         breakPoints
 
         flightParams
@@ -14,11 +11,9 @@ classdef Flight < handle
         dt
     end
     methods
-        function obj = Flight(rocket_dyn, controller, environment, navigation, breakPoints, flightParams)
+        function obj = Flight(rocket_dyn, environment, breakPoints, flightParams)
             obj.rocket_dyn = rocket_dyn;
-            obj.controller = controller;
             obj.environment = environment;
-            obj.navigation = navigation;
             obj.breakPoints = breakPoints;
             obj.flightParams = flightParams;
 
@@ -30,8 +25,6 @@ classdef Flight < handle
         end
 
         % TODO: Build setters for all attributes
-
-        %function calc_moi()
             
         %end
 
@@ -65,17 +58,15 @@ classdef Flight < handle
         end
 
         function x_dot = rocket_model(obj, state)
-            h = state(4);
-            %disturbances.wind = obj.environment.get_wind(h);  TODO
-            disturbances.wind = 0;
+            altitude = state(4);
+            disturbances.wind = obj.environment.get_windspeed(altitude);
             
-            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime);
+            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
             x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
         
         % To avoid -> replace by Log class
         function [F_b, M_b] = get_forces_and_moments_wrapper(obj, state) %Duplicate of rocket_model method to get F_b and M_b
-            h = state(4);
             %disturbances.wind = obj.environment.get_wind(h);  TODO
             disturbances.wind = 0;
             

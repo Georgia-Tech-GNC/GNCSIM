@@ -5,6 +5,7 @@ classdef RocketDynamics < handle
 		motor_params
 		controller
         navigation
+        aerodynamics
 
         mass_wet (1,1) double {mustBePositive} = 1
         mass_dry (1,1) double {mustBePositive} = 1
@@ -15,7 +16,7 @@ classdef RocketDynamics < handle
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params)
+        function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params, controller, navigation, aerodynamics)
             obj.body = body;
             obj.rocket_fins = rocket_fins;
             obj.motor_params = motor_params;
@@ -25,6 +26,9 @@ classdef RocketDynamics < handle
             obj.moi_dry = rocket_params.moi_dry;
             obj.CG_wet = rocket_params.CG_wet;
             obj.CG_dry = rocket_params.CG_dry;
+            obj.controller = controller;
+            obj.navigation = navigation;
+            obj.aerodynamics = aerodynamics;
         end
 
         function [m, CG, moi] = interp_mass_CG_MOI(t)
@@ -56,14 +60,21 @@ classdef RocketDynamics < handle
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, breakPoints)
             
             % computes aero forces and moments 
-            [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
-            [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
+            % Need to think on how to implement wind frame
+            if isempty(obj.aerodynamics):
+                [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
+                [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
+                F_b_aero = F_b_fins + F_b_body;
+                M_b_aero = M_b_fins + M_b_body;
+            else
+                [F_b_aero, M_b_aero] = obj.aerodynamics
+            end
             
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
             %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
             %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
-            F_b = F_b_fins + F_b_body;
-            M_b = M_b_fins + M_b_body;
+            F_b = F_b_aero;
+            M_b = M_b_aero;
 			%F_b = F_b_fins;
 			%M_b = M_b_fins;
         end

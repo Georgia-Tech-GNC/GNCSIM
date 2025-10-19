@@ -3,16 +3,14 @@ clear; clc; close all;
 
 %% Instantiate Classes
 
-% Rocket Dynamics
-rocketDynamics = setupRocket();
-
 % Setup Environment
 environment = setupEnvironment();
 
+% Setup CFD Aerodynamics
 aerodynamics = setupAerodynamics();
 
 % Setup Controller
-controller = setupController(rocketDynamics);
+controller = setupController();
 
 % Setup BreakPoints
 breakPoints = setupBreakPoints(controller);
@@ -20,8 +18,11 @@ breakPoints = setupBreakPoints(controller);
 % Setup Navigation
 navigation = setupNavigation();
 
+% Rocket Dynamics
+rocketDynamics = setupRocket(controller, navigation, aerodynamics);
+
 % Setup Flight Simulation
-flight = setupFlight(rocketDynamics, controller, environment, navigation);
+flight = setupFlight(rocketDynamics, environment, breakPoints);
 
 %% Run Flight
 [t, x, Fb, Mb] = flight.run_sim();
@@ -36,7 +37,7 @@ analysis.GenerateAllPlots();
 
 %% Setup Functions
 
-function rocket_dyn = setupRocket()
+function rocket_dyn = setupRocket(controller, navigation)
     % Create Rocket Params
     rocket_params.mass_wet = 40.912994; % kg
     rocket_params.mass_dry = 32.619994;
@@ -97,7 +98,7 @@ function rocket_dyn = setupRocket()
     % Create rocket dynamics object
     body = rocket_pkg.RocketBody(body_params);
     
-    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
+    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params, controller, navigation);
 end
 
 % Need to set up Flight to use environment()
@@ -170,7 +171,60 @@ function controller = setupController() % Where should I implement trimpoints?
 end
 
 function navigation = setupNavigation()
-    % Implement When Nav Class Finishes
+    % Navigation
+    %nav_params.acc_noise = 0.01;
+    %nav = Navigation(nav_params);
+
+    acc_params.VRW = -1;
+    acc_params.leverArm = -1;
+    acc_params.SF = -1;
+    acc_params.bias = -1;
+
+    acc_params.noiseCovariance = -1;
+    acc_params.outputRate = -1;
+    acc_params.outputProbability = -1;
+    acc_params.observationMatrix = -1;
+    accelerometer = navigation_pkg.Accelerometer(acc_params);
+
+    gps_params.refLLA = [33.776, -84.399, 306];
+    gps_params.verticalAccuracy = 1;
+    gps_params.horizontalAccuracy = 1;
+    gps_params.velocityAccuracy = 1;
+
+    gps_params.noiseCovariance = -1;
+    gps_params.outputRate = -1;
+    gps_params.outputProbability = -1;
+    gps_params.observationMatrix = -1;
+    gps = navigation_pkg.GPS(gps_params);
+
+    gyro_params.ARW = -1;
+    gyro_params.bias = -1;
+
+    gyro_params.noiseCovariance = -1;
+    gyro_params.outputRate = -1;
+    gyro_params.outputProbability = -1;
+    gyro_params.observationMatrix = -1;
+    gyroscope = navigation_pkg.Gyroscope(gyro_params);
+
+    nav_params.dt = .1;
+    dt = nav_params.dt;
+    nav_params.P = 0.1 * eye(6);
+    nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
+        0,                        1, 0,                        0, 0,                        0
+        0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
+        0,                        0, 0,                        1, 0,                        0
+        0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
+        0,                        0, 0,                        0, 0,                        1];
+
+    sigma_a = 10;
+    nav_params.Q = sigma_a^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
+                     (dt^3)/2,     dt^2,          0,           0,              0,          0;
+                           0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
+                           0,         0,   (dt^3)/2,        dt^2,              0,          0;
+                           0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
+                           0,         0,          0,           0,       (dt^3)/2,      dt^2];    
+
+    navigation = navigation_pkg.Navigation(nav_params, gps, gyroscope, accelerometer);
 end
 
 function flight = setupFlight(rocketDynamics, controller, environment, navigation, breakPoints)
