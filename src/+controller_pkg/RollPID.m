@@ -6,7 +6,6 @@ classdef RollPID < Controller
         Ki % Integral gain
         Kd % Derivative gain
         Kb % Back calculation gain
-        Kf % Feed Forward gain
         integral % Integral term
         previousError % Previous error value
         previousTime % Previous error time
@@ -16,6 +15,7 @@ classdef RollPID < Controller
 
     methods
 
+        % Constructor for RollPID class
         function obj = RollPID(actuator, Kp, Ki, Kd, Kb, Kf, minTorque, maxTorque)
             obj.actuator = actuator;
             obj.Kp = Kp;
@@ -38,19 +38,14 @@ classdef RollPID < Controller
         end
 
         % Set Torque Limits
-        function obj = setTorqueLimits(minTorque,maxTorque)
+        function obj = setTorqueLimits(obj,minTorque,maxTorque)
             obj.minTorque = minTorque;
             obj.maxTorque = maxTorque;
         end
 
-        % Set back calculation gain
+        % Set Back Calculation Gain
         function obj = setKb(obj,Kb)
             obj.Kb = Kb; 
-        end
-
-        % Set Feedforward gain
-        function obj = setKf(obj,Kf)
-            obj.Kf = Kf; 
         end
 
         % Get PID Gains
@@ -66,14 +61,9 @@ classdef RollPID < Controller
             maxTorque = obj.maxTorque;
         end
 
-        % Get back calculation gain
+        % Get Back Calculation Gain
         function [Kb] = getKb(obj)
             Kb = obj.Kb; 
-        end
-
-        % Get Feedforward gain
-        function [Kf] = getKf(obj)
-            Kf = obj.Kf;
         end
 
         function [F_b, M_b] = get_forces_and_moments(obj, state, target_state, disturbances, motor_params, CG, ~, time)
@@ -105,9 +95,10 @@ classdef RollPID < Controller
             % Anti-Wind Up logic
             obj.integral = obj.integral + obj.Ki * error * obj.Kb(clamped_torque - torque);
 
-            % Assign output forces and moments
-            F_b = [0 0 0]; % Assuming no force contribution
-            M_b = [clamped_torque 0 0]; 
+            % Pass control output to actutator to calculate forces and moments
+            % NEED TO DOUBLE CHECK INPUTS FOR FUNCTION
+            [F_b, M_b] = obj.actuator.get_forces_and_moments(torque, motor_params, CG); 
+
         end
 
         % Reset Controller 
