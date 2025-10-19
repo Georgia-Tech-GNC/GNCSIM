@@ -65,7 +65,7 @@ classdef RollPID < Controller
             Kb = obj.Kb; 
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, target_state, disturbances, rocket, motor_params, CG, ~, time) 
+        function [F_b, M_b] = get_forces_and_moments(obj, state, target_state, ~, rocket, motor_params, CG, ~, time) 
             % Pass control output to actutator to calculate forces and moments
             % NEED TO DOUBLE CHECK INPUTS FOR FUNCTION
             clamped_torque = computeControls(obj, state, target_state, time);
@@ -73,7 +73,7 @@ classdef RollPID < Controller
 
         end
 
-        function [clamped_torque] =  computeControls(obj, state, target_state, time)
+        function [clamped_torque] = computeControls(obj, state, target_state, time)
             % Roll Error
             error = target_state(6) - state(6); % Assuming roll is 6th position in state
 
