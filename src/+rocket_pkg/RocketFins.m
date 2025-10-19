@@ -132,24 +132,23 @@ classdef RocketFins < rocket_pkg.DatcomManager
 		end
 
 		function draw_fin(obj)
-			% Plots the 2D planform of the single reference fin.
-			
-			figure('Name', 'Fin Geometry');
-			hold on;
+            LE_root = [0, 0];
+            LE_tip  = [obj.fin_params.fin_span * tand(obj.fin_params.sweep_deg), obj.fin_params.fin_span];
+            TE_root = [obj.fin_params.root_chord, 0];
+            TE_tip  = [LE_tip(1) + obj.fin_params.tip_chord, obj.fin_params.fin_span];
             
-			% Plot the four vertices (X vs Y), connecting the last point to the first
-			plot([obj.fin_vertices(:, 1); obj.fin_vertices(1, 1)], ...
-                 [obj.fin_vertices(:, 2); obj.fin_vertices(1, 2)], 'k-')
-			
-			% Formatting the plot
-			title('Generated Wing Geometry');
-			xlabel('X - Longitudinal Axis (m)');
-			ylabel('Y - Spanwise Axis (m)');
+            % Create arrays for plotting
+            x = [LE_root(1), TE_root(1), TE_tip(1), LE_tip(1), LE_root(1)];
+            y = [LE_root(2), TE_root(2), TE_tip(2), LE_tip(2), LE_root(2)];
             
-			% Ensure axes have equal scaling for correct visual proportion
-			grid on;
-			axis equal;
-			hold off;
+            % Plot the fin
+            figure;
+            fill(x, y, [0.2 0.6 0.9], 'EdgeColor', 'k', 'LineWidth', 1.5);
+            axis equal;
+            xlabel('Chord direction (m)');
+            ylabel('Span direction (m)');
+            title(sprintf('Fin Geometry: Root chord=%.2f, Tip chord=%.2f, Fin span=%.2f, Sweep angle=%.1f°', obj.fin_params.root_chord, obj.fin_params.tip_chord, obj.fin_params.fin_span, obj.fin_params.sweep_deg));
+            grid on;
 		end
 	end
 end
