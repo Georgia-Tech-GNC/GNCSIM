@@ -42,16 +42,16 @@ classdef GPS < Sensor
                                 'VelocityAccuracy', gps_params.velocityAccuracy);
         end
 
-        function measurement = getMeasurement(obj, state, stateDot, currentTime)
+        function measurement = getMeasurement(obj, state, stateDot) %, currentTime)
             
-            if obj.isOutputReady(currentTime)
+            %if obj.isOutputReady(currentTime)
                 obj.posI = state(1:3);
                 obj.velB = state(4:6);
                 llaPos = NED2lla();
                 measurement = obj.gps(llaPos,obj.bodyVel);
-            else
-                measurement = [];
-            end
+           % else
+               % measurement = [];
+           % end
 
         end
 
@@ -72,8 +72,8 @@ classdef GPS < Sensor
 
             dx = -sin(phi)*cos(lambda)*xNED - sin(lambda)*yNED - cos(phi)*cos(lambda)*zNED;
             dy = -sin(phi)*sin(lambda)*xNED + cos(lambda)*yNED - cos(phi)*sin(lambda)*zNED;
-            dz =  cos(phi)*xNED - sin(phi)*zNED;
-
+            % dz =  cos(phi)*xNED - sin(phi)*zNED;
+            dz =  -cos(phi)*xNED + sin(phi)*zNED; % If NEU -> Check
             xECEF = refECEF(1) + dx;
             yECEF = refECEF(2) + dy;
             zECEF = refECEF(3) + dz;

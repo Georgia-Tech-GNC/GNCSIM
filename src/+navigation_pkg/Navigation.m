@@ -12,7 +12,11 @@ classdef Navigation
         Q
         R
         K 
-        q = [1;0;0;0];
+        q 
+        z
+        h = [1;1;1;0;0;0];
+        gyroRawData
+        accRawData
         accelerometer
         gyroscope
         gps
@@ -33,9 +37,26 @@ classdef Navigation
             
         end
 
-        function updatedState = runNavigation(state, stateDot)
+        function updatedState = runNavigation(obj, state, stateDot)
+            
+            obj.getRawData(state, stateDot);
+            obj.runAttitudeEstimation();
             obj.x = state(1:6);
-            obj.q = state(7:10);
+
+
+            obj.ekf();
+            
+            updatedState = [obj.x; obj.q; state(11:13)];
+
+        end
+
+         function obj = runAttitudeEstimation(obj) % Check what the dt is
+            wx = obj.gyroRawData(1);
+            wy = obj.gyroRawData(2);
+            wz = obj.gyroRawData(3);
+            q_delt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz, obj.dt);
+            q_new = obj.quatMulitply(obj.q, q_delt);
+            obj.q = q_new;
 
         end
 
@@ -47,25 +68,26 @@ classdef Navigation
             
 
             % Predict Step
-            obj.predictState(accI) 
+            obj.predictState() 
             obj.P = obj.predictCovariance();
 
             % Update Step
-            z = 0; % sensor data for this step -----------> sensor models
+            % sensor data for this step -----------> sensor models
             obj.K = kalmanGain();
             obj.x = obj.updateState();
             obj.P = updateCovariance();
 
         end
 
-        function obj = predictState(obj, accI)
+        function obj = predictState(obj)
 
-            obj.x(1) = obj.x(1) + obj.x(4)*obj.dt + accI(1) * ((obj.dt^2)/2);
-            obj.x(2) = obj.x(2) + obj.x(5)*obj.dt + accI(2) * ((obj.dt^2)/2);
-            obj.x(3) = obj.x(3) + obj.x(6)*obj.dt + accI(3) * ((obj.dt^2)/2);
-            obj.x(4) = obj.x(4) + accI(1) * obj.dt; 
-            obj.x(5) = obj.x(5) + accI(2) * obj.dt; % WRONG WROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOn
-            obj.x(6) = obj.x(6) + accI(3) * obj.dt;
+            accI = obj.accBodytoInertial();
+            obj.x(1) = obj.x(1) + Utils.quatrotate(conj(obj.q),obj.x(4))*obj.dt + accI(1) * ((obj.dt^2)/2);
+            obj.x(2) = obj.x(2) + Utils.quatrotate(conj(obj.q),obj.x(5))*obj.dt + accI(2) * ((obj.dt^2)/2);
+            obj.x(3) = obj.x(3) + Utils.quatrotate(conj(obj.q),obj.x(6))*obj.dt + accI(3) * ((obj.dt^2)/2);
+            obj.x(4) = obj.x(4) + Utils.quatrotate(obj.q,accI(1)) * obj.dt; 
+            obj.x(5) = obj.x(5) + Utils.quatrotate(obj.q,accI(2)) * obj.dt; % WRONG WROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOn
+            obj.x(6) = obj.x(6) + Utils.quatrotate(obj.q,accI(3)) * obj.dt;
 
         end
 
@@ -78,7 +100,7 @@ classdef Navigation
 
         function obj = updateState(obj)
 
-            y = obj.z - obj.h(obj.x);
+            y = obj.z - obj.h(obj.x); % Need to do z and h
             obj.x = obj.x + obj.K * y;
 
         end
@@ -98,7 +120,14 @@ classdef Navigation
         end
 
         %% Sensor Data
-        
+        % Need to interp1(extrap) --> Vector of times we got sensor data,
+        % vector of sensor data, current time we want to interpolate to
+        % 
+        function obj = getRawData(obj, state, stateDot)
+            obj.z = obj.gps.getMeasurement(state,stateDot); % eventually fix
+            obj.accRawData = obj.accelerometer.getMeasurment(state,stateDot);
+            obj.gyroRawData = obj.gyroscope.getMeasuremtn(staqte,stateDot);
+        end
         %% Frame Transformation Functions
 
         % GPS
@@ -125,7 +154,7 @@ classdef Navigation
             
             [xECEF, yECEF, zECEF] = LLA2ECEF(lat, lon, alt);
 
-            refECEF = LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));
+            refECEF = LLA2ECEF(obj.gps.refLLA(1), obj.gps.refLLA(2), obj.gps.refLLA(3));
             dx = xECEF - refECEF(1);
             dy = yECEF - refECEF(2);
             dz = zECEF - refECEF(3);
@@ -139,9 +168,37 @@ classdef Navigation
 
         end
 
-        function [accI] = accBodytoInertial(accBody)
-            accI = Utils.quatrotate(conj(qBI), accBody) + [0,0,9.81];
+        function [accI] = accBodytoInertial(obj)
+            accI = Utils.quatrotate(conj(obj.q), obj.accRawData) + [0,0,9.81];
         end
+    
+        function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor
 
+            omegaVec = [wx wy wz];
+            
+            if norm(omegaVec) == 0
+                omegaVec = omegaVec + 0.001;
+            end
+            
+            axis = omegaVec./norm(omegaVec);
+            angle = obj.dt*norm(omegaVec);
+            
+            q_delt_s = cos(angle/2);
+            q_delt_x = axis(1)*sin(angle/2);
+            q_delt_y = axis(2)*sin(angle/2);
+            q_delt_z = axis(3)*sin(angle/2);
+            
+            q_delt = [q_delt_s; q_delt_x; q_delt_y; q_delt_z];
+            
+       end
+        
+       function [quat_new]= quatMulitply(obj, q1,q2)
+            
+            q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
+            q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
+                
+            quat_new = [q_s_new; q_ang_new];
+                
+       end
     end
 end

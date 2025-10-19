@@ -57,17 +57,17 @@ classdef Accelerometer < Sensor
             noisyAccel = (1 + obj.SF) .* accelIMU + obj.bias + noise;
         end
 
-        function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            if obj.isOutputReady(currentTime)
+        function measurement = getMeasurement(obj, state, stateDot)%, currentTime)
+           % if obj.isOutputReady(currentTime)
                 obj.qBI = state(7:10);
                 obj.angVelB = state(11:13);
-                obj.accelB = stateDot(4:6); 
+                obj.accelB = stateDot(5:7); % Is mdot at index 1? 
     
                 accelIMU = obj.accLeverArm();
                 measurement = obj.addNoise(accelIMU);
-            else
-                measurement = [];
-            end
+          %  else
+            %    measurement = [];
+          %  end
         end
     end
 end
