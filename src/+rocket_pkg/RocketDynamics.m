@@ -1,5 +1,6 @@
-classdef RocketDynamics < handle
-	properties
+classdef RocketDynamics < handle&Exportable
+
+	properties (SetAccess = private)
 		body
 		rocket_fins
 		motor_params
@@ -30,6 +31,18 @@ classdef RocketDynamics < handle
             obj.navigation = navigation;
             obj.aerodynamics = aerodynamics;
         end
+
+        function restoreFromStruct(obj, s)
+        % Restore all properties from a struct (bypasses SetAccess=private)
+            f = fieldnames(s); % Get all field names from the struct 's'
+            for i = 1:numel(f) % Loop thru each field
+                try
+                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
+                catch ME % Warning if fails so it doesn't crash
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
 
         function [m, CG, moi] = interp_mass_CG_MOI(t)
             % Need to pass in thrust curve somehow

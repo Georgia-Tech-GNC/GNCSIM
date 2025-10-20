@@ -1,6 +1,6 @@
 % Main Authors: Hridai Ambati (ported from GNCSIM 1.0, might need to tweak
 % stuff)
-classdef Environment
+classdef Environment < handle&Exportable
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -21,6 +21,7 @@ classdef Environment
     end
 
     methods
+
         function obj = Environment()
             %   Constructing Default Environment Class
             %   Assumes Default Wind Parameters as defined in MonteCarlo
@@ -33,6 +34,30 @@ classdef Environment
             % plot(obj.wind_vec, obj.alts, 'LineWidth', 1);
 
         end
+
+        function restoreFromStruct(obj, s)
+        % Restore all properties from a struct (bypasses SetAccess=private)
+            f = fieldnames(s); % Get all field names from the struct 's'
+            for i = 1:numel(f) % Loop thru each field
+                try
+                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
+                catch ME % Warning if fails so it doesn't crash
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
+
+        function restoreFromStruct(obj, s)
+        % Restore all properties from a struct (bypasses SetAccess=private)
+            f = fieldnames(s); % Get all field names from the struct 's'
+            for i = 1:numel(f) % Loop thru each field
+                try
+                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
+                catch ME % Warning if fails so it doesn't crash
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
         
         function windspeed = get_windspeed(obj, alt)
             wind_index = max(min(round(alt / obj.step_size), obj.max_altitude), 1);

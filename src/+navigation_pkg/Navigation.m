@@ -1,8 +1,8 @@
-classdef Navigation
+classdef Navigation < handle&Exportable
     % Sensor Modeling & State Estimation
     % 
 
-    properties
+    properties (SetAccess = private)
         
         dt
         currentTime 
@@ -34,18 +34,42 @@ classdef Navigation
     end
 
     methods
-        function obj = Navigation(nav_params, gps, gyroscope, accelerometer)
-            
-            obj.dt = nav_params.dt;
-            obj.P = nav_params.P;
-            obj.dfdx = nav_params.dfdx;
-            obj.Q = nav_params.Q;
-            
-            obj.gps = gps;
-            obj.gyroscope = gyroscope;
-            obj.accelerometer = accelerometer;
-            
+
+        function obj = Navigation(varargin)
+            if nargin == 0
+                % Empty constructor for loading from MAT/Exportable
+                return
+            elseif nargin == 4
+                nav_params = varargin{1};
+                gps = varargin{2};
+                gyroscope = varargin{3};
+                accelerometer = varargin{4};
+                
+                obj.dt = nav_params.dt;
+                obj.P = nav_params.P;
+                obj.dfdx = nav_params.dfdx;
+                obj.Q = nav_params.Q;
+                
+                obj.gps = gps;
+                obj.gyroscope = gyroscope;
+                obj.accelerometer = accelerometer;
+            else
+                 error('Navigation constructor expects either 0 or 4 input arguments.');
+            end
         end
+        % wrap added by Zhanna S
+
+        function restoreFromStruct(obj, s)
+        % Restore all properties from a struct (bypasses SetAccess=private)
+            f = fieldnames(s); % Get all field names from the struct 's'
+            for i = 1:numel(f) % Loop thru each field
+                try
+                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
+                catch ME % Warning if fails so it doesn't crash
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
 
         function updatedState = runNavigation(obj, state, stateDot)
             

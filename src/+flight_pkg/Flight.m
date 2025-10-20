@@ -1,4 +1,9 @@
+<<<<<<< HEAD:src/+flight_pkg/Flight.m
 classdef Flight < handle
+=======
+
+classdef Flight < handle&Exportable
+>>>>>>> fe8bb4d009c9ca0909dfb552c9a1fcaead78f728:src/Flight.m
     properties
         rocket_dyn
         environment
@@ -11,18 +16,54 @@ classdef Flight < handle
         dt
     end
     methods
+<<<<<<< HEAD:src/+flight_pkg/Flight.m
         function obj = Flight(rocket_dyn, environment, breakPoints, flightParams)
             obj.rocket_dyn = rocket_dyn;
             obj.environment = environment;
             obj.breakPoints = breakPoints;
             obj.flightParams = flightParams;
+=======
+        function obj = Flight(varargin)
+            if varargin == 0
+                return
+            elseif varargin == 6
+                rocket_dyn = varargin{1}; 
+                controller = varargin{2}; 
+                environment = varargin{3};
+                navigation = varargin{4}; 
+                breakPoints = varargin{5}; 
+                flightParams = varargin{6};
+                
+                obj.rocket_dyn = rocket_dyn;
+                obj.controller = controller;
+                obj.environment = environment;
+                obj.navigation = navigation;
+                obj.breakPoints = breakPoints;
+                obj.flightParams = flightParams;
+    
+                obj.dt = obj.flightParams.dt;
+                obj.x0 = obj.flightParams.x0;
+                obj.totalTime = obj.flightParams.totalTime;
+                
+                %obj.rocket_dyn.calc_moi()
+            else
+                % ERROR: Catches any other number of inputs
+                error('Flight constructor expects either 0 (for loading) or 6 input arguments.');
+            end
+        end % wrap added by Zhanna S
+>>>>>>> fe8bb4d009c9ca0909dfb552c9a1fcaead78f728:src/Flight.m
 
-            obj.dt = obj.flightParams.dt;
-            obj.x0 = obj.flightParams.x0;
-            obj.totalTime = obj.flightParams.totalTime;
-            
-            %obj.rocket_dyn.calc_moi()
-        end
+        function restoreFromStruct(obj, s)
+        % Restore all properties from a struct (bypasses SetAccess=private)
+            f = fieldnames(s); % Get all field names from the struct 's'
+            for i = 1:numel(f) % Loop thru each field
+                try
+                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
+                catch ME % Warning if fails so it doesn't crash
+                    warning('Could not restore %s: %s', f{i}, ME.message);
+                end
+            end
+        end % function added by Zhanna S
 
         % TODO: Build setters for all attributes
             
