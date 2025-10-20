@@ -4,7 +4,7 @@ clear; clc; close all;
 %% Instantiate Classes
 
 % Rocket Dynamics
-rocketDynamics = setupRocketDynamics();
+[rocketDynamics, rocket_params, motor_params] = setupRocketDynamics();
 
 % Setup Environment
 environment = setupEnvironment();
@@ -15,27 +15,28 @@ aerodynamics = setupAerodynamics();
 controller = setupController(rocketDynamics);
 
 % Setup BreakPoints
-breakPoints = setupBreakPoints(controller); % who the hell is 'BreakPoints': missing defined class file, cannot make exportable
+breakPoints = setupBreakPoints(); % [closed] who the hell is 'BreakPoints': missing defined class file, cannot make exportable
 
 % Setup Navigation
 navigation = setupNavigation();
 
 % Setup Flight Simulation
-flight = setupFlight(rocketDynamics, controller, environment, navigation);
+flight = setupFlight(rocketDynamics, controller, environment, navigation, breakPoints);
 
 %% Run Flight
-[t, x, Fb, Mb] = flight.run_sim();
+[tArr, xArr, FbArr, MbArr] = flight.runSim();
 
-flight.plotFlight(t_arr, x_arr);
+% Plot Flight
+flight.plotFlight(tArr, xArr);
 
 %% Analysis
 n = 1; %For single flight
-analysis = analysis_pkg.Analysis(t, x, n, Fb, Mb);
+analysis = analysis_pkg.Analysis(tArr, xArr, n, FbArr, MbArr);
 analysis.GenerateAllPlots();
 
 %% Setup Functions
 
-function rocket_dyn = setupRocket()
+function [rocket_dyn, rocket_params, motor_params] = setupRocketDynamics()
     % Create Rocket Params
     rocket_params.mass_wet = 40.912994; % kg
     rocket_params.mass_dry = 32.619994;
@@ -95,7 +96,6 @@ function rocket_dyn = setupRocket()
 
     % Create rocket dynamics object
     body = rocket_pkg.RocketBody(body_params);
-    
     rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
 end
 
@@ -145,10 +145,16 @@ function [aerodynamics] = setupAerodynamics()
     aero_forces_moments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
 end
 
-
 function breakPoints = setupBreakPoints()
-    % fill in once breakPoints here
-end
+    breakPoints = BreakPoints();
+
+    % Example: add dummy break points (replace with trajectory generator later)
+    % progressValue could be altitude or ΔV idk just some random stuff
+    % below for now
+    breakPoints.addBreakPoint(0,   zeros(6,1), zeros(2,1), eye(6), eye(6,2), [1 0]);
+    breakPoints.addBreakPoint(100, zeros(6,1), zeros(2,1), eye(6), eye(6,2), [0.8 0.2]);
+    % remove the dummy above, please, and replace with real stuff
+end 
 
 function controller = setupController() % Where should I implement trimpoints?
     % State: [u, v, w, p, q, r, q0, q1, q2, q3]
