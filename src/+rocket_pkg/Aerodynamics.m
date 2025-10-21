@@ -83,7 +83,7 @@ classdef Aerodynamics < handle&Exportable
             MAz_function = obj.MAz_func;
         end
 
-        function [FAb, MAb]= calcAeroBodyFrame_JV(obj, u, v, w, p, r, rho, CG)
+        function [FAb, MAb]= getAeroForcesMoments(obj, state, rho, CG)
             % Inputs [u v w] in (m/s). Inputs [p r] in (rad/s). Input rho
             % in kg/m^3. Input CG in m from tip of nosecone.
 

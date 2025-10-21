@@ -4,15 +4,16 @@ clear; clc; close all;
 %% Instantiate Classes
 
 % Rocket Dynamics
-[rocketDynamics, rocket_params, motor_params] = setupRocketDynamics();
+[rocket_dyn, rocket_params, motor_params] = setupRocketDynamics(); % no controller or navigation in here, those go into Flight later
 
 % Setup Environment
 environment = setupEnvironment();
 
+% Setup CFD Aerodynamics
 aerodynamics = setupAerodynamics();
 
 % Setup Controller
-controller = setupController(rocketDynamics);
+controller = setupController();
 
 % Setup BreakPoints
 breakPoints = setupBreakPoints(); % [closed] who the hell is 'BreakPoints': missing defined class file, cannot make exportable
@@ -20,8 +21,15 @@ breakPoints = setupBreakPoints(); % [closed] who the hell is 'BreakPoints': miss
 % Setup Navigation
 navigation = setupNavigation();
 
+% Rocket Dynamics
+% rocketDynamics = setupRocket(controller, navigation, aerodynamics); I
+% think it makes more sense to pass controller, navigation into flight, not
+% RocketDynamics. It will be too annoying to have to change RocketDynamics
+% file if we switch controllers, no?
+% REDUNDANT
+
 % Setup Flight Simulation
-flight = setupFlight(rocketDynamics, controller, environment, navigation, breakPoints);
+flight = setupFlight(rocket_dyn, controller, environment, navigation, breakPoints);
 
 %% Run Flight
 [tArr, xArr, FbArr, MbArr] = flight.runSim();
@@ -37,6 +45,7 @@ analysis.GenerateAllPlots();
 %% Setup Functions
 
 function [rocket_dyn, rocket_params, motor_params] = setupRocketDynamics()
+
     % Create Rocket Params
     rocket_params.mass_wet = 40.912994; % kg
     rocket_params.mass_dry = 32.619994;
@@ -58,7 +67,6 @@ function [rocket_dyn, rocket_params, motor_params] = setupRocketDynamics()
     body_params.rocket_diameter = 0.203;    % [m]
 
     % Motor params
-
     motor_params.burn_time = 13.1; % s
     motor_params.tc = [0.0, 0.457288;
         0.152, 0.314574;
@@ -93,8 +101,15 @@ function [rocket_dyn, rocket_params, motor_params] = setupRocketDynamics()
         14.6754, 12.60914;
         16.1354, 0.0;];
 
-
-    % Create rocket dynamics object
+    % Create rocket dynamics object    
+% trash below, please replace later with REAL dimensions
+    fins_params.span       = 0.15;       % [m] placeholder
+    fins_params.root_chord = 0.20;       % [m]
+    fins_params.tip_chord  = 0.10;       % [m]
+    fins_params.sweep      = 20*pi/180;  % [rad]
+    fins_params.n_fins     = 4;
+    fins = rocket_pkg.Fins(fins_params);
+% REMOVE STUFF ABOVE
     body = rocket_pkg.RocketBody(body_params);
     rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
 end
@@ -175,7 +190,60 @@ function controller = setupController() % Where should I implement trimpoints?
 end
 
 function navigation = setupNavigation()
-    % Implement When Nav Class Finishes
+    % Navigation
+    %nav_params.acc_noise = 0.01;
+    %nav = Navigation(nav_params);
+
+    acc_params.VRW = -1;
+    acc_params.leverArm = -1;
+    acc_params.SF = -1;
+    acc_params.bias = -1;
+
+    acc_params.noiseCovariance = -1;
+    acc_params.outputRate = -1;
+    acc_params.outputProbability = -1;
+    acc_params.observationMatrix = -1;
+    accelerometer = navigation_pkg.Accelerometer(acc_params);
+
+    gps_params.refLLA = [33.776, -84.399, 306];
+    gps_params.verticalAccuracy = 1;
+    gps_params.horizontalAccuracy = 1;
+    gps_params.velocityAccuracy = 1;
+
+    gps_params.noiseCovariance = -1;
+    gps_params.outputRate = -1;
+    gps_params.outputProbability = -1;
+    gps_params.observationMatrix = -1;
+    gps = navigation_pkg.GPS(gps_params);
+
+    gyro_params.ARW = -1;
+    gyro_params.bias = -1;
+
+    gyro_params.noiseCovariance = -1;
+    gyro_params.outputRate = -1;
+    gyro_params.outputProbability = -1;
+    gyro_params.observationMatrix = -1;
+    gyroscope = navigation_pkg.Gyroscope(gyro_params);
+
+    nav_params.dt = .1;
+    dt = nav_params.dt;
+    nav_params.P = 0.1 * eye(6);
+    nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
+        0,                        1, 0,                        0, 0,                        0
+        0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
+        0,                        0, 0,                        1, 0,                        0
+        0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
+        0,                        0, 0,                        0, 0,                        1];
+
+    sigma_a = 10;
+    nav_params.Q = sigma_a^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
+                     (dt^3)/2,     dt^2,          0,           0,              0,          0;
+                           0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
+                           0,         0,   (dt^3)/2,        dt^2,              0,          0;
+                           0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
+                           0,         0,          0,           0,       (dt^3)/2,      dt^2];    
+
+    navigation = navigation_pkg.Navigation(nav_params, gps, gyroscope, accelerometer);
 end
 
 function flight = setupFlight(rocketDynamics, controller, environment, navigation, breakPoints)

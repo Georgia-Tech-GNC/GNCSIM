@@ -1,10 +1,12 @@
+<<<<<<< HEAD:src/+flight_pkg/Flight.m
+classdef Flight < handle
+=======
 
 classdef Flight < handle&Exportable
+>>>>>>> fe8bb4d009c9ca0909dfb552c9a1fcaead78f728:src/Flight.m
     properties
         rocket_dyn
-        controller
         environment
-        navigation
         breakPoints
 
         flightParams
@@ -14,6 +16,13 @@ classdef Flight < handle&Exportable
         dt
     end
     methods
+<<<<<<< HEAD:src/+flight_pkg/Flight.m
+        function obj = Flight(rocket_dyn, environment, breakPoints, flightParams)
+            obj.rocket_dyn = rocket_dyn;
+            obj.environment = environment;
+            obj.breakPoints = breakPoints;
+            obj.flightParams = flightParams;
+=======
         function obj = Flight(varargin)
             if varargin == 0
                 return
@@ -42,6 +51,7 @@ classdef Flight < handle&Exportable
                 error('Flight constructor expects either 0 (for loading) or 6 input arguments.');
             end
         end % wrap added by Zhanna S
+>>>>>>> fe8bb4d009c9ca0909dfb552c9a1fcaead78f728:src/Flight.m
 
         function restoreFromStruct(obj, s)
         % Restore all properties from a struct (bypasses SetAccess=private)
@@ -56,8 +66,6 @@ classdef Flight < handle&Exportable
         end % function added by Zhanna S
 
         % TODO: Build setters for all attributes
-
-        %function calc_moi()
             
         %end
 
@@ -91,17 +99,15 @@ classdef Flight < handle&Exportable
         end
 
         function x_dot = rocket_model(obj, state)
-            h = state(4);
-            %disturbances.wind = obj.environment.get_wind(h);  TODO
-            disturbances.wind = 0;
+            altitude = state(4);
+            disturbances.wind = obj.environment.get_windspeed(altitude);
             
-            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime);
+            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
             x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
         
         % To avoid -> replace by Log class
         function [F_b, M_b] = get_forces_and_moments_wrapper(obj, state) %Duplicate of rocket_model method to get F_b and M_b
-            h = state(4);
             %disturbances.wind = obj.environment.get_wind(h);  TODO
             disturbances.wind = 0;
             

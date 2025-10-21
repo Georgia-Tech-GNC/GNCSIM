@@ -183,7 +183,6 @@ function nav = setup_navigation()
                            0,         0,          0,           0,       (dt^3)/2,      dt^2];    
 
     nav = navigation_pkg.Navigation(nav_params, gps, gyroscope, accelerometer);
-    
 end
 
 function flight = setup_flight(rocket_dyn)
