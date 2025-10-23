@@ -9,7 +9,7 @@ run_DATCOM(rocket_dyn)
 
 flight = setup_flight(rocket_dyn);
 
-%flight.rocket_dyn.draw()
+flight.rocketDyn.draw()
 
 %% Run Flight
 %[t, x, Fb, Mb] = flight.run_sim();
@@ -18,7 +18,7 @@ flight = setup_flight(rocket_dyn);
 %% Analysis
 n = 1; %For single flight
 %analysis = analysis_pkg.Analysis(t, x, n, Fb, Mb);
-analysis.GenerateAllPlots();
+%analysis_pkg.GenerateAllPlots();
 
 %flight.draw_traj()
 
