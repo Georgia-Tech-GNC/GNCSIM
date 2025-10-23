@@ -1,12 +1,11 @@
-<<<<<<< HEAD:src/+flight_pkg/Flight.m
-classdef Flight < handle
-=======
+
 
 classdef Flight < handle&Exportable
->>>>>>> fe8bb4d009c9ca0909dfb552c9a1fcaead78f728:src/Flight.m
     properties
-        rocket_dyn
+        rocketDyn
+        controller
         environment
+        navigation
         breakPoints
 
         flightParams
@@ -16,25 +15,18 @@ classdef Flight < handle&Exportable
         dt
     end
     methods
-<<<<<<< HEAD:src/+flight_pkg/Flight.m
-        function obj = Flight(rocket_dyn, environment, breakPoints, flightParams)
-            obj.rocket_dyn = rocket_dyn;
-            obj.environment = environment;
-            obj.breakPoints = breakPoints;
-            obj.flightParams = flightParams;
-=======
         function obj = Flight(varargin)
-            if varargin == 0
+            if nargin == 0
                 return
-            elseif varargin == 6
-                rocket_dyn = varargin{1}; 
+            elseif nargin == 6
+                rocketDyn = varargin{1}; 
                 controller = varargin{2}; 
                 environment = varargin{3};
                 navigation = varargin{4}; 
                 breakPoints = varargin{5}; 
                 flightParams = varargin{6};
                 
-                obj.rocket_dyn = rocket_dyn;
+                obj.rocketDyn = rocketDyn;
                 obj.controller = controller;
                 obj.environment = environment;
                 obj.navigation = navigation;
@@ -51,7 +43,6 @@ classdef Flight < handle&Exportable
                 error('Flight constructor expects either 0 (for loading) or 6 input arguments.');
             end
         end % wrap added by Zhanna S
->>>>>>> fe8bb4d009c9ca0909dfb552c9a1fcaead78f728:src/Flight.m
 
         function restoreFromStruct(obj, s)
         % Restore all properties from a struct (bypasses SetAccess=private)

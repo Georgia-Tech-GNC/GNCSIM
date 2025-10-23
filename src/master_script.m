@@ -12,12 +12,12 @@ flight = setup_flight(rocket_dyn);
 %flight.rocket_dyn.draw()
 
 %% Run Flight
-[t, x, Fb, Mb] = flight.run_sim();
+%[t, x, Fb, Mb] = flight.run_sim();
 
 
 %% Analysis
 n = 1; %For single flight
-analysis = analysis_pkg.Analysis(t, x, n, Fb, Mb);
+%analysis = analysis_pkg.Analysis(t, x, n, Fb, Mb);
 analysis.GenerateAllPlots();
 
 %flight.draw_traj()
@@ -187,8 +187,8 @@ end
 
 function flight = setup_flight(rocket_dyn)
     % Flight
-    flight_params.sim_time = 2;  % length of simulation [s]
-    flight_params.dt = 0.01;  % time step [s]
+    flightParams.totalTime = 2;  % length of simulation [s]
+    flightParams.dt = 0.01;  % time step [s]
 
     mass_0 = 20;
     pos_0 = [0, 0, 5000];
@@ -196,12 +196,13 @@ function flight = setup_flight(rocket_dyn)
     quat_0 = [1, 0, 0 ,0];
     omega_0 = [0, .1, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
-    flight_params.x0 = state_0;
-    
+    flightParams.x0 = state_0;
+
     nav = -1;
+    breakPoints = -1;
     environment = -1;
     controller = -1;
-    flight = Flight(rocket_dyn, controller, environment, nav, flight_params);
+    flight = flight_pkg.Flight(rocket_dyn, controller, environment, nav, breakPoints, flightParams);
 end
 
 function monte_carlo = setup_MonteCarlo()
