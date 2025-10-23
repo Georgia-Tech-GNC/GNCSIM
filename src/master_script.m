@@ -12,7 +12,7 @@ flight = setup_flight(rocket_dyn);
 flight.rocketDyn.draw()
 
 %% Run Flight
-%[t, x, Fb, Mb] = flight.run_sim();
+[t, x, Fb, Mb] = flight.runSim();
 
 
 %% Analysis
@@ -191,10 +191,10 @@ function flight = setup_flight(rocket_dyn)
     flightParams.dt = 0.01;  % time step [s]
 
     mass_0 = 20;
-    pos_0 = [0, 0, 5000];
-    vel_0 = [100, 0, 0];
-    quat_0 = [1, 0, 0 ,0];
-    omega_0 = [0, .1, 0];
+    pos_0 = [0, 0, 0];
+    vel_0 = [0, 0, 100];
+    quat_0 = Utils.euler_to_quat([0, -90, 0]).';
+    omega_0 = [0, 0, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
     flightParams.x0 = state_0;
 

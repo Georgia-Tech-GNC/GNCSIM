@@ -84,7 +84,7 @@ classdef RocketDynamics < handle&Exportable
             
             % computes aero forces and moments 
             % Need to think on how to implement wind frame
-            if isempty(obj.aerodynamics):
+            if isempty(obj.aerodynamics)
                 [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
                 [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
                 F_b_aero = F_b_fins + F_b_body;

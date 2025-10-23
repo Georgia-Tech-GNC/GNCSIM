@@ -91,9 +91,10 @@ classdef Flight < handle&Exportable
 
         function x_dot = rocket_model(obj, state)
             altitude = state(4);
-            disturbances.wind = obj.environment.get_windspeed(altitude);
+            %disturbances.wind = obj.environment.get_windspeed(altitude);
+            disturbances.wind = zeros(3);
             
-            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
+            [F_b, M_b] = obj.rocketDyn.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
             x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
         
@@ -102,10 +103,10 @@ classdef Flight < handle&Exportable
             %disturbances.wind = obj.environment.get_wind(h);  TODO
             disturbances.wind = 0;
             
-            [F_b, M_b] = obj.rocket_dyn.get_forces_and_moments(state, disturbances, obj.currentTime);
+            [F_b, M_b] = obj.rocketDyn.get_forces_and_moments(state, disturbances, obj.currentTime);
         end
 
-        function [state_dot] = flatEarth_EOM(state, F_b, M_b)   
+        function [state_dot] = flatEarth_EOM(obj, state, F_b, M_b)   
             mass = state(1);
             %pos = state(2:4);  % not needed
             vel = state(5:7);
