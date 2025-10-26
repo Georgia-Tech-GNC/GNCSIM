@@ -30,19 +30,26 @@ classdef Gyroscope < Sensor
             obj.outputProbability = gyro_params.outputProbability;
             obj.observationMatrix = gyro_params.observationMatrix;
 
+            obj.outputPeriod = 1 / obj.outputRate;
+            obj.lastOutputTime = 0;
+            obj.nextOutputTime = obj.outputPeriod;
+
             obj.ARW = gyro_params.ARW;
             obj.bias = gyro_params.bias;
 
         end
 
-        function measurement = getMeasurement(obj, state, stateDot)%, currentTime)
+        function measurement = getMeasurement(obj, state, stateDot, currentTime)
 
-           % if obj.isOutputReady(currentTime)
-                obj.w = state(11:13);
-                measurement = obj.w % obj.addNoise(); % Add noise
-           % else
-                %measurement = [];
-           % end
+            if obj.isOutputReady(currentTime)
+                obj.w = state(12:14);
+                measurement = obj.addNoise(); % Add noise
+            else
+                measurement = [];
+            end
+
+            obj.scheduleNextOutput(currentTime);
+
         end
 
         function noisyGyro = addNoise(obj)

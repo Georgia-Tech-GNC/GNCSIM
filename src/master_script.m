@@ -130,43 +130,50 @@ end
 
 function nav = setup_navigation()
     % Navigation
-    %nav_params.acc_noise = 0.01;
-    %nav = Navigation(nav_params);
 
+    % Acc
     acc_params.VRW = -1;
     acc_params.leverArm = -1;
     acc_params.SF = -1;
     acc_params.bias = -1;
 
     acc_params.noiseCovariance = -1;
-    acc_params.outputRate = -1;
-    acc_params.outputProbability = -1;
-    acc_params.observationMatrix = -1;
+    acc_params.outputRate = 100;
+    acc_params.outputProbability = 1;
+    acc_params.observationMatrix = zeros(3);
+
+   
     accelerometer = navigation_pkg.Accelerometer(acc_params);
 
+    % GPS
     gps_params.refLLA = [33.776, -84.399, 306];
     gps_params.verticalAccuracy = 1;
     gps_params.horizontalAccuracy = 1;
     gps_params.velocityAccuracy = 1;
 
     gps_params.noiseCovariance = -1;
-    gps_params.outputRate = -1;
-    gps_params.outputProbability = -1;
-    gps_params.observationMatrix = -1;
+    gps_params.outputRate = 10;
+    gps_params.outputProbability = .8;
+    gps_params.observationMatrix = eye(3);
+
+
     gps = navigation_pkg.GPS(gps_params);
 
+    % Gyro
     gyro_params.ARW = -1;
     gyro_params.bias = -1;
 
     gyro_params.noiseCovariance = -1;
-    gyro_params.outputRate = -1;
-    gyro_params.outputProbability = -1;
-    gyro_params.observationMatrix = -1;
+    gyro_params.outputRate = 100;
+    gyro_params.outputProbability = 1;
+    gyro_params.observationMatrix = zeros(3);
+
     gyroscope = navigation_pkg.Gyroscope(gyro_params);
 
     nav_params.dt = .1;
     dt = nav_params.dt;
     nav_params.P = 0.1 * eye(6);
+
     nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
         0,                        1, 0,                        0, 0,                        0
         0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
@@ -175,6 +182,7 @@ function nav = setup_navigation()
         0,                        0, 0,                        0, 0,                        1];
 
     sigma_a = 10;
+
     nav_params.Q = sigma_a^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
                      (dt^3)/2,     dt^2,          0,           0,              0,          0;
                            0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;

@@ -21,7 +21,6 @@ classdef GPS < Sensor
         gpsBuiltIn    
     end
 
-    % Still need to implement sensor error/bias
 
     methods
 
@@ -33,6 +32,10 @@ classdef GPS < Sensor
             obj.outputProbability = gps_params.outputProbability;
             obj.observationMatrix = gps_params.observationMatrix;
 
+            obj.outputPeriod = 1 / obj.outputRate;
+            obj.lastOutputTime = 0;
+            obj.nextOutputTime = obj.outputPeriod;
+
             obj.refLLA = gps_params.refLLA;
             obj.gpsBuiltIn = gpsSensor('SampleRate', obj.outputRate, ...
                                 'ReferenceLocation', obj.refLLA, ...
@@ -42,16 +45,18 @@ classdef GPS < Sensor
                                 'VelocityAccuracy', gps_params.velocityAccuracy);
         end
 
-        function measurement = getMeasurement(obj, state, stateDot) %, currentTime)
+        function measurement = getMeasurement(obj, state, stateDot, currentTime)
             
-            %if obj.isOutputReady(currentTime)
+            if obj.isOutputReady(currentTime)
                 obj.posI = state(1:3);
                 obj.velB = state(4:6);
                 llaPos = NED2lla();
                 measurement = obj.gpsBuiltIn(llaPos,obj.bodyVel);
-           % else
-               % measurement = [];
-           % end
+            else
+                measurement = [];
+            end
+
+            obj.scheduleNextOutput(currentTime);
 
         end
 

@@ -35,10 +35,31 @@ classdef Accelerometer < Sensor
             obj.outputProbability = acc_params.outputProbability;
             obj.observationMatrix = acc_params.observationMatrix;
 
+            obj.outputPeriod = 1 / obj.outputRate;
+            obj.lastOutputTime = 0;
+            obj.nextOutputTime = obj.outputPeriod;
+
             obj.leverArm = acc_params.leverArm;
             obj.SF = acc_params.SF;
             obj.bias = acc_params.bias;
             obj.VRW = acc_params.VRW;
+
+        end
+
+        function measurement = getMeasurement(obj, state, stateDot, currentTime)
+            
+            if obj.isOutputReady(currentTime)
+                obj.qBI = state(8:11);
+                obj.angVelB = state(12:14);
+                obj.accelB = stateDot(5:7); 
+    
+                accelIMU = obj.accLeverArm();
+                measurement = obj.addNoise(accelIMU);
+            else
+                measurement = [];
+            end
+
+            obj.scheduleNextOutput(currentTime);
 
         end
 
@@ -56,19 +77,8 @@ classdef Accelerometer < Sensor
             % Add noise, bias, and scale factor
             noise = obj.VRW .* sqrt(obj.outputRate) .* randn(3,1);
             noisyAccel = (1 + obj.SF) .* accelIMU + obj.bias + noise;
+
         end
 
-        function measurement = getMeasurement(obj, state, stateDot)%, currentTime)
-           % if obj.isOutputReady(currentTime)
-                obj.qBI = state(7:10);
-                obj.angVelB = state(11:13);
-                obj.accelB = stateDot(5:7); % Is mdot at index 1? 
-    
-                accelIMU = obj.accLeverArm();
-                measurement = accelIMU %obj.addNoise(accelIMU);
-          %  else
-            %    measurement = [];
-          %  end
-        end
     end
 end

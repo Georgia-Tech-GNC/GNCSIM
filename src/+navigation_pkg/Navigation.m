@@ -17,9 +17,11 @@ classdef Navigation < handle&Exportable
              0 4.2 0;
              0 0 4.2];
         K 
-        q 
+        q = [1/sqrt(2),0,1/sqrt(2),0];
         z
         h = @(x)[x(1);x(2);x(3)];
+
+        gpsRawData
         gyroRawData
         accRawData
 
@@ -71,25 +73,26 @@ classdef Navigation < handle&Exportable
             end
         end % function added by Zhanna S
 
-        function updatedState = runNavigation(obj, state, stateDot)
+        function ekfState = runNavigation(obj, state, stateDot)
             
             obj.getRawData(state, stateDot);
-            obj.runAttitudeEstimation();
-            obj.x = state(1:6);
+            if obj.currentTime ~= 0
+                obj.runAttitudeEstimation();
+            end
 
-
+            obj.x = state(2:7);
             obj.ekf();
             
-            updatedState = [obj.x; obj.q; state(11:13)];
+            ekfState = [state(1); obj.x; obj.q; state(12:14)];
             
 
         end
 
-         function obj = runAttitudeEstimation(obj) % Check what the dt is
+         function obj = runAttitudeEstimation(obj) 
             wx = obj.gyroRawData(1);
             wy = obj.gyroRawData(2);
             wz = obj.gyroRawData(3);
-            q_delt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz, obj.dt);
+            q_delt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz);
             q_new = obj.quatMulitply(obj.q, q_delt);
             obj.q = q_new;
 
@@ -109,9 +112,11 @@ classdef Navigation < handle&Exportable
             % Update Step
             % Sensor data called in runNavigation, maybe move it here/
             % don't auto set z but use observation matrix
-            obj.K = kalmanGain();
-            obj.x = obj.updateState();
-            obj.P = updateCovariance();
+            if ~(isempty(obj.gpsRawData))
+                obj.K = kalmanGain();
+                bj.x = obj.updateState();
+                obj.P = updateCovariance();
+            end
 
             diagP = diag(obj.P);
             obj.covHistory.Px(end+1) = diagP(1);
@@ -136,7 +141,7 @@ classdef Navigation < handle&Exportable
             obj.x(2) = obj.x(2) + Utils.quatrotate(conj(obj.q),obj.x(5))*obj.dt + accI(2) * ((obj.dt^2)/2);
             obj.x(3) = obj.x(3) + Utils.quatrotate(conj(obj.q),obj.x(6))*obj.dt + accI(3) * ((obj.dt^2)/2);
             obj.x(4) = obj.x(4) + Utils.quatrotate(obj.q,accI(1)) * obj.dt; 
-            obj.x(5) = obj.x(5) + Utils.quatrotate(obj.q,accI(2)) * obj.dt; % WRONG WROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOn
+            obj.x(5) = obj.x(5) + Utils.quatrotate(obj.q,accI(2)) * obj.dt; 
             obj.x(6) = obj.x(6) + Utils.quatrotate(obj.q,accI(3)) * obj.dt;
 
         end
@@ -170,17 +175,12 @@ classdef Navigation < handle&Exportable
         end
 
         %% Sensor Data
-        % Need to interp1(extrap) --> Vector of times we got sensor data,
-        % vector of sensor data, current time we want to interpolate to
-        function obj = interpolate(obj)
-            
-        end
-
-        % 
         function obj = getRawData(obj, state, stateDot)
-            obj.z = obj.gps.getMeasurement(state,stateDot); % eventually fix
+
+            obj.gpsRawData = obj.gps.getMeasurement(state,stateDot); 
             obj.accRawData = obj.accelerometer.getMeasurment(state,stateDot);
             obj.gyroRawData = obj.gyroscope.getMeasuremtn(staqte,stateDot);
+
         end
         %% Frame Transformation Functions
 
@@ -235,7 +235,7 @@ classdef Navigation < handle&Exportable
             end
             
             axis = omegaVec./norm(omegaVec);
-            angle = obj.dt*norm(omegaVec);
+            angle = obj.gyroscope.outputPeriod*norm(omegaVec);
             
             q_delt_s = cos(angle/2);
             q_delt_x = axis(1)*sin(angle/2);
@@ -246,7 +246,7 @@ classdef Navigation < handle&Exportable
             
         end
         
-        function [quat_new]= quatMulitply(obj, q1,q2)
+        function [quat_new]= quatMulitply(q1,q2)
             
             q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
             q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
@@ -265,7 +265,7 @@ classdef Navigation < handle&Exportable
             xlabel('Time [s]');
             ylabel('Position Covariance');
             legend('x', 'y', 'z');
-            title('Position State Covariances');
+            title('Position Covariances');
         
             subplot(2,1,2);
             plot(t, obj.covHistory.Vx, t, obj.covHistory.Vy, t, obj.covHistory.Vz, 'LineWidth', 1.5);
@@ -273,7 +273,7 @@ classdef Navigation < handle&Exportable
             xlabel('Time [s]');
             ylabel('Velocity Covariance');
             legend('vx', 'vy', 'vz');
-            title('Velocity State Covariances');
+            title('Velocity Covariances');
         end
     end
 end
