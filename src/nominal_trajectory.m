@@ -1,10 +1,12 @@
+run_time = 13.1; % simulation length
 
 burn_time = 13.1;
 delta_t = 0.1; % for uniform time interval break points
 dt = .01;
-steps = round(burn_time / dt, 0);
+steps = round(run_time / dt, 0);
 
-x = [0;
+
+x = [0; % initial state
      0;
      0;
      .001;
@@ -13,10 +15,12 @@ x = [0;
      0;
      0;
      0;
-     1;
+     1/sqrt(2);
      0;
-     0;
+     1/sqrt(2);
      0];
+
+
 
 u = zeros(3,1); % initial control
 
@@ -25,19 +29,19 @@ Q = ones(13, 1);
 R = ones(3, 1);
 
 % need to tune: what was .01 is now 1, what was massive is now 100
-Q(1) = 1; % px
-Q(2) = 1000; % p_y
-Q(3) = 1000; % pz
-Q(4) = 1; % u
-Q(5) = 1; % v
-Q(6) = 1; % w
-Q(7) = 1; % p
-Q(8) = 1; % q
-Q(9) = 1; % r
-Q(10) = 1; % q0
+Q(1) = .01; % x
+Q(2) = 1000; % y
+Q(3) = 1000; % z
+Q(4) = .01; % u
+Q(5) = .01; % v
+Q(6) = .01; % w
+Q(7) = .01; % p
+Q(8) = .01; % q
+Q(9) = .01; % r
+Q(10) = .01; % q0
 Q(11) = 1000; % q1
-Q(12) = 1; % q2
-Q(13) = 1; % q3
+Q(12) = .01; % q2
+Q(13) = .01; % q3
 
 R(1) = 1; % M_roll
 R(2) = 1000; % M_pitch
@@ -90,14 +94,20 @@ thrust_fun  = @(tt) getThrust(tt, arr, burn_time);  % table-based thrust
 
 %% Generate Trajectory
 
-data = struct("px",[0],"p_y",[0],"pz",[0],"vx",[0],"vy",[0],"vz",[0],"wx",[0],"wy",[0],"wz",[0], ...
-"q0",[1],"q1",[0],"q2",[0],"q3",[0], "T",[0], "roll",[0], "pitch",[0], "yaw",[0]);
+data = struct("x",[0],"y",[0],"z",[0],"u",[0],"v",[0.01],"w",[0],"p",[0],"q",[0],"r",[0], ...
+"q0",[sqrt(2)/2],"q1",[0],"q2",[sqrt(2)/2],"q3",[0], "T",[0], "roll",[0], "pitch",[0], "yaw",[0]);
+
+% to check aero stuff
+data.t   = 0;
+data.FAx = 0; data.FAy = 0; data.FAz = 0;   % body forces [N]
+data.MAx = 0; data.MAy = 0; data.MAz = 0;   % body moments [N·m]
+
 
 for i = 1:steps
 
     t = dt * (i-1);
    
-    currentThrust = getThrust(t, arr);
+    currentThrust = getThrust(t, arr, burn_time);
     
     
     % syms px p_y pz vx vy vz wx wy wz q0 q1 q2 q3 MT_bx MT_by MT_bz T time_elapsed
@@ -117,6 +127,7 @@ for i = 1:steps
     
     % if at break point
     if mod(i-1, round(delta_t/dt)) == 0 %&& t ~= 0 % is t = 0 a breakpoint?
+    %if 1 == 2  % to only propagate, not optimize
         % Names present in the symbolic A,B from Jacobian_1()
         state_names   = {'x','y','z','u','v','w','p','q','r','q0','q1','q2','q3'};
         control_names = {'u1','u2','u3'};
@@ -132,7 +143,7 @@ for i = 1:steps
         % Rebuild CG(t) numerically same as model (linear ramp):
         CGt = 2.419762 - ((2.419762 - 2.314814)/13.1)*t;
         
-        arg_asin = x(9) * (10.3264 - 3.281*CGt) / (3.281*max(V,1e-9)); % r*lever / (3.281*V)
+        arg_asin = x(9) * (10.3264 - 3.281*CGt) / (3.281*V); % r*lever / (3.281*V)
         
         if M1 >= 1 || abs(arg_asin) > 1
             warning('Aero domain breach at t=%.3f: M1=%.3f, asin_arg=%.3f; Jacobian will go complex.', ...
@@ -182,28 +193,131 @@ for i = 1:steps
     else
         x = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun);
     end
+
+    % --- INLINE aero recompute for logging (must match eom_nonlin) ---
+    xi = x(1); yi = x(2); zi = x(3); 
+    uB = x(4); vB = x(5); wB = x(6);
+    pB = x(7); qB = x(8); rB = x(9);
+    q0 = x(10); q1 = x(11); q2 = x(12); q3 = x(13); 
+    
+    % CG(t) like your model
+    burn_time   = 13.1;
+    initial_CG  = 2.419762;
+    final_CG    = 2.314814;
+    if t < burn_time
+        CG = initial_CG - ((initial_CG - final_CG)/burn_time) * t;
+    else
+        CG = final_CG;
+    end
+    
+    % IMPORTANT: your inertial is NED -> altitude ≈ -z (clamp at 0)
+    alt = max(0, -zi);
+    
+    % Atmosphere (same law you had, but use altitude not x/north)
+    rho = 0.0023769 * (1 - 6.877e-6 * alt)^4.25588;
+    
+    V = sqrt(uB^2 + vB^2 + wB^2 + 1e-12);
+    alpha = vB / uB;   % (you preferred this over atan2)
+    asin_arg = rB*(10.3264 - (3.281*CG)) / (3.281*V);
+
+    AeroData = struct("u_in",[0.01],"v_in",[0],"w_in",[0],"rho_in",[0],"CG_in",[0],"p_in",[0],"r_in",[0], ...
+        "FAx",[0],"FAy",[0],"FAz",[0],"MAx",[0],"MAy",[0],"MAz",[0]);
+    
+
+    FAx = (1/0.225)*(((0.64181 .* ((vB/uB)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(uB^2 + vB^2 + wB^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(uB^2 + vB^2 + wB^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(uB^2 + vB^2 + wB^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(uB^2 + vB^2 + wB^2)))/1116.45)^2))) * asin(rB*(10.3264-(3.281*CG))/(3.281*(sqrt(uB^2 + vB^2 + wB^2)))))*sin(vB/uB) + ((0.00253 * ((vB/uB)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(uB^2 + vB^2 + wB^2))).^2 .* 0.9375)*-1*cos(vB/uB));
+    FAy = (1/0.225)*(((0.64181 .* ((vB/uB)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(uB^2 + vB^2 + wB^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(uB^2 + vB^2 + wB^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(uB^2 + vB^2 + wB^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(uB^2 + vB^2 + wB^2)))/1116.45)^2))) * asin(rB*(10.3264-(3.281*CG))/(3.281*(sqrt(uB^2 + vB^2 + wB^2)))))*-1*cos(vB/uB) + ((0.00253 * ((vB/uB)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(uB^2 + vB^2 + wB^2))).^2 .* 0.9375)*-1*sin(vB/uB));
+    FAz = 0;
+    MAx = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(uB^2 + vB^2 + wB^2))./1116.4).^2)).*pB)./(0.4688.*(3.281*sqrt(uB^2 + vB^2 + wB^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(uB^2 + vB^2 + wB^2)).^2.*0.4688);
+    MAy = 0;
+    MAz = 1.36*((((vB/uB)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(uB^2 + vB^2 + wB^2))./1097.40).^2))) + -0.00014 .* ((vB/uB)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(uB^2 + vB^2 + wB^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(uB^2 + vB^2 + wB^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(uB^2 + vB^2 + wB^2))/1116.45)^2))) * asin(rB*(10.3264-(3.281*CG))/(3.281*sqrt(uB^2 + vB^2 + wB^2))) * (10.3264-(3.281*CG)));
+    
+    % Append to logs
+    data.t = [data.t;t];
+    data.FAx = [data.FAx;FAx];
+    data.FAy = [data.FAy;FAy];
+    data.FAz = [data.FAz;FAz];
+    data.MAx = [data.MAx;MAx];
+    data.MAy = [data.MAy;MAy];
+    data.MAz = [data.MAz;MAz];
+
+    % aero check log
+    AeroData.u_in = [AeroData.u_in;uB];
+    AeroData.v_in = [AeroData.v_in;vB];
+    AeroData.w_in = [AeroData.w_in;wB];
+    AeroData.rho_in = [AeroData.rho_in;rho];
+    AeroData.CG_in = [AeroData.CG_in;CG];
+    AeroData.p_in = [AeroData.p_in;pB];
+    AeroData.r_in = [AeroData.r_in;rB];
+    AeroData.FAx = [AeroData.FAx;FAx];
+    AeroData.FAy = [AeroData.FAy;FAy];
+    AeroData.FAz = [AeroData.FAz;FAz];
+    AeroData.MAx = [AeroData.MAx;MAx];
+    AeroData.MAy = [AeroData.MAy;MAy];
+    AeroData.MAz = [AeroData.MAz;MAz];
+    % ---------------------------------------------------
+
     
     
     % add to struct
-    data.px = [data.px,x(1)];
-    data.p_y = [data.p_y,x(2)];
-    data.pz = [data.pz,x(3)];
-    data.vx = [data.vx,x(4)];
-    data.vy = [data.vy,x(5)];
-    data.vz = [data.vz,x(6)];
-    data.wx = [data.wx,x(7)];
-    data.wy = [data.wy,x(8)];
-    data.wz = [data.wz,x(9)];
-    data.q0 = [data.q0,x(10)];
-    data.q1 = [data.q1,x(11)];
-    data.q2 = [data.q2,x(12)];
-    data.q3 = [data.q3,x(13)];
+    data.x = [data.x;x(1)]; 
+    data.y = [data.y;x(2)];
+    data.z = [data.z;x(3)]; % NED convention: z = -altitude
+    data.u = [data.u;x(4)];
+    data.v = [data.v;x(5)];
+    data.w = [data.w;x(6)];
+    data.p = [data.p;x(7)];
+    data.q = [data.q;x(8)];
+    data.r = [data.r;x(9)];
+    data.q0 = [data.q0;x(10)];
+    data.q1 = [data.q1;x(11)];
+    data.q2 = [data.q2;x(12)];
+    data.q3 = [data.q3;x(13)];
     
-    data.roll = [data.roll,u(1)];
-    data.pitch = [data.pitch,u(2)];
-    data.yaw = [data.yaw,u(3)];
+    data.roll = [data.roll;u(1)];
+    data.pitch = [data.pitch;u(2)];
+    data.yaw = [data.yaw;u(3)];
     %data.thrust = [data.thrust,u(4)];
 
 end
 
-disp("Successfully generated nominal trajectory!")
+disp("Success!")
+
+display_results(data)
+
+
+
+function []= display_results(data)
+
+    figure(1); clf
+    plot3(data.x, data.y, -data.z)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z (m)')
+    title('3D Trajectory')
+
+    figure(2); clf
+    plot(data.t, atan2(data.v,data.u))
+    xlabel('t (s)')
+    ylabel('alpha')
+    title('3D Trajectory')
+
+    figure(2); clf
+    plot(data.t, atan2(data.v,data.u))
+    xlabel('t (s)')
+    ylabel('alpha')
+    title('Angle of Attack ')
+
+    figure(3); clf
+    plot(data.t, data.x)
+    xlabel('t (s)')
+    ylabel('alpha')
+    title('3D Trajectory')
+
+
+
+
+
+
+
+
+end

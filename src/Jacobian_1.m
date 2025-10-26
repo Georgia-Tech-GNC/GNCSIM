@@ -30,7 +30,14 @@ function [A, B] = Jacobian_1()
 
     burn_time = 13.1;
 
-    rho = 0.0023769 .* (1 - 6.877e-6 .* x).^4.25588;
+    rho = 0.0023769 .* (1 - 6.877e-6 .* -z).^4.25588;
+    %rho = 1.225 * (1 - 2.25577e-5 * -z)^4.25588;
+
+    
+   
+
+
+     
 
     %R = [2*(q0^2+q1^2)-1, 2*(q1*q2-q0*q3), 2*(q1*q3+q0*q2); 2*(q1*q2+q0*q3), 2*(q0^2+q2^2)-1, 2*(q2*q3-q0*q1); 2*(q1*q3-q0*q2), 2*(q2*q3+q0*q1), 2*(q0^2+q3^2)-1];
     % R = [1 - 2*(q2^2 + q3^2),     2*(q1*q2 - q0*q3),     2*(q1*q3 + q0*q2);
@@ -44,6 +51,7 @@ function [A, B] = Jacobian_1()
     ]; % inertial to body
 
     inv_R = inv(R); % body to inertial
+   
 
     
     
@@ -64,7 +72,7 @@ function [A, B] = Jacobian_1()
                      Ixx, dryRollMOI, Iyy, dryPitchMOI, ...
                      Izz, dryYawMOI, burn_time];
 
-    V = sqrt(u.^2 + v.^2 + w.^2 + 1e-12);
+    V = sqrt(u.^2 + v.^2 + w.^2);
     % V = max(V, 1e-6);         % avoid division by zero / tiny V
 
     % arg = r.*(10.3264 - 3.281*CG) ./ (3.281 .* V);
@@ -72,7 +80,7 @@ function [A, B] = Jacobian_1()
     % theta = asin(arg_clamped);
     asin_arg = r*(10.3264-(3.281*CG))/(3.281*(V));
     asin_expansion_5 = asin_arg + (asin_arg^3)/6 + 3*(asin_arg^5) / 40; 
-    alpha = v/u;
+    alpha = atan2(v,u);
     
     
 

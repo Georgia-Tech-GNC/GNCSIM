@@ -1,4 +1,4 @@
-function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, ControlObj)
+function [xDot, log, AeroData_sim_out] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, AerodynamicsObj, ControlObj)
 % rocketModel: Open loop model for jet vanes rocket dynamics
 % t: current time
 % x: current state: [px py pz vx vy vz q0 q1 q2 q3 wx wy wz]
@@ -247,10 +247,24 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
                 [FA_b, MA_b] = AerodynamicsObj.calcAeroBodyFrame_JV(vx, vy, vz, wx, wz, rho, CG);
             end
         end
+        % AeroData_sim.u_in = [AeroData_sim.u_in;abs(vx)];
+        % AeroData_sim.v_in = [AeroData_sim.v_in;vy];
+        % AeroData_sim.w_in = [AeroData_sim.w_in;vz];
+        % AeroData_sim.rho_in = [AeroData_sim.rho_in;rho];
+        % AeroData_sim.CG_in = [AeroData_sim.CG_in;CG];
+        % AeroData_sim.p_in = [AeroData_sim.p_in;wx];
+        % AeroData_sim.r_in = [AeroData_sim.r_in;wz];
+        % AeroData_sim.FAx = [AeroData_sim.FAx;FA_b(1)];
+        % AeroData_sim.FAy = [AeroData_sim.FAy;FA_b(2)];
+        % AeroData_sim.FAz = [AeroData_sim.FAz;FA_b(3)];
 
+        % break point
         alpha = atan2(vy, vx);
         beta = atan2(vz, vx);
     end
+
+    %FA_b = [0;0;0]; 
+    %MA_b = [0;0;0];
 
     %% Parachute Forces
     if v_f(1) < 0
@@ -331,7 +345,7 @@ function [xDot, log] = rocketModel(t, x, RocketObj, EnvironmentObj, FlightObj, A
         end
     end
     
-    %% Logging
+    % Logging
 
     % add to log
     log.alpha = alpha;
@@ -381,4 +395,5 @@ function vB = quat_rotate(q,vI)
     [~, vB1, vB2, vB3] = parts(quaternion(quatconj(q_u)) .* quaternion([zeros(dims(1),1) vI]) .* quaternion(q_u));
     vB = [vB1 vB2 vB3];
 
+    %AeroData_sim_out = AeroData_sim;
 end

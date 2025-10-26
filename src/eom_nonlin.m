@@ -31,7 +31,12 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     dryMOI = [dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI];
 
     % atmosphere via altitude x (your x is altitude)
-    rho = 0.0023769 * (1 - 6.877e-6 * xi)^4.25588;
+    rho = 0.0023769 * (1 - 6.877e-6 * -zi)^4.25588;
+    %rho = 1.225 * (1 - 2.25577e-5 * -zi)^4.25588;
+   
+    
+
+    
 
     % --- quaternion DCM exactly as in your Jacobian_1 (the 1st version you kept) ---
     R = [ ...
@@ -40,7 +45,13 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     2*(q1*q3 + q0*q2),           2*(q2*q3 - q0*q1),     q0^2 - q1^2 - q2^2 + q3^2 ...
     ];
 
+    %R = [2*(q0^2+q1^2)-1, 2*(q1*q2-q0*q3), 2*(q1*q3+q0*q2); 2*(q1*q2+q0*q3), 2*(q0^2+q2^2)-1, 2*(q2*q3-q0*q1); 2*(q1*q3-q0*q2), 2*(q2*q3+q0*q1), 2*(q0^2+q3^2)-1];
+    % R = [1 - 2*(q2^2 + q3^2),     2*(q1*q2 - q0*q3),     2*(q1*q3 + q0*q2);
+    %  2*(q1*q2 + q0*q3),       1 - 2*(q1^2 + q3^2),   2*(q2*q3 - q0*q1);
+    %  2*(q1*q3 - q0*q2),       2*(q2*q3 + q0*q1),     1 - 2*(q1^2 + q2^2)];
+
     inv_R = inv(R);
+    
     
 
     % --- mass & CG vs time: identical piecewise ---
@@ -59,9 +70,9 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     Izz = Ib(3,3);
 
     % --- aero terms: same formulas you use (alpha = v/u) ---
-    V = sqrt(u^2 + v^2 + w^2 + 1e-12);
-    alpha = v / u;                       % you said this ran longer than atan2
-    asin_arg = r*(10.3264 - (3.281*CG)) / (3.281*V);
+    V = sqrt(u^2 + v^2 + w^2);
+    alpha = atan2(v,u);                       % you said this ran longer than atan2
+    asin_arg = r*(10.3264 - (3.281*CG)) / (3.281*V); 
     
     FAx_b_sym = (1/0.225)*(((0.64181 .* ((alpha)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(asin_arg))*sin(alpha) + ((0.00253 * ((alpha)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(alpha));
     FAy_b_sym = (1/0.225)*(((0.64181 .* ((alpha)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(asin_arg))*-1*cos(alpha) + ((0.00253 * ((alpha)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(alpha));
@@ -73,8 +84,12 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     
     
     % shorthand
-    FAx = FAx_b_sym; FAy = FAy_b_sym; FAz = FAz_b_sym;
-    MAx = MAx_b_sym; MAy = MAy_b_sym; MAz = MAz_b_sym;
+    FAx = FAx_b_sym;
+    FAy = FAy_b_sym; 
+    FAz = FAz_b_sym;
+    MAx = MAx_b_sym; 
+    MAy = MAy_b_sym; 
+    MAz = MAz_b_sym;
     
     % no aero
     % FAx = 0;
