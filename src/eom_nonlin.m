@@ -84,7 +84,7 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     
     
     % shorthand
-    FAx = FAx_b_sym;
+    FAx = 50*FAx_b_sym;
     FAy = FAy_b_sym; 
     FAz = FAz_b_sym;
     MAx = MAx_b_sym; 

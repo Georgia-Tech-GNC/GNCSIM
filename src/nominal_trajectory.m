@@ -29,9 +29,9 @@ Q = ones(13, 1);
 R = ones(3, 1);
 
 % need to tune: what was .01 is now 1, what was massive is now 100
-Q(1) = .01; % x
+Q(1) = 1000; % x
 Q(2) = 1000; % y
-Q(3) = 1000; % z
+Q(3) = .01; % z
 Q(4) = .01; % u
 Q(5) = .01; % v
 Q(6) = .01; % w
@@ -93,6 +93,8 @@ eom_fun     = @eom_nonlin;                          % your nonlinear RHS
 thrust_fun  = @(tt) getThrust(tt, arr, burn_time);  % table-based thrust
 
 %% Generate Trajectory
+
+tic
 
 data = struct("x",[0],"y",[0],"z",[0],"u",[0],"v",[0.01],"w",[0],"p",[0],"q",[0],"r",[0], ...
 "q0",[sqrt(2)/2],"q1",[0],"q2",[sqrt(2)/2],"q3",[0], "T",[0], "roll",[0], "pitch",[0], "yaw",[0]);
@@ -188,7 +190,7 @@ for i = 1:steps
         if any(~isfinite(B_num(:))), error('B_num has non-finite entries'); end
     
         % Optimize & propagate (thrust is a parameter, not a decision)
-        [x, u] = optimize_propagate(x, Q, R, A_num, B_num, dt, u_max, eom_fun, thrust_fun, t);
+        [x, u] = analytic_optimize_propagate(x, Q, R, A_num, B_num, dt, u_max, eom_fun, thrust_fun, t);
     
     else
         x = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun);
@@ -217,7 +219,7 @@ for i = 1:steps
     rho = 0.0023769 * (1 - 6.877e-6 * alt)^4.25588;
     
     V = sqrt(uB^2 + vB^2 + wB^2 + 1e-12);
-    alpha = vB / uB;   % (you preferred this over atan2)
+    alpha = atan2(vB, uB);   % (you preferred this over atan2)
     asin_arg = rB*(10.3264 - (3.281*CG)) / (3.281*V);
 
     AeroData = struct("u_in",[0.01],"v_in",[0],"w_in",[0],"rho_in",[0],"CG_in",[0],"p_in",[0],"r_in",[0], ...
@@ -233,7 +235,7 @@ for i = 1:steps
     
     % Append to logs
     data.t = [data.t;t];
-    data.FAx = [data.FAx;FAx];
+    data.FAx = [data.FAx;50*FAx];
     data.FAy = [data.FAy;FAy];
     data.FAz = [data.FAz;FAz];
     data.MAx = [data.MAx;MAx];
@@ -282,6 +284,8 @@ end
 
 disp("Success!")
 
+toc
+%%
 display_results(data)
 
 
@@ -292,7 +296,7 @@ function []= display_results(data)
     plot3(data.x, data.y, -data.z)
     xlabel('X')
     ylabel('Y')
-    zlabel('Z (m)')
+    zlabel('Altitude (m)')
     title('3D Trajectory')
 
     figure(2); clf
@@ -308,10 +312,34 @@ function []= display_results(data)
     title('Angle of Attack ')
 
     figure(3); clf
-    plot(data.t, data.x)
+    plot(data.t, data.u, data.t, data.v, data.t, data.w)
     xlabel('t (s)')
-    ylabel('alpha')
-    title('3D Trajectory')
+    ylabel('Velocities (m/s)')
+    title('Velocity Components')
+
+    figure(4); clf
+    plot(data.t, data.p, data.t, data.q, data.t, data.r)
+    xlabel('t (s)')
+    ylabel('Angular Velocities ')
+    title('AngularVelocity Components')
+
+    figure(5); clf
+    plot(data.t, data.q0, data.t, data.q1, data.t, data.q2, data.t, data.q3)
+    xlabel('t (s)')
+    ylabel('Quaternion')
+    title('Quaternion Components')
+
+    figure(6); clf
+    plot(data.t, data.FAx, data.t, data.FAy, data.t, data.FAz)
+    xlabel('t (s)')
+    ylabel('Aero Forces')
+    title('Aero Force Components')
+
+    figure(7); clf
+    plot(data.t, data.MAx, data.t, data.MAy, data.t, data.MAz)
+    xlabel('t (s)')
+    ylabel('Aero Moments')
+    title('Aero Moment Components')
 
 
 

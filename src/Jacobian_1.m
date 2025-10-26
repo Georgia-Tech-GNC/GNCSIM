@@ -94,7 +94,7 @@ function [A, B] = Jacobian_1()
     
     
 
-    aero_forces_moments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
+    aero_forces_moments = [50*FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
 
 
     EOM_no_aero = [u*inv_R(1,1) + v*inv_R(1,2) + w*inv_R(1,3) - xdot, % inv_R 
