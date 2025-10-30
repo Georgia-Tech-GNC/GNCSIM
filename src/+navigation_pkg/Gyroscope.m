@@ -4,8 +4,8 @@ classdef Gyroscope < Sensor
         name = "Gyroscope"
         outputDimension = 3;
         noiseCovariance
-        outputRate     % Hz
-        outputProbability        % 
+        outputRate     
+        outputProbability       
         observationMatrix
     end
 
@@ -43,7 +43,7 @@ classdef Gyroscope < Sensor
 
             if obj.isOutputReady(currentTime)
                 obj.w = state(12:14);
-                measurement = obj.addNoise(); % Add noise
+                measurement = obj.w; %obj.addNoise(); % Add noise
             else
                 measurement = [];
             end

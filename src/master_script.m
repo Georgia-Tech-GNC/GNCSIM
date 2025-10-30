@@ -156,12 +156,14 @@ function nav = setup_navigation()
     gps_params.horizontalAccuracy = 1;
     gps_params.velocityAccuracy = 1;
 
-    gps_params.noiseCovariance = -1;
+    gps_params.noiseCovariance = [8.4 0 0;
+                                  0 4.2 0;
+                                  0 0 4.2];
     gps_params.outputRate = 10;
     gps_params.outputProbability = .8;
-    gps_params.observationMatrix = eye(3);
-
-
+    gps_params.observationMatrix = @(x)[1 0 0 0 0 0;
+                                        0 1 0 0 0 0;
+                                        0 0 1 0 0 0];
     gps = navigation_pkg.GPS(gps_params);
 
     % Gyro
