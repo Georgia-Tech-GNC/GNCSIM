@@ -9,17 +9,13 @@ classdef Navigation < handle&Exportable
         x = zeros(6,1);
         P
         dfdx
-        dhdx = @(x)[1 0 0 0 0 0;
-                    0 1 0 0 0 0;
-                    0 0 1 0 0 0];
+        dhdx        
         Q
-        R = [8.4 0 0;
-             0 4.2 0;
-             0 0 4.2];
+        R
         K 
         q = [1/sqrt(2),0,1/sqrt(2),0];
         z
-        h = @(x)[x(1);x(2);x(3)];
+        h
 
         gpsRawData
         gyroRawData
@@ -37,16 +33,8 @@ classdef Navigation < handle&Exportable
 
     methods
 
-        function obj = Navigation(varargin)
-            if nargin == 0
-                % Empty constructor for loading from MAT/Exportable
-                return
-            elseif nargin == 4
-                nav_params = varargin{1};
-                gps = varargin{2};
-                gyroscope = varargin{3};
-                accelerometer = varargin{4};
-                
+        function obj = Navigation(nav_params, gps, gyroscope, accelerometer)
+
                 obj.dt = nav_params.dt;
                 obj.P = nav_params.P;
                 obj.dfdx = nav_params.dfdx;
@@ -55,23 +43,10 @@ classdef Navigation < handle&Exportable
                 obj.gps = gps;
                 obj.gyroscope = gyroscope;
                 obj.accelerometer = accelerometer;
-            else
-                 error('Navigation constructor expects either 0 or 4 input arguments.');
-            end
+                obj.generateObservationMatrices;
+
         end
         % wrap added by Zhanna S
-
-        function restoreFromStruct(obj, s)
-        % Restore all properties from a struct (bypasses SetAccess=private)
-            f = fieldnames(s); % Get all field names from the struct 's'
-            for i = 1:numel(f) % Loop thru each field
-                try
-                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
-                catch ME % Warning if fails so it doesn't crash
-                    warning('Could not restore %s: %s', f{i}, ME.message);
-                end
-            end
-        end % function added by Zhanna S
 
         function ekfState = runNavigation(obj, state, stateDot)
             
@@ -114,7 +89,7 @@ classdef Navigation < handle&Exportable
             % don't auto set z but use observation matrix
             if ~(isempty(obj.gpsRawData))
                 obj.K = kalmanGain();
-                bj.x = obj.updateState();
+                obj.x = obj.updateState();
                 obj.P = updateCovariance();
             end
 
@@ -181,6 +156,14 @@ classdef Navigation < handle&Exportable
             obj.accRawData = obj.accelerometer.getMeasurment(state,stateDot);
             obj.gyroRawData = obj.gyroscope.getMeasuremtn(staqte,stateDot);
 
+        end
+
+        function obj = generateObservationMatrices(obj)
+
+            [gpsH, gpsR] = obj.gps.getObservationMatrices();
+            obj.dhdx = gpsH;
+            obj.R = gpsR;
+            obj.h = @(x)[x(1);x(2);x(3)];
         end
         %% Frame Transformation Functions
 

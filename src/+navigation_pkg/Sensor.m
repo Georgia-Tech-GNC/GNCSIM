@@ -43,8 +43,9 @@ classdef (Abstract) Sensor < handle
             obj.outputPeriod = 1 / newRate;
         end
         
-        function out = get_observationMatrix(obj)
-            out = obj.observationMatrix;
+        function [H,R] = getObservationMatrices(obj)
+            H = obj.observationMatrix;
+            R = obj.noiseCovariance;
         end
     end
     

@@ -4,8 +4,8 @@ classdef Accelerometer < Sensor
         name = "Accelerometer"
         outputDimension = 3
         noiseCovariance
-        outputRate            % Hz
-        outputProbability       % 
+        outputRate           
+        outputProbability      
         observationMatrix
     end
 

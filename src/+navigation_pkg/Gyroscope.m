@@ -4,8 +4,8 @@ classdef Gyroscope < Sensor
         name = "Gyroscope"
         outputDimension = 3;
         noiseCovariance
-        outputRate     % Hz
-        outputProbability        % 
+        outputRate     
+        outputProbability       
         observationMatrix
     end
 
