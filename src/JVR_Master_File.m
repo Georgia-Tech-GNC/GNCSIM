@@ -3,9 +3,6 @@ clear; clc; close all;
 
 %% Instantiate Classes
 
-% Rocket Dynamics
-[rocket_dyn, rocket_params, motor_params] = setupRocketDynamics(); % no controller or navigation in here, those go into Flight later
-
 % Setup Environment
 environment = setupEnvironment();
 
@@ -16,20 +13,16 @@ aerodynamics = setupAerodynamics();
 controller = setupController();
 
 % Setup BreakPoints
-breakPoints = setupBreakPoints(); % [closed] who the hell is 'BreakPoints': missing defined class file, cannot make exportable
+breakPoints = setupBreakPoints(controller);
 
 % Setup Navigation
 navigation = setupNavigation();
 
 % Rocket Dynamics
-% rocketDynamics = setupRocket(controller, navigation, aerodynamics); I
-% think it makes more sense to pass controller, navigation into flight, not
-% RocketDynamics. It will be too annoying to have to change RocketDynamics
-% file if we switch controllers, no?
-% REDUNDANT
+rocketDynamics = setupRocket(controller, navigation, aerodynamics);
 
 % Setup Flight Simulation
-flight = setupFlight(rocket_dyn, controller, environment, navigation, breakPoints);
+flight = setupFlight(rocketDynamics, environment, breakPoints);
 
 %% Run Flight
 [tArr, xArr, FbArr, MbArr] = flight.runSim();
@@ -38,13 +31,14 @@ flight = setupFlight(rocket_dyn, controller, environment, navigation, breakPoint
 flight.plotFlight(tArr, xArr);
 
 %% Analysis
+% Still need to implement stuff there. 
 n = 1; %For single flight
 analysis = analysis_pkg.Analysis(tArr, xArr, n, FbArr, MbArr);
 analysis.GenerateAllPlots();
 
 %% Setup Functions
 
-function [rocket_dyn, rocket_params, motor_params] = setupRocketDynamics()
+function RocketDynamics = setupRocket()
 
     % Create Rocket Params
     rocket_params.mass_wet = 40.912994; % kg
@@ -161,14 +155,7 @@ function [aerodynamics] = setupAerodynamics()
 end
 
 function breakPoints = setupBreakPoints()
-    breakPoints = BreakPoints();
-
-    % Example: add dummy break points (replace with trajectory generator later)
-    % progressValue could be altitude or ΔV idk just some random stuff
-    % below for now
-    breakPoints.addBreakPoint(0,   zeros(6,1), zeros(2,1), eye(6), eye(6,2), [1 0]);
-    breakPoints.addBreakPoint(100, zeros(6,1), zeros(2,1), eye(6), eye(6,2), [0.8 0.2]);
-    % remove the dummy above, please, and replace with real stuff
+    % TODO
 end 
 
 function controller = setupController() % Where should I implement trimpoints?
@@ -191,43 +178,50 @@ end
 
 function navigation = setupNavigation()
     % Navigation
-    %nav_params.acc_noise = 0.01;
-    %nav = Navigation(nav_params);
 
+    % Acc
     acc_params.VRW = -1;
     acc_params.leverArm = -1;
     acc_params.SF = -1;
     acc_params.bias = -1;
 
     acc_params.noiseCovariance = -1;
-    acc_params.outputRate = -1;
-    acc_params.outputProbability = -1;
-    acc_params.observationMatrix = -1;
+    acc_params.outputRate = 100;
+    acc_params.outputProbability = 1;
+    acc_params.observationMatrix = zeros(3);
+
+   
     accelerometer = navigation_pkg.Accelerometer(acc_params);
 
+    % GPS
     gps_params.refLLA = [33.776, -84.399, 306];
     gps_params.verticalAccuracy = 1;
     gps_params.horizontalAccuracy = 1;
     gps_params.velocityAccuracy = 1;
 
     gps_params.noiseCovariance = -1;
-    gps_params.outputRate = -1;
-    gps_params.outputProbability = -1;
-    gps_params.observationMatrix = -1;
+    gps_params.outputRate = 10;
+    gps_params.outputProbability = .8;
+    gps_params.observationMatrix = eye(3);
+
+
     gps = navigation_pkg.GPS(gps_params);
 
+    % Gyro
     gyro_params.ARW = -1;
     gyro_params.bias = -1;
 
     gyro_params.noiseCovariance = -1;
-    gyro_params.outputRate = -1;
-    gyro_params.outputProbability = -1;
-    gyro_params.observationMatrix = -1;
+    gyro_params.outputRate = 100;
+    gyro_params.outputProbability = 1;
+    gyro_params.observationMatrix = zeros(3);
+
     gyroscope = navigation_pkg.Gyroscope(gyro_params);
 
     nav_params.dt = .1;
     dt = nav_params.dt;
     nav_params.P = 0.1 * eye(6);
+
     nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
         0,                        1, 0,                        0, 0,                        0
         0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
@@ -236,6 +230,7 @@ function navigation = setupNavigation()
         0,                        0, 0,                        0, 0,                        1];
 
     sigma_a = 10;
+
     nav_params.Q = sigma_a^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
                      (dt^3)/2,     dt^2,          0,           0,              0,          0;
                            0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
@@ -255,4 +250,3 @@ function flight = setupFlight(rocketDynamics, controller, environment, navigatio
     % Create flight object
     flight = Flight(rocketDynamics, controller, environment, navigation, breakPoints, flightParams);
 end
-

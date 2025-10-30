@@ -1,6 +1,5 @@
 classdef RocketDynamics < handle&Exportable
-
-	properties (SetAccess = private)
+    properties
 		body
 		rocket_fins
 		motor_params
@@ -17,42 +16,21 @@ classdef RocketDynamics < handle&Exportable
 	end
 
 	methods
-        function obj = RocketDynamics(varargin)
-            if nargin == 0
-                % Empty constructor for Exportable (loading from MAT)
-                return
+        function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params, controller, navigation, aerodynamics)
+            obj.body = body;
+            obj.rocket_fins = rocket_fins;
+            obj.motor_params = motor_params;
+            obj.mass_wet = rocket_params.mass_wet;
+            obj.mass_dry = rocket_params.mass_dry;
+            obj.moi_wet = rocket_params.moi_wet;
+            obj.moi_dry = rocket_params.moi_dry;
+            obj.CG_wet = rocket_params.CG_wet;
+            obj.CG_dry = rocket_params.CG_dry;
+            obj.controller = controller;
+            obj.navigation = navigation;
+            obj.aerodynamics = aerodynamics;
+        end
 
-            elseif nargin == 4
-                body = varargin{1};
-                rocket_fins = varargin{2};
-                rocket_params = varargin{3};
-                motor_params = varargin{4};
-
-                obj.body = body;
-                obj.rocket_fins = rocket_fins;
-                obj.motor_params = motor_params;
-                obj.mass_wet = rocket_params.mass_wet;
-                obj.mass_dry = rocket_params.mass_dry;
-                obj.moi_wet = rocket_params.moi_wet;
-                obj.moi_dry = rocket_params.moi_dry;
-                obj.CG_wet = rocket_params.CG_wet;
-                obj.CG_dry = rocket_params.CG_dry;
-            else
-                error('RocketDynamics constructor expects either 0 or 4 input arguments.');
-            end
-        end % wrap added by Zhanna S
-
-        function restoreFromStruct(obj, s)
-        % Restore all properties from a struct (bypasses SetAccess=private)
-            f = fieldnames(s); % Get all field names from the struct 's'
-            for i = 1:numel(f) % Loop thru each field
-                try
-                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
-                catch ME % Warning if fails so it doesn't crash
-                    warning('Could not restore %s: %s', f{i}, ME.message);
-                end
-            end
-        end % function added by Zhanna S
 
         function [m, CG, moi] = interp_mass_CG_MOI(t)
             % Need to pass in thrust curve somehow
