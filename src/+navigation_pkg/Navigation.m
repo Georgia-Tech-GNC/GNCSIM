@@ -46,10 +46,10 @@ classdef Navigation < handle&Exportable
                 obj.generateObservationMatrices;
 
         end
-        % wrap added by Zhanna S
 
-        function ekfState = runNavigation(obj, state, stateDot)
-            
+
+        function ekfState = get_state_estimate(obj, state, stateDot, currentTime)
+            obj.currentTime = currentTime;
             obj.getRawData(state, stateDot);
             if obj.currentTime ~= 0
                 obj.runAttitudeEstimation();
@@ -93,19 +93,19 @@ classdef Navigation < handle&Exportable
                 obj.P = updateCovariance();
             end
 
-            diagP = diag(obj.P);
-            obj.covHistory.Px(end+1) = diagP(1);
-            obj.covHistory.Py(end+1) = diagP(2);
-            obj.covHistory.Pz(end+1) = diagP(3);
-            obj.covHistory.Vx(end+1) = diagP(4);
-            obj.covHistory.Vy(end+1) = diagP(5);
-            obj.covHistory.Vz(end+1) = diagP(6);
-        
-            if isempty(obj.covHistory.time)
-                obj.covHistory.time(1) = 0;
-            else
-                obj.covHistory.time(end+1) = obj.covHistory.time(end) + obj.dt;
-            end
+            % diagP = diag(obj.P);
+            % obj.covHistory.Px(end+1) = diagP(1);
+            % obj.covHistory.Py(end+1) = diagP(2);
+            % obj.covHistory.Pz(end+1) = diagP(3);
+            % obj.covHistory.Vx(end+1) = diagP(4);
+            % obj.covHistory.Vy(end+1) = diagP(5);
+            % obj.covHistory.Vz(end+1) = diagP(6);
+            % 
+            % if isempty(obj.covHistory.time)
+            %     obj.covHistory.time(1) = 0;
+            % else
+            %     obj.covHistory.time(end+1) = obj.covHistory.time(end) + obj.dt;
+            % end
 
         end
 
@@ -152,9 +152,9 @@ classdef Navigation < handle&Exportable
         %% Sensor Data
         function obj = getRawData(obj, state, stateDot)
 
-            obj.gpsRawData = obj.gps.getMeasurement(state,stateDot); 
-            obj.accRawData = obj.accelerometer.getMeasurment(state,stateDot);
-            obj.gyroRawData = obj.gyroscope.getMeasuremtn(staqte,stateDot);
+            obj.gpsRawData = obj.gps.getMeasurement(state,stateDot,obj.currentTime); 
+            obj.accRawData = obj.accelerometer.getMeasurment(state,stateDot,obj.currentTime);
+            obj.gyroRawData = obj.gyroscope.getMeasuremtn(state,stateDot,obj.currentTime);
 
         end
 
