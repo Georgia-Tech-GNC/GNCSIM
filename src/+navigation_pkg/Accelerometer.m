@@ -54,7 +54,7 @@ classdef Accelerometer < Sensor
                 obj.accelB = stateDot(5:7); 
     
                 accelIMU = obj.accLeverArm();
-                measurement = obj.addNoise(accelIMU);
+                measurement = accelIMU; %obj.addNoise(accelIMU);
             else
                 measurement = [];
             end

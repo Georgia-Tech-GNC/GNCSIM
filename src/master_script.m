@@ -161,7 +161,7 @@ function nav = setup_navigation()
     gps_params.outputProbability = .8;
     gps_params.observationMatrix = @(x)[1 0 0 0 0 0;
                                         0 1 0 0 0 0;
-                                        0 0 1 0 0 0];;
+                                        0 0 1 0 0 0];
     gps = navigation_pkg.GPS(gps_params);
 
     % Gyro
