@@ -64,6 +64,7 @@ function rocket_dyn = setup_rocket()
     fin_params.translation = [x_fin_ref, body_params.rocket_diameter / 2, 0];  % [m]   
     
     % Motor
+    motor_params.burn_time = 13.1;
     motor_params.tc = [0.0, 0.457288;
         0.152, 0.314574;
         0.162, 40.2069;
@@ -98,6 +99,7 @@ function rocket_dyn = setup_rocket()
         16.1354, 0.0;];
     motor_params.mass = 0.4;  % [kg]
     motor_params.x_ref = -1;  % [m]
+    motor_params.totalImpulse = 14583; % N-sec
 
     % Create rocket dynamics object
     body = rocket_pkg.RocketBody(body_params, flight_con_params);

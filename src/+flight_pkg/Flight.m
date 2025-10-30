@@ -9,6 +9,7 @@ classdef Flight < handle
         flightParams
         totalTime
         currentTime
+        currentXDot
         x0
         dt
     end
@@ -33,10 +34,11 @@ classdef Flight < handle
 
         function [tArr, xArr, FbArr, MbArr] = runSim(obj)
             % This function propagates the dynamics using RK4
-            
+
             % Need setters for this
             x = obj.x0(:);
             N = obj.totalTime / obj.dt;
+            obj.currentTime = 0.0;
 
             tArr = zeros(1,N);
             xArr = zeros(14, N);
@@ -44,14 +46,22 @@ classdef Flight < handle
             MbArr = zeros(3,N);
 
             for ii = 2:N
+                obj.currentXDot = obj.rocket_model(x);
+
                 k1 = obj.rocket_model(x);
                 k2 = obj.rocket_model(x + (k1)*obj.dt/2);
                 k3 = obj.rocket_model(x + (k2)*obj.dt/2);
                 k4 = obj.rocket_model(x + (k3)*obj.dt);
-                
+
                 obj.currentTime = ii * obj.dt;
+
                 x = x + obj.dt*((1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4);
 
+                % quaternion normalization
+                quat = x(8:11);
+                quat_norm = Utils.normalize_quat(quat);
+                x(8:11) = quat_norm;
+    
                 tArr(ii) = obj.currentTime;
                 xArr(:, ii) = x;
 
@@ -65,7 +75,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.get_windspeed(altitude);
             disturbances.wind = zeros(3);
             
-            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
+            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime, obj.currentXdot, obj.breakPoints);
             x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
         
@@ -79,7 +89,6 @@ classdef Flight < handle
 
         function [state_dot] = flatEarth_EOM(obj, state, F_b, M_b)   
             mass = state(1);
-            %pos = state(2:4);  % not needed
             vel = state(5:7);
             quat = state(8:11);
             omega = state(12:14);
@@ -91,20 +100,26 @@ classdef Flight < handle
                 omega(3), omega(2), -omega(1), 0
             ];
 
-            q = quat;
-            C_B_I = Utils.dir_cosine(q);
+            T = obj.rocketDynamics.getThrust(obj.currentTime);
+            totalImpulse = obj.rocketDynamics.totalImpulse;
+            mass_wet = obj.rocketDynamics.mass_wet;
+            mass_dry = obj.rocketDynamics.mass_dry;
+
+            % preventing mass to go below mass_dry
+            mass = max(mass, mass_dry); 
+
+            [~, Ib] = obj.rocketDynamics.get_CG_MOI(mass);
+
+            C_B_I = Utils.dir_cosine(quat);
             C_I_B = C_B_I.';
 
-            %g = [0;0;-9.81];
-			g = [0;0;0];
+            g = [0;0;-9.81];
 
-            F_I = (C_I_B * F_b) + mass * g;
-            %Ib = obj.rocket_dyn.get_moi(mass);  % TODO
-			Ib = 10 * eye(3);
+            F_b = F_b + C_B_I * g;
             
-            mass_dot = 0;
-            pos_dot = vel;
-            vel_dot = F_I / mass;
+            mass_dot = - T * (mass_wet - mass_dry) / totalImpulse;
+            pos_dot = C_I_B * vel;
+            vel_dot = F_b / mass - cross(omega, vel);
             quat_dot = 0.5 * mat_omega * quat;
             omega_dot = Ib\(M_b - cross(omega, Ib*omega));
             state_dot = [mass_dot; pos_dot; vel_dot; quat_dot; omega_dot];

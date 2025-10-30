@@ -2,11 +2,14 @@ classdef RocketDynamics < handle&Exportable
     properties
 		body
 		rocket_fins
-		motor_params
+		motor_params 
 		controller
         navigation
         aerodynamics = []
-
+        
+        thrustCurve
+        totalImpulse
+        burnTime
         mass_wet (1,1) double {mustBePositive} = 1
         mass_dry (1,1) double {mustBePositive} = 1
         moi_wet (3,3) double = eye(3)
@@ -30,6 +33,9 @@ classdef RocketDynamics < handle&Exportable
             obj.body = body;
             obj.rocket_fins = rocket_fins;
             obj.motor_params = motor_params;
+            obj.thrustCurve = motor_params.tc;
+            obj.totalImpulse = motor_params.totalImpulse;
+            obj.burnTime = motor_params.burn_time;
             obj.mass_wet = rocket_params.mass_wet;
             obj.mass_dry = rocket_params.mass_dry;
             obj.moi_wet = rocket_params.moi_wet;
@@ -41,37 +47,48 @@ classdef RocketDynamics < handle&Exportable
             obj.aerodynamics = aerodynamics;
         end
 
-
-        function [m, CG, moi] = interp_mass_CG_MOI(t)
-            % Need to pass in thrust curve somehow
-            tc = obj.motor_params.tc;
-            totalThrust = trapz(tc(1:2:end-1),tc(2:2:end)); 
-            if t < burnTime
-                % Proportionality constants
-                k_mass = (obj.mass_wet-obj.mass_dry)/totalThrust;
-                k_CG = (obj.CG_wet-obj.CG_dry)/totalThrust;
-                k_moi = (obj.moi_wet-obj.moi_dry)/totalThrust;
-                % Time + cumulative thrust calculations
-                curr_t = tc(tc(1:2:end-1) < t);
-                t_stop = curr_t(end); % Last tc point included in calculation
-                t_last = tc(find(tc == t_stop));
-                T_slope = (tc(t_last+3)-tc(t_last+1))/(tc(t_last+2)-tc(t_last));
-                cum_T = trapz(tc(1:2:t_last),tc(2:2:t_last+1)) + T_slope*(tc(t_last+2)-t_last);
-                % Thrust-based interpolation
-                m = obj.mass_wet - k_mass * cum_T;
-                CG = obj.CG_wet - k_CG * cum_T;
-                moi = obj.moi_wet - k_moi * cum_T;
-            else
-                m = obj.mass_dry;
-                CG = obj.CG_dry;
-                moi = obj.moi_dry;
+        function currentThrust = getThrust(obj, t)
+            % Error check
+            if ~isnumeric(t)
+                error('Error: Time must be numeric.')
             end
+        
+            % If beyond burn time, thrust is zero
+            if t > obj.burnTime
+                currentThrust = 0;
+                return
+            end
+        
+            % Extract time and thrust columns
+            tc = obj.thrustCurve;
+            time = tc(:, 1);
+            thrust = tc(:, 2);
+        
+            % Linear interpolation
+            currentThrust = interp1(time, thrust, t, 'linear', 0);
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, breakPoints)
+        function [currentCG, currentMOI] = get_CG_MOI(obj, mass)
+            % Error check
+            if ~isnumeric(mass)
+                error('Error: Mass must be numeric.')
+            end
+
+            % If beyond burn time, thrust is zero
+            if mass <= obj.mass_dry
+                currentCG = obj.CG_dry;
+                currentMOI = obj.moi_dry;
+                return
+            end
+            
+            % Linear interpolation wrt mass
+            currentCG = obj.CG_dry + (mass - obj.mass_dry)/(obj.mass_wet - obj.mass_dry) .* (obj.CG_wet - obj.CG_dry);
+            currentMOI = obj.moi_dry + (mass - obj.mass_dry)/(obj.mass_wet - obj.mass_dry) .* (obj.moi_wet - obj.moi_dry);
+        end
+
+        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, xdot, breakPoints)
             
             % computes aero forces and moments 
-            % Need to think on how to implement wind frame
             if isempty(obj.aerodynamics)
                 [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
                 [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
@@ -80,14 +97,16 @@ classdef RocketDynamics < handle&Exportable
             else
                 [F_b_aero, M_b_aero] = obj.aerodynamics.get_forces_and_moments(state, disturbances);
             end
+
+            F_t_b = [obj.getThrust(time); 0; 0];
+            
             
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
-            %TODO: state_estimate = navigation.get_state_estimate(state, disturbances)
+            state_estimate = navigation.get_state_estimate(state, disturbances)
             %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
-            F_b = F_b_aero;
+
+            F_b = F_b_aero + F_t_b;
             M_b = M_b_aero;
-			%F_b = F_b_fins;
-			%M_b = M_b_fins;
         end
 
         function compute_buildup(obj)
@@ -164,3 +183,31 @@ classdef RocketDynamics < handle&Exportable
         end
     end
 end
+
+
+% DEPRECATED (sorry Kandarp)
+% function [m, CG, moi] = interp_mass_CG_MOI(t)
+%     % Need to pass in thrust curve somehow
+%     tc = obj.motor_params.tc;
+%     totalThrust = trapz(tc(1:2:end-1),tc(2:2:end)); 
+%     if t < burnTime
+%         % Proportionality constants
+%         k_mass = (obj.mass_wet-obj.mass_dry)/totalThrust;
+%         k_CG = (obj.CG_wet-obj.CG_dry)/totalThrust;
+%         k_moi = (obj.moi_wet-obj.moi_dry)/totalThrust;
+%         % Time + cumulative thrust calculations
+%         curr_t = tc(tc(1:2:end-1) < t);
+%         t_stop = curr_t(end); % Last tc point included in calculation
+%         t_last = tc(find(tc == t_stop));
+%         T_slope = (tc(t_last+3)-tc(t_last+1))/(tc(t_last+2)-tc(t_last));
+%         cum_T = trapz(tc(1:2:t_last),tc(2:2:t_last+1)) + T_slope*(tc(t_last+2)-t_last);
+%         % Thrust-based interpolation
+%         m = obj.mass_wet - k_mass * cum_T;
+%         CG = obj.CG_wet - k_CG * cum_T;
+%         moi = obj.moi_wet - k_moi * cum_T;
+%     else
+%         m = obj.mass_dry;
+%         CG = obj.CG_dry;
+%         moi = obj.moi_dry;
+%     end
+% end

@@ -22,15 +22,18 @@ classdef RocketBody < rocket_pkg.DatcomManager
 
            	% Rotation from inertial frame to body frame using quaternion
            	q = state(8:11);
-           	R_ib = Utils.dir_cosine(q);
+            C_B_I = Utils.dir_cosine(q);
 	
-           	% Compute body-frame velocity
-           	v_i = state(5:7);
-           	v_w = [0;0;0];   % Placeholder for wind
-           	v_b = R_ib*(v_i + v_w);
+            % Body frame velocity
+            v_b = state(5:7);
+
+            % v_w = C_B_I * disturbances.wind
+            v_w = C_B_I * [0;0;0]; % Wind velocity (ignored for now)
+           
+            v_b = v_b + v_w;
 			
 			% Compute aerodynamic forces and moments using DATCOM data
-			[F_b, M_b] = Utils.get_forces_and_moments(state, v_b, obj.aero);
+			[F_b, M_b] = rocket_pkg.DatcomManager.get_forces_and_moments(state, v_b, obj.aero);
 		end
 
 		function r_nose = get_nose_radii(obj, x_nose)

@@ -94,6 +94,7 @@ function RocketDynamics = setupRocket()
         13.5895, 106.0499;
         14.6754, 12.60914;
         16.1354, 0.0;];
+    motor_params.totalImpulse = 14583; % N-sec
 
     % Create rocket dynamics object    
 % trash below, please replace later with REAL dimensions
@@ -104,8 +105,9 @@ function RocketDynamics = setupRocket()
     fins_params.n_fins     = 4;
     fins = rocket_pkg.Fins(fins_params);
 % REMOVE STUFF ABOVE
+
     body = rocket_pkg.RocketBody(body_params);
-    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
+    RocketDynamics = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
 end
 
 % Need to set up Flight to use environment()

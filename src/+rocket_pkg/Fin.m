@@ -18,29 +18,32 @@ classdef Fin < handle
 
            % Rotation from inertial to body using quaternion
            q = state(8:11);
-           R_ib = Utils.dir_cosine(q);
+           C_B_I = Utils.dir_cosine(q);
 
            % Body frame velocity
-           v_i = state(5:7);
-           v_w = [0;0;0]; % Wind velocity (ignored for now)
-           v_b = R_ib*(v_i + v_w);
+           v_b = state(5:7);
+
+           % v_w = C_B_I * disturbances.wind
+           v_w = C_B_I * [0;0;0]; % Wind velocity (ignored for now)
+           
+           v_b = v_b + v_w;
 
            % Rotation from body frame to component (fin) frame
-		   R_bc = Utils.fin_dcm(0, obj.fin_params.angle);
+		   C_C_B = Utils.fin_dcm(0, obj.fin_params.angle);
 
            % Component frame velocity and ang vel
            w_b = state(12:14);
            r_cb = -obj.fin_params.translation;
-           v_c = R_bc*(v_b + cross(w_b, r_cb));
+           v_c = C_C_B*(v_b + cross(w_b, r_cb));
 			
 		   % Get component forces and moments based on 
-		   [F_c, M_c] = Utils.get_forces_and_moments(state, v_c, obj.aero);
+		   [F_c, M_c] = rocket_pkg.DatcomManager.get_forces_and_moments(state, v_c, obj.aero);
 
            % Converting back to body frame
-           R_cb = R_bc';
-           F_b = R_cb*F_c;
+           C_B_C = C_C_B';
+           F_b = C_B_C*F_c;
            M_b_ross = cross(r_cb.', F_c);
-           M_b = R_cb*M_c + M_b_ross(:);
+           M_b = C_B_C*M_c + M_b_ross(:);
 		end
 	end
 end

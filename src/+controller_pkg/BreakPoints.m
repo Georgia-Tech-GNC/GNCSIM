@@ -12,6 +12,10 @@ classdef BreakPoints < Handle
             % TODO: Port Danil's work here 
         end
 
+        function dumb_traj()
+            % generate trivial trajectory
+        end
+
         function generateBreakPoints(obj)
             % TODO: Break trajectory based on accumulated velocity or
             % altitude and corresponding hyper parameters. Compute A and B
@@ -29,6 +33,10 @@ classdef BreakPoints < Handle
             % performance for each breakpoint (root locus, % overshoot,
             % settling time, rise time, peak time, etc)
 
+        end
+
+        function gain_scheduling_interpolated()
+        
         end
 
     end
