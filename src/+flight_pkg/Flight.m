@@ -2,7 +2,7 @@
 
 classdef Flight < handle
     properties
-        rocket_dyn
+        rocketDynamics
         environment
         breakPoints
 
@@ -13,8 +13,8 @@ classdef Flight < handle
         dt
     end
     methods
-        function obj = Flight(rocket_dyn, environment, breakPoints, flightParams)
-            obj.rocket_dyn = rocket_dyn;
+        function obj = Flight(rocketDynamics, environment, breakPoints, flightParams)
+            obj.rocketDynamics = rocketDynamics;
             obj.environment = environment;
             obj.breakPoints = breakPoints;
             obj.flightParams = flightParams;
@@ -65,7 +65,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.get_windspeed(altitude);
             disturbances.wind = zeros(3);
             
-            [F_b, M_b] = obj.rocketDyn.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
+            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime, obj.breakPoints);
             x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
         
@@ -74,7 +74,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.get_wind(h);  TODO
             disturbances.wind = 0;
             
-            [F_b, M_b] = obj.rocketDyn.get_forces_and_moments(state, disturbances, obj.currentTime);
+            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime);
         end
 
         function [state_dot] = flatEarth_EOM(obj, state, F_b, M_b)   

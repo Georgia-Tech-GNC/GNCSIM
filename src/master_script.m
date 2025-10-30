@@ -9,7 +9,7 @@ run_DATCOM(rocket_dyn)
 
 flight = setup_flight(rocket_dyn);
 
-flight.rocketDyn.draw()
+flight.rocketDynamics.draw()
 
 %% Run Flight
 [t, x, Fb, Mb] = flight.runSim();
@@ -102,8 +102,11 @@ function rocket_dyn = setup_rocket()
     % Create rocket dynamics object
     body = rocket_pkg.RocketBody(body_params, flight_con_params);
     fins = rocket_pkg.RocketFins(fin_params, flight_con_params);
+
+    controller = -1;
+    navigation = -1;
     
-    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
+    rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params, controller, navigation);
 end
 
 
@@ -206,11 +209,9 @@ function flight = setup_flight(rocket_dyn)
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
     flightParams.x0 = state_0;
 
-    nav = -1;
     breakPoints = -1;
     environment = -1;
-    controller = -1;
-    flight = flight_pkg.Flight(rocket_dyn, controller, environment, nav, breakPoints, flightParams);
+    flight = flight_pkg.Flight(rocket_dyn, environment, breakPoints, flightParams);
 end
 
 function monte_carlo = setup_MonteCarlo()

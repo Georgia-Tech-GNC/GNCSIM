@@ -5,7 +5,7 @@ classdef RocketDynamics < handle&Exportable
 		motor_params
 		controller
         navigation
-        aerodynamics
+        aerodynamics = []
 
         mass_wet (1,1) double {mustBePositive} = 1
         mass_dry (1,1) double {mustBePositive} = 1
@@ -17,6 +17,16 @@ classdef RocketDynamics < handle&Exportable
 
 	methods
         function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params, controller, navigation, aerodynamics)
+            arguments
+                body
+                rocket_fins
+                rocket_params
+                motor_params
+                controller
+                navigation
+                aerodynamics = []
+            end
+
             obj.body = body;
             obj.rocket_fins = rocket_fins;
             obj.motor_params = motor_params;
@@ -68,7 +78,7 @@ classdef RocketDynamics < handle&Exportable
                 F_b_aero = F_b_fins + F_b_body;
                 M_b_aero = M_b_fins + M_b_body;
             else
-                [F_b_aero, M_b_aero] = obj.aerodynamics
+                [F_b_aero, M_b_aero] = obj.aerodynamics.get_forces_and_moments(state, disturbances);
             end
             
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
