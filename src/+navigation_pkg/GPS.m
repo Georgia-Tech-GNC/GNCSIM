@@ -1,4 +1,4 @@
-classdef GPS < Sensor
+classdef GPS < navigation_pkg.Sensor
     % Model of in-flight GPS
 
     properties 
@@ -11,7 +11,7 @@ classdef GPS < Sensor
     end
 
     properties (Constant)
-        SENSOR_TYPE = SensorType.GPS
+        SENSOR_TYPE = navigation_pkg.SensorType.GPS
     end
 
     properties
@@ -24,8 +24,8 @@ classdef GPS < Sensor
     methods
 
         function obj = GPS(gps_params)
-        
-            obj@Sensor()
+
+            obj@navigation_pkg.Sensor()
             obj.noiseCovariance = gps_params.noiseCovariance;
             obj.outputRate = gps_params.outputRate;
             obj.outputProbability = gps_params.outputProbability;

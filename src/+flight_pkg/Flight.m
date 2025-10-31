@@ -32,7 +32,7 @@ classdef Flight < handle
             
         %end
 
-        function [tArr, xArr, FbArr, MbArr] = runSim(obj)
+        function [tArr, xArr, FbArr, MbArr, stateEstimateArr] = runSim(obj)
             % This function propagates the dynamics using RK4
 
             % Need setters for this
@@ -45,8 +45,11 @@ classdef Flight < handle
             FbArr = zeros(3,N);
             MbArr = zeros(3,N);
 
+            stateEstimateArr = zeros(14,N);
+
             for ii = 2:N
                 obj.currentXDot = obj.rocket_model(x);
+                stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.get_state_estimate(x, obj.currentXDot, obj.currentTime);
 
                 k1 = obj.rocket_model(x);
                 k2 = obj.rocket_model(x + (k1)*obj.dt/2);
@@ -75,7 +78,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.get_windspeed(altitude);
             disturbances.wind = zeros(3);
             
-            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime, obj.currentXdot, obj.breakPoints);
+            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints);
             x_dot = obj.flatEarth_EOM(state, F_b, M_b);
         end
         

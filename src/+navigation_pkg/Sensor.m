@@ -9,7 +9,7 @@ classdef (Abstract) Sensor < handle
     end
    
     properties (Abstract, Constant)
-        SENSOR_TYPE SensorType
+        SENSOR_TYPE navigation_pkg.SensorType
     end
 
     properties
@@ -20,11 +20,9 @@ classdef (Abstract) Sensor < handle
     end 
     
     methods
-        % Constructor
+        % Constructor - child classes must initialize outputPeriod, lastOutputTime, nextOutputTime
         function obj = Sensor()
-            obj.outputPeriod = 1 / outputRate;
-            obj.lastOutputTime = 0;
-            obj.nextOutputTime = obj.outputPeriod; % First output after one period
+            % Empty constructor - subclasses handle initialization
         end
         
         function tf = isOutputReady(obj, currentTime)

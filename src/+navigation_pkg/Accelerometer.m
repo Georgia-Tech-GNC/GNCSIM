@@ -1,4 +1,4 @@
-classdef Accelerometer < Sensor
+classdef Accelerometer < navigation_pkg.Sensor
     
     properties 
         name = "Accelerometer"
@@ -10,7 +10,7 @@ classdef Accelerometer < Sensor
     end
 
     properties (Constant)
-        SENSOR_TYPE = SensorType.ACCELEROMETER
+        SENSOR_TYPE = navigation_pkg.SensorType.ACCELEROMETER
     end
     
     properties
@@ -29,7 +29,7 @@ classdef Accelerometer < Sensor
 
         function obj = Accelerometer(acc_params)
 
-            obj@Sensor()
+            obj@navigation_pkg.Sensor()
             obj.noiseCovariance = acc_params.noiseCovariance;
             obj.outputRate = acc_params.outputRate;
             obj.outputProbability = acc_params.outputProbability;

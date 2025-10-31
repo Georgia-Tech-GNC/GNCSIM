@@ -1,4 +1,4 @@
-classdef Magnetometer < Sensor
+classdef Magnetometer < navigation_pkg.Sensor
     properties 
         name = "Magnetometer"
         outputDimension = 3;
@@ -9,7 +9,7 @@ classdef Magnetometer < Sensor
     end
 
     properties (Constant)
-        SENSOR_TYPE = SensorType.GYROSCOPE
+        SENSOR_TYPE = navigation_pkg.SensorType.GYROSCOPE
     end
 
     properties

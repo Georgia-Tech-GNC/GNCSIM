@@ -10,10 +10,12 @@ environment = setupEnvironment();
 aerodynamics = setupAerodynamics();
 
 % Setup Controller
-controller = setupController();
+% controller = setupController();
+controller = -1;
 
 % Setup BreakPoints
-breakPoints = setupBreakPoints(controller);
+% breakPoints = setupBreakPoints(controller);
+breakPoints = -1;
 
 % Setup Navigation
 navigation = setupNavigation();
@@ -25,10 +27,11 @@ rocketDynamics = setupRocket(controller, navigation, aerodynamics);
 flight = setupFlight(rocketDynamics, environment, breakPoints);
 
 %% Run Flight
-[tArr, xArr, FbArr, MbArr] = flight.runSim();
+[tArr, xArr, FbArr, MbArr, stateEstimateArr] = flight.runSim();
 
 % Plot Flight
 flight.plotFlight(tArr, xArr);
+flight.plotFlight(tArr, stateEstimateArr);
 
 %% Analysis
 % Still need to implement stuff there. 
@@ -38,7 +41,7 @@ analysis.GenerateAllPlots();
 
 %% Setup Functions
 
-function RocketDynamics = setupRocket()
+function RocketDynamics = setupRocket(controller, navigation, aerodynamics)
 
     % Create Rocket Params
     rocket_params.mass_wet = 40.912994; % kg
@@ -97,17 +100,19 @@ function RocketDynamics = setupRocket()
     motor_params.totalImpulse = 14583; % N-sec
 
     % Create rocket dynamics object    
-% trash below, please replace later with REAL dimensions
-    fins_params.span       = 0.15;       % [m] placeholder
-    fins_params.root_chord = 0.20;       % [m]
-    fins_params.tip_chord  = 0.10;       % [m]
-    fins_params.sweep      = 20*pi/180;  % [rad]
-    fins_params.n_fins     = 4;
-    fins = rocket_pkg.Fins(fins_params);
-% REMOVE STUFF ABOVE
+    % trash below, please replace later with REAL dimensions
+    %     fins_params.span       = 0.15;       % [m] placeholder
+    %     fins_params.root_chord = 0.20;       % [m]
+    %     fins_params.tip_chord  = 0.10;       % [m]
+    %     fins_params.sweep      = 20*pi/180;  % [rad]
+    %     fins_params.n_fins     = 4;
+    %     fins = rocket_pkg.RocketFins(fins_params);
+    % % REMOVE STUFF ABOVE
 
-    body = rocket_pkg.RocketBody(body_params);
-    RocketDynamics = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
+    %body = rocket_pkg.RocketBody(body_params);
+    body = -1;
+    rocket_fins = -1;
+    RocketDynamics = rocket_pkg.RocketDynamics(body, rocket_fins, rocket_params, motor_params, controller, navigation, aerodynamics);
 end
 
 % Need to set up Flight to use environment()
@@ -121,7 +126,7 @@ function EnvironmentObj = setupEnvironment()
     use_default = true;
     
     location = [latitude longitude elevation];
-    EnvironmentObj = Environment();
+    EnvironmentObj = flight_pkg.Environment();
     EnvironmentObj.set_max_altitude(10000) % m
     EnvironmentObj.set_vm_mean(0.01) % m/s
     EnvironmentObj.set_vm_3sigma(0.01) % m/s
@@ -178,7 +183,7 @@ function controller = setupController() % Where should I implement trimpoints?
     controller = controller_pkg.LQR(Q, R, JetVanesActuator);
 end
 
-function nav = setup_navigation()
+function nav = setupNavigation()
     % Navigation
 
     % Acc
@@ -205,7 +210,7 @@ function nav = setup_navigation()
                                   0 4.2 0;
                                   0 0 4.2];
     gps_params.outputRate = 10;
-    gps_params.outputProbability = .8;
+    gps_params.outputProbability = 1;
     gps_params.observationMatrix = @(x)[1 0 0 0 0 0;
                                         0 1 0 0 0 0;
                                         0 0 1 0 0 0];
@@ -222,7 +227,7 @@ function nav = setup_navigation()
 
     gyroscope = navigation_pkg.Gyroscope(gyro_params);
 
-    nav_params.dt = .1;
+    nav_params.dt = .01;
     dt = nav_params.dt;
     nav_params.P = 0.1 * eye(6);
 
@@ -245,12 +250,22 @@ function nav = setup_navigation()
     nav = navigation_pkg.Navigation(nav_params, gps, gyroscope, accelerometer);
 end
 
-function flight = setupFlight(rocketDynamics, controller, environment, navigation, breakPoints)
-    % Setup flight simulation parameters
-    flightParams.dt = 0.01;                % [s] Time step
-    flightParams.x0 = [0, 0, 0, 0.001, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];  % Initial state from old JVR sim
-    flightParams.totalTime = 20;   % [s] Total Time for simulaion
-    
-    % Create flight object
-    flight = Flight(rocketDynamics, controller, environment, navigation, breakPoints, flightParams);
+
+function flight = setupFlight(rocketDynamics, environment, breakPoints)
+    % Flight
+    flightParams.totalTime = 10;  % length of simulation [s]
+    flightParams.dt = 0.01;  % time step [s]
+
+    mass_0 = 20;
+    pos_0 = [0, 0, 0];
+    vel_0 = [0, 0, 100];
+    quat_0 = Utils.euler_to_quat([0, -90, 0]).';
+    omega_0 = [0, 0, 0];
+    state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
+    flightParams.x0 = state_0;
+
+    breakPoints = -1;
+    environment = -1;
+    flight = flight_pkg.Flight(rocketDynamics, environment, breakPoints, flightParams);
 end
+

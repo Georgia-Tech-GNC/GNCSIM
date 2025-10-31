@@ -1,4 +1,4 @@
-classdef Gyroscope < Sensor
+classdef Gyroscope < navigation_pkg.Sensor
 
     properties 
         name = "Gyroscope"
@@ -10,7 +10,7 @@ classdef Gyroscope < Sensor
     end
 
     properties (Constant)
-        SENSOR_TYPE = SensorType.GYROSCOPE
+        SENSOR_TYPE = navigation_pkg.SensorType.GYROSCOPE
     end
 
     properties
@@ -23,8 +23,8 @@ classdef Gyroscope < Sensor
     methods
 
         function obj = Gyroscope(gyro_params)
-        
-            obj@Sensor()
+
+            obj@navigation_pkg.Sensor()
             obj.noiseCovariance = gyro_params.noiseCovariance;
             obj.outputRate = gyro_params.outputRate;
             obj.outputProbability = gyro_params.outputProbability;

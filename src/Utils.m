@@ -4,23 +4,29 @@ classdef Utils
         function vb = quatRotate(q,va)
             % quat_rotate Rotates vec data set using qab from b to a i.e.
             % qBI is Inertial to Body
-            % va - 3d vector in b frame (nx3)
-            % vb - 3d vec in a frame (nx3)
-            % n - # of data entries
-            
-            dims = size(va);
-            
-            % normalize quat
-            q_norm = (q(:,1).^2 + q(:,2).^2 + q(:,3).^2 + q(:,4).^2) .^ 0.5;
-            q_u0 = q(:,1) ./ q_norm;
-            q_u1 = q(:,2) ./ q_norm;
-            q_u2 = q(:,3) ./ q_norm;
-            q_u3 = q(:,4) ./ q_norm;
-            q_u = [q_u0 q_u1 q_u2 q_u3];
-            
-            % quat rotation
-            [~, vB1, vB2, vB3] = parts(quaternion(quatconj(q_u)) .* quaternion([zeros(dims(1),1) va]) .* quaternion(q_u));
-            vb = [vB1 vB2 vB3];
+            % va - 3d vector in b frame (1x3 row or 3x1 column)
+            % vb - 3d vec in a frame (same shape as va)
+
+            % Check if va is column vector and convert to row
+            was_column = false;
+            if size(va, 1) == 3 && size(va, 2) == 1
+                va = va';
+                was_column = true;
+            end
+
+            % Normalize quaternion
+            q_u = Utils.normalize_quat(q);
+
+            % quat rotation: q_conj * [0, va] * q
+            % Convert vector to pure quaternion [0, vx, vy, vz]
+            va_quat = [0, va];
+            [~, vB1, vB2, vB3] = parts(quaternion(quatconj(q_u)) .* quaternion(va_quat) .* quaternion(q_u));
+            vb = [vB1, vB2, vB3];
+
+            % Convert back to column if input was column
+            if was_column
+                vb = vb';
+            end
         end
 
         function q = euler_to_quat(a)

@@ -93,31 +93,31 @@ classdef Navigation < handle&Exportable
                 obj.P = updateCovariance();
             end
 
-            % diagP = diag(obj.P);
-            % obj.covHistory.Px(end+1) = diagP(1);
-            % obj.covHistory.Py(end+1) = diagP(2);
-            % obj.covHistory.Pz(end+1) = diagP(3);
-            % obj.covHistory.Vx(end+1) = diagP(4);
-            % obj.covHistory.Vy(end+1) = diagP(5);
-            % obj.covHistory.Vz(end+1) = diagP(6);
-            % 
-            % if isempty(obj.covHistory.time)
-            %     obj.covHistory.time(1) = 0;
-            % else
-            %     obj.covHistory.time(end+1) = obj.covHistory.time(end) + obj.dt;
-            % end
+            diagP = diag(obj.P);
+            obj.covHistory.Px(end+1) = diagP(1);
+            obj.covHistory.Py(end+1) = diagP(2);
+            obj.covHistory.Pz(end+1) = diagP(3);
+            obj.covHistory.Vx(end+1) = diagP(4);
+            obj.covHistory.Vy(end+1) = diagP(5);
+            obj.covHistory.Vz(end+1) = diagP(6);
+
+            if isempty(obj.covHistory.time)
+                obj.covHistory.time(1) = 0;
+            else
+                obj.covHistory.time(end+1) = obj.covHistory.time(end) + obj.dt;
+            end
 
         end
 
         function obj = predictState(obj)
 
             accI = obj.accBodytoInertial();
-            obj.x(1) = obj.x(1) + Utils.quatrotate(conj(obj.q),obj.x(4))*obj.dt + accI(1) * ((obj.dt^2)/2);
-            obj.x(2) = obj.x(2) + Utils.quatrotate(conj(obj.q),obj.x(5))*obj.dt + accI(2) * ((obj.dt^2)/2);
-            obj.x(3) = obj.x(3) + Utils.quatrotate(conj(obj.q),obj.x(6))*obj.dt + accI(3) * ((obj.dt^2)/2);
-            obj.x(4) = obj.x(4) + Utils.quatrotate(obj.q,accI(1)) * obj.dt; 
-            obj.x(5) = obj.x(5) + Utils.quatrotate(obj.q,accI(2)) * obj.dt; 
-            obj.x(6) = obj.x(6) + Utils.quatrotate(obj.q,accI(3)) * obj.dt;
+            obj.x(1) = obj.x(1) + Utils.quatRotate(quatconj(obj.q),obj.x(4))*obj.dt + accI(1) * ((obj.dt^2)/2);
+            obj.x(2) = obj.x(2) + Utils.quatRotate(quatconj(obj.q),obj.x(5))*obj.dt + accI(2) * ((obj.dt^2)/2);
+            obj.x(3) = obj.x(3) + Utils.quatRotate(quatconj(obj.q),obj.x(6))*obj.dt + accI(3) * ((obj.dt^2)/2);
+            obj.x(4) = obj.x(4) + Utils.quatRotate(obj.q,accI(1)) * obj.dt;
+            obj.x(5) = obj.x(5) + Utils.quatRotate(obj.q,accI(2)) * obj.dt;
+            obj.x(6) = obj.x(6) + Utils.quatRotate(obj.q,accI(3)) * obj.dt;
 
         end
 
@@ -153,8 +153,8 @@ classdef Navigation < handle&Exportable
         function obj = getRawData(obj, state, stateDot)
 
             obj.gpsRawData = obj.gps.getMeasurement(state,stateDot,obj.currentTime); 
-            obj.accRawData = obj.accelerometer.getMeasurment(state,stateDot,obj.currentTime);
-            obj.gyroRawData = obj.gyroscope.getMeasuremtn(state,stateDot,obj.currentTime);
+            obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
+            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
 
         end
 
@@ -206,7 +206,7 @@ classdef Navigation < handle&Exportable
         end
 
         function [accI] = accBodytoInertial(obj)
-            accI = Utils.quatrotate(conj(obj.q), obj.accRawData) + [0,0,9.81];
+            accI = Utils.quatRotate(quatconj(obj.q), obj.accRawData) + [0,0,9.81];
         end
     
         function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor
