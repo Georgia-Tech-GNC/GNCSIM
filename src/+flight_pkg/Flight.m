@@ -49,7 +49,7 @@ classdef Flight < handle
 
             for ii = 2:N
                 obj.currentXDot = obj.rocket_model(x);
-                stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.get_state_estimate(x, obj.currentXDot, obj.currentTime);
+                %stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.get_state_estimate(x, obj.currentXDot, obj.currentTime);
 
                 k1 = obj.rocket_model(x);
                 k2 = obj.rocket_model(x + (k1)*obj.dt/2);
@@ -128,7 +128,7 @@ classdef Flight < handle
             state_dot = [mass_dot; pos_dot; vel_dot; quat_dot; omega_dot];
         end
 
-        function plotFlight(t_arr, x_arr)
+        function plotFlight(obj, t_arr, x_arr)
             
             figure;
             plot3(x_arr(2, :), x_arr(3, :), x_arr(4, :), 'LineWidth', 2);
@@ -163,29 +163,31 @@ classdef Flight < handle
             grid on;
             legend('show');
             title('Angular Velocity Components');
+
+            % Plot eurler angles
+
             
             % Convert quaternion to Euler angles
-            euler_angles = quat2eul(x_arr(8:11, :));
+            euler_angles = rad2deg(quat2eul(x_arr(8:11, :).'));
 
             % Plotting Euler angles
             figure;
             subplot(3, 1, 1);
-            plot(t_arr, euler_angles(1, :), 'r', 'LineWidth', 2);
-            ylabel('Roll (rad)');
+            plot(t_arr, euler_angles(:, 1), 'r', 'LineWidth', 2);
+            ylabel('Roll (deg)');
             grid on;
 
             subplot(3, 1, 2);
-            plot(t_arr, euler_angles(2, :), 'g', 'LineWidth', 2);
-            ylabel('Pitch (rad)');
+            plot(t_arr, euler_angles(:, 2), 'g', 'LineWidth', 2);
+            ylabel('Pitch (deg)');
             grid on;
 
             subplot(3, 1, 3);
-            plot(t_arr, euler_angles(3, :), 'b', 'LineWidth', 2);
-            ylabel('Yaw (rad)');
+            plot(t_arr, euler_angles(:, 3), 'b', 'LineWidth', 2);
+            ylabel('Yaw (deg)');
             xlabel('Time (s)');
             grid on;
             sgtitle('Orientation (Euler Angles)');
-
         end
     end
 end
