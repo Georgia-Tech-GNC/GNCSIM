@@ -9,7 +9,7 @@ run_DATCOM(rocket_dyn)
 
 flight = setup_flight(rocket_dyn);
 
-flight.rocketDynamics.draw()
+%flight.rocketDynamics.draw()
 
 %% Run Flight
 [t, x, Fb, Mb] = flight.runSim();
@@ -23,7 +23,7 @@ n = 1; %For single flight
 %flight.draw_traj()
 
 
-%flight.plotFlight(t, x);
+flight.plotFlight(t, x);
 
 %% Functions
 function rocket_dyn = setup_rocket()
@@ -109,6 +109,14 @@ function rocket_dyn = setup_rocket()
     navigation = -1;
     
     rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params, controller, navigation);
+
+    rocket_dyn.mass_wet = 20;
+    rocket_dyn.mass_dry = 18;
+    rocket_dyn.CG_wet = 0.6;
+    rocket_dyn.CG_dry = 0.4;
+    rocket_dyn.moi_wet = 4 * eye(3);
+    rocket_dyn.moi_dry = 3 * eye(3);
+
 end
 
 
@@ -206,10 +214,10 @@ function flight = setup_flight(rocket_dyn)
     flightParams.dt = 0.01;  % time step [s]
 
     mass_0 = 20;
-    pos_0 = [0, 0, 0];
-    vel_0 = [0, 0, 100];
-    quat_0 = Utils.euler_to_quat([0, -90, 0]).';
-    omega_0 = [0, 0, 0];
+    pos_0 = [0, 0, 1];
+    vel_0 = [1, 0, 0];
+    quat_0 = Utils.euler_to_quat([1, 5, 1]).';
+    omega_0 = [0, .05, 0];
     state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
     flightParams.x0 = state_0;
 

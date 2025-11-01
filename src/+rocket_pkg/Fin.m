@@ -33,7 +33,7 @@ classdef Fin < handle
 
            % Component frame velocity and ang vel
            w_b = state(12:14);
-           r_cb = -obj.fin_params.translation;
+           r_cb = -obj.fin_params.translation(:);
            v_c = C_C_B*(v_b + cross(w_b, r_cb));
 			
 		   % Get component forces and moments based on 
@@ -42,7 +42,7 @@ classdef Fin < handle
            % Converting back to body frame
            C_B_C = C_C_B';
            F_b = C_B_C*F_c;
-           M_b_ross = cross(r_cb.', F_c);
+           M_b_ross = cross(r_cb, F_b);
            M_b = C_B_C*M_c + M_b_ross(:);
 		end
 	end

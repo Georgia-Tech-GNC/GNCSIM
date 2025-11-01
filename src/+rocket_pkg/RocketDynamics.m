@@ -89,14 +89,14 @@ classdef RocketDynamics < handle&Exportable
         function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, xdot, breakPoints)
             
             % computes aero forces and moments 
-            % if isempty(obj.aerodynamics)
-            %     [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
-            %     [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
-            %     F_b_aero = F_b_fins + F_b_body;
-            %     M_b_aero = M_b_fins + M_b_body;
-            % else
-            %     [F_b_aero, M_b_aero] = obj.aerodynamics.get_forces_and_moments(state, disturbances);
-            % end
+            if isempty(obj.aerodynamics)
+                 [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
+                 [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
+                 F_b_aero = F_b_fins + F_b_body;
+                 M_b_aero = M_b_fins + M_b_body;
+             else
+                 [F_b_aero, M_b_aero] = obj.aerodynamics.get_forces_and_moments(state, disturbances);
+             end
 
             F_t_b = [obj.getThrust(time); 0; 0];
             
@@ -106,8 +106,8 @@ classdef RocketDynamics < handle&Exportable
             state_estimate = obj.navigation.get_state_estimate(state, xdot, time);
             %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
 
-            F_b = F_t_b; %F_b_aero + F_t_b;
-            M_b = [0; 0; 0]; %M_b_aero;
+            F_b = F_t_b + F_b_aero;
+            M_b = M_b_aero;
         end
 
         function compute_buildup(obj)

@@ -132,7 +132,7 @@ classdef DatcomManager < handle
 			cn = cn_F(AoA_deg, mach, alt);
 
 			alpha_range = [min(aero.alpha(:)), max(aero.alpha(:))];
-    		mach_range  = [min(aero.mach(:)), max(aero.mach(:))];
+    		mach_range  = [0, max(aero.mach(:))];
     		alt_range   = [min(aero.alt(:)),  max(aero.alt(:))];
 		
     		% Check bounds
