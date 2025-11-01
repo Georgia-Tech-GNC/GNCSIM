@@ -49,7 +49,7 @@ classdef GPS < navigation_pkg.Sensor&handle
             
             if obj.isOutputReady(currentTime)
                 obj.posI = state(2:4);
-                [lat, lon, alt] = obj.NED2LLA();
+                [lat, lon, alt] = obj.ENU2LLA();
                 llaPos = [lat, lon, alt];
                 measurement = obj.gpsBuiltIn(llaPos,state(5:7)');
             else
@@ -60,7 +60,7 @@ classdef GPS < navigation_pkg.Sensor&handle
 
         end
 
-        function [lat, lon, alt] = NED2LLA(obj)
+        function [lat, lon, alt] = ENU2LLA(obj)
 
             % Converts from NED coordinates back to LLA (WGS84)
 
@@ -71,13 +71,13 @@ classdef GPS < navigation_pkg.Sensor&handle
             phi = deg2rad(obj.refLLA(1));
             lambda = deg2rad(obj.refLLA(2));
 
-            xNED = obj.posI(1);
-            yNED = obj.posI(2);
-            zNED = obj.posI(3);
+            xENU = obj.posI(1);
+            yENU = obj.posI(2);
+            zENU = obj.posI(3);
 
-            dx = -sin(phi)*cos(lambda)*xNED - sin(lambda)*yNED - cos(phi)*cos(lambda)*zNED;
-            dy = -sin(phi)*sin(lambda)*xNED + cos(lambda)*yNED - cos(phi)*sin(lambda)*zNED;
-            dz =  cos(phi)*xNED - sin(phi)*zNED;
+            dx = -sin(lambda)*xENU - sin(phi)*cos(lambda)*yENU + cos(phi)*cos(lambda)*zENU;
+            dy = cos(lambda)*xENU - sin(phi)*sin(lambda)*yENU + cos(phi)*sin(lambda)*zENU;
+            dz =  cos(phi)*yENU + sin(phi)*zENU;
             
             xECEF = refECEF(1) + dx;
             yECEF = refECEF(2) + dy;

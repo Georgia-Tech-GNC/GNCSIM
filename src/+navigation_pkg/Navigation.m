@@ -1,6 +1,5 @@
 classdef Navigation < handle&Exportable
     % Sensor Modeling & State Estimation
-    % Specific force  to acceleration still needed
     % Frame transform for gps data
 
     properties (SetAccess = private)
@@ -98,8 +97,7 @@ classdef Navigation < handle&Exportable
             obj.P = obj.predictCovariance();
 
             % Update Step
-            % Sensor data called in runNavigation, maybe move it here/
-            % don't auto set z but use observation matrix
+            % don't auto set z use observation matrix
             if ~(isempty(obj.gpsRawData))
                 obj.K = obj.kalmanGain();
                 obj.updateState();
@@ -168,9 +166,15 @@ classdef Navigation < handle&Exportable
         %% Sensor Data
         function obj = getRawData(obj, state, stateDot)
 
-            obj.gpsRawData = obj.gps.getMeasurement(state,stateDot,obj.currentTime);
-            obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
-            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
+            [lat, lon, alt] = obj.gps.getMeasurement(state,stateDot,obj.currentTime);
+            [xENU, yENU, zENU] = obj.GPS2ENU(lat,lon,alt);
+            obj.gpsRawData = [xENU, yENU, zENU];
+
+            [xAcc, yAcc, zAcc] = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
+            obj.accRawData = [xAcc, yAcc, zAcc];
+
+            [xGyro, yGyro, zGyro] = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
+            obj.gyroRawData = [xGyro, yGyro, zGyro];
 
         end
 
@@ -203,7 +207,7 @@ classdef Navigation < handle&Exportable
 
         end
 
-        function [xNED, yNED, zNED] = GPS2NED(obj, lat, lon, alt)
+        function [xENU, yENU, zENU] = GPS2ENU(obj, lat, lon, alt)
             
             [xECEF, yECEF, zECEF] = LLA2ECEF(lat, lon, alt);
 
@@ -215,14 +219,14 @@ classdef Navigation < handle&Exportable
             phi = deg2rad(lat);
             lambda = deg2rad(lon);
 
-            xNED = -sin(phi) * cos(lambda) * dx - sin(phi) * sin(lambda) * dy + cos(phi) * dz;
-            yNED = -sin(lambda) * dx + cos(lambda) * dy;
-            zNED = -cos(phi) * cos(lambda) * dx - cos(phi) * sin(lambda) * dy - sin(phi) * dz;
+            xENU = -sin(lambda)*dx + cos(lambda)*dy;
+            yENU = -sin(phi)*cos(lambda)*dx - sin(phi)*sin(lambda)*dy + cos(phi)*dz;
+            zENU = cos(phi)*cos(lambda)*dx + cos(phi)*sin(lambda)*dy + sin(phi)*dz;
 
         end
 
         function [accI] = accBodytoInertial(obj)
-            accI = obj.cIB * obj.accRawData + [0,0,9.81];
+            accI = obj.cIB * obj.accRawData + [0,0,-9.81];
         end
     
         function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor
