@@ -27,7 +27,11 @@ classdef (Abstract) Sensor < handle
         
         function tf = isOutputReady(obj, currentTime)
             % Check if sensor should output at current time
-            tf = (currentTime >= obj.nextOutputTime) && (rand() < (obj.outputProbability));
+            if currentTime == 0
+                tf = true;
+            else
+                tf = (currentTime >= obj.nextOutputTime) && (rand() < (obj.outputProbability));
+            end
         end
         
         function scheduleNextOutput(obj, currentTime)

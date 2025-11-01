@@ -102,6 +102,7 @@ classdef RocketDynamics < handle&Exportable
             
             
             %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
+
             state_estimate = obj.navigation.get_state_estimate(state, xdot, time);
             %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
 

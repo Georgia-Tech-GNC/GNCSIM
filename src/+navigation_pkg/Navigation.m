@@ -1,6 +1,7 @@
 classdef Navigation < handle&Exportable
     % Sensor Modeling & State Estimation
-    % 
+    % Specific force  to acceleration still needed
+    % Frame transform for gps data
 
     properties (SetAccess = private)
         
@@ -20,6 +21,9 @@ classdef Navigation < handle&Exportable
         gpsRawData
         gyroRawData
         accRawData
+
+        cBI
+        cIB
 
         accelerometer
         gyroscope
@@ -50,15 +54,24 @@ classdef Navigation < handle&Exportable
 
         function ekfState = get_state_estimate(obj, state, stateDot, currentTime)
             obj.currentTime = currentTime;
-            obj.getRawData(state, stateDot);
-            if obj.currentTime ~= 0
-                obj.runAttitudeEstimation();
-            end
 
+            if obj.currentTime ~= 0
+                obj.getRawData(state, stateDot);
+                obj.runAttitudeEstimation();
+            else
+                obj.gpsRawData = zeros(3,1);
+                obj.gyroRawData = zeros(3,1);
+                obj.accRawData = zeros(3,1);
+                obj.q = state(8:11);
+            end
             obj.x = state(2:7);
-            obj.ekf();
+
+            obj.cBI = Utils.dir_cosine(obj.q);
+            obj.cIB = obj.cBI.';
             
-            ekfState = [state(1); obj.x; obj.q; state(12:14)];
+            obj.ekf();
+
+            ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
             
 
         end
@@ -81,16 +94,16 @@ classdef Navigation < handle&Exportable
             
 
             % Predict Step
-            obj.predictState() 
+            obj.predictState();
             obj.P = obj.predictCovariance();
 
             % Update Step
             % Sensor data called in runNavigation, maybe move it here/
             % don't auto set z but use observation matrix
             if ~(isempty(obj.gpsRawData))
-                obj.K = kalmanGain();
-                obj.x = obj.updateState();
-                obj.P = updateCovariance();
+                obj.K = obj.kalmanGain();
+                obj.updateState();
+                obj.P = obj.updateCovariance();
             end
 
             diagP = diag(obj.P);
@@ -112,12 +125,14 @@ classdef Navigation < handle&Exportable
         function obj = predictState(obj)
 
             accI = obj.accBodytoInertial();
-            obj.x(1) = obj.x(1) + Utils.quatRotate(quatconj(obj.q),obj.x(4))*obj.dt + accI(1) * ((obj.dt^2)/2);
-            obj.x(2) = obj.x(2) + Utils.quatRotate(quatconj(obj.q),obj.x(5))*obj.dt + accI(2) * ((obj.dt^2)/2);
-            obj.x(3) = obj.x(3) + Utils.quatRotate(quatconj(obj.q),obj.x(6))*obj.dt + accI(3) * ((obj.dt^2)/2);
-            obj.x(4) = obj.x(4) + Utils.quatRotate(obj.q,accI(1)) * obj.dt;
-            obj.x(5) = obj.x(5) + Utils.quatRotate(obj.q,accI(2)) * obj.dt;
-            obj.x(6) = obj.x(6) + Utils.quatRotate(obj.q,accI(3)) * obj.dt;
+            velI = obj.cIB * obj.x(4:6);
+            accB = obj.cBI * accI;
+            obj.x(1) = obj.x(1) + velI(1) * obj.dt + accI(1) * ((obj.dt^2)/2);
+            obj.x(2) = obj.x(2) + velI(2) * obj.dt + accI(2) * ((obj.dt^2)/2);
+            obj.x(3) = obj.x(3) + velI(3) * obj.dt + accI(3) * ((obj.dt^2)/2);
+            obj.x(4) = obj.x(4) + accB(1) * obj.dt;
+            obj.x(5) = obj.x(5) + accB(2) * obj.dt;
+            obj.x(6) = obj.x(6) + accB(3) * obj.dt;
 
         end
 
@@ -130,6 +145,7 @@ classdef Navigation < handle&Exportable
 
         function obj = updateState(obj)
 
+            obj.z = obj.gpsRawData;
             y = obj.z - obj.h(obj.x); % Need to do z and h
             obj.x = obj.x + obj.K * y;
 
@@ -152,7 +168,7 @@ classdef Navigation < handle&Exportable
         %% Sensor Data
         function obj = getRawData(obj, state, stateDot)
 
-            obj.gpsRawData = obj.gps.getMeasurement(state,stateDot,obj.currentTime); 
+            obj.gpsRawData = obj.gps.getMeasurement(state,stateDot,obj.currentTime);
             obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
             obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
 
@@ -206,7 +222,7 @@ classdef Navigation < handle&Exportable
         end
 
         function [accI] = accBodytoInertial(obj)
-            accI = Utils.quatRotate(quatconj(obj.q), obj.accRawData) + [0,0,9.81];
+            accI = obj.cIB * obj.accRawData + [0,0,9.81];
         end
     
         function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor

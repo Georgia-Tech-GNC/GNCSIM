@@ -8,6 +8,7 @@ environment = setupEnvironment();
 
 % Setup CFD Aerodynamics
 aerodynamics = setupAerodynamics();
+aerodynamics = -1;
 
 % Setup Controller
 % controller = setupController();
@@ -201,7 +202,7 @@ function nav = setupNavigation()
     accelerometer = navigation_pkg.Accelerometer(acc_params);
 
     % GPS
-    gps_params.refLLA = [33.776, -84.399, 306];
+    gps_params.refLLA = [31.2732, 83.3538, 75]; % Check
     gps_params.verticalAccuracy = 1;
     gps_params.horizontalAccuracy = 1;
     gps_params.velocityAccuracy = 1;

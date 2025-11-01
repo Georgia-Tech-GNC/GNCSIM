@@ -1,4 +1,4 @@
-classdef Gyroscope < navigation_pkg.Sensor
+classdef Gyroscope < navigation_pkg.Sensor&handle
 
     properties 
         name = "Gyroscope"

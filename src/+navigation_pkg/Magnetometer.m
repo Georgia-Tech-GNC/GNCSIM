@@ -1,4 +1,4 @@
-classdef Magnetometer < navigation_pkg.Sensor
+classdef Magnetometer < navigation_pkg.Sensor&handle
     properties 
         name = "Magnetometer"
         outputDimension = 3;

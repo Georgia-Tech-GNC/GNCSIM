@@ -1,4 +1,4 @@
-classdef GPS < navigation_pkg.Sensor
+classdef GPS < navigation_pkg.Sensor&handle
     % Model of in-flight GPS
 
     properties 
@@ -42,14 +42,16 @@ classdef GPS < navigation_pkg.Sensor
                                 'VerticalPositionAccuracy', gps_params.verticalAccuracy, ...
                                 'HorizontalPositionAccuracy', gps_params.horizontalAccuracy, ...
                                 'VelocityAccuracy', gps_params.velocityAccuracy);
+
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
             
             if obj.isOutputReady(currentTime)
                 obj.posI = state(2:4);
-                llaPos = NED2lla();
-                measurement = obj.gpsBuiltIn(llaPos,state(5:7));
+                [lat, lon, alt] = obj.NED2LLA();
+                llaPos = [lat, lon, alt];
+                measurement = obj.gpsBuiltIn(llaPos,state(5:7)');
             else
                 measurement = [];
             end
@@ -63,15 +65,15 @@ classdef GPS < navigation_pkg.Sensor
             % Converts from NED coordinates back to LLA (WGS84)
 
             % Reference ECEF
-            refECEF = LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));
+            refECEF = lla2ecef([obj.refLLA(1), obj.refLLA(2), obj.refLLA(3)]);
 
             % Reference latitude and longitude (radians)
             phi = deg2rad(obj.refLLA(1));
             lambda = deg2rad(obj.refLLA(2));
 
-            xNED = obj.inertialPos(1);
-            yNED = obj.inertialPos(2);
-            zNED = obj.inertialPos(3);
+            xNED = obj.posI(1);
+            yNED = obj.posI(2);
+            zNED = obj.posI(3);
 
             dx = -sin(phi)*cos(lambda)*xNED - sin(lambda)*yNED - cos(phi)*cos(lambda)*zNED;
             dy = -sin(phi)*sin(lambda)*xNED + cos(lambda)*yNED - cos(phi)*sin(lambda)*zNED;
@@ -82,11 +84,12 @@ classdef GPS < navigation_pkg.Sensor
             zECEF = refECEF(3) + dz;
 
             % Convert ECEF → LLA
-            [lat, lon, alt] = ECEF2LLA(xECEF, yECEF, zECEF);
+            [lat, lon, alt] = obj.ECEF2LLA(xECEF, yECEF, zECEF);
+            
 
         end
 
-        function [lat, lon, alt] = ECEF2LLA(xECEF, yECEF, zECEF)
+        function [lat, lon, alt] = ECEF2LLA(obj, xECEF, yECEF, zECEF)
             % Converts from ECEF to WGS84 Latitude, Longitude, Altitude
 
             WGS84_A = 6378137.0;         

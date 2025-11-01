@@ -1,4 +1,4 @@
-classdef Accelerometer < navigation_pkg.Sensor
+classdef Accelerometer < navigation_pkg.Sensor&handle
     
     properties 
         name = "Accelerometer"
@@ -51,6 +51,7 @@ classdef Accelerometer < navigation_pkg.Sensor
             if obj.isOutputReady(currentTime)
                 obj.qBI = state(8:11);
                 obj.angVelB = state(12:14);
+
                 obj.accelB = stateDot(5:7); 
     
                 accelIMU = obj.accLeverArm();
@@ -70,7 +71,8 @@ classdef Accelerometer < navigation_pkg.Sensor
             r = zeros(3,1); % placeholder
             velCG = zeros(3,1); % Placeholder for future coupling term
             correction = cross(w, velCG) + cross(w, cross(w, r));
-            accelIMU = obj.accelB - Utils.quatRotate(obj.qBI, correction);
+            cBI = Utils.dir_cosine(obj.qBI);
+            accelIMU = obj.accelB - cBI * correction;
         end
 
         function noisyAccel = addNoise(obj, accelIMU)
