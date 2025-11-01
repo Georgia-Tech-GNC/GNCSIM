@@ -1,5 +1,3 @@
-
-
 classdef Flight < handle
     properties
         rocketDynamics
@@ -48,13 +46,20 @@ classdef Flight < handle
             stateEstimateArr = zeros(14,N);
 
             for ii = 2:N
-                obj.currentXDot = obj.rocket_model(x);
-                %stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.get_state_estimate(x, obj.currentXDot, obj.currentTime);
+                ii
+                obj.currentXDot = obj.rocketModel(x);
 
-                k1 = obj.rocket_model(x);
-                k2 = obj.rocket_model(x + (k1)*obj.dt/2);
-                k3 = obj.rocket_model(x + (k2)*obj.dt/2);
-                k4 = obj.rocket_model(x + (k3)*obj.dt);
+                disp('xdot')
+                disp(obj.currentXDot)
+                stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
+                
+                disp('state estimate')
+                disp(stateEstimateArr(:,ii))
+
+                k1 = obj.rocketModel(x);
+                k2 = obj.rocketModel(x + (k1)*obj.dt/2);
+                k3 = obj.rocketModel(x + (k2)*obj.dt/2);
+                k4 = obj.rocketModel(x + (k3)*obj.dt);
 
                 obj.currentTime = ii * obj.dt;
 
@@ -62,18 +67,21 @@ classdef Flight < handle
 
                 % quaternion normalization
                 quat = x(8:11);
-                quat_norm = Utils.normalize_quat(quat);
-                x(8:11) = quat_norm;
+                quatNorm = Utils.normalizeQuat(quat);
+                x(8:11) = quatNorm;
     
                 tArr(ii) = obj.currentTime;
                 xArr(:, ii) = x;
+                
+                disp('x arr')
+                disp(xArr(:, ii))
 
                 % replace by Log Class
                 [FbArr(:,ii), MbArr(:,ii)] = obj.get_forces_and_moments_wrapper(x);
             end
         end
 
-        function x_dot = rocket_model(obj, state)
+        function x_dot = rocketModel(obj, state)
             altitude = state(4);
             %disturbances.wind = obj.environment.get_windspeed(altitude);
             disturbances.wind = zeros(3);
@@ -103,15 +111,11 @@ classdef Flight < handle
                 omega(3), omega(2), -omega(1), 0
             ];
 
-            T = obj.rocketDynamics.getThrust(obj.currentTime);
-            totalImpulse = obj.rocketDynamics.totalImpulse;
-            mass_wet = obj.rocketDynamics.mass_wet;
-            mass_dry = obj.rocketDynamics.mass_dry;
 
             % preventing mass to go below mass_dry
-            mass = max(mass, mass_dry); 
+            mass = max(mass, obj.rocketDynamics.mass_dry); 
 
-            [~, Ib] = obj.rocketDynamics.get_CG_MOI(mass);
+            [~, Ib] = obj.rocketDynamics.getCgMoi(mass);
 
             C_B_I = Utils.dir_cosine(quat);
             C_I_B = C_B_I.';
@@ -120,7 +124,7 @@ classdef Flight < handle
 
             F_b = F_b + C_B_I * g;
             
-            mass_dot = - T * (mass_wet - mass_dry) / totalImpulse;
+            mass_dot = obj.rocketDynamics.getMDot(obj.currentTime);
             pos_dot = C_I_B * vel;
             vel_dot = F_b / mass - cross(omega, vel);
             quat_dot = 0.5 * mat_omega * quat;

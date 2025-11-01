@@ -8,7 +8,6 @@ environment = setupEnvironment();
 
 % Setup CFD Aerodynamics
 aerodynamics = setupAerodynamics();
-aerodynamics = -1;
 
 % Setup Controller
 % controller = setupController();
@@ -42,13 +41,13 @@ analysis.GenerateAllPlots();
 
 %% Setup Functions
 
-function RocketDynamics = setupRocket(controller, navigation, aerodynamics)
+function rocketDynamics = setupRocket(controller, navigation, aerodynamics)
 
     % Create Rocket Params
-    rocket_params.mass_wet = 40.912994; % kg
-    rocket_params.mass_dry = 32.619994;
-    rocket_params.CG_wet = 2.419762;
-    rocket_params.CG_dry = 2.314814;
+    rocketParams.massWet = 40.912994; % kg
+    rocketParams.massDry = 32.619994;
+    rocketParams.cgWet = 2.419762;
+    rocketParams.cgDry = 2.314814;
 
     wetRollMOI = 0.209731;  % Ixx
     wetPitchMOI = 24.655278;  % Iyy
@@ -57,16 +56,16 @@ function RocketDynamics = setupRocket(controller, navigation, aerodynamics)
     dryPitchMOI = 22.301315;
     dryYawMOI = 22.301570;
 
-    rocket_params.moi_wet = [wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI];
-    rocket_params.moi_dry = [dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI];
-    
+    rocketParams.moiWet = [wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI];
+    rocketParams.moiDry = [dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI];
+
     % Create Body
-    body_params.body_length = 3.4;          % [m]
-    body_params.rocket_diameter = 0.203;    % [m]
+    bodyParams.bodyLength = 3.4;          % [m]
+    bodyParams.rocketDiameter = 0.203;    % [m]
 
     % Motor params
-    motor_params.burn_time = 13.1; % s
-    motor_params.tc = [0.0, 0.457288;
+    motorParams.burnTime = 13.1; % s
+    motorParams.tc = [0.0, 0.457288;
         0.152, 0.314574;
         0.162, 40.2069;
         0.164, 148.3954;
@@ -98,39 +97,39 @@ function RocketDynamics = setupRocket(controller, navigation, aerodynamics)
         13.5895, 106.0499;
         14.6754, 12.60914;
         16.1354, 0.0;];
-    motor_params.totalImpulse = 14583; % N-sec
+    motorParams.totalImpulse = 14583; % N-sec
 
-    % Create rocket dynamics object    
+    % Create rocket dynamics object
     % trash below, please replace later with REAL dimensions
-    %     fins_params.span       = 0.15;       % [m] placeholder
-    %     fins_params.root_chord = 0.20;       % [m]
-    %     fins_params.tip_chord  = 0.10;       % [m]
-    %     fins_params.sweep      = 20*pi/180;  % [rad]
-    %     fins_params.n_fins     = 4;
-    %     fins = rocket_pkg.RocketFins(fins_params);
+    %     finsParams.span       = 0.15;       % [m] placeholder
+    %     finsParams.rootChord = 0.20;       % [m]
+    %     finsParams.tipChord  = 0.10;       % [m]
+    %     finsParams.sweep      = 20*pi/180;  % [rad]
+    %     finsParams.nFins     = 4;
+    %     fins = rocket_pkg.RocketFins(finsParams);
     % % REMOVE STUFF ABOVE
 
-    %body = rocket_pkg.RocketBody(body_params);
+    %body = rocket_pkg.RocketBody(bodyParams);
     body = -1;
-    rocket_fins = -1;
-    RocketDynamics = rocket_pkg.RocketDynamics(body, rocket_fins, rocket_params, motor_params, controller, navigation, aerodynamics);
+    rocketFins = -1;
+    rocketDynamics = rocket_pkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics);
 end
 
 % Need to set up Flight to use environment()
-function EnvironmentObj = setupEnvironment()
+function environmentObj = setupEnvironment()
     % Assuming Location of GRITS Launch Site; 31.2732° N, 83.3538° W
     latitude = 31.2732; % deg
     longitude = 83.3538; % deg
     elevation = 75; % m
-    
+
     % Use default location? (if not, then python is needed to generate the new location data)
-    use_default = true;
-    
+    useDefault = true;
+
     location = [latitude longitude elevation];
-    EnvironmentObj = flight_pkg.Environment();
-    EnvironmentObj.set_max_altitude(10000) % m
-    EnvironmentObj.set_vm_mean(0.01) % m/s
-    EnvironmentObj.set_vm_3sigma(0.01) % m/s
+    environmentObj = flight_pkg.Environment();
+    environmentObj.setMaxAltitude(10000); % m
+    environmentObj.setVmMean(0.01); % m/s
+    environmentObj.setVm3Sigma(0.01); % m/s
 end
 
 function [aerodynamics] = setupAerodynamics()
@@ -145,21 +144,21 @@ function [aerodynamics] = setupAerodynamics()
     MAy_b_sym = 0;
     MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
     
-    FAx_b_func = matlabFunction(FAx_b_sym, vars=Vars);
-    FAy_b_func = matlabFunction(FAy_b_sym, vars=Vars);
-    FAz_b_func = matlabFunction(FAz_b_sym, vars=Vars);
-    MAx_b_func = matlabFunction(MAx_b_sym, vars=Vars);
-    MAy_b_func = matlabFunction(MAy_b_sym, vars=Vars);
-    MAz_b_func = matlabFunction(MAz_b_sym, vars=Vars);
-    
-    aerodynamics.set_FAx_func(FAx_b_func);
-    aerodynamics.set_FAy_func(FAy_b_func);
-    aerodynamics.set_FAz_func(FAz_b_func);
-    aerodynamics.set_MAx_func(MAx_b_func);
-    aerodynamics.set_MAy_func(MAy_b_func);
-    aerodynamics.set_MAz_func(MAz_b_func);
+    fAxBFunc = matlabFunction(FAx_b_sym, vars=Vars);
+    fAyBFunc = matlabFunction(FAy_b_sym, vars=Vars);
+    fAzBFunc = matlabFunction(FAz_b_sym, vars=Vars);
+    mAxBFunc = matlabFunction(MAx_b_sym, vars=Vars);
+    mAyBFunc = matlabFunction(MAy_b_sym, vars=Vars);
+    mAzBFunc = matlabFunction(MAz_b_sym, vars=Vars);
 
-    aero_forces_moments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
+    aerodynamics.setFAxFunc(fAxBFunc);
+    aerodynamics.setFAyFunc(fAyBFunc);
+    aerodynamics.setFAzFunc(fAzBFunc);
+    aerodynamics.setMAxFunc(mAxBFunc);
+    aerodynamics.setMAyFunc(mAyBFunc);
+    aerodynamics.setMAzFunc(mAzBFunc);
+
+    aeroForcesMoments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
 end
 
 function breakPoints = setupBreakPoints()
@@ -170,85 +169,85 @@ function controller = setupController() % Where should I implement trimpoints?
     % State: [u, v, w, p, q, r, q0, q1, q2, q3]
     Q = diag([10, 10, 10, 1, 1, 1, 1, 1, 1, 1]);   % Not Sure
     R = diag([1, 1, 1, 1]);                        % Not Sure
-    
+
     % Create Jet Vanes Actuator
 
     % should set the bias and r24 here, not through motor params
-    JetVanesActuator = JVR_files.JetVanesActuatorModel();
-    JetVanesActuator.biasAng = [0; 0; 0; 0]; % [rad] Not Sure What Real Values Are
-    JetVanesActuator.r24 = 0.0144;              % [m] Distance Between Vanes 2 and 4
-    JetVanesActuator.location = 3.4;            % m (length of rocket)
-    JetVanesActuator.q_ba = [1, 0, 0, 0];       % unit quaternion
+    jetVanesActuator = JVR_files.JetVanesActuatorModel();
+    jetVanesActuator.biasAng = [0; 0; 0; 0]; % [rad] Not Sure What Real Values Are
+    jetVanesActuator.r24 = 0.0144;              % [m] Distance Between Vanes 2 and 4
+    jetVanesActuator.location = 3.4;            % m (length of rocket)
+    jetVanesActuator.qBa = [1, 0, 0, 0];       % unit quaternion
 
     % Create LQR Controller
-    controller = controller_pkg.LQR(Q, R, JetVanesActuator);
+    controller = controller_pkg.LQR(Q, R, jetVanesActuator);
 end
 
 function nav = setupNavigation()
     % Navigation
 
     % Acc
-    acc_params.VRW = -1;
-    acc_params.leverArm = -1;
-    acc_params.SF = -1;
-    acc_params.bias = -1;
+    accParams.VRW = -1;
+    accParams.leverArm = -1;
+    accParams.SF = -1;
+    accParams.bias = -1;
 
-    acc_params.noiseCovariance = -1;
-    acc_params.outputRate = 100;
-    acc_params.outputProbability = 1;
-    acc_params.observationMatrix = zeros(3);
+    accParams.noiseCovariance = -1;
+    accParams.outputRate = 100;
+    accParams.outputProbability = 1;
+    accParams.observationMatrix = zeros(3);
 
-   
-    accelerometer = navigation_pkg.Accelerometer(acc_params);
+
+    accelerometer = navigation_pkg.Accelerometer(accParams);
 
     % GPS
-    gps_params.refLLA = [31.2732, 83.3538, 75]; % Check
-    gps_params.verticalAccuracy = 1;
-    gps_params.horizontalAccuracy = 1;
-    gps_params.velocityAccuracy = 1;
+    gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    gpsParams.verticalAccuracy = 1;
+    gpsParams.horizontalAccuracy = 1;
+    gpsParams.velocityAccuracy = 1;
 
-    gps_params.noiseCovariance = [8.4 0 0;
+    gpsParams.noiseCovariance = [8.4 0 0;
                                   0 4.2 0;
                                   0 0 4.2];
-    gps_params.outputRate = 10;
-    gps_params.outputProbability = 1;
-    gps_params.observationMatrix = @(x)[1 0 0 0 0 0;
+    gpsParams.outputRate = 10;
+    gpsParams.outputProbability = 1;
+    gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                         0 1 0 0 0 0;
                                         0 0 1 0 0 0];
-    gps = navigation_pkg.GPS(gps_params);
+    gps = navigation_pkg.GPS(gpsParams);
 
     % Gyro
-    gyro_params.ARW = -1;
-    gyro_params.bias = -1;
+    gyroParams.ARW = -1;
+    gyroParams.bias = -1;
 
-    gyro_params.noiseCovariance = -1;
-    gyro_params.outputRate = 100;
-    gyro_params.outputProbability = 1;
-    gyro_params.observationMatrix = zeros(3);
+    gyroParams.noiseCovariance = -1;
+    gyroParams.outputRate = 100;
+    gyroParams.outputProbability = 1;
+    gyroParams.observationMatrix = zeros(3);
 
-    gyroscope = navigation_pkg.Gyroscope(gyro_params);
+    gyroscope = navigation_pkg.Gyroscope(gyroParams);
 
-    nav_params.dt = .01;
-    dt = nav_params.dt;
-    nav_params.P = 0.1 * eye(6);
+    navParams.dt = .01;
+    dt = navParams.dt;
+    navParams.P = 0.1 * eye(6);
 
-    nav_params.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
+    navParams.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
         0,                        1, 0,                        0, 0,                        0
         0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
         0,                        0, 0,                        1, 0,                        0
         0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
         0,                        0, 0,                        0, 0,                        1];
 
-    sigma_a = 10;
+    sigmaA = 10;
 
-    nav_params.Q = sigma_a^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
+    navParams.Q = sigmaA^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
                      (dt^3)/2,     dt^2,          0,           0,              0,          0;
                            0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
                            0,         0,   (dt^3)/2,        dt^2,              0,          0;
                            0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
-                           0,         0,          0,           0,       (dt^3)/2,      dt^2];    
+                           0,         0,          0,           0,       (dt^3)/2,      dt^2];
 
-    nav = navigation_pkg.Navigation(nav_params, gps, gyroscope, accelerometer);
+    nav = navigation_pkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
 
 
@@ -257,13 +256,13 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints)
     flightParams.totalTime = 10;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
-    mass_0 = 20;
-    pos_0 = [0, 0, 0];
-    vel_0 = [0, 0, 100];
-    quat_0 = Utils.euler_to_quat([0, -90, 0]).';
-    omega_0 = [0, 0, 0];
-    state_0 = [mass_0, pos_0, vel_0, quat_0, omega_0].';
-    flightParams.x0 = state_0;
+    mass0 = 20;
+    pos0 = [0, 0, 0];
+    vel0 = [0, 0, 100];
+    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    omega0 = [0, 0, 0];
+    state0 = [mass0, pos0, vel0, quat0, omega0].';
+    flightParams.x0 = state0;
 
     breakPoints = -1;
     environment = -1;

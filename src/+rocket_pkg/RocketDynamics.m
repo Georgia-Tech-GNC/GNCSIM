@@ -1,8 +1,8 @@
-classdef RocketDynamics < handle&Exportable
+classdef RocketDynamics < handle
     properties
 		body
-		rocket_fins
-		motor_params 
+		rocketFins
+		motorParams 
 		controller
         navigation
         aerodynamics = []
@@ -10,38 +10,40 @@ classdef RocketDynamics < handle&Exportable
         thrustCurve
         totalImpulse
         burnTime
-        mass_wet (1,1) double {mustBePositive} = 1
-        mass_dry (1,1) double {mustBePositive} = 1
-        moi_wet (3,3) double = eye(3)
-        moi_dry (3,3) double = eye(3)
-        CG_wet (1,1) double {mustBePositive} = 1
-        CG_dry (1,1) double {mustBePositive} = 1
+        massWet (1,1) double {mustBePositive} = 1
+        massDry (1,1) double {mustBePositive} = 1
+        moiWet (3,3) double = eye(3)
+        moiDry (3,3) double = eye(3)
+        cgWet (1,1) double {mustBePositive} = 1
+        cgDry (1,1) double {mustBePositive} = 1
+
+        useThrust = true
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocket_fins, rocket_params, motor_params, controller, navigation, aerodynamics)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics)
             arguments
                 body
-                rocket_fins
-                rocket_params
-                motor_params
+                rocketFins
+                rocketParams
+                motorParams
                 controller
                 navigation
                 aerodynamics = []
             end
 
             obj.body = body;
-            obj.rocket_fins = rocket_fins;
-            obj.motor_params = motor_params;
-            obj.thrustCurve = motor_params.tc;
-            obj.totalImpulse = motor_params.totalImpulse;
-            obj.burnTime = motor_params.burn_time;
-            obj.mass_wet = rocket_params.mass_wet;
-            obj.mass_dry = rocket_params.mass_dry;
-            obj.moi_wet = rocket_params.moi_wet;
-            obj.moi_dry = rocket_params.moi_dry;
-            obj.CG_wet = rocket_params.CG_wet;
-            obj.CG_dry = rocket_params.CG_dry;
+            obj.rocketFins = rocketFins;
+            obj.motorParams = motorParams;
+            obj.thrustCurve = motorParams.tc;
+            obj.totalImpulse = motorParams.totalImpulse;
+            obj.burnTime = motorParams.burnTime;
+            obj.massWet = rocketParams.massWet;
+            obj.massDry = rocketParams.massDry;
+            obj.moiWet = rocketParams.moiWet;
+            obj.moiDry = rocketParams.moiDry;
+            obj.cgWet = rocketParams.cgWet;
+            obj.cgDry = rocketParams.cgDry;
             obj.controller = controller;
             obj.navigation = navigation;
             obj.aerodynamics = aerodynamics;
@@ -54,7 +56,10 @@ classdef RocketDynamics < handle&Exportable
             end
         
             % If beyond burn time, thrust is zero
-            if t > obj.burnTime
+            if ~obj.useThrust
+                currentThrust = 0;
+                return
+            elseif t > obj.burnTime
                 currentThrust = 0;
                 return
             end
@@ -68,57 +73,64 @@ classdef RocketDynamics < handle&Exportable
             currentThrust = interp1(time, thrust, t, 'linear', 0);
         end
 
-        function [currentCG, currentMOI] = get_CG_MOI(obj, mass)
+        function [currentCG, currentMOI] = getCgMoi(obj, mass)
             % Error check
             if ~isnumeric(mass)
                 error('Error: Mass must be numeric.')
             end
 
             % If beyond burn time, thrust is zero
-            if mass <= obj.mass_dry
-                currentCG = obj.CG_dry;
-                currentMOI = obj.moi_dry;
+            if mass <= obj.massDry
+                currentCG = obj.cgDry;
+                currentMOI = obj.moiDry;
                 return
             end
             
             % Linear interpolation wrt mass
-            currentCG = obj.CG_dry + (mass - obj.mass_dry)/(obj.mass_wet - obj.mass_dry) .* (obj.CG_wet - obj.CG_dry);
-            currentMOI = obj.moi_dry + (mass - obj.mass_dry)/(obj.mass_wet - obj.mass_dry) .* (obj.moi_wet - obj.moi_dry);
+            currentCG = obj.cgDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.cgWet - obj.cgDry);
+            currentMOI = obj.moiDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.moiWet - obj.moiDry);
         end
 
-        function [F_b, M_b] = get_forces_and_moments(obj, state, disturbances, time, xdot, breakPoints)
+        function mDot = getMDot(obj, time)
+            T = obj.getThrust(time);
+            mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
+        end
+
+        function [fB, mB] = getForcesAndMoments(obj, state, disturbances, time, xdot, breakPoints)
             
-            % computes aero forces and moments 
+            % computes aero forces and moments
             if isempty(obj.aerodynamics)
-                 [F_b_fins, M_b_fins] = obj.rocket_fins.get_forces_and_moments(state, disturbances);
-                 [F_b_body, M_b_body] = obj.body.get_forces_and_moments(state, disturbances);
-                 F_b_aero = F_b_fins + F_b_body;
-                 M_b_aero = M_b_fins + M_b_body;
+                 [fBFins, mBFins] = obj.rocketFins.getForcesAndMoments(state, disturbances);
+                 [fBBody, mBBody] = obj.body.getForcesAndMoments(state, disturbances);
+                 fBAero = fBFins + fBBody;
+                 mBAero = mBFins + mBBody;
              else
-                 [F_b_aero, M_b_aero] = obj.aerodynamics.get_forces_and_moments(state, disturbances);
+                 %[fBAero, mBAero] = obj.aerodynamics.getForcesAndMoments(state, disturbances);
+                 fBAero = [0;0;0];
+                 mBAero = [0;0;0];
              end
 
-            F_t_b = [obj.getThrust(time); 0; 0];
-            
-            
-            %TODO: sensor_data = sensor.get_sensor_data(time, state, disturbances, CG)
+            fTB = [obj.getThrust(time); 0; 0];
 
-            state_estimate = obj.navigation.get_state_estimate(state, xdot, time);
-            %[F_b_controller, M_b_controller] = obj.controller.get_forces_and_moments(state, obj, CG, breakPoints, time);
 
-            F_b = F_t_b + F_b_aero;
-            M_b = M_b_aero;
+            %TODO: sensorData = sensor.getSensorData(time, state, disturbances, CG)
+
+            stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
+            %[fBController, mBController] = obj.controller.getForcesAndMoments(state, obj, CG, breakPoints, time);
+
+            fB = fTB + fBAero;
+            mB = mBAero;
         end
 
         function compute_buildup(obj)
             obj.body.compute_buildup()
-            obj.rocket_fins.compute_buildup()
+            obj.rocketFins.compute_buildup()
         end
 
 		function draw(obj)
             % ========== ROCKET ==========
             r_body = obj.body.body_params;
-            fins = obj.rocket_fins.fin_params;
+            fins = obj.rocketFins.fin_params;
             r = r_body.rocket_diameter/2;
             x_nose = linspace(r_body.nose_cone_length, 0, 100);
             
@@ -184,6 +196,7 @@ classdef RocketDynamics < handle&Exportable
         end
     end
 end
+
 
 
 % DEPRECATED (sorry Kandarp)

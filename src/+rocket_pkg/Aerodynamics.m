@@ -1,16 +1,16 @@
 % Main Authors: Patrick Barry
 
-classdef Aerodynamics < handle&Exportable
+classdef Aerodynamics < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
     properties (Access = private)
-        FAx_func;
-        FAy_func;
-        FAz_func;
-        MAx_func;
-        MAy_func;
-        MAz_func;
+        fAxFunc;
+        fAyFunc;
+        fAzFunc;
+        mAxFunc;
+        mAyFunc;
+        mAzFunc;
     end
 
     methods
@@ -21,93 +21,81 @@ classdef Aerodynamics < handle&Exportable
             % concept vehicle development
         end
 
-        function restoreFromStruct(obj, s)
-        % Restore all properties from a struct (bypasses SetAccess=private)
-            f = fieldnames(s); % Get all field names from the struct 's'
-            for i = 1:numel(f) % Loop thru each field
-                try
-                    obj.(f{i}) = s.(f{i}); % Assign struct to the object property
-                catch ME % Warning if fails so it doesn't crash
-                    warning('Could not restore %s: %s', f{i}, ME.message);
-                end
-            end
-        end % function added by Zhanna S
-
         % Setters
-        function obj= set_FAx_func(obj, FAx_function)
-            obj.FAx_func = FAx_function;
+        function obj = setFAxFunc(obj, fAxFunction)
+            obj.fAxFunc = fAxFunction;
         end
 
-        function obj= set_FAy_func(obj, FAy_function)
-            obj.FAy_func = FAy_function;
+        function obj = setFAyFunc(obj, fAyFunction)
+            obj.fAyFunc = fAyFunction;
         end
 
-        function obj= set_FAz_func(obj, FAz_function)
-            obj.FAz_func = FAz_function;
+        function obj = setFAzFunc(obj, fAzFunction)
+            obj.fAzFunc = fAzFunction;
         end
 
-        function obj= set_MAx_func(obj, MAx_function)
-            obj.MAx_func = MAx_function;
+        function obj = setMAxFunc(obj, mAxFunction)
+            obj.mAxFunc = mAxFunction;
         end
 
-        function obj= set_MAy_func(obj, MAy_function)
-            obj.MAy_func = MAy_function;
+        function obj = setMAyFunc(obj, mAyFunction)
+            obj.mAyFunc = mAyFunction;
         end
 
-        function obj= set_MAz_func(obj, MAz_function)
-            obj.MAz_func = MAz_function;
+        function obj = setMAzFunc(obj, mAzFunction)
+            obj.mAzFunc = mAzFunction;
         end
 
         % Getters
-        function FAx_function = get_FAx_func(obj)
-            FAx_function = obj.FAx_func;
+        function fAxFunction = getFAxFunc(obj)
+            fAxFunction = obj.fAxFunc;
         end
 
-        function FAy_function = get_FAy_func(obj)
-            FAy_function = obj.FAy_func;
+        function fAyFunction = getFAyFunc(obj)
+            fAyFunction = obj.fAyFunc;
         end
 
-        function FAz_function = get_FAz_func(obj)
-            FAz_function = obj.FAz_func;
+        function fAzFunction = getFAzFunc(obj)
+            fAzFunction = obj.fAzFunc;
         end
 
-        function MAx_function = get_MAx_func(obj)
-            MAx_function = obj.MAx_func;
+        function mAxFunction = getMAxFunc(obj)
+            mAxFunction = obj.mAxFunc;
         end
 
-        function MAy_function = get_MAy_func(obj)
-            MAy_function = obj.MAy_func;
+        function mAyFunction = getMAyFunc(obj)
+            mAyFunction = obj.mAyFunc;
         end
 
-        function MAz_function = get_MAz_func(obj)
-            MAz_function = obj.MAz_func;
+        function mAzFunction = getMAzFunc(obj)
+            mAzFunction = obj.mAzFunc;
         end
 
-        function [FAb, MAb]= getAeroForcesMoments(obj, state, rho, CG)
+        function [fAb, mAb] = getAeroForcesMoments(obj, state, rho, CG)
             % Inputs [u v w] in (m/s). Inputs [p r] in (rad/s). Input rho
             % in kg/m^3. Input CG in m from tip of nosecone.
 
             % Aerodynamic forces
-            FAx_function = obj.FAx_func;
-            FAy_function = obj.FAy_func;
-            FAz_function = obj.FAz_func;
+            fAxFunction = obj.fAxFunc;
+            fAyFunction = obj.fAyFunc;
+            fAzFunction = obj.fAzFunc;
 
-            FAx = FAx_function(u, v, w, rho, CG, p, r);
-            FAy = FAy_function(u, v, w, rho, CG, p, r);
-            FAz = FAz_function(u, v, w, rho, CG, p, r);
-            
-            FAb = [FAx; FAy; FAz];
+            fAx = fAxFunction(u, v, w, rho, CG, p, r);
+            fAy = fAyFunction(u, v, w, rho, CG, p, r);
+            fAz = fAzFunction(u, v, w, rho, CG, p, r);
+
+            fAb = [fAx; fAy; fAz];
 
             % Aerodynamic moments
-            MAx_function = obj.MAx_func;
-            MAy_function = obj.MAy_func;
-            MAz_function = obj.MAz_func;
+            mAxFunction = obj.mAxFunc;
+            mAyFunction = obj.mAyFunc;
+            mAzFunction = obj.mAzFunc;
 
-            MAx_b = MAx_function(u, v, w, rho, CG, p, r);
-            MAy_b = MAy_function(u, v, w, rho, CG, p, r);
-            MAz_b = MAz_function(u, v, w, rho, CG, p, r);
+            mAxB = mAxFunction(u, v, w, rho, CG, p, r);
+            mAyB = mAyFunction(u, v, w, rho, CG, p, r);
+            mAzB = mAzFunction(u, v, w, rho, CG, p, r);
 
-            MAb = [MAx_b; MAy_b; MAz_b];
+            mAb = [mAxB; mAyB; mAzB];
         end
 
     end

@@ -15,12 +15,12 @@ classdef Utils
             end
 
             % Normalize quaternion
-            q_u = Utils.normalize_quat(q);
+            qU = Utils.normalizeQuat(q);
 
             % quat rotation: q_conj * [0, va] * q
             % Convert vector to pure quaternion [0, vx, vy, vz]
-            va_quat = [0, va];
-            [~, vB1, vB2, vB3] = parts(quaternion(quatconj(q_u)) .* quaternion(va_quat) .* quaternion(q_u));
+            vaQuat = [0, va];
+            [~, vB1, vB2, vB3] = parts(quaternion(quatconj(qU)) .* quaternion(vaQuat) .* quaternion(qU));
             vb = [vB1, vB2, vB3];
 
             % Convert back to column if input was column
@@ -29,7 +29,7 @@ classdef Utils
             end
         end
 
-        function q = euler_to_quat(a)
+        function q = eulerToQuat(a)
             % Convert Euler angles to a quaternion.
             %
             % Input:
@@ -59,7 +59,7 @@ classdef Utils
             q(4) = cy * cr * sp + sy * sr * cp;  % z component
         end
 
-        function q_norm = normalize_quat(q)
+        function qNorm = normalizeQuat(q)
             % normalize_quat: Normalizes a quaternion to unit length.
             %
             % Input:
@@ -84,11 +84,11 @@ classdef Utils
             mag = sqrt(sum(q.^2, 2));
 
             % Normalize
-            q_norm = q ./ mag;
+            qNorm = q ./ mag;
 
             % Restore original shape if it was a column vector
             if was_column
-                q_norm = q_norm';
+                qNorm = qNorm';
             end
         end
 
@@ -122,21 +122,21 @@ classdef Utils
             dcm = Ry * quatDCM;
 		end
 
-		function dcm = fin_dcm(delta_deg, theta_deg)
+		function dcm = finDcm(deltaDeg, thetaDeg)
 			% fin_dcm: Generates a rotation matrix based on fin location
 			% angle (theta) and fin deflection(delta)
 			%
     		% INPUT:
-    		%   delta_deg - Fin deflection angle in degrees
-			%   theta_deg - rotation angle along x axis representing fin
+    		%   deltaDeg - Fin deflection angle in degrees
+			%   thetaDeg - rotation angle along x axis representing fin
 			%   location in degrees
 			%
     		% OUTPUT:
     		%   dcm - A 3x3 direction cosine matrix (rotation matrix).
     		%
 			% Convert the angles from degrees to radians
-			delta = deg2rad(delta_deg);
-			theta = deg2rad(theta_deg);
+			delta = deg2rad(deltaDeg);
+			theta = deg2rad(thetaDeg);
 			
 			% Define the first rotation matrix (Rotation about the Y-axis by delta: R_y(delta))
 			R_y_delta = [
