@@ -258,8 +258,8 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints)
 
     mass0 = 20;
     pos0 = [0, 0, 0];
-    vel0 = [0, 0, 100];
-    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    vel0 = [0, 0, 0];
+    quat0 = Utils.eulerToQuat([0, 0, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;

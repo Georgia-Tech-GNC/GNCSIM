@@ -35,7 +35,7 @@ classdef RocketDynamics < handle
             obj.body = body;
             obj.rocketFins = rocketFins;
             obj.motorParams = motorParams;
-            obj.thrustCurve = motorParams.tc;
+            obj.thrustCurve = motorParams.thrustCurve;
             obj.totalImpulse = motorParams.totalImpulse;
             obj.burnTime = motorParams.burnTime;
             obj.massWet = rocketParams.massWet;
