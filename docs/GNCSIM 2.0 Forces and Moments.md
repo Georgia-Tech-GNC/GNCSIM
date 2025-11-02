@@ -10,7 +10,7 @@ $$
 \begin{bmatrix}
     m \\
     p_I \\
-    v_I \\
+    v_B \\
     q_{IB} \\
     \omega_B
 \end{bmatrix}
@@ -19,7 +19,7 @@ $$
 where:
 * $m$ is the mass of the body.
 * $p_I = [x, y, z]^T$ is the position vector in the inertial frame.
-* $v_I = [v_x, v_y, v_z]^T$ is the velocity vector in the inertial frame.
+* $v_B = [v_x, v_y, v_z]^T$ is the velocity vector in the body frame.
 * $q_{IB} = [q_0, q_1, q_2, q_3]^T$ is the quaternion representing the orientation from the inertial frame to the body frame.
 * $\omega = [\omega_x, \omega_y, \omega_z]^T$ is the angular velocity vector in the body frame.
 
@@ -42,14 +42,14 @@ $$
 $$
 % Position
 \begin{equation}
-\dot{p}_I = v_I
+\dot{p}_I = \mathbf{C}_{BI} v_B
 \end{equation}
 $$
 
 $$
 % Velocity
 \begin{equation}
-\dot{v}_I = \frac{1}{m} \left( \mathbf{C}_{BI}(q) F_b \right) + g
+\dot{v}_B = \frac{F_b}{m} + \mathbf{C}_{IB}(q) g
 \end{equation}
 $$
 
@@ -106,17 +106,17 @@ Vectors can be computed between the frames using rotation matrix. For example $\
 
 ### Aerodynamics
 
-These equations can simulate any rigid body with changing mass, however in order to simulate the rigid body dynamics of a rocket, aerodynamics must be taken into account. To do this the forces and moments must be a function of the state. The forces and moments are a function of the altitude $h$, inertial velocity $v_I$, orientation $q$ and angular rate $\omega$. 
+These equations can simulate any rigid body with changing mass, however in order to simulate the rigid body dynamics of a rocket, aerodynamics must be taken into account. To do this the forces and moments must be a function of the state. The forces and moments are a function of the altitude $h$, inertial velocity $v_B$, orientation $q$ and angular rate $\omega$. 
 
 $$
 \begin{equation}
-F_b=f(h, v_I, q, \omega)
+F_b=f(h, v_B, q, \omega)
 \end{equation}
 $$
 
 $$
 \begin{equation}
-M_b=f(h, v_I, q, \omega)
+M_b=f(h, v_B, q, \omega)
 \end{equation}
 $$
 
@@ -124,7 +124,7 @@ The first step in computing the forces and moments is getting the velocity in th
 
 $$
 \begin{equation}
-v_B=\boldsymbol{C}_{IB}(q) (v_I + v_w)
+v_B=\boldsymbol{C}_{IB}(q)v_w + v_B
 \end{equation}
 $$
 
@@ -264,18 +264,18 @@ Once the forces and moments are determined, the process outlined in this section
 The fins can be defined using five parameters as shown in the MATLAB code below.
 
 ```
-    fin_params.num_fins = 4;        % [~]
-    fin_params.root_chord = 0.203;  % [m]
-    fin_params.tip_chord = 0.17;    % [m]
-    fin_params.fin_span = 0.144;    % [m]
-    fin_params.sweep_deg = 15.0;    % [deg]
+    fin_params.numFins = 4;        % [~]
+    fin_params.rootChord = 0.203;  % [m]
+    fin_params.tipChord = 0.17;    % [m]
+    fin_params.finSpan = 0.144;    % [m]
+    fin_params.sweepDeg = 15.0;    % [deg]
 ```
 
-* *num_fins* is the number of fins attached to the body.
-* *root_chord* is the length of the fin’s base (where it attaches to the body).
-* *tip_chord* is the length of the fin’s outer edge (furthest from the body).
-* *fin_span* is the distance from the body surface to the fin tip.
-* *sweep_deg* is the angle of the fin’s leading edge relative to the body axis.
+* *numFins* is the number of fins attached to the body.
+* *rootChord* is the length of the fin’s base (where it attaches to the body).
+* *tipChord* is the length of the fin’s outer edge (furthest from the body).
+* *finSpan* is the distance from the body surface to the fin tip.
+* *sweepDeg* is the angle of the fin’s leading edge relative to the body axis.
 
 From that the full geometry of the fin can be defined as shown below.
 
@@ -391,7 +391,71 @@ NEXT CASE
 * *NEXT CASE*: Tells DATCOM that this case is complete and the next one follows
 
 ### DATCOM Buildup for Body
-TODO
+
+The body can be defined using five parameters as shown in the MATLAB code below.
+
+```
+    bodyParams.noseLength = 0.61;  % [m]
+    bodyParams.bodyLength = 2.03;  % This does not include nose code [m]
+    bodyParams.rocketDiameter = 0.157;  % [m]
+```
+
+* *noseLength* is the total length of the nose 
+* *bodyLength* is the length of the body exluding nosecone
+* *rocketDiameter* is the diamaeter of rocket
+
+Note that the flight conditions reference dimensions are assumed to be the same as the fin.
+
+```
+ $FLTCON NMACH=3.0, MACH(1)=0.2000,
+ 0.4000,
+ 0.6000,
+ NALT=3.0, ALT(1)=0.0000,
+ 5000.0000,
+ 10000.0000,
+ NALPHA=11.0, ALSCHD(1)=-10.0000,
+ -8.0000,
+ -6.0000,
+ -4.0000,
+ -2.0000,
+ 0.0000,
+ 2.0000,
+ 4.0000,
+ 6.0000,
+ 8.0000,
+ 10.0000,
+ LOOP=2.0$
+ $OPTINS SREF=0.0194, CBARR=2.6400, BLREF=0.1570$
+ $SYNTHS XW=0.0000, XCG=0.6000$
+ $BODY   NX=14.0,
+ X(1)=0.0000, 0.0678, 0.1356, 0.2033, 0.2711, 0.3389, 0.4067, 0.4744, 0.5422,
+ 0.6100, 1.1175, 1.6250, 2.1325, 2.6400,
+ R(1)=0.0001, 0.0168, 0.0314, 0.0440, 0.0546, 0.0633, 0.0700, 0.0748, 0.0776,
+ 0.0785, 0.0785, 0.0785, 0.0785, 0.0785$
+DIM M
+NEXT CASE
+```
+
+#### Longitudinal Geometry (CG, Body Position)
+These parameters are used to compute pitching moment and stability derivatives.
+
+```
+ $SYNTHS XW=0.0000, XCG=0.0655$
+```
+* *XW*: Body apex position from nose tip in $m$
+* *XCG*: Center of gravity location from nose tip in $m$
+
+#### Body Geometry Definition
+
+```
+ $BODY   NX=14.0,
+ X(1)=0.0000, 0.0678, 0.1356, 0.2033, 0.2711, 0.3389, 0.4067, 0.4744, 0.5422,
+ 0.6100, 1.1175, 1.6250, 2.1325, 2.6400,
+ R(1)=0.0001, 0.0168, 0.0314, 0.0440, 0.0546, 0.0633, 0.0700, 0.0748, 0.0776,
+ 0.0785, 0.0785, 0.0785, 0.0785, 0.0785$
+ ```
+ * *BODY*: Body x positions in $m$
+ * *R*: Body radius positions at corresponding body postion $m$ 
 
 ### Control and Trim Points
 
