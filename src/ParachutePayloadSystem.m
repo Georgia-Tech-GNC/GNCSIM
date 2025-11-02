@@ -42,9 +42,9 @@ classdef ParachutePayloadSystem < handle
             obj.S_p = pi * (D_c/2)^2;
             
             % Suspension line length NEED TO CHANGE
-            L_s = 1.713 * D_c;
+            L_s = 1.5;
             
-            % Vector from attachment to canopy CG (in parachute frame)
+            % Vector from attachment to canopy CG in parachute frame
             obj.L_p = [0; 0; L_s/2];
             
             % Parachute inertia NEED TO CHANGE
