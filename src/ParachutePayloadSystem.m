@@ -6,7 +6,7 @@ classdef ParachutePayloadSystem < handle
         % Parachute physical properties
         m_c         % Canopy mass (kg)
         I_p         % Parachute inertia
-        L_p         % Vector from attachment to canopy CG (parachute frame) [m]
+        L_p         % Vector from attachment to canopy CG (parachute frame) (m)
         S_p         % Parachute reference area (m^2)
         D_c         % Canopy diameter (m
                 
@@ -121,7 +121,7 @@ classdef ParachutePayloadSystem < handle
             F_aero_earth = R_pe * F_aero_par;
             M_aero_earth = R_pe * M_aero_par;
             
-            % Include parachute weight and payload weight (if specified)
+            % Include parachute weight
             m_total = obj.m_c;
             F_gravity_earth = [0; 0; -m_total * obj.g];
             
