@@ -111,12 +111,11 @@ classdef RocketDynamics < handle
              end
 
             fTB = [obj.getThrust(time); 0; 0];
-
-
+            
             %TODO: sensorData = sensor.getSensorData(time, state, disturbances, CG)
 
-            stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
-            %[fBController, mBController] = obj.controller.getForcesMoments(state, obj, CG, breakPoints, time);
+            %TODO: %stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
+            %TODO: %[fBController, mBController] = obj.controller.getForcesMoments(state, obj, CG, breakPoints, time);
 
             fB = fTB + fBAero;
             mB = mBAero;

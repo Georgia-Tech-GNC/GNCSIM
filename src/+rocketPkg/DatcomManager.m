@@ -136,15 +136,17 @@ classdef DatcomManager < handle
     		altRange   = [min(aero.alt(:)),  max(aero.alt(:))];
 
     		% Check bounds
-    		if aoaDeg < alphaRange(1) || aoaDeg > alphaRange(2)
-        		warning('AoA %.2f° is out of range [%.2f, %.2f].', aoaDeg, alphaRange(1), alphaRange(2));
-    		end
-    		if mach < machRange(1) || mach > machRange(2)
-        		warning('Mach %.2f is out of range [%.2f, %.2f].', mach, machRange(1), machRange(2));
-    		end
-    		if alt < altRange(1) || alt > altRange(2)
-        		warning('Altitude %.2f m is out of range [%.2f, %.2f].', alt, altRange(1), altRange(2));
-    		end
+            if 0
+    		    if aoaDeg < alphaRange(1) || aoaDeg > alphaRange(2)
+        		    warning('AoA %.2f° is out of range [%.2f, %.2f].', aoaDeg, alphaRange(1), alphaRange(2));
+    		    end
+    		    if mach < machRange(1) || mach > machRange(2)
+        		    warning('Mach %.2f is out of range [%.2f, %.2f].', mach, machRange(1), machRange(2));
+    		    end
+    		    if alt < altRange(1) || alt > altRange(2)
+        		    warning('Altitude %.2f m is out of range [%.2f, %.2f].', alt, altRange(1), altRange(2));
+                end
+            end
         end
     end
 end

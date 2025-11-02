@@ -210,14 +210,14 @@ end
 
 function flight = setup_flight(rocketDyn)
     % Flight
-    flightParams.totalTime = 2;  % length of simulation [s]
+    flightParams.totalTime = 20;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = 20;
     pos0 = [0, 0, 1];
     vel0 = [1, 0, 0];
-    quat0 = Utils.eulerToQuat([1, 5, 1]).';
-    omega0 = [0, .05, 0];
+    quat0 = Utils.eulerToQuat([0, 5, 0]).';
+    omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 

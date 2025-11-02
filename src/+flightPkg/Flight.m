@@ -46,15 +46,15 @@ classdef Flight < handle
             stateEstimateArr = zeros(14,N);
 
             for ii = 2:N
-                ii
+                
                 obj.currentXDot = obj.rocketModel(x);
 
-                disp('xdot')
-                disp(obj.currentXDot)
-                stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
+                %disp('xdot')
+                %disp(obj.currentXDot)
+                %stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
 
-                disp('state estimate')
-                disp(stateEstimateArr(:,ii))
+                %disp('state estimate')
+                %disp(stateEstimateArr(:,ii))
 
                 k1 = obj.rocketModel(x);
                 k2 = obj.rocketModel(x + (k1)*obj.dt/2);
@@ -73,8 +73,8 @@ classdef Flight < handle
                 tArr(ii) = obj.currentTime;
                 xArr(:, ii) = x;
 
-                disp('x arr')
-                disp(xArr(:, ii))
+                %disp('x arr')
+                %disp(xArr(:, ii))
 
                 % replace by Log Class
                 [fbArr(:,ii), mbArr(:,ii)] = obj.getForcesMomentsWrapper(x);
@@ -121,8 +121,9 @@ classdef Flight < handle
             cIB = cBI.';
 
             g = [0;0;-9.81];
+            fG = mass * g;
 
-            fB = fB + cBI * g;
+            fB = fB + cBI * fG;
 
             massDot = obj.rocketDynamics.getMDot(obj.currentTime);
             posDot = cIB * vel;
