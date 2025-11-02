@@ -8,11 +8,11 @@ classdef BreakPoints < Handle
 
     methods
     
-        function compute_optimal_trajectory(obj, rocketDynamics)
-            % TODO: Port Danil's work here 
+        function computeOptimalTrajectory(obj, rocketDynamics)
+            % TODO: Port Danil's work here
         end
 
-        function dumb_traj()
+        function dumbTraj()
             % generate trivial trajectory
         end
 
@@ -23,20 +23,20 @@ classdef BreakPoints < Handle
 
         end
 
-        function compute_gains(obj, controller)
+        function computeGains(obj, controller)
             % TODO: Call controller for each breakPoint and compute gains
-            
+
         end
 
-        function stability_analysis(obj)
+        function stabilityAnalysis(obj)
             % TODO: Closed-loop stability analysis and classical controller
             % performance for each breakpoint (root locus, % overshoot,
             % settling time, rise time, peak time, etc)
 
         end
 
-        function gain_scheduling_interpolated()
-        
+        function gainSchedulingInterpolated()
+
         end
 
     end

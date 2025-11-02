@@ -36,7 +36,7 @@ flight.plotFlight(tArr, stateEstimateArr);
 %% Analysis
 % Still need to implement stuff there. 
 n = 1; %For single flight
-analysis = analysis_pkg.Analysis(tArr, xArr, n, FbArr, MbArr);
+analysis = analysisPkg.Analysis(tArr, xArr, n, FbArr, MbArr);
 analysis.GenerateAllPlots();
 
 %% Setup Functions
@@ -49,15 +49,15 @@ function rocketDynamics = setupRocket(controller, navigation, aerodynamics)
     rocketParams.cgWet = 2.419762;
     rocketParams.cgDry = 2.314814;
 
-    wetRollMOI = 0.209731;  % Ixx
-    wetPitchMOI = 24.655278;  % Iyy
-    wetYawMOI = 24.656148;  % Izz
-    dryRollMOI = 0.201846;
-    dryPitchMOI = 22.301315;
-    dryYawMOI = 22.301570;
+    wetRollMoi = 0.209731;  % Ixx
+    wetPitchMoi = 24.655278;  % Iyy
+    wetYawMoi = 24.656148;  % Izz
+    dryRollMoi = 0.201846;
+    dryPitchMoi = 22.301315;
+    dryYawMoi = 22.301570;
 
-    rocketParams.moiWet = [wetRollMOI 0 0; 0 wetPitchMOI 0; 0 0 wetYawMOI];
-    rocketParams.moiDry = [dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI];
+    rocketParams.moiWet = [wetRollMoi 0 0; 0 wetPitchMoi 0; 0 0 wetYawMoi];
+    rocketParams.moiDry = [dryRollMoi 0 0; 0 dryPitchMoi 0; 0 0 dryYawMoi];
 
     % Create Body
     bodyParams.bodyLength = 3.4;          % [m]
@@ -65,7 +65,7 @@ function rocketDynamics = setupRocket(controller, navigation, aerodynamics)
 
     % Motor params
     motorParams.burnTime = 13.1; % s
-    motorParams.tc = [0.0, 0.457288;
+    motorParams.thrustCurve = [0.0, 0.457288;
         0.152, 0.314574;
         0.162, 40.2069;
         0.164, 148.3954;
@@ -112,7 +112,7 @@ function rocketDynamics = setupRocket(controller, navigation, aerodynamics)
     %body = rocket_pkg.RocketBody(bodyParams);
     body = -1;
     rocketFins = -1;
-    rocketDynamics = rocket_pkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics);
+    rocketDynamics = rocketPkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics);
 end
 
 % Need to set up Flight to use environment()
@@ -126,30 +126,30 @@ function environmentObj = setupEnvironment()
     useDefault = true;
 
     location = [latitude longitude elevation];
-    environmentObj = flight_pkg.Environment();
+    environmentObj = flightPkg.Environment();
     environmentObj.setMaxAltitude(10000); % m
     environmentObj.setVmMean(0.01); % m/s
     environmentObj.setVm3Sigma(0.01); % m/s
 end
 
 function [aerodynamics] = setupAerodynamics()
-    aerodynamics = rocket_pkg.Aerodynamics();
+    aerodynamics = rocketPkg.Aerodynamics();
     syms u v w rho CG p r
-    Vars = [u v w rho CG p r];
+    vars = [u v w rho CG p r];
     
-    FAx_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*sin(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(v/u));
-    FAy_b_sym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
-    FAz_b_sym = 0;
-    MAx_b_sym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
-    MAy_b_sym = 0;
-    MAz_b_sym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
+    fAxBSym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*sin(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*cos(v/u));
+    fAyBSym = (1/0.225)*(((0.64181 .* ((v/u)*(180/pi)) .* (0.64181 ./ (3.59306 + sqrt(1 - ((3.281*(sqrt(u^2 + v^2 + w^2)))./1097.40).^2)))) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375 + 0.5*(rho*0.00194)*(3.281*(sqrt(u^2 + v^2 + w^2)))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*(sqrt(u^2 + v^2 + w^2)))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*(sqrt(u^2 + v^2 + w^2)))))*-1*cos(v/u) + ((0.00253 * ((v/u)*(180/pi)).^2 + 0.13932) .* 0.5 .* (rho*0.00194) .* (3.281*(sqrt(u^2 + v^2 + w^2))).^2 .* 0.9375)*-1*sin(v/u));
+    fAzBSym = 0;
+    mAxBSym = 1.36*((((4.*((2.*pi)./sqrt(1-((3.281*sqrt(u^2 + v^2 + w^2))./1116.4).^2)).*p)./(0.4688.*(3.281*sqrt(u^2 + v^2 + w^2)))).*0.1897).*0.5.*(rho*0.00194).*(3.281*sqrt(u^2 + v^2 + w^2)).^2.*0.4688);
+    mAyBSym = 0;
+    mAzBSym = 1.36*((((v/u)*(180/pi)) .* ((4.12421 ./ (27.81553 + 16.83430 .* sqrt(1 - ((3.281*sqrt(u^2 + v^2 + w^2))./1097.40).^2))) + -0.00014 .* ((v/u)*(180/pi)) + 0.01273)) * 0.5 * (rho*0.00194) * (3.281*sqrt(u^2 + v^2 + w^2)).^2 * 0.9375 + 0.5*(rho*0.00194)*(3.281*sqrt(u^2 + v^2 + w^2))^2*0.9375 * (2.61799)/(1+sqrt(1+0.797628*(1-((3.281*sqrt(u^2 + v^2 + w^2))/1116.45)^2))) * asin(r*(10.3264-(3.281*CG))/(3.281*sqrt(u^2 + v^2 + w^2))) * (10.3264-(3.281*CG)));
     
-    fAxBFunc = matlabFunction(FAx_b_sym, vars=Vars);
-    fAyBFunc = matlabFunction(FAy_b_sym, vars=Vars);
-    fAzBFunc = matlabFunction(FAz_b_sym, vars=Vars);
-    mAxBFunc = matlabFunction(MAx_b_sym, vars=Vars);
-    mAyBFunc = matlabFunction(MAy_b_sym, vars=Vars);
-    mAzBFunc = matlabFunction(MAz_b_sym, vars=Vars);
+    fAxBFunc = matlabFunction(fAxBSym, vars=vars);
+    fAyBFunc = matlabFunction(fAyBSym, vars=vars);
+    fAzBFunc = matlabFunction(fAzBSym, vars=vars);
+    mAxBFunc = matlabFunction(mAxBSym, vars=vars);
+    mAyBFunc = matlabFunction(mAyBSym, vars=vars);
+    mAzBFunc = matlabFunction(mAzBSym, vars=vars);
 
     aerodynamics.setFAxFunc(fAxBFunc);
     aerodynamics.setFAyFunc(fAyBFunc);
@@ -158,7 +158,7 @@ function [aerodynamics] = setupAerodynamics()
     aerodynamics.setMAyFunc(mAyBFunc);
     aerodynamics.setMAzFunc(mAzBFunc);
 
-    aeroForcesMoments = [FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
+    aeroForcesMoments = [fAxBSym, fAyBSym, fAzBSym, mAxBSym, mAyBSym, mAzBSym];
 end
 
 function breakPoints = setupBreakPoints()
@@ -173,14 +173,14 @@ function controller = setupController() % Where should I implement trimpoints?
     % Create Jet Vanes Actuator
 
     % should set the bias and r24 here, not through motor params
-    jetVanesActuator = JVR_files.JetVanesActuatorModel();
+    jetVanesActuator = jvrFiles.JetVanesActuatorModel();
     jetVanesActuator.biasAng = [0; 0; 0; 0]; % [rad] Not Sure What Real Values Are
     jetVanesActuator.r24 = 0.0144;              % [m] Distance Between Vanes 2 and 4
     jetVanesActuator.location = 3.4;            % m (length of rocket)
     jetVanesActuator.qBa = [1, 0, 0, 0];       % unit quaternion
 
     % Create LQR Controller
-    controller = controller_pkg.LQR(Q, R, jetVanesActuator);
+    controller = controllerPkg.LQR(Q, R, jetVanesActuator);
 end
 
 function nav = setupNavigation()
@@ -198,7 +198,7 @@ function nav = setupNavigation()
     accParams.observationMatrix = zeros(3);
 
 
-    accelerometer = navigation_pkg.Accelerometer(accParams);
+    accelerometer = navigationPkg.Accelerometer(accParams);
 
     % GPS
     gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
@@ -214,7 +214,7 @@ function nav = setupNavigation()
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                         0 1 0 0 0 0;
                                         0 0 1 0 0 0];
-    gps = navigation_pkg.GPS(gpsParams);
+    gps = navigationPkg.GPS(gpsParams);
 
     % Gyro
     gyroParams.ARW = -1;
@@ -225,7 +225,7 @@ function nav = setupNavigation()
     gyroParams.outputProbability = 1;
     gyroParams.observationMatrix = zeros(3);
 
-    gyroscope = navigation_pkg.Gyroscope(gyroParams);
+    gyroscope = navigationPkg.Gyroscope(gyroParams);
 
     navParams.dt = .01;
     dt = navParams.dt;
@@ -247,7 +247,7 @@ function nav = setupNavigation()
                            0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
                            0,         0,          0,           0,       (dt^3)/2,      dt^2];
 
-    nav = navigation_pkg.Navigation(navParams, gps, gyroscope, accelerometer);
+    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
 
 
@@ -266,6 +266,6 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints)
 
     breakPoints = -1;
     environment = -1;
-    flight = flight_pkg.Flight(rocketDynamics, environment, breakPoints, flightParams);
+    flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, flightParams);
 end
 

@@ -92,8 +92,8 @@ classdef Utils
             end
         end
 
-        function dcm = dir_cosine(q)
-            % dir_cosine: Converts a quaternion to a direction cosine matrix.
+        function dcm = dirCosine(q)
+            % dirCosine: Converts a quaternion to a direction cosine matrix.
             %
             % This function returns a 3x3 matrix that represents a rotation
             % from an INERTIAL frame to a BODY frame, based on the input quaternion.
@@ -105,8 +105,8 @@ classdef Utils
             % OUTPUT:
             %   dcm - A 3x3 direction cosine matrix (rotation matrix).
             %
-        
-            % Ensure q is a column vector 
+
+            % Ensure q is a column vector
             q = q(:);
 
             q0 = q(1); % Scalar part
@@ -118,7 +118,7 @@ classdef Utils
             quatDCM = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
                     2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
-        
+
             dcm = Ry * quatDCM;
 		end
 

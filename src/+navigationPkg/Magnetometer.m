@@ -1,57 +1,51 @@
-classdef GPS < navigation_pkg.Sensor&handle
-    % Model of in-flight GPS
-
+classdef Magnetometer < navigationPkg.Sensor&handle
     properties 
-        name = "GPS"
+        name = "Magnetometer"
         outputDimension = 3;
         noiseCovariance
-        outputRate           % Hz
-        outputProbability         % 
-        observationMatrix 
+        outputRate    
+        outputProbability      
+        observationMatrix
     end
 
     properties (Constant)
-        SENSOR_TYPE = navigation_pkg.SensorType.GPS
+        SENSOR_TYPE = navigationPkg.SensorType.MAGNETOMETER
     end
 
     properties
         refLLA
         posI
-        gpsBuiltIn    
     end
 
 
     methods
 
-        function obj = GPS(gps_params)
+        function obj = Magnetometer(magParams)
 
-            obj@navigation_pkg.Sensor()
-            obj.noiseCovariance = gps_params.noiseCovariance;
-            obj.outputRate = gps_params.outputRate;
-            obj.outputProbability = gps_params.outputProbability;
-            obj.observationMatrix = gps_params.observationMatrix;
+            obj@Sensor()
+            obj.noiseCovariance = magParams.noiseCovariance;
+            obj.outputRate = magParams.outputRate;
+            obj.outputProbability = magParams.outputProbability;
+            obj.observationMatrix = magParams.observationMatrix;
 
             obj.outputPeriod = 1 / obj.outputRate;
             obj.lastOutputTime = 0;
             obj.nextOutputTime = obj.outputPeriod;
 
-            obj.refLLA = gps_params.refLLA;
-            obj.gpsBuiltIn = gpsSensor('SampleRate', obj.outputRate, ...
-                                'ReferenceLocation', obj.refLLA, ...
-                                'PositionInputFormat', 'Geodetic', ...
-                                'VerticalPositionAccuracy', gps_params.verticalAccuracy, ...
-                                'HorizontalPositionAccuracy', gps_params.horizontalAccuracy, ...
-                                'VelocityAccuracy', gps_params.velocityAccuracy);
+            obj.refLLA = magParams.refLLA;
+
+
 
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            
+
             if obj.isOutputReady(currentTime)
+                
                 obj.posI = state(2:4);
-                [lat, lon, alt] = obj.ENU2LLA();
-                llaPos = [lat, lon, alt];
-                measurement = obj.gpsBuiltIn(llaPos,state(5:7)');
+                LLA = obj.NED2LLA(); % clean up
+                [mag,~,~,~,~] = Utils.quatRotate(state(8:11),wrldmagm(LLA(3),LLA(1),LLA(2)));
+                measurement = mag' ./ 1e3; 
             else
                 measurement = [];
             end
@@ -60,36 +54,38 @@ classdef GPS < navigation_pkg.Sensor&handle
 
         end
 
-        function [lat, lon, alt] = ENU2LLA(obj)
+
+
+
+        function [lat, lon, alt] = NED2LLA(obj)
 
             % Converts from NED coordinates back to LLA (WGS84)
 
             % Reference ECEF
-            refECEF = lla2ecef([obj.refLLA(1), obj.refLLA(2), obj.refLLA(3)]);
+            refECEF = LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));
 
             % Reference latitude and longitude (radians)
             phi = deg2rad(obj.refLLA(1));
             lambda = deg2rad(obj.refLLA(2));
 
-            xENU = obj.posI(1);
-            yENU = obj.posI(2);
-            zENU = obj.posI(3);
+            xNED = obj.inertialPos(1);
+            yNED = obj.inertialPos(2);
+            zNED = obj.inertialPos(3);
 
-            dx = -sin(lambda)*xENU - sin(phi)*cos(lambda)*yENU + cos(phi)*cos(lambda)*zENU;
-            dy = cos(lambda)*xENU - sin(phi)*sin(lambda)*yENU + cos(phi)*sin(lambda)*zENU;
-            dz =  cos(phi)*yENU + sin(phi)*zENU;
-            
+            dx = -sin(phi)*cos(lambda)*xNED - sin(lambda)*yNED - cos(phi)*cos(lambda)*zNED;
+            dy = -sin(phi)*sin(lambda)*xNED + cos(lambda)*yNED - cos(phi)*sin(lambda)*zNED;
+            dz =  cos(phi)*xNED - sin(phi)*zNED;
+
             xECEF = refECEF(1) + dx;
             yECEF = refECEF(2) + dy;
             zECEF = refECEF(3) + dz;
 
             % Convert ECEF → LLA
-            [lat, lon, alt] = obj.ECEF2LLA(xECEF, yECEF, zECEF);
-            
+            [lat, lon, alt] = ECEF2LLA(xECEF, yECEF, zECEF);
 
         end
 
-        function [lat, lon, alt] = ECEF2LLA(obj, xECEF, yECEF, zECEF)
+        function [lat, lon, alt] = ECEF2LLA(xECEF, yECEF, zECEF)
             % Converts from ECEF to WGS84 Latitude, Longitude, Altitude
 
             WGS84_A = 6378137.0;         
@@ -117,5 +113,6 @@ classdef GPS < navigation_pkg.Sensor&handle
             lon = rad2deg(lon);
 
         end
+
     end
 end

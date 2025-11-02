@@ -14,21 +14,21 @@ classdef LQR < Controller
             obj.actuator = actuator;
         end
         
-        function K = compute_gain(obj, A, B)
+        function K = computeGain(obj, A, B)
             % Compute one LQR gain
             K = lqr(A, B, obj.Q, obj.R);
         end
-  
-        function del_u = compute_controls(K, del_x)
-            del_u = -K*del_x;
+
+        function delU = computeControls(K, delX)
+            delU = -K*delX;
         end
-        
-        function [F_b, M_b] = get_forces_and_moments(state, rocket, CG, breakPoints, time)
+
+        function [fB, mB] = getForcesMoments(state, rocket, CG, breakPoints, time)
                 [K, x0, u0] = breakPoints.selectGain(state, time);
-                del_x = state - x0;
-                del_u = compute_controls(obj, K, del_x);
-                u = del_u + u0;
-               [F_b, M_b] = obj.actuator.get_forces_and_moments(obj, u, rocket, CG);
+                delX = state - x0;
+                delU = computeControls(obj, K, delX);
+                u = delU + u0;
+               [fB, mB] = obj.actuator.getForcesMoments(obj, u, rocket, CG);
         end
     end
 end

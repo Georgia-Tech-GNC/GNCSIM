@@ -30,7 +30,7 @@ classdef Flight < handle
             
         %end
 
-        function [tArr, xArr, FbArr, MbArr, stateEstimateArr] = runSim(obj)
+        function [tArr, xArr, fbArr, mbArr, stateEstimateArr] = runSim(obj)
             % This function propagates the dynamics using RK4
 
             % Need setters for this
@@ -40,8 +40,8 @@ classdef Flight < handle
 
             tArr = zeros(1,N);
             xArr = zeros(14, N);
-            FbArr = zeros(3,N);
-            MbArr = zeros(3,N);
+            fbArr = zeros(3,N);
+            mbArr = zeros(3,N);
 
             stateEstimateArr = zeros(14,N);
 
@@ -52,7 +52,7 @@ classdef Flight < handle
                 disp('xdot')
                 disp(obj.currentXDot)
                 stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
-                
+
                 disp('state estimate')
                 disp(stateEstimateArr(:,ii))
 
@@ -69,36 +69,36 @@ classdef Flight < handle
                 quat = x(8:11);
                 quatNorm = Utils.normalizeQuat(quat);
                 x(8:11) = quatNorm;
-    
+
                 tArr(ii) = obj.currentTime;
                 xArr(:, ii) = x;
-                
+
                 disp('x arr')
                 disp(xArr(:, ii))
 
                 % replace by Log Class
-                [FbArr(:,ii), MbArr(:,ii)] = obj.get_forces_and_moments_wrapper(x);
+                [fbArr(:,ii), mbArr(:,ii)] = obj.getForcesMomentsWrapper(x);
             end
         end
 
-        function x_dot = rocketModel(obj, state)
+        function xDot = rocketModel(obj, state)
             altitude = state(4);
-            %disturbances.wind = obj.environment.get_windspeed(altitude);
+            %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
-            
-            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints);
-            x_dot = obj.flatEarth_EOM(state, F_b, M_b);
+
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints);
+            xDot = obj.flatEarth_EOM(state, fB, mB);
         end
         
         % To avoid -> replace by Log class
-        function [F_b, M_b] = get_forces_and_moments_wrapper(obj, state) %Duplicate of rocket_model method to get F_b and M_b
-            %disturbances.wind = obj.environment.get_wind(h);  TODO
+        function [fB, mB] = getForcesMomentsWrapper(obj, state) %Duplicate of rocket_model method to get fB and mB
+            %disturbances.wind = obj.environment.getWind(h);  TODO
             disturbances.wind = 0;
-            
-            [F_b, M_b] = obj.rocketDynamics.get_forces_and_moments(state, disturbances, obj.currentTime);
+
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime);
         end
 
-        function [state_dot] = flatEarth_EOM(obj, state, F_b, M_b)   
+        function [stateDot] = flatEarth_EOM(obj, state, fB, mB)
             mass = state(1);
             vel = state(5:7);
             quat = state(8:11);
@@ -112,24 +112,24 @@ classdef Flight < handle
             ];
 
 
-            % preventing mass to go below mass_dry
-            mass = max(mass, obj.rocketDynamics.mass_dry); 
+            % preventing mass to go below massDry
+            mass = max(mass, obj.rocketDynamics.massDry);
 
             [~, Ib] = obj.rocketDynamics.getCgMoi(mass);
 
-            C_B_I = Utils.dir_cosine(quat);
-            C_I_B = C_B_I.';
+            cBI = Utils.dirCosine(quat);
+            cIB = cBI.';
 
             g = [0;0;-9.81];
 
-            F_b = F_b + C_B_I * g;
-            
-            mass_dot = obj.rocketDynamics.getMDot(obj.currentTime);
-            pos_dot = C_I_B * vel;
-            vel_dot = F_b / mass - cross(omega, vel);
-            quat_dot = 0.5 * mat_omega * quat;
-            omega_dot = Ib\(M_b - cross(omega, Ib*omega));
-            state_dot = [mass_dot; pos_dot; vel_dot; quat_dot; omega_dot];
+            fB = fB + cBI * g;
+
+            massDot = obj.rocketDynamics.getMDot(obj.currentTime);
+            posDot = cIB * vel;
+            velDot = fB / mass - cross(omega, vel);
+            quatDot = 0.5 * mat_omega * quat;
+            omegaDot = Ib\(mB - cross(omega, Ib*omega));
+            stateDot = [massDot; posDot; velDot; quatDot; omegaDot];
         end
 
         function plotFlight(obj, t_arr, x_arr)

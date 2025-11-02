@@ -1,4 +1,4 @@
-classdef Gyroscope < navigation_pkg.Sensor&handle
+classdef Gyroscope < navigationPkg.Sensor&handle
 
     properties 
         name = "Gyroscope"
@@ -10,7 +10,7 @@ classdef Gyroscope < navigation_pkg.Sensor&handle
     end
 
     properties (Constant)
-        SENSOR_TYPE = navigation_pkg.SensorType.GYROSCOPE
+        SENSOR_TYPE = navigationPkg.SensorType.GYROSCOPE
     end
 
     properties
@@ -22,20 +22,20 @@ classdef Gyroscope < navigation_pkg.Sensor&handle
 
     methods
 
-        function obj = Gyroscope(gyro_params)
+        function obj = Gyroscope(gyroParams)
 
-            obj@navigation_pkg.Sensor()
-            obj.noiseCovariance = gyro_params.noiseCovariance;
-            obj.outputRate = gyro_params.outputRate;
-            obj.outputProbability = gyro_params.outputProbability;
-            obj.observationMatrix = gyro_params.observationMatrix;
+            obj@navigationPkg.Sensor()
+            obj.noiseCovariance = gyroParams.noiseCovariance;
+            obj.outputRate = gyroParams.outputRate;
+            obj.outputProbability = gyroParams.outputProbability;
+            obj.observationMatrix = gyroParams.observationMatrix;
 
             obj.outputPeriod = 1 / obj.outputRate;
             obj.lastOutputTime = 0;
             obj.nextOutputTime = obj.outputPeriod;
 
-            obj.ARW = gyro_params.ARW;
-            obj.bias = gyro_params.bias;
+            obj.ARW = gyroParams.ARW;
+            obj.bias = gyroParams.bias;
 
         end
 

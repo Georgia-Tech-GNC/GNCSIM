@@ -1,4 +1,4 @@
-classdef Navigation < handle&Exportable
+classdef Navigation < handle
     % Sensor Modeling & State Estimation
     % Frame transform for gps data
 
@@ -36,13 +36,13 @@ classdef Navigation < handle&Exportable
 
     methods
 
-        function obj = Navigation(nav_params, gps, gyroscope, accelerometer)
+        function obj = Navigation(navParams, gps, gyroscope, accelerometer)
 
-                obj.dt = nav_params.dt;
-                obj.P = nav_params.P;
-                obj.dfdx = nav_params.dfdx;
-                obj.Q = nav_params.Q;
-                
+                obj.dt = navParams.dt;
+                obj.P = navParams.P;
+                obj.dfdx = navParams.dfdx;
+                obj.Q = navParams.Q;
+
                 obj.gps = gps;
                 obj.gyroscope = gyroscope;
                 obj.accelerometer = accelerometer;
@@ -51,7 +51,7 @@ classdef Navigation < handle&Exportable
         end
 
 
-        function ekfState = get_state_estimate(obj, state, stateDot, currentTime)
+        function ekfState = getStateEstimate(obj, state, stateDot, currentTime)
             obj.currentTime = currentTime;
 
             if obj.currentTime ~= 0
@@ -65,7 +65,7 @@ classdef Navigation < handle&Exportable
             end
             obj.x = state(2:7);
 
-            obj.cBI = Utils.dir_cosine(obj.q);
+            obj.cBI = Utils.dirCosine(obj.q);
             obj.cIB = obj.cBI.';
             
             obj.ekf();
@@ -75,13 +75,13 @@ classdef Navigation < handle&Exportable
 
         end
 
-         function obj = runAttitudeEstimation(obj) 
+         function obj = runAttitudeEstimation(obj)
             wx = obj.gyroRawData(1);
             wy = obj.gyroRawData(2);
             wz = obj.gyroRawData(3);
-            q_delt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz);
-            q_new = obj.quatMulitply(obj.q, q_delt);
-            obj.q = q_new;
+            qDelt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz);
+            qNew = obj.quatMulitply(obj.q, qDelt);
+            obj.q = qNew;
 
         end
 
@@ -229,33 +229,33 @@ classdef Navigation < handle&Exportable
             accI = obj.cIB * obj.accRawData + [0,0,-9.81];
         end
     
-        function [q_delt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor
+        function [qDelt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor
 
             omegaVec = [wx wy wz];
-            
+
             if norm(omegaVec) == 0
                 omegaVec = omegaVec + 0.001;
             end
-            
+
             axis = omegaVec./norm(omegaVec);
             angle = obj.gyroscope.outputPeriod*norm(omegaVec);
-            
-            q_delt_s = cos(angle/2);
-            q_delt_x = axis(1)*sin(angle/2);
-            q_delt_y = axis(2)*sin(angle/2);
-            q_delt_z = axis(3)*sin(angle/2);
-            
-            q_delt = [q_delt_s; q_delt_x; q_delt_y; q_delt_z];
-            
+
+            qDeltS = cos(angle/2);
+            qDeltX = axis(1)*sin(angle/2);
+            qDeltY = axis(2)*sin(angle/2);
+            qDeltZ = axis(3)*sin(angle/2);
+
+            qDelt = [qDeltS; qDeltX; qDeltY; qDeltZ];
+
         end
-        
-        function [quat_new]= quatMulitply(q1,q2)
-            
-            q_s_new = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
-            q_ang_new = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
-                
-            quat_new = [q_s_new; q_ang_new];
-                
+
+        function [quatNew]= quatMulitply(q1,q2)
+
+            qSNew = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
+            qAngNew = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
+
+            quatNew = [qSNew; qAngNew];
+
         end
        %% Plotting
         function plotCovariances(obj)

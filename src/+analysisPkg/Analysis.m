@@ -25,7 +25,7 @@ classdef Analysis < handle
     end
 
     methods
-        function obj = Analysis(t, x, n, Fb, Mb)
+        function obj = Analysis(t, x, n, fb, mb)
             obj.numSamples = n;
             obj.time = t;
             nTimeSteps = length(obj.time);
@@ -56,19 +56,19 @@ classdef Analysis < handle
                 obj.vel(:,:,i)       = transpose(x(5:7,:));
                 obj.q_bf(:,:,i)          = transpose(x(8:11,:));
                 obj.angVel(:,:,i)        = transpose(x(12:14,:));
-                %obj.angleOfAttack(:,:,i) = 
-                %obj.sideslipAngle(:,:,i) = 
-                %obj.CG(:,:,i)            = 
-                %obj.angAccel(:,:,i)      = 
-                %obj.MA_b(:,:,i)          = 
-                %obj.MT_b(:,:,i)          = 
-                %obj.ME_b(:,:,i)          = 
-                %obj.l_p(:,:,i)           = 
-                %obj.n_a(:,:,i)           = 
-                %obj.n_r(:,:,i)           = 
-                %obj.accelFlat(:,:,i)     = 
-                obj.Fb(:,:,i) = transpose(Fb);
-                obj.Mb(:,:,i) = transpose(Mb);
+                %obj.angleOfAttack(:,:,i) =
+                %obj.sideslipAngle(:,:,i) =
+                %obj.CG(:,:,i)            =
+                %obj.angAccel(:,:,i)      =
+                %obj.MA_b(:,:,i)          =
+                %obj.MT_b(:,:,i)          =
+                %obj.ME_b(:,:,i)          =
+                %obj.l_p(:,:,i)           =
+                %obj.n_a(:,:,i)           =
+                %obj.n_r(:,:,i)           =
+                %obj.accelFlat(:,:,i)     =
+                obj.Fb(:,:,i) = transpose(fb);
+                obj.Mb(:,:,i) = transpose(mb);
             end
         end
 

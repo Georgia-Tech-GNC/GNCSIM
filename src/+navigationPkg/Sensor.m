@@ -9,7 +9,7 @@ classdef (Abstract) Sensor < handle
     end
    
     properties (Abstract, Constant)
-        SENSOR_TYPE navigation_pkg.SensorType
+        SENSOR_TYPE navigationPkg.SensorType
     end
 
     properties

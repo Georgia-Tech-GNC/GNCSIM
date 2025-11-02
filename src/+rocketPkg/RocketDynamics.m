@@ -73,7 +73,7 @@ classdef RocketDynamics < handle
             currentThrust = interp1(time, thrust, t, 'linear', 0);
         end
 
-        function [currentCG, currentMOI] = getCgMoi(obj, mass)
+        function [currentCg, currentMoi] = getCgMoi(obj, mass)
             % Error check
             if ~isnumeric(mass)
                 error('Error: Mass must be numeric.')
@@ -81,14 +81,14 @@ classdef RocketDynamics < handle
 
             % If beyond burn time, thrust is zero
             if mass <= obj.massDry
-                currentCG = obj.cgDry;
-                currentMOI = obj.moiDry;
+                currentCg = obj.cgDry;
+                currentMoi = obj.moiDry;
                 return
             end
-            
+
             % Linear interpolation wrt mass
-            currentCG = obj.cgDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.cgWet - obj.cgDry);
-            currentMOI = obj.moiDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.moiWet - obj.moiDry);
+            currentCg = obj.cgDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.cgWet - obj.cgDry);
+            currentMoi = obj.moiDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.moiWet - obj.moiDry);
         end
 
         function mDot = getMDot(obj, time)
@@ -96,16 +96,16 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesAndMoments(obj, state, disturbances, time, xdot, breakPoints)
-            
+        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, xdot, breakPoints)
+
             % computes aero forces and moments
             if isempty(obj.aerodynamics)
-                 [fBFins, mBFins] = obj.rocketFins.getForcesAndMoments(state, disturbances);
-                 [fBBody, mBBody] = obj.body.getForcesAndMoments(state, disturbances);
+                 [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, disturbances);
+                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
                  fBAero = fBFins + fBBody;
                  mBAero = mBFins + mBBody;
              else
-                 %[fBAero, mBAero] = obj.aerodynamics.getForcesAndMoments(state, disturbances);
+                 %[fBAero, mBAero] = obj.aerodynamics.getForcesMoments(state, disturbances);
                  fBAero = [0;0;0];
                  mBAero = [0;0;0];
              end
@@ -116,41 +116,41 @@ classdef RocketDynamics < handle
             %TODO: sensorData = sensor.getSensorData(time, state, disturbances, CG)
 
             stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
-            %[fBController, mBController] = obj.controller.getForcesAndMoments(state, obj, CG, breakPoints, time);
+            %[fBController, mBController] = obj.controller.getForcesMoments(state, obj, CG, breakPoints, time);
 
             fB = fTB + fBAero;
             mB = mBAero;
         end
 
-        function compute_buildup(obj)
-            obj.body.compute_buildup()
-            obj.rocketFins.compute_buildup()
+        function computeBuildup(obj)
+            obj.body.computeBuildup()
+            obj.rocketFins.computeBuildup()
         end
 
 		function draw(obj)
             % ========== ROCKET ==========
-            r_body = obj.body.body_params;
-            fins = obj.rocketFins.fin_params;
-            r = r_body.rocket_diameter/2;
-            x_nose = linspace(r_body.nose_cone_length, 0, 100);
-            
+            rBody = obj.body.bodyParams;
+            fins = obj.rocketFins.finParams;
+            r = rBody.rocketDiameter/2;
+            xNose = linspace(rBody.noseLength, 0, 100);
+
             % Tangent ogive nose cone profile
-            y_profile = obj.body.get_nose_radii(x_nose); 
-            
+            yProfile = obj.body.getNoseRadii(xNose);
+
             % Cylindrical body
-            x_body = linspace(r_body.nose_cone_length, r_body.nose_cone_length + r_body.body_length, 50);
-            y_body = r * ones(size(x_body));
-            
+            xBody = linspace(rBody.noseLength, rBody.noseLength + rBody.bodyLength, 50);
+            yBody = r * ones(size(xBody));
+
             % Combine profile
-            x = [x_nose, x_body];
-            y = [y_profile, y_body];
-            
+            x = [xNose, xBody];
+            y = [yProfile, yBody];
+
             % Revolve a 2D curve (x,y) about the x-axis to form a surface
             theta = linspace(0, 2*pi, 120);
             X = repmat(x(:), 1, 120);
             Y = repmat(y(:), 1, 120).*cos(theta);
             Z = repmat(y(:), 1, 120).*sin(theta);
-            
+
             % Plot body
             figure; hold on;
             surf(X, Y, Z, 'FaceColor', [0.8 0.8 0.9], 'EdgeColor', 'none');
@@ -158,40 +158,40 @@ classdef RocketDynamics < handle
             xlabel('Length (m)'); ylabel('Y (m)'); zlabel('Z (m)');
             title('3D Rocket with Fins');
             camlight headlight; lighting gouraud;
-            
+
             % ========== FINS ==========
             % Fin base position (at end of body)
-            x_base = r_body.nose_cone_length + r_body.body_length - fins.root_chord;  % where root leading edge starts
+            xBase = rBody.noseLength + rBody.bodyLength - fins.rootChord;  % where root leading edge starts
             finColor = [0.2 0.5 0.8];
-            
+
             % Define one fin shape in X–Y plane before rotation
-            LE_root = [0, 0];
-            TE_root = [fins.root_chord, 0];
-            LE_tip  = [fins.fin_span * tand(fins.sweep_deg), fins.fin_span];
-            TE_tip  = [LE_tip(1) + fins.tip_chord, fins.fin_span];
-            
-            finX = [LE_root(1), TE_root(1), TE_tip(1), LE_tip(1)];
-            finY = [LE_root(2), TE_root(2), TE_tip(2), LE_tip(2)];
-            
+            leRoot = [0, 0];
+            teRoot = [fins.rootChord, 0];
+            leTip  = [fins.finSpan * tand(fins.sweepDeg), fins.finSpan];
+            teTip  = [leTip(1) + fins.tipChord, fins.finSpan];
+
+            finX = [leRoot(1), teRoot(1), teTip(1), leTip(1)];
+            finY = [leRoot(2), teRoot(2), teTip(2), leTip(2)];
+
             % For each fin, rotate and position around body
-            for i = 1:fins.num_fins
-                theta2 = 2*pi*(i-1)/fins.num_fins;  % angular position
+            for i = 1:fins.numFins
+                theta2 = 2*pi*(i-1)/fins.numFins;  % angular position
                 % Rotation matrix around X-axis (rocket axis)
                 Rz = [1 0 0; 0 cos(theta2) -sin(theta2); 0 sin(theta2) cos(theta2)];
 
                 % Shift fin so its root attaches to rocket body
-                Xf = finX + x_base;
+                Xf = finX + xBase;
                 Yf = r + finY;
                 Zf = zeros(size(finY));
-                
+
                 % Stack to rotate (not necessary here because we rotate by construction)
-                fin_local = [Xf; Yf; Zf];
-                fin = Rz * fin_local;
-                
+                finLocal = [Xf; Yf; Zf];
+                fin = Rz * finLocal;
+
                 % Draw fin as patch
                 fill3(Xf, fin(2,:), fin(3,:), finColor, 'FaceAlpha', 0.9, 'EdgeColor', 'k');
             end
-            
+
             view(30,20);
         end
     end
@@ -200,28 +200,28 @@ end
 
 
 % DEPRECATED (sorry Kandarp)
-% function [m, CG, moi] = interp_mass_CG_MOI(t)
+% function [m, cg, moi] = interpMassCgMoi(t)
 %     % Need to pass in thrust curve somehow
-%     tc = obj.motor_params.tc;
-%     totalThrust = trapz(tc(1:2:end-1),tc(2:2:end)); 
+%     tc = obj.motorParams.tc;
+%     totalThrust = trapz(tc(1:2:end-1),tc(2:2:end));
 %     if t < burnTime
 %         % Proportionality constants
-%         k_mass = (obj.mass_wet-obj.mass_dry)/totalThrust;
-%         k_CG = (obj.CG_wet-obj.CG_dry)/totalThrust;
-%         k_moi = (obj.moi_wet-obj.moi_dry)/totalThrust;
+%         kMass = (obj.massWet-obj.massDry)/totalThrust;
+%         kCg = (obj.cgWet-obj.cgDry)/totalThrust;
+%         kMoi = (obj.moiWet-obj.moiDry)/totalThrust;
 %         % Time + cumulative thrust calculations
-%         curr_t = tc(tc(1:2:end-1) < t);
-%         t_stop = curr_t(end); % Last tc point included in calculation
-%         t_last = tc(find(tc == t_stop));
-%         T_slope = (tc(t_last+3)-tc(t_last+1))/(tc(t_last+2)-tc(t_last));
-%         cum_T = trapz(tc(1:2:t_last),tc(2:2:t_last+1)) + T_slope*(tc(t_last+2)-t_last);
+%         currT = tc(tc(1:2:end-1) < t);
+%         tStop = currT(end); % Last tc point included in calculation
+%         tLast = tc(find(tc == tStop));
+%         tSlope = (tc(tLast+3)-tc(tLast+1))/(tc(tLast+2)-tc(tLast));
+%         cumT = trapz(tc(1:2:tLast),tc(2:2:tLast+1)) + tSlope*(tc(tLast+2)-tLast);
 %         % Thrust-based interpolation
-%         m = obj.mass_wet - k_mass * cum_T;
-%         CG = obj.CG_wet - k_CG * cum_T;
-%         moi = obj.moi_wet - k_moi * cum_T;
+%         m = obj.massWet - kMass * cumT;
+%         cg = obj.cgWet - kCg * cumT;
+%         moi = obj.moiWet - kMoi * cumT;
 %     else
-%         m = obj.mass_dry;
-%         CG = obj.CG_dry;
-%         moi = obj.moi_dry;
+%         m = obj.massDry;
+%         cg = obj.cgDry;
+%         moi = obj.moiDry;
 %     end
 % end

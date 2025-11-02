@@ -1,4 +1,4 @@
-classdef Accelerometer < navigation_pkg.Sensor&handle
+classdef Accelerometer < navigationPkg.Sensor&handle
     
     properties 
         name = "Accelerometer"
@@ -10,7 +10,7 @@ classdef Accelerometer < navigation_pkg.Sensor&handle
     end
 
     properties (Constant)
-        SENSOR_TYPE = navigation_pkg.SensorType.ACCELEROMETER
+        SENSOR_TYPE = navigationPkg.SensorType.ACCELEROMETER
     end
     
     properties
@@ -27,22 +27,22 @@ classdef Accelerometer < navigation_pkg.Sensor&handle
 
     methods
 
-        function obj = Accelerometer(acc_params)
+        function obj = Accelerometer(accParams)
 
-            obj@navigation_pkg.Sensor()
-            obj.noiseCovariance = acc_params.noiseCovariance;
-            obj.outputRate = acc_params.outputRate;
-            obj.outputProbability = acc_params.outputProbability;
-            obj.observationMatrix = acc_params.observationMatrix;
+            obj@navigationPkg.Sensor()
+            obj.noiseCovariance = accParams.noiseCovariance;
+            obj.outputRate = accParams.outputRate;
+            obj.outputProbability = accParams.outputProbability;
+            obj.observationMatrix = accParams.observationMatrix;
 
             obj.outputPeriod = 1 / obj.outputRate;
             obj.lastOutputTime = 0;
             obj.nextOutputTime = obj.outputPeriod;
 
-            obj.leverArm = acc_params.leverArm;
-            obj.SF = acc_params.SF;
-            obj.bias = acc_params.bias;
-            obj.VRW = acc_params.VRW;
+            obj.leverArm = accParams.leverArm;
+            obj.SF = accParams.SF;
+            obj.bias = accParams.bias;
+            obj.VRW = accParams.VRW;
 
         end
 
@@ -71,7 +71,7 @@ classdef Accelerometer < navigation_pkg.Sensor&handle
             r = zeros(3,1); % placeholder
             velCG = zeros(3,1); % Placeholder for future coupling term
             correction = cross(w, velCG) + cross(w, cross(w, r));
-            cBI = Utils.dir_cosine(obj.qBI);
+            cBI = Utils.dirCosine(obj.qBI);
             accelIMU = obj.accelB - cBI * correction;
         end
 
