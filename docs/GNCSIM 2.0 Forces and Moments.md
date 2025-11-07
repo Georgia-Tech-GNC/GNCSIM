@@ -470,20 +470,20 @@ Any trim point must satisfy the form $\dot{x}^{*}=f(x^{*},u^{*})$ where $x^{*}$ 
 The key idea of trim points is that we have some states that are fixed and some states are free. For example when developing a pitch controller at 5 degrees pitch attitude the orientation (quaternion) and angular rate are fixed. The free variable would be the moment or fin deflection needed to maintain steady state flight and the angle of attack. In this case that would mean minimizing angular rate and angular  acceleration. Below is a more mathematical explanation of what is going on.
 
 <u>**State (x)**</u>
-$p_I=[0,0,0]^T$
-$v_B=[v \text{cos}(\alpha), 0, v \text{sin}(\alpha)]^T$
-$q=$ eurl2quat($[0,\theta,0]^T$)
-$\omega=[0,0,0]^T$
+* $p_I=[0,0,0]^T$ 
+* $v_B=[v \text{cos}(\alpha), 0, v \text{sin}(\alpha)]^T$
+* $q=$ eurl2quat($[0,\theta,0]^T$)
+* $\omega=[0,0,0]^T$
 
 <u>**Control (u)**</u>
-$u=[M_x, M_y, M_z]$
+* $u=[M_x, M_y, M_z]$
 
 <u>**Free Variables (z)**</u>
-$z=[M_x, M_y, M_z, \alpha]$
+* $z=[M_x, M_y, M_z, \alpha]$
 
 <u>**Fixed Variables**</u>
-$\theta=5^\circ$
-$v=100 \frac{m}{s}$
+* $\theta=5^\circ$
+* $v=100 \frac{m}{s}$
 
 Both the state vector $x$ and control $u$ are a function of the free variables $z$. Because of this the derivative of the state vector can be a function of $z$ as shown below.
 
