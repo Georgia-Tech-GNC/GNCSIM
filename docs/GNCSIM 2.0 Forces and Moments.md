@@ -552,7 +552,7 @@ Because the function $g$ is nonlinear the Jacobian is taken to linearize it arou
 
 $$
 \begin{equation}
-J_g=\frac{\partial g}{\partial x_{14}}\Big\vert_{x_{14}=x^*_{14}} \in \real^{3 \times 14}
+J_g=\frac{\partial g}{\partial x_{14}}\Big\vert_{x_{14}=x^*_{14}} \in R^{3 \times 14}
 \end{equation} 
 $$
 
@@ -578,7 +578,7 @@ To make a LTI system of the reduced form the Jacobian around the trim point at t
 
 $$
 \begin{equation}
-J_h=\frac{\partial h}{\partial x_{3}}\Big\vert_{x_{3}=x^*_{3}} \in \real^{14 \times 3}
+J_h=\frac{\partial h}{\partial x_{3}}\Big\vert_{x_{3}=x^*_{3}} \in R^{14 \times 3}
 \end{equation} 
 $$
 
