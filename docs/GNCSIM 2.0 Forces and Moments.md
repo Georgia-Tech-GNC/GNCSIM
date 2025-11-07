@@ -496,9 +496,7 @@ $$
 Because the goal is to develop a attitude controller the derivate of the state vector relating to attitude should be zero (i.e. $\dot{q}=0$, $\dot{\omega}=0$). So a optimization is preformed to find for what free variables $z$ does $\dot{q}=0$ and $\dot{\omega}=0$. Let the objective of this optimization be defined below.
 
 $$
-\begin{equation}
-J= \sum_{i \in I} (\dot{x}^*_i(z))^2=\sum_{i \in I} f_i(\bar{x}(z), \bar{u}(z))^2
-\end{equation}
+J = \sum_{i \in I} (\dot{x}^*_i(z))^2 = \sum_{i \in I} f_i(\bar{x}(z), \bar{u}(z))^2
 $$
 
 The index $i$ is the $i^{th}$ element of the state vector. In the case for a pitch controller the $I=[8,9,10,11,12,13,14]$ because these are the indices that correspond the quaternion ($q$) and angular rate ($\omega$). The intuition behind this optimization can be summed up in the question: **What values of $z$ (moment and angle of attack) will return the lowest value of angular rate ($\dot{q}$) and angular acceleration ($\dot{\omega}$) at the current state (100 $\frac{m}{s}$ and at 5$^\circ$ pitch)?**
