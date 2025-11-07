@@ -455,19 +455,19 @@ These parameters are used to compute pitching moment and stability derivatives.
  0.0785, 0.0785, 0.0785, 0.0785, 0.0785$
  ```
  * *BODY*: Body x positions in $m$
- * *R*: Body radius positions at corresponding body postion $m$ 
+ * *R*: Body radius positions at corresponding body position $m$ 
 
 ### Pitch Control
 
-In order to devlop a pitch controller a linear time-inverant (LTI) system must be devloped. This can be challenging as our dyanmics are non-linear and time-varying, however trim points can be used to linearize the dynamics around a point from which the system can be linear and time-invarent. Once a point is found a reduced order model can be devloped to transform our 14 dimensional model into a 3 dimensional LTI system for pitch.
+In order to develop a pitch controller a linear time-invariant (LTI) system must be developed. This can be challenging as our dynamics are non-linear and time-varying, however trim points can be used to linearize the dynamics around a point from which the system can be linear and time-invariant. Once a point is found a reduced order model can be developed to transform our 14 dimensional model into a 3 dimensional LTI system for pitch.
 
 #### Finding trim points
 
-Any trim point must satisify the form $\dot{x}^{*}=f(x^{*},u^{*})$ where $x^{*}$ is the state, $\dot{x}^{*}$ is the state derivative, $u^{*}$ is the contol and $f$ is the dynamics. Most of the time we want $\dot{x}^{*}$ to be zero for some of the states. This is because if $\dot{x}^{*}$ is assumsed to be zero then that is a steady condition where the system can maintain a constant motion and a LTI system can be developed around that point.
+Any trim point must satisfy the form $\dot{x}^{*}=f(x^{*},u^{*})$ where $x^{*}$ is the state, $\dot{x}^{*}$ is the state derivative, $u^{*}$ is the control and $f$ is the dynamics. Most of the time we want $\dot{x}^{*}$ to be zero for some of the states. This is because if $\dot{x}^{*}$ is assumed to be zero then that is a steady condition where the system can maintain a constant motion and a LTI system can be developed around that point.
 
-#### Trim point optimzation
+#### Trim point optimization
 
-The key idea of trim points is that we have some states that are fixed and some states are free. For example when delveloping a pitch controller at 5 degrees pitch attitude the orientation (quaterion) and angular rate are fixed. The free variable would be the moment or fin deflection needed to maintain steady state flight and the angle of attack. In this case that would mean minimizing angular rate and angular accelration. Below is a more mathmatical explination of what is going on.
+The key idea of trim points is that we have some states that are fixed and some states are free. For example when developing a pitch controller at 5 degrees pitch attitude the orientation (quaternion) and angular rate are fixed. The free variable would be the moment or fin deflection needed to maintain steady state flight and the angle of attack. In this case that would mean minimizing angular rate and angular  acceleration. Below is a more mathematical explanation of what is going on.
 
 <u>**State (x)**</u>
 $p_I=[0,0,0]^T$
@@ -493,7 +493,7 @@ $$
 \end{equation}
 $$
 
-Because the goal is to develop a attitude controller the derivate of the state vector relating to attitude should be zero (i.e. $\dot{q}=0$, $\dot{\omega}=0$). So a optimziation is preformed to find for what free variables $z$ does $\dot{q}=0$ and $\dot{\omega}=0$. Let the objective of this optimzation be defined below.
+Because the goal is to develop a attitude controller the derivate of the state vector relating to attitude should be zero (i.e. $\dot{q}=0$, $\dot{\omega}=0$). So a optimization is preformed to find for what free variables $z$ does $\dot{q}=0$ and $\dot{\omega}=0$. Let the objective of this optimization be defined below.
 
 $$
 \begin{equation}
@@ -501,7 +501,7 @@ J= \sum_{i \in I} (\dot{x}^*_i(z))^2=\sum_{i \in I} f_i(\bar{x}(z), \bar{u}(z))^
 \end{equation}
 $$
 
-The index $i$ is the $i^{th}$ elment of the state vector. In the case for a pitch controller the $I=[8,9,10,11,12,13,14]$ because these are the indices that correspond the quaterion ($q$) and angular rate ($\omega$). The intution behind this optimzation can be summed up in the question: **What values of $z$ (moment and angle of attack) will return the lowest value of angular rate ($\dot{q}$) and angular accleration ($\dot{\omega}$) at the current state (100 $\frac{m}{s}$ and at 5$^\circ$ pitch)?**
+The index $i$ is the $i^{th}$ element of the state vector. In the case for a pitch controller the $I=[8,9,10,11,12,13,14]$ because these are the indices that correspond the quaternion ($q$) and angular rate ($\omega$). The intuition behind this optimization can be summed up in the question: **What values of $z$ (moment and angle of attack) will return the lowest value of angular rate ($\dot{q}$) and angular acceleration ($\dot{\omega}$) at the current state (100 $\frac{m}{s}$ and at 5$^\circ$ pitch)?**
 
 
 $$
@@ -510,7 +510,7 @@ z^*=\argmin_z(J)
 \end{equation}
 $$
 
-Once the free varables are found they can then be converted to state as shown below.
+Once the free variables are found they can then be converted to state as shown below.
 
 $$
 \begin{equation}
@@ -520,7 +520,7 @@ $$
 
 #### Reduced Order Model
 
-Once a trim point is found the dynamics can be linearized around that point by calculating the jacobian of the dynamics with respect to the state and control and the trimpoint. The jacobian can be calculated symboliclly or using finite difference.
+Once a trim point is found the dynamics can be linearized around that point by calculating the Jacobian of the dynamics with respect to the state and control and the trim point. The Jacobian can be calculated symbolically or using finite difference.
 
 $$
 \begin{equation}
@@ -536,7 +536,7 @@ $$
 \end{equation}
 $$
 
-Recall that the primary goal of this section is to find a pitch controller however the dynamics for pitch are nonlinear but under certain assumptions the dynamics can be linear. The major variables that effect pitch are pitch $\theta$, pitch rate $q$ and angle of attack $\alpha$. Below are the steps to reduce the 14 dimensional state vector inot the 3 dimensional state vector $x_3 = [\theta, q, \alpha]^T$.
+Recall that the primary goal of this section is to find a pitch controller however the dynamics for pitch are nonlinear but under certain assumptions the dynamics can be linear. The major variables that effect pitch are pitch $\theta$, pitch rate $q$ and angle of attack $\alpha$. Below are the steps to reduce the 14 dimensional state vector into the 3 dimensional state vector $x_3 = [\theta, q, \alpha]^T$.
 
 Going forward the stat vector of the full 6 degree of freedom dynamics with 14 states will be called $x_{14}$ and the new reduced state vector with 3 states will be $x_3$.
 
@@ -550,7 +550,7 @@ $$
 
 [TODO: Define $g$]
 
-Because the function $g$ is nonlinear the jacobian is taken to linearize it around the trim point. 
+Because the function $g$ is nonlinear the Jacobian is taken to linearize it around the trim point. 
 
 $$
 \begin{equation}
@@ -558,7 +558,7 @@ J_g=\frac{\partial g}{\partial x_{14}}\Big\vert_{x_{14}=x^*_{14}} \in \real^{3 \
 \end{equation} 
 $$
 
-Using the jacobian above $A=A_{14}$ and $B=B_{14}$ a new linear system can be formulated where the input state vector is full and the state deriviative is in the reduced states.
+Using the Jacobian above $A=A_{14}$ and $B=B_{14}$ a new linear system can be formulated where the input state vector is full and the state derivative is in the reduced states.
 
 $$
 \begin{equation}
@@ -566,7 +566,7 @@ $$
 \end{equation}
 $$
 
-Furturmore the function $h$ is defined to expand the lower dimensional state vector $x_3$ to the full state vector $x_{14}$.
+Furthermore the function $h$ is defined to expand the lower dimensional state vector $x_3$ to the full state vector $x_{14}$.
 
 $$
 \begin{equation}
@@ -576,7 +576,7 @@ $$
 
 [TODO: Define $h$]
 
-To make a LTI system of the reduced form the jacobian around the trimpoint at the reduced state $x^*_3$ ($x^*_3=g(x^*_{14})$) is taken.
+To make a LTI system of the reduced form the Jacobian around the trim point at the reduced state $x^*_3$ ($x^*_3=g(x^*_{14})$) is taken.
 
 $$
 \begin{equation}
@@ -584,7 +584,7 @@ J_h=\frac{\partial h}{\partial x_{3}}\Big\vert_{x_{3}=x^*_{3}} \in \real^{14 \ti
 \end{equation} 
 $$
 
-From this a linear tranformation can be used to lift the reduced state to the higher order sate.
+From this a linear transformation can be used to lift the reduced state to the higher order sate.
 
 $$
 \begin{equation}
