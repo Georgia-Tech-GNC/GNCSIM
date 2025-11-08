@@ -13,7 +13,7 @@ classdef Navigation < handle
         Q
         R
         K 
-        q = [1/sqrt(2),0,1/sqrt(2),0];
+        q 
         z
         h
 
@@ -42,6 +42,7 @@ classdef Navigation < handle
                 obj.P = navParams.P;
                 obj.dfdx = navParams.dfdx;
                 obj.Q = navParams.Q;
+               
 
                 obj.gps = gps;
                 obj.gyroscope = gyroscope;
@@ -54,24 +55,26 @@ classdef Navigation < handle
         function ekfState = getStateEstimate(obj, state, stateDot, currentTime)
             obj.currentTime = currentTime;
 
-            if obj.currentTime ~= 0
-                obj.getRawData(state, stateDot);
-                obj.runAttitudeEstimation();
-            else
-                obj.gpsRawData = zeros(3,1);
-                obj.gyroRawData = zeros(3,1);
-                obj.accRawData = zeros(3,1);
-                obj.q = state(8:11);
+            if obj.currentTime == 0
+                obj.q = Utils.eulerToQuat([0, -90, 0]);
+                ekfState = [state(1); obj.x(:); obj.q; state(12:14)];
+                return
             end
-            obj.x = state(2:7);
+            obj.getRawData(state, stateDot);
 
             obj.cBI = Utils.dirCosine(obj.q);
             obj.cIB = obj.cBI.';
+
+            obj.runAttitudeEstimation();
             
             obj.ekf();
-
+      
             ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
-            
+
+            disp('State')
+            disp(state)
+            % disp('Ekf')
+            % disp(ekfState)
 
         end
 
@@ -166,15 +169,15 @@ classdef Navigation < handle
         %% Sensor Data
         function obj = getRawData(obj, state, stateDot)
 
-            [lat, lon, alt] = obj.gps.getMeasurement(state,stateDot,obj.currentTime);
-            [xENU, yENU, zENU] = obj.GPS2ENU(lat,lon,alt);
-            obj.gpsRawData = [xENU, yENU, zENU];
+            gpsRawDataLLA = obj.gps.getMeasurement(state,stateDot,obj.currentTime);
+            if ~(isempty(gpsRawDataLLA))
+                [xENU, yENU, zENU] = obj.GPS2ENU(gpsRawDataLLA(1),gpsRawDataLLA(2),gpsRawDataLLA(3));
+                obj.gpsRawData = [xENU, yENU, zENU];
+            end
 
-            [xAcc, yAcc, zAcc] = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
-            obj.accRawData = [xAcc, yAcc, zAcc];
+            obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
 
-            [xGyro, yGyro, zGyro] = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
-            obj.gyroRawData = [xGyro, yGyro, zGyro];
+            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
 
         end
 
@@ -226,10 +229,12 @@ classdef Navigation < handle
         end
 
         function [accI] = accBodytoInertial(obj)
-            accI = obj.cIB * obj.accRawData + [0,0,-9.81];
+
+            accI = obj.cIB * obj.accRawData + [0; 0; -9.81];
+
         end
     
-        function [qDelt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) % dt for now -> change to timeStep of sensor
+        function [qDelt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) 
 
             omegaVec = [wx wy wz];
 
@@ -249,7 +254,7 @@ classdef Navigation < handle
 
         end
 
-        function [quatNew]= quatMulitply(q1,q2)
+        function [quatNew]= quatMulitply(obj, q1,q2)
 
             qSNew = q1(1)*q2(1) - q1(2)*q2(2)- q1(3)*q2(3)- q1(4)*q2(4);
             qAngNew = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));

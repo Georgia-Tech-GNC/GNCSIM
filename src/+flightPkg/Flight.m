@@ -51,7 +51,7 @@ classdef Flight < handle
 
                 %disp('xdot')
                 %disp(obj.currentXDot)
-                %stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
+                stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
 
                 %disp('state estimate')
                 %disp(stateEstimateArr(:,ii))

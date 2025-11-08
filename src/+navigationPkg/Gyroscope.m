@@ -40,13 +40,13 @@ classdef Gyroscope < navigationPkg.Sensor&handle
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-
-            if obj.isOutputReady(currentTime)
+            
+           % if obj.isOutputReady(currentTime)
                 obj.w = state(12:14);
-                measurement = obj.w; %obj.addNoise(); % Add noise
-            else
-                measurement = [];
-            end
+                measurement = obj.w; %obj.addNoise(); % Add noise + make []
+            %else
+             %   measurement = [];
+           % end
 
             obj.scheduleNextOutput(currentTime);
 

@@ -114,12 +114,12 @@ classdef Utils
             q2 = q(3); % Vector part y
             q3 = q(4); % Vector part z
 
-            Ry = [0 0 1; 0 1 0; -1 0 0];
+
             quatDCM = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
                     2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
 
-            dcm = Ry * quatDCM;
+            dcm = quatDCM;
 		end
 
 		function dcm = finDcm(deltaDeg, thetaDeg)

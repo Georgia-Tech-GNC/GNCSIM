@@ -30,6 +30,7 @@ flight = setupFlight(rocketDynamics, environment, breakPoints);
 [tArr, xArr, FbArr, MbArr, stateEstimateArr] = flight.runSim();
 
 % Plot Flight
+navigation.plotCovariances();
 flight.plotFlight(tArr, xArr);
 flight.plotFlight(tArr, stateEstimateArr);
 
@@ -241,11 +242,11 @@ function nav = setupNavigation()
     sigmaA = 10;
 
     navParams.Q = sigmaA^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
-                     (dt^3)/2,     dt^2,          0,           0,              0,          0;
-                           0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
-                           0,         0,   (dt^3)/2,        dt^2,              0,          0;
-                           0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
-                           0,         0,          0,           0,       (dt^3)/2,      dt^2];
+                              (dt^3)/2,     dt^2,          0,           0,              0,          0;
+                                     0,        0,   (dt^4)/4,    (dt^3)/2,              0,          0;
+                                     0,        0,   (dt^3)/2,        dt^2,              0,          0;
+                                     0,        0,          0,           0,       (dt^4)/4,   (dt^3)/2;
+                                     0,        0,          0,           0,       (dt^3)/2,      dt^2];
 
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
@@ -259,7 +260,7 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints)
     mass0 = 20;
     pos0 = [0, 0, 0];
     vel0 = [0, 0, 0];
-    quat0 = Utils.eulerToQuat([0, 0, 0]).';
+    quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;

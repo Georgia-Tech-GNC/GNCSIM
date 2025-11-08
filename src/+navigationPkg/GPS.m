@@ -51,7 +51,8 @@ classdef GPS < navigationPkg.Sensor&handle
                 obj.posI = state(2:4);
                 [lat, lon, alt] = obj.ENU2LLA();
                 llaPos = [lat, lon, alt];
-                measurement = obj.gpsBuiltIn(llaPos,state(5:7)');
+                [latM, lonM, altM] = obj.gpsBuiltIn(llaPos,state(5:7)');
+                measurement = [latM, lonM, altM];
             else
                 measurement = [];
             end
