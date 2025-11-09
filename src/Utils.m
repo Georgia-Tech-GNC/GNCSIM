@@ -123,7 +123,7 @@ classdef Utils
 		end
 
 		function dcm = finDcm(deltaDeg, thetaDeg)
-			% fin_dcm: Generates a rotation matrix based on fin location
+			% finDcm: Generates a rotation matrix based on fin location
 			% angle (theta) and fin deflection(delta)
 			%
     		% INPUT:
@@ -155,6 +155,40 @@ classdef Utils
 			dcm = R_y_delta * R_x_theta;
         end
 
+        function J = numericalJacobian(fun, x0)
+            %numericalJacobian Compute the Jacobian matrix of a function at a given point.
+            %
+            %   J = numericalJacobian(fun, x0)
+            %
+            %   INPUT:
+            %       fun - Function handle, e.g. @(x) [x(1)^2 + x(2); sin(x(1)) + x(2)^3]
+            %       x0  - Point (vector) where the Jacobian is evaluated
+            %
+            %   OUTPUT:
+            %       J   - Jacobian matrix (m-by-n), where m = length(fun(x0)), n = length(x0)        
+            % Ensure x0 is a column vector
+            x0 = x0(:);
+            f0 = fun(x0);
+            n = length(x0);
+            m = length(f0);
+            J = zeros(m, n);
+        
+            % Finite difference step size
+            h = sqrt(eps) * max(abs(x0), 1);
+        
+            for i = 1:n
+                x_plus = x0;
+                x_minus = x0;
+                x_plus(i) = x_plus(i) + h(i);
+                x_minus(i) = x_minus(i) - h(i);
+        
+                f_plus = fun(x_plus);
+                f_minus = fun(x_minus);
+        
+                % Central difference
+                J(:, i) = (f_plus - f_minus) / (2 * h(i));
+            end
+        end
     end
 end
 

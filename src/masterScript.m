@@ -22,6 +22,10 @@ n = 1; %For single flight
 
 %flight.draw_traj()
 
+lti = analysisPkg.ReduceLTI(flight);
+xStar = flight.flightParams.x0;
+uStar = [0 0 0].';
+lti.calculateROM(xStar, uStar)
 
 flight.plotFlight(t, x);
 
@@ -65,7 +69,7 @@ function rocketDyn = setupRocket()
 
     % Motor
     motorParams.burnTime = 13.1;
-    motorParams.tc = [0.0, 0.457288;
+    motorParams.thrustCurve = [0.0, 0.457288;
         0.152, 0.314574;
         0.162, 40.2069;
         0.164, 148.3954;
@@ -215,9 +219,9 @@ function flight = setup_flight(rocketDyn)
 
     mass0 = 20;
     pos0 = [0, 0, 1];
-    vel0 = [1, 0, 0];
-    quat0 = Utils.eulerToQuat([0, 5, 0]).';
-    omega0 = [0, 0, 0];
+    vel0 = [20, 0, 0];
+    quat0 = Utils.eulerToQuat([0, 90, 0]).';
+    omega0 = [0, 0.5, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 
