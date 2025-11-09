@@ -20,7 +20,8 @@ classdef Navigation < handle
         gpsRawData
         gyroRawData
         accRawData
-
+        
+        cIBprior
         cBI
         cIB
 
@@ -61,6 +62,9 @@ classdef Navigation < handle
                 return
             end
             obj.getRawData(state, stateDot);
+
+            obj.cIBprior = Utils.dirCosine(obj.q)';
+
             obj.runAttitudeEstimation();
 
             obj.cBI = Utils.dirCosine(obj.q);
@@ -70,10 +74,10 @@ classdef Navigation < handle
       
             ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
 
-            % disp('State')
-            % disp(state)
-            % disp('Ekf')
-            % disp(ekfState)
+            disp('State')
+            disp(state)
+            disp('Ekf')
+            disp(ekfState)
 
             % disp('--- Rotation Matrix Check ---');
             % 
@@ -162,6 +166,8 @@ classdef Navigation < handle
 
             obj.x(4:6) = obj.cBI * [velIx; velIy; velIz];
 
+            disp(obj.x(5))
+
         end
 
         function K = kalmanGain(obj)
@@ -175,8 +181,6 @@ classdef Navigation < handle
 
             obj.z = obj.gpsRawData';
             y = obj.z - obj.h(obj.x);
-            disp(obj.x)
-            disp(obj.K*y)
             obj.x = obj.x + obj.K * y;
 
         end
@@ -268,7 +272,8 @@ classdef Navigation < handle
             omegaVec = [wx wy wz];
 
             if norm(omegaVec) == 0
-                omegaVec = omegaVec + 0.001;
+                qDelt = [1;0;0;0]; 
+                return
             end
 
             axis = omegaVec./norm(omegaVec);
@@ -289,6 +294,7 @@ classdef Navigation < handle
             qAngNew = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
 
             quatNew = [qSNew; qAngNew];
+            quatNew = quatNew / norm(quatNew);
 
         end
        %% Plotting
