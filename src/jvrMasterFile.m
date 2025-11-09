@@ -205,7 +205,7 @@ function nav = setupNavigation()
     gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
     gpsParams.verticalAccuracy = 1;
     gpsParams.horizontalAccuracy = 1;
-    gpsParams.velocityAccuracy = 1;
+    gpsParams.velocityAccuracy = .05;
 
     gpsParams.noiseCovariance = [8.4 0 0;
                                   0 4.2 0;
@@ -239,7 +239,7 @@ function nav = setupNavigation()
         0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
         0,                        0, 0,                        0, 0,                        1];
 
-    sigmaA = 10;
+    sigmaA = 1;
 
     navParams.Q = sigmaA^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
                               (dt^3)/2,     dt^2,          0,           0,              0,          0;
