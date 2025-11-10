@@ -35,12 +35,11 @@ log.trim();
 
 % Plot Flight
 % navigation.plotCovariances();
-% flight.plotFlight(tArr, xArr);
-% flight.plotFlight(tArr, stateEstimateArr);
 
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
+%analysis.plotAllStateEstimate();
 
 %% Setup Functions
 
@@ -257,7 +256,7 @@ end
 
 function flight = setupFlight(rocketDynamics, environment, breakPoints)
     % Flight
-    flightParams.totalTime = 13;  % length of simulation [s]
+    flightParams.totalTime = 20;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;

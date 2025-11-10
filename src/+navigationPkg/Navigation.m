@@ -76,8 +76,8 @@ classdef Navigation < handle
 
             % disp('State')
             % disp(state)
-            disp('Ekf')
-            disp(ekfState)
+            % disp('Ekf')
+            % disp(ekfState)
 
             % disp('--- Rotation Matrix Check ---');
             % 

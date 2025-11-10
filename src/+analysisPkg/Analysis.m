@@ -334,27 +334,221 @@ classdef Analysis < handle
             % Plot mean ± std for a given state
             stats = obj.computeStatistics(stateName);
             time = obj.getCommonTime();
-            
+
             figure;
             hold on;
-            
+
             % Plot mean
             plot(time, stats.mean, 'b-', 'LineWidth', 2, 'DisplayName', 'Mean');
-            
+
             % Plot confidence interval
             fill([time, fliplr(time)], ...
                  [stats.mean + stats.std; flipud(stats.mean - stats.std)], ...
                  'b', 'FaceAlpha', 0.2, 'EdgeColor', 'none', 'DisplayName', '\pm 1\sigma');
-            
+
             % Plot min/max envelope
             plot(time, stats.min, 'r--', 'LineWidth', 1, 'DisplayName', 'Min/Max');
             plot(time, stats.max, 'r--', 'LineWidth', 1, 'HandleVisibility', 'off');
-            
+
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex');
             ylabel(['\textbf{', strrep(stateName, '_', '\_'), '}'], 'Interpreter', 'latex');
             legend('show', 'Interpreter', 'latex');
             grid on;
             title(['\textbf{', strrep(stateName, '_', '\_'), ' Statistics}'], 'Interpreter', 'latex');
+        end
+
+        % State Estimate Plotting Functions
+        function plotTrajectoryEstimate(obj)
+            figure;
+
+            plot3(0,0,0,'o','MarkerSize',10)
+            hold on
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Get position state estimates
+                x_pos = log.getStateEstimate('x');
+                y_pos = log.getStateEstimate('y');
+                z_pos = log.getStateEstimate('z');
+
+                % Plot final position
+                plot3(x_pos(end), y_pos(end), z_pos(end), 'x','MarkerSize', 10)
+                % Plot trajectory
+                plot3(x_pos, y_pos, z_pos, 'LineWidth', 2)
+            end
+
+            grid on
+            xlabel('\textbf{Flat Earth X (m)}', 'Interpreter', 'latex')
+            ylabel('\textbf{Flat Earth Y (m)}', 'Interpreter', 'latex')
+            zlabel('\textbf{Flat Earth Z (m)}', 'Interpreter', 'latex')
+            title('\textbf{Trajectory (State Estimate)}', 'Interpreter', 'latex')
+            axis equal
+        end
+
+        function plotVelocityEstimate(obj)
+            % Calculate Mach Numbers
+            a = 340; % m/s (Speed of sound PLACEHOLDER)
+            machMax = zeros(obj.numSamples, 1);
+            altMax = zeros(obj.numSamples, 1);
+
+            figure;
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Get velocity component estimates
+                vx = log.getStateEstimate('vx');
+                vy = log.getStateEstimate('vy');
+                vz = log.getStateEstimate('vz');
+
+                time = log.time;
+                plot(time, vx, 'LineWidth', 2)
+                plot(time, vy, 'LineWidth', 2)
+                plot(time, vz, 'LineWidth', 2)
+
+                % Calculate Mach number
+                velMag = sqrt(vx.^2 + vy.^2 + vz.^2);
+                machNumbers = velMag ./ a;
+                machMax(i) = max(machNumbers);
+
+                % Get altitude (z position estimate)
+                z_pos = log.getStateEstimate('z');
+                altMax(i) = max(z_pos);
+            end
+
+            averageMaxMachNumber = mean(machMax);
+            disp(['[Estimate] Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
+
+            averageMaxAltitude = mean(altMax);
+            disp(['[Estimate] Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
+
+            legend('v_x','v_y','v_z')
+            ylabel('\textbf{Velocity in Body Frame (m/s)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Velocity (State Estimate)}', 'Interpreter', 'latex')
+            grid on;
+        end
+
+        function plotEulerAngleEstimate(obj)
+            figure;
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Get quaternion state estimates
+                q0 = log.getStateEstimate('q0');
+                q1 = log.getStateEstimate('q1');
+                q2 = log.getStateEstimate('q2');
+                q3 = log.getStateEstimate('q3');
+
+                quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
+                quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
+                quat_rotated = quat * quat_y90;
+
+                eul = rad2deg(quat2eul(quat_rotated, 'ZYX'));
+                plot(log.time, eul, 'LineWidth', 2)
+            end
+
+
+            legend('Yaw','Pitch','Roll')
+            ylabel('\textbf{Euler Angles (deg)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Euler Angles (State Estimate)}', 'Interpreter', 'latex')
+            grid on
+        end
+
+        function plotAngularVelocityEstimate(obj)
+            figure;
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                wx = log.getStateEstimate('wx');
+                wy = log.getStateEstimate('wy');
+                wz = log.getStateEstimate('wz');
+
+                time = log.time(1:log.currentIdx);
+
+                plot(time, rad2deg(wx), 'r', 'LineWidth', 2, 'DisplayName', 'ω_x (deg/s)');
+                plot(time, rad2deg(wy), 'g', 'LineWidth', 2, 'DisplayName', 'ω_y (deg/s)');
+                plot(time, rad2deg(wz), 'b', 'LineWidth', 2, 'DisplayName', 'ω_z (deg/s)');
+            end
+
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex');
+            ylabel('\textbf{Angular Velocity (rad/s)}', 'Interpreter', 'latex');
+            grid on;
+            hold off;
+            legend('show');
+            title('\textbf{Angular Velocity (State Estimate)}', 'Interpreter', 'latex');
+        end
+
+        function plotAltitudeAndXYEstimate(obj)
+            % Plot altitude, x, and y coordinate estimates as a function of time
+            % Creates a figure with 3 subplots
+
+            figure;
+            % Subplot 1: Altitude vs Time
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+                z_pos = log.getStateEstimate('z');
+                time = log.time(1:log.currentIdx);
+                plot(time, z_pos, 'LineWidth', 2);
+            end
+
+            grid on;
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex');
+            ylabel('\textbf{Altitude z (m)}', 'Interpreter', 'latex');
+            title('\textbf{Altitude vs Time (State Estimate)}', 'Interpreter', 'latex');
+            hold off;
+
+            figure;
+            % Subplot 2: X Coordinate vs Time
+            subplot(2, 1, 1);
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+                x_pos = log.getStateEstimate('x');
+                time = log.time(1:log.currentIdx);
+                plot(time, x_pos, 'LineWidth', 2);
+            end
+
+            grid on;
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex');
+            ylabel('\textbf{X Position (m)}', 'Interpreter', 'latex');
+            title('\textbf{X Coordinate vs Time (State Estimate)}', 'Interpreter', 'latex');
+            hold off;
+
+            % Subplot 3: Y Coordinate vs Time
+            subplot(2, 1, 2);
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+                y_pos = log.getStateEstimate('y');
+                time = log.time(1:log.currentIdx);
+                plot(time, y_pos, 'LineWidth', 2);
+            end
+
+            grid on;
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex');
+            ylabel('\textbf{Y Position (m)}', 'Interpreter', 'latex');
+            title('\textbf{Y Coordinate vs Time (State Estimate)}', 'Interpreter', 'latex');
+            hold off;
+        end
+
+        function plotAllStateEstimate(obj)
+            obj.plotTrajectoryEstimate();
+            obj.plotVelocityEstimate();
+            obj.plotEulerAngleEstimate();
+            obj.plotAngularVelocityEstimate();
+            obj.plotAltitudeAndXYEstimate();
         end
     end
 end
