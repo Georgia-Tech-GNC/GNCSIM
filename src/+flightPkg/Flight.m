@@ -25,7 +25,6 @@ classdef Flight < handle
             %obj.rocket_dyn.calc_moi()
         end
 
-
         % TODO: Build setters for all attributes
             
         %end
@@ -82,6 +81,17 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'statedots', xDot);
             end
         end
+
+        function xDot = rocketModelDeflection(obj, state, control)
+            % Control: [Mx, My, Mz]
+            altitude = state(4);
+            %disturbances.wind = obj.environment.getWindspeed(altitude);
+            disturbances.wind = zeros(3);
+
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints);
+            
+            xDot = obj.flatEarth_EOM(state, fB, mB + control(:));
+        end
         
         function [stateDot] = flatEarth_EOM(obj, state, fB, mB)
             mass = state(1);
@@ -119,7 +129,9 @@ classdef Flight < handle
         end
 
         function plotFlight(obj, t_arr, x_arr)
-            
+            t_arr = t_arr(2:end);
+            x_arr = x_arr(:, 2:end);
+
             figure;
             plot3(x_arr(2, :), x_arr(3, :), x_arr(4, :), 'LineWidth', 2);
             grid on;
@@ -165,10 +177,18 @@ classdef Flight < handle
             title('Angular Velocity Components');
 
             % Plot eurler angles
+            N = size(x_arr(8:11, :), 2);
+            vertical_quat_arr = zeros(N, 4);
+            euler_angles = zeros(N, 3);
 
-            
-            % Convert quaternion to Euler angles
-            euler_angles = rad2deg(quat2eul(x_arr(8:11, :).'));
+            for ii=1:N
+                quat = quaternion(x_arr(8:11, ii).');
+                quat_y90 = quaternion(Utils.eulerToQuat([0 -90 0]).');
+                vertical_quat_arr = quat * quat_y90;
+
+                % Convert quaternion to Euler angles
+                euler_angles(ii, :) = rad2deg(quat2eul(vertical_quat_arr));
+            end
 
             % Plotting Euler angles
             figure;

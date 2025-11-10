@@ -20,7 +20,8 @@ classdef Navigation < handle
         gpsRawData
         gyroRawData
         accRawData
-
+        
+        cIBprior
         cBI
         cIB
 
@@ -62,10 +63,12 @@ classdef Navigation < handle
             end
             obj.getRawData(state, stateDot);
 
-            obj.cBI = Utils.dirCosine(obj.q);
-            obj.cIB = obj.cBI.';
+            obj.cIBprior = Utils.dirCosine(obj.q)';
 
             obj.runAttitudeEstimation();
+
+            obj.cBI = Utils.dirCosine(obj.q);
+            obj.cIB = obj.cBI.';
             
             obj.ekf();
       
@@ -73,12 +76,38 @@ classdef Navigation < handle
 
             % disp('State')
             % disp(state)
-            % disp('Ekf')
-            % disp(ekfState)
+            disp('Ekf')
+            disp(ekfState)
 
+            % disp('--- Rotation Matrix Check ---');
+            % 
+            % % Body axes unit vectors
+            % x_body = [1; 0; 0];
+            % y_body = [0; 1; 0];
+            % z_body = [0; 0; 1];
+            % 
+            % % Rotate body axes into inertial (ENU) using cIB
+            % x_inertial = obj.cIB * x_body;
+            % y_inertial = obj.cIB * y_body;
+            % z_inertial = obj.cIB * z_body;
+            % 
+            % disp('Body x-axis in inertial frame:');
+            % disp(x_inertial);
+            % 
+            % disp('Body y-axis in inertial frame:');
+            % disp(y_inertial);
+            % 
+            % disp('Body z-axis in inertial frame:');
+            % disp(z_inertial);
+            % 
+            % % Optional: Check that cIB is orthonormal
+            % orthonormality = obj.cIB * obj.cBI; % should be close to identity
+            % disp('cIB * cBI (should be identity):');
+            % disp(orthonormality);
+            
         end
 
-         function obj = runAttitudeEstimation(obj)
+        function obj = runAttitudeEstimation(obj)
             wx = obj.gyroRawData(1);
             wy = obj.gyroRawData(2);
             wz = obj.gyroRawData(3);
@@ -126,14 +155,18 @@ classdef Navigation < handle
         function obj = predictState(obj)
 
             accI = obj.accBodytoInertial();
-            velI = obj.cIB * obj.x(4:6);
-            accB = obj.cBI * accI;
+            velI = obj.cIB * obj.x(4:6); % Change to cIBprior
+
             obj.x(1) = obj.x(1) + velI(1) * obj.dt + accI(1) * ((obj.dt^2)/2);
             obj.x(2) = obj.x(2) + velI(2) * obj.dt + accI(2) * ((obj.dt^2)/2);
             obj.x(3) = obj.x(3) + velI(3) * obj.dt + accI(3) * ((obj.dt^2)/2);
-            obj.x(4) = obj.x(4) + accB(1) * obj.dt;
-            obj.x(5) = obj.x(5) + accB(2) * obj.dt;
-            obj.x(6) = obj.x(6) + accB(3) * obj.dt;
+            velIx = velI(1) + accI(1) * obj.dt;
+            velIy = velI(2) + accI(2) * obj.dt;
+            velIz = velI(3) + accI(3) * obj.dt;
+
+            obj.x(4:6) = obj.cBI * [velIx; velIy; velIz];
+
+            disp(obj.x(5))
 
         end
 
@@ -146,8 +179,8 @@ classdef Navigation < handle
 
         function obj = updateState(obj)
 
-            obj.z = obj.gpsRawData;
-            y = obj.z - obj.h(obj.x); % Need to do z and h
+            obj.z = obj.gpsRawData';
+            y = obj.z - obj.h(obj.x);
             obj.x = obj.x + obj.K * y;
 
         end
@@ -191,7 +224,7 @@ classdef Navigation < handle
         %% Frame Transformation Functions
 
         % GPS
-        function [xECEF, yECEF, zECEF] = LLA2ECEF(lat, lon, alt)
+        function [xECEF, yECEF, zECEF] = LLA2ECEF(obj, lat, lon, alt)
             % Converts from WGS84 to ECEF
 
             WGS84_E = 0.08181;
@@ -210,17 +243,17 @@ classdef Navigation < handle
 
         end
 
-        function [xENU, yENU, zENU] = GPS2ENU(obj, lat, lon, alt)
+        function [xENU, yENU, zENU] = GPS2ENU(obj,lat, lon, alt)
             
-            [xECEF, yECEF, zECEF] = LLA2ECEF(lat, lon, alt);
+            [xECEF, yECEF, zECEF] = obj.LLA2ECEF(lat, lon, alt);
 
-            refECEF = LLA2ECEF(obj.gps.refLLA(1), obj.gps.refLLA(2), obj.gps.refLLA(3));
-            dx = xECEF - refECEF(1);
-            dy = yECEF - refECEF(2);
-            dz = zECEF - refECEF(3);
+            [xECEFref, yECEFref, zECEFref] = obj.LLA2ECEF(obj.gps.refLLA(1), obj.gps.refLLA(2), obj.gps.refLLA(3));
+            dx = xECEF - xECEFref;
+            dy = yECEF - yECEFref;
+            dz = zECEF - zECEFref;
 
-            phi = deg2rad(lat);
-            lambda = deg2rad(lon);
+            phi = deg2rad(obj.gps.refLLA(1)); % Check these
+            lambda = deg2rad(obj.gps.refLLA(2));
 
             xENU = -sin(lambda)*dx + cos(lambda)*dy;
             yENU = -sin(phi)*cos(lambda)*dx - sin(phi)*sin(lambda)*dy + cos(phi)*dz;
@@ -239,7 +272,8 @@ classdef Navigation < handle
             omegaVec = [wx wy wz];
 
             if norm(omegaVec) == 0
-                omegaVec = omegaVec + 0.001;
+                qDelt = [1;0;0;0]; 
+                return
             end
 
             axis = omegaVec./norm(omegaVec);
@@ -260,6 +294,7 @@ classdef Navigation < handle
             qAngNew = q1(1).*q2(2:4) + q2(1).*q1(2:4) + cross(q1(2:4), q2(2:4));
 
             quatNew = [qSNew; qAngNew];
+            quatNew = quatNew / norm(quatNew);
 
         end
        %% Plotting

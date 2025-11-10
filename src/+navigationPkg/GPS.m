@@ -46,18 +46,16 @@ classdef GPS < navigationPkg.Sensor&handle
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            
             if obj.isOutputReady(currentTime)
                 obj.posI = state(2:4);
                 [lat, lon, alt] = obj.ENU2LLA();
                 llaPos = [lat, lon, alt];
                 [latM, lonM, altM] = obj.gpsBuiltIn(llaPos,state(5:7)');
                 measurement = [latM, lonM, altM];
+                obj.scheduleNextOutput(currentTime);
             else
                 measurement = [];
             end
-
-            obj.scheduleNextOutput(currentTime);
 
         end
 
