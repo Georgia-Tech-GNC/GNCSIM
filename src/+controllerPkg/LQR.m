@@ -23,11 +23,14 @@ classdef LQR < Controller
             delU = -K*delX;
         end
 
-        function [fB, mB] = getForcesMoments(state, rocket, CG, breakPoints, time)
+        function [fB, mB] = getForcesMoments(state, rocket, CG, breakPoints, time, log)
                 [K, x0, u0] = breakPoints.selectGain(state, time);
                 delX = state - x0;
                 delU = computeControls(obj, K, delX);
                 u = delU + u0;
+                if ~isempty(log)
+                    log.add(time, 'controlinputs', u)
+                end
                [fB, mB] = obj.actuator.getForcesMoments(obj, u, rocket, CG);
         end
     end

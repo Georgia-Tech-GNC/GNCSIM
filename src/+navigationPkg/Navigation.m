@@ -71,8 +71,8 @@ classdef Navigation < handle
       
             ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
 
-            disp('State')
-            disp(state)
+            % disp('State')
+            % disp(state)
             % disp('Ekf')
             % disp(ekfState)
 

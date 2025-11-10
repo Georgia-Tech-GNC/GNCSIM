@@ -26,19 +26,21 @@ rocketDynamics = setupRocket(controller, navigation, aerodynamics);
 % Setup Flight Simulation
 flight = setupFlight(rocketDynamics, environment, breakPoints);
 
+% Setup Log
+log = setupLog(flight);
+
 %% Run Flight
-[tArr, xArr, FbArr, MbArr, stateEstimateArr] = flight.runSim();
+log = flight.runSim(log);
+log.trim();
 
 % Plot Flight
-navigation.plotCovariances();
-flight.plotFlight(tArr, xArr);
-flight.plotFlight(tArr, stateEstimateArr);
+% navigation.plotCovariances();
+% flight.plotFlight(tArr, xArr);
+% flight.plotFlight(tArr, stateEstimateArr);
 
 %% Analysis
-% Still need to implement stuff there. 
-n = 1; %For single flight
-analysis = analysisPkg.Analysis(tArr, xArr, n, FbArr, MbArr);
-analysis.GenerateAllPlots();
+analysis = analysisPkg.Analysis(log);
+analysis.generateAllPlots();
 
 %% Setup Functions
 
@@ -133,6 +135,7 @@ function environmentObj = setupEnvironment()
     environmentObj.setVm3Sigma(0.01); % m/s
 end
 
+% not working yet
 function [aerodynamics] = setupAerodynamics()
     aerodynamics = rocketPkg.Aerodynamics();
     syms u v w rho CG p r
@@ -254,10 +257,10 @@ end
 
 function flight = setupFlight(rocketDynamics, environment, breakPoints)
     % Flight
-    flightParams.totalTime = 10;  % length of simulation [s]
+    flightParams.totalTime = 40;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
-    mass0 = 20;
+    mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
     vel0 = [0, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
@@ -267,6 +270,25 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints)
 
     breakPoints = -1;
     environment = -1;
+
     flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, flightParams);
 end
+
+function log = setupLog(flight)
+    % Define state names (14 states for 6DOF rocket)
+    stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', ...
+                  'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
+    
+    % Define control input names
+    controlInputNames = {'thrust', 'gimbalX', 'gimbalY', 'gimbalZ'};
+
+    % Size of log (will increase if needed)
+    maxSteps = flight.totalTime / flight.dt;
+    
+    % Initialize Log object
+    log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);
+end
+
+
+
 

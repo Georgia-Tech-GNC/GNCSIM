@@ -279,7 +279,7 @@ The fins can be defined using five parameters as shown in the MATLAB code below.
 
 From that the full geometry of the fin can be defined as shown below.
 
-![alt text](fin_info.png)
+![alt text](../img/fin_info.png)
 
 The parameters above can be formatted into a DATCOM input file as shown below. This file defines the geometry, flow conditions, and analysis setup for a wing-only aerodynamic analysis.
 

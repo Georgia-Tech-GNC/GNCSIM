@@ -30,33 +30,21 @@ classdef Flight < handle
             
         %end
 
-        function [tArr, xArr, fbArr, mbArr, stateEstimateArr] = runSim(obj)
+        function log = runSim(obj, log)
             % This function propagates the dynamics using RK4
 
             % Need setters for this
+            obj.currentTime = 0.0;
             x = obj.x0(:);
             N = obj.totalTime / obj.dt;
-            obj.currentTime = 0.0;
 
-            tArr = zeros(1,N);
-            xArr = zeros(14, N);
-            fbArr = zeros(3,N);
-            mbArr = zeros(3,N);
+            log.initializeTimestep(obj.currentTime);
+            log.add(obj.currentTime, 'states', x);
 
-            stateEstimateArr = zeros(14,N);
+            obj.currentXDot = obj.rocketModel(x, log);
 
-            for ii = 2:N
-                
-                obj.currentXDot = obj.rocketModel(x);
-
-                %disp('xdot')
-                %disp(obj.currentXDot)
-                stateEstimateArr(:, ii) = obj.rocketDynamics.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime);
-
-                %disp('state estimate')
-                %disp(stateEstimateArr(:,ii))
-
-                k1 = obj.rocketModel(x);
+            for ii = 1:N
+                k1 = obj.currentXDot;
                 k2 = obj.rocketModel(x + (k1)*obj.dt/2);
                 k3 = obj.rocketModel(x + (k2)*obj.dt/2);
                 k4 = obj.rocketModel(x + (k3)*obj.dt);
@@ -65,39 +53,36 @@ classdef Flight < handle
 
                 x = x + obj.dt*((1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4);
 
-                % quaternion normalization
                 quat = x(8:11);
                 quatNorm = Utils.normalizeQuat(quat);
-                x(8:11) = quatNorm;
+                x(8:11) = quatNorm;     
 
-                tArr(ii) = obj.currentTime;
-                xArr(:, ii) = x;
+                log.initializeTimestep(obj.currentTime);
+                log.add(obj.currentTime, 'states', x);
 
-                %disp('x arr')
-                %disp(xArr(:, ii))
-
-                % replace by Log Class
-                [fbArr(:,ii), mbArr(:,ii)] = obj.getForcesMomentsWrapper(x);
+                obj.currentXDot = obj.rocketModel(x, log);
             end
         end
 
-        function xDot = rocketModel(obj, state)
+        function xDot = rocketModel(obj, state, log)
+            arguments
+                obj
+                state 
+                log = []  % Optional, defaults to empty
+            end
+
             altitude = state(4);
             %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints);
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
+
+            if ~isempty(log)
+                log.add(obj.currentTime, 'statedots', xDot);
+            end
         end
         
-        % To avoid -> replace by Log class
-        function [fB, mB] = getForcesMomentsWrapper(obj, state) %Duplicate of rocket_model method to get fB and mB
-            %disturbances.wind = obj.environment.getWind(h);  TODO
-            disturbances.wind = 0;
-
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime);
-        end
-
         function [stateDot] = flatEarth_EOM(obj, state, fB, mB)
             mass = state(1);
             vel = state(5:7);
@@ -144,6 +129,14 @@ classdef Flight < handle
             title('3D Trajectory of the Flight');
             axis equal;
             view(3);
+
+            figure;
+            plot(t_arr, x_arr(1, :));
+            grid on;
+            xlabel('Time (s)');
+            ylabel('Mass (kg)');
+            legend('show');
+            title('Mass');
             
             % Plotting velocity components
             figure;
@@ -154,6 +147,7 @@ classdef Flight < handle
             xlabel('Time (s)');
             ylabel('Velocity (m/s)');
             grid on;
+            hold off;
             legend('show');
             title('Velocity Components');
        
@@ -166,6 +160,7 @@ classdef Flight < handle
             xlabel('Time (s)');
             ylabel('Angular Velocity (rad/s)');
             grid on;
+            hold off;
             legend('show');
             title('Angular Velocity Components');
 

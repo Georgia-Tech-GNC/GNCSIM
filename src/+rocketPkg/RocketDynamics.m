@@ -96,26 +96,31 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, xdot, breakPoints)
-
+        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, xdot, breakPoints, log)
             % computes aero forces and moments
             if isempty(obj.aerodynamics)
                  [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, disturbances);
                  [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
                  fBAero = fBFins + fBBody;
                  mBAero = mBFins + mBBody;
-             else
+            else
                  %[fBAero, mBAero] = obj.aerodynamics.getForcesMoments(state, disturbances);
                  fBAero = [0;0;0];
                  mBAero = [0;0;0];
-             end
+            end
 
             fTB = [obj.getThrust(time); 0; 0];
-            
-            %TODO: sensorData = sensor.getSensorData(time, state, disturbances, CG)
 
-            %TODO: %stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
-            %TODO: %[fBController, mBController] = obj.controller.getForcesMoments(state, obj, CG, breakPoints, time);
+            stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
+            %[fBController, mBController] = obj.controller.getForcesMoments(stateEstimate, obj, CG, breakPoints, time, log);
+
+            if ~isempty(log)
+                log.add(time, 'aeroforces', fBAero);
+                log.add(time, 'aeromoments', mBAero);
+                log.add(time, 'stateestimates', stateEstimate);
+                log.add(time, 'thrust', obj.getThrust(time));
+                %log.add(time, 'controlmoments', mBController);
+            end
 
             fB = fTB + fBAero;
             mB = mBAero;

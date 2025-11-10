@@ -32,11 +32,12 @@ nav:
     - Rocket Class: gncsim-documentation/rocket_class.md
     - Trim Batch Class: gncsim-documentation/trim_batch_class.md
     - Trim Point Class: gncsim-documentation/trim_point_class.md
+- GNCSIM 2.0 Documentation:
+    - Forces and Moments: gncsim-documentation/gncsim2_forces_moments.md
 - Onboarding:
     - Git Installation and Setup: onboarding/git_onboarding_instructions.md
     - Git Usage Guide: onboarding/git_guide.md
     - MATLAB Resources: onboarding/matlab_onboarding.md
-    - Running GNCSIM: onboarding/gncsim_practice_guide.md
 - Learning Resources:
     - Learning Tree: learning-resources/main_flowcharts.md
     - Math Foundations: learning-resources/math_foundations.md 

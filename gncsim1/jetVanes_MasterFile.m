@@ -18,8 +18,8 @@ FlightObj = setupFlight();
 TrimPointsObj = generateTrimPoints(aero_forces_moments, doof_params, FlightObj, AeroObj, Doof, EnvironmentObj);
 
 %% Run Flight
-FlightObj.set_runClosedLoop(true); % Set to true to simulate controlled flight
-FlightObj.set_applyWind(true);
+FlightObj.set_runClosedLoop(false); % Set to true to simulate controlled flight
+FlightObj.set_applyWind(false);
 log = FlightObj.runFlight(Doof, EnvironmentObj, AeroObj, TrimPointsObj);
 FlightObj.plot_sim_dashboard(log, Doof, EnvironmentObj);
 
