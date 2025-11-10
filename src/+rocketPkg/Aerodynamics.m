@@ -71,9 +71,18 @@ classdef Aerodynamics < handle
             mAzFunction = obj.mAzFunc;
         end
 
-        function [fAb, mAb] = getAeroForcesMoments(obj, state, rho, CG)
+        function [fAb, mAb] = getAeroForcesMoments(obj, state, disturbances, rho, CG)
             % Inputs [u v w] in (m/s). Inputs [p r] in (rad/s). Input rho
             % in kg/m^3. Input CG in m from tip of nosecone.
+
+            % placeholder - need to improve
+            rho = 1.225; %kg/m^3
+
+            % need to unpack state vector
+
+            % wind = convert to body frame (disturbances.wind)
+            % apply wind
+            [u, v, w] = [u, v, w] - wind
 
             % Aerodynamic forces
             fAxFunction = obj.fAxFunc;

@@ -257,7 +257,7 @@ end
 
 function flight = setupFlight(rocketDynamics, environment, breakPoints)
     % Flight
-    flightParams.totalTime = 40;  % length of simulation [s]
+    flightParams.totalTime = 13;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
