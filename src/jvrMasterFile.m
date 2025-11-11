@@ -21,7 +21,7 @@ breakPoints = -1;
 navigation = setupNavigation();
 
 % Rocket Dynamics
-rocketDynamics = setupRocket(controller, navigation, aerodynamics);
+rocketDynamics = setupRocket(controller, aerodynamics); % setupRocket(controller, navigation, aerodynamics);
 
 % Setup Flight Simulation
 flight = setupFlight(rocketDynamics, environment, breakPoints, navigation); % added nav obj
