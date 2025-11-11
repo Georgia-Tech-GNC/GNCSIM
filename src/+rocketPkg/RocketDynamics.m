@@ -4,7 +4,7 @@ classdef RocketDynamics < handle
 		rocketFins
 		motorParams 
 		controller
-        navigation
+        % navigation
         aerodynamics = []
         
         thrustCurve
@@ -21,14 +21,14 @@ classdef RocketDynamics < handle
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, aerodynamics) % RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics)
             arguments
                 body
                 rocketFins
                 rocketParams
                 motorParams
                 controller
-                navigation
+                % navigation
                 aerodynamics = []
             end
 
@@ -45,7 +45,7 @@ classdef RocketDynamics < handle
             obj.cgWet = rocketParams.cgWet;
             obj.cgDry = rocketParams.cgDry;
             obj.controller = controller;
-            obj.navigation = navigation;
+            % obj.navigation = navigation;
             obj.aerodynamics = aerodynamics;
         end
 
@@ -96,7 +96,7 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, xdot, breakPoints, log)
+        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, xdot, breakPoints, stateEstimate, log)
             % computes aero forces and moments
             if isempty(obj.aerodynamics)
                  [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, disturbances);
@@ -110,8 +110,6 @@ classdef RocketDynamics < handle
             end
 
             fTB = [obj.getThrust(time); 0; 0];
-
-            stateEstimate = obj.navigation.getStateEstimate(state, xdot, time);
             %[fBController, mBController] = obj.controller.getForcesMoments(stateEstimate, obj, CG, breakPoints, time, log);
 
             if ~isempty(log)

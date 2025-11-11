@@ -3,19 +3,22 @@ classdef Flight < handle
         rocketDynamics
         environment
         breakPoints
+        navigation
 
         flightParams
         totalTime
         currentTime
         currentXDot
+        currentStateEstimate
         x0
         dt
     end
     methods
-        function obj = Flight(rocketDynamics, environment, breakPoints, flightParams)
+        function obj = Flight(rocketDynamics, environment, breakPoints, navigation, flightParams)
             obj.rocketDynamics = rocketDynamics;
             obj.environment = environment;
             obj.breakPoints = breakPoints;
+            obj.navigation = navigation;
             obj.flightParams = flightParams;
 
             obj.dt = obj.flightParams.dt;
@@ -40,7 +43,9 @@ classdef Flight < handle
             log.initializeTimestep(obj.currentTime);
             log.add(obj.currentTime, 'states', x);
 
-            obj.currentXDot = obj.rocketModel(x, log);
+            obj.currentXDot = zeros(14,1); % obj.rocketModel(x, log);
+            obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
+            
 
             for ii = 1:N
                 k1 = obj.currentXDot;
@@ -60,6 +65,8 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'states', x);
 
                 obj.currentXDot = obj.rocketModel(x, log);
+                obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
+                
             end
         end
 
@@ -74,7 +81,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints, log);
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints, obj.currentStateEstimate, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
 
             if ~isempty(log)

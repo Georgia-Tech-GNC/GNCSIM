@@ -40,18 +40,22 @@ classdef GPS < navigationPkg.Sensor&handle
                                 'ReferenceLocation', obj.refLLA, ...
                                 'PositionInputFormat', 'Geodetic', ...
                                 'VerticalPositionAccuracy', gpsParams.verticalAccuracy, ...
-                                'HorizontalPositionAccuracy', gpsParams.horizontalAccuracy, ...
-                                'VelocityAccuracy', gpsParams.velocityAccuracy);
+                                'HorizontalPositionAccuracy', gpsParams.horizontalAccuracy);
 
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
             if obj.isOutputReady(currentTime)
                 obj.posI = state(2:4);
+
+                cIB = Utils.dirCosine(state(8:11))';
+
+                velI = cIB * state(5:7);
+
                 [lat, lon, alt] = obj.ENU2LLA();
                 llaPos = [lat, lon, alt];
-                [latM, lonM, altM] = obj.gpsBuiltIn(llaPos,state(5:7)');
-                measurement = [latM, lonM, altM];
+                [gpsLLA] = obj.gpsBuiltIn(llaPos, velI');
+                measurement = gpsLLA;
                 obj.scheduleNextOutput(currentTime);
             else
                 measurement = [];

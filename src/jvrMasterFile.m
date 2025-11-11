@@ -24,7 +24,7 @@ navigation = setupNavigation();
 rocketDynamics = setupRocket(controller, navigation, aerodynamics);
 
 % Setup Flight Simulation
-flight = setupFlight(rocketDynamics, environment, breakPoints);
+flight = setupFlight(rocketDynamics, environment, breakPoints, navigation); % added nav obj
 
 % Setup Log
 log = setupLog(flight);
@@ -34,16 +34,17 @@ log = flight.runSim(log);
 log.trim();
 
 % Plot Flight
+navigation.plotAccelerations();
 % navigation.plotCovariances();
 
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
-%analysis.plotAllStateEstimate();
+analysis.plotAllStateEstimate();
 
 %% Setup Functions
 
-function rocketDynamics = setupRocket(controller, navigation, aerodynamics)
+function rocketDynamics = setupRocket(controller, aerodynamics) % setupRocket(controller, navigation, aerodynamics);
 
     % Create Rocket Params
     rocketParams.massWet = 40.912994; % kg
@@ -114,7 +115,7 @@ function rocketDynamics = setupRocket(controller, navigation, aerodynamics)
     %body = rocket_pkg.RocketBody(bodyParams);
     body = -1;
     rocketFins = -1;
-    rocketDynamics = rocketPkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics);
+    rocketDynamics = rocketPkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, aerodynamics); % rocketPkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics);
 end
 
 % Need to set up Flight to use environment()
@@ -234,29 +235,28 @@ function nav = setupNavigation()
     dt = navParams.dt;
     navParams.P = 0.1 * eye(6);
 
-    navParams.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
-        0,                        1, 0,                        0, 0,                        0
-        0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
-        0,                        0, 0,                        1, 0,                        0
-        0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
-        0,                        0, 0,                        0, 0,                        1];
+    navParams.dfdx = @(dt, q)[1, 0, 0, dt*(2*q(1)^2 + 2*q(2)^2 - 1), dt*(2*q(1)*q(4) + 2*q(2)*q(3)), -dt*(2*q(1)*q(3) - 2*q(2)*q(4));
+                              0, 1, 0, -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), dt*(2*q(1)^2 + 2*q(3)^2 - 1), dt*(2*q(1)*q(2) + 2*q(3)*q(4)); 
+                              0, 0, 1, dt*(2*q(1)*q(3) + 2*q(2)*q(4)), -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), dt*(2*q(1)^2 + 2*q(4)^2 - 1);
+                              0, 0, 0, 1, 0, 0;
+                              0, 0, 0, 0, 1, 0;
+                              0, 0, 0, 0, 0, 1];
+    sigmaA = 5;
 
-    sigmaA = 1;
-
-    navParams.Q = sigmaA^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
-                              (dt^3)/2,     dt^2,          0,           0,              0,          0;
-                                     0,        0,   (dt^4)/4,    (dt^3)/2,              0,          0;
-                                     0,        0,   (dt^3)/2,        dt^2,              0,          0;
-                                     0,        0,          0,           0,       (dt^4)/4,   (dt^3)/2;
-                                     0,        0,          0,           0,       (dt^3)/2,      dt^2];
+    navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+                              0, (dt^4)/4, 0, 0, dt/2, 0;
+                              0, 0, (dt^4)/4, 0, 0, dt/2;
+                              dt/2, 0, 0, dt^2, 0, 0;
+                              0, (dt^3)/2, 0, 0, dt^2, 0;
+                              0, 0, (dt^3)/2, 0, 0, dt^2];
 
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
 
 
-function flight = setupFlight(rocketDynamics, environment, breakPoints)
+function flight = setupFlight(rocketDynamics, environment, breakPoints, navigation)
     % Flight
-    flightParams.totalTime = 20;  % length of simulation [s]
+    flightParams.totalTime = 10;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
@@ -270,7 +270,7 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints)
     breakPoints = -1;
     environment = -1;
 
-    flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, flightParams);
+    flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, navigation, flightParams);
 end
 
 function log = setupLog(flight)

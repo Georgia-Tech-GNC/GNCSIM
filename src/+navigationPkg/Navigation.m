@@ -6,7 +6,7 @@ classdef Navigation < handle
         
         dt
         currentTime 
-        x = zeros(6,1);
+        x 
         P
         dfdx
         dhdx        
@@ -32,6 +32,7 @@ classdef Navigation < handle
         covHistory = struct('Px', [], 'Py', [], 'Pz', [], ...
                         'Vx', [], 'Vy', [], 'Vz', [], ...
                         'time', []);
+        accelHistory = struct('ax', [], 'ay', [], 'az', [], 'time', []);
 
     end
 
@@ -55,10 +56,10 @@ classdef Navigation < handle
 
         function ekfState = getStateEstimate(obj, state, stateDot, currentTime)
             obj.currentTime = currentTime;
-
-            if obj.currentTime == 0
+            if currentTime == 0
                 obj.q = Utils.eulerToQuat([0, -90, 0]);
-                ekfState = [state(1); obj.x(:); obj.q; state(12:14)];
+                obj.x = state(2:7);
+                ekfState = state;
                 return
             end
             obj.getRawData(state, stateDot);
@@ -71,13 +72,33 @@ classdef Navigation < handle
             obj.cIB = obj.cBI.';
             
             obj.ekf();
+
+            % TEMP REMOVE
+
+            accBody = stateDot(5:7);    
+
+
+            obj.accelHistory.ax(end+1) = accBody(1);
+            obj.accelHistory.ay(end+1) = accBody(2);
+            obj.accelHistory.az(end+1) = accBody(3);
+
+            if isempty(obj.accelHistory.time)
+                obj.accelHistory.time(1) = obj.currentTime;
+            else
+                obj.accelHistory.time(end+1) = obj.currentTime;
+            end
+
       
             ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
 
             % disp('State')
             % disp(state)
+            % disp("State Dot")
+            % disp(stateDot)
             % disp('Ekf')
             % disp(ekfState)
+            % disp("Time")
+            % disp(currentTime)
 
             % disp('--- Rotation Matrix Check ---');
             % 
@@ -166,8 +187,6 @@ classdef Navigation < handle
 
             obj.x(4:6) = obj.cBI * [velIx; velIy; velIz];
 
-            disp(obj.x(5))
-
         end
 
         function K = kalmanGain(obj)
@@ -235,7 +254,7 @@ classdef Navigation < handle
             lambda = deg2rad(lon);
 
             % Convert LLA to ECEF
-            N = WGS84_A / sqrt(1 - (WGS84_E * sin(phi))^2);
+            N = WGS84_A / sqrt(1 - (WGS84_E^2 * (sin(phi))^2));
 
             xECEF = (N + alt) * cos(phi) * cos(lambda);
             yECEF = (N + alt) * cos(phi) * sin(lambda);
@@ -243,7 +262,7 @@ classdef Navigation < handle
 
         end
 
-        function [xENU, yENU, zENU] = GPS2ENU(obj,lat, lon, alt)
+        function [xENU, yENU, zENU] = GPS2ENU(obj, lat, lon, alt)
             
             [xECEF, yECEF, zECEF] = obj.LLA2ECEF(lat, lon, alt);
 
@@ -318,5 +337,28 @@ classdef Navigation < handle
             legend('vx', 'vy', 'vz');
             title('Velocity Covariances');
         end
+
+        %TEMP
+                function plotAccelerations(obj)
+            t = obj.accelHistory.time;
+            if isempty(t)
+                error('No acceleration history recorded. Make sure getStateEstimate(...) is being called with stateDot or accelerometer data.');
+            end
+
+            ax = obj.accelHistory.ax;
+            ay = obj.accelHistory.ay;
+            az = obj.accelHistory.az;
+
+            figure;
+            plot(t, ax, 'LineWidth', 1.5); hold on;
+            plot(t, ay, 'LineWidth', 1.5);
+            plot(t, az, 'LineWidth', 1.5);
+            grid on;
+            xlabel('Time [s]');
+            ylabel('Acceleration [m/s^2]');
+            legend('a_x (body)', 'a_y (body)', 'a_z (body)', 'Location', 'best');
+            title('Body-Frame Accelerations (indices 5:7 of stateDot)');
+        end
+
     end
 end
