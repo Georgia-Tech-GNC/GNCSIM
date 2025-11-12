@@ -8,6 +8,7 @@ classdef RocketFins < rocketPkg.DatcomManager
 		numFins			% Total number of fins
 		fins			% Array of individual rocket_pkg.Fin objects
 		finVertices		% (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
+		%flightConParams
     end
 
 	methods
@@ -15,14 +16,14 @@ classdef RocketFins < rocketPkg.DatcomManager
 		function obj = RocketFins(finParams, flightConParams)
 			% Call superclass constructor (required for inheritance)
 			obj = obj@rocketPkg.DatcomManager(flightConParams)
-
+			%obj.flightConParams = flightConParams;
 			obj.finParams = finParams;
 			obj.numFins = finParams.numFins;
 			translation = finParams.translation;
 
 			% Create and space the individual Fin objects
             finParams.angle = 0;
-            mainFin = rocketPkg.Fin("fin", finParams);  % master fin
+            mainFin = rocketPkg.Fin("fin", finParams, flightConParams);  % master fin
             obj.fins = mainFin;
 
             for ii=1:obj.numFins - 1
@@ -31,7 +32,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 finParams.angle = (360 / obj.numFins) * ii;
 				finParams.translation = Utils.finDcm(0, finParams.angle) * translation(:);
 
-                fin = rocketPkg.Fin("fin", finParams);
+                fin = rocketPkg.Fin("fin", finParams, flightConParams);
                 obj.fins = [obj.fins, fin];
             end
 		end
@@ -116,6 +117,7 @@ classdef RocketFins < rocketPkg.DatcomManager
 			% Takes DATCOM aero data and adds it to each fin object
             for ii=1:length(obj.fins)
                 obj.fins(ii).aero = aero;
+				obj.fins(ii).buildInterps(aero);
             end
 		end
 

@@ -44,7 +44,7 @@ classdef Flight < handle
 
             obj.currentXDot = zeros(14,1); % obj.rocketModel(x, log);
             obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
-            
+			log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
 
             for ii = 1:log.maxSteps - 1
                 k1 = obj.currentXDot;
@@ -65,7 +65,7 @@ classdef Flight < handle
 
                 obj.currentXDot = obj.rocketModel(x, log);
                 obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
-                
+                log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
             end
         end
 

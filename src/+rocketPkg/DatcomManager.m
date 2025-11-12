@@ -5,7 +5,11 @@ classdef DatcomManager < handle
 
 	properties
 		fileID				% File identifier for the currently open DATCOM input file
-		flightConParams	% Structure containing flight condition parameters (Mach, altitude, alpha)
+		flightConParams		% Structure containing flight condition parameters (Mach, altitude, alpha)
+		caInterp
+		cmInterp
+		cnInterp
+		aero
 	end
 
 	methods
@@ -68,6 +72,68 @@ classdef DatcomManager < handle
 			fprintf(obj.fileID, 'NEXT CASE\n');
 			fclose(obj.fileID);
 		end
+
+		function buildInterps(obj, aero)
+            obj.caInterp = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
+                        aero.ca, "linear");
+
+            obj.cmInterp = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
+						aero.cm, "linear");
+
+            obj.cnInterp = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
+                        aero.cn, "linear");
+		end
+
+		function [ca, cm, cn] = aeroInterp(obj, mach, aoaDeg, alt)
+			% TODO change this function to generate functions
+
+            ca = obj.caInterp(aoaDeg, mach, alt);
+            cm = obj.cmInterp(aoaDeg, mach, alt);
+			cn = obj.cnInterp(aoaDeg, mach, alt);
+
+			alphaRange = [min(obj.aero.alpha(:)), max(obj.aero.alpha(:))];
+    		machRange  = [0, max(obj.aero.mach(:))];
+    		altRange   = [min(obj.aero.alt(:)),  max(obj.aero.alt(:))];
+
+    		% Check bounds
+            if 0
+    		    if aoaDeg < alphaRange(1) || aoaDeg > alphaRange(2)
+        		    warning('AoA %.2f° is out of range [%.2f, %.2f].', aoaDeg, alphaRange(1), alphaRange(2));
+    		    end
+    		    if mach < machRange(1) || mach > machRange(2)
+        		    warning('Mach %.2f is out of range [%.2f, %.2f].', mach, machRange(1), machRange(2));
+    		    end
+    		    if alt < altRange(1) || alt > altRange(2)
+        		    warning('Altitude %.2f m is out of range [%.2f, %.2f].', alt, altRange(1), altRange(2));
+                end
+            end
+		end
+
+        function [fC, mC] = getForcesMomentsDatcom(obj, state, vC)
+
+			% Aerodynamic coefficients
+           	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
+           	a = 343; % Speed of sound approximation (TODO: Replace with better approximation)
+           	M = vA/a;
+           	AoA = atan2d(vC(3),vC(1));
+
+           	pos = state(2:4);
+           	altitude = pos(3);  % z componet of position
+           	[ca, cm, cn] = obj.aeroInterp(M, AoA, altitude);
+	
+           	S = obj.aero.sref;
+           	c = obj.aero.cbar;
+			% TODO change rho (density) to function of height
+			rho = 1.225;
+           	q = 0.5 * vA^2 * rho;
+
+           	% Forces + Moments in component frame
+           	N = cn*q*S;
+           	A = ca*q*S;
+           	M = cm*q*c;
+           	fC = [-A; 0; -N];
+		   	mC = [0; M; 0];
+		end
 	end
 
 	methods (Static)
@@ -89,65 +155,7 @@ classdef DatcomManager < handle
 			% Run DATCOM and display completion message
             status = system(command);
             disp('DATCOM execution finished.');
-        end
-
-        function [fC, mC] = getForcesMoments(state, vC, aero)
-
-			% Aerodynamic coefficients
-           	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
-           	a = 343; % Speed of sound approximation (TODO: Replace with better approximation)
-           	M = vA/a;
-           	AoA = atan2d(vC(3),vC(1));
-
-           	pos = state(2:4);
-           	altitude = pos(3);  % z componet of position
-           	[ca, cm, cn] = rocketPkg.DatcomManager.aeroInterp(aero, M, AoA, altitude);
-	
-           	S = aero.sref;
-           	c = aero.cbar;
-			% TODO change rho (density) to function of height
-			rho = 1.225;
-           	q = 0.5 * vA^2 * rho;
-
-           	% Forces + Moments in component frame
-           	N = cn*q*S;
-           	A = ca*q*S;
-           	M = cm*q*c;
-           	fC = [-A; 0; -N];
-		   	mC = [0; M; 0];
 		end
-
-		function [ca, cm, cn] = aeroInterp(aero, mach, aoaDeg, alt)
-			% TODO change this function to generate functions
-            caF = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
-                        aero.ca, "linear");
-            ca = caF(aoaDeg, mach, alt);
-
-            cmF = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
-                        aero.cm, "linear");
-            cm = cmF(aoaDeg, mach, alt);
-
-            cnF = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
-                        aero.cn, "linear");
-			cn = cnF(aoaDeg, mach, alt);
-
-			alphaRange = [min(aero.alpha(:)), max(aero.alpha(:))];
-    		machRange  = [0, max(aero.mach(:))];
-    		altRange   = [min(aero.alt(:)),  max(aero.alt(:))];
-
-    		% Check bounds
-            if 0
-    		    if aoaDeg < alphaRange(1) || aoaDeg > alphaRange(2)
-        		    warning('AoA %.2f° is out of range [%.2f, %.2f].', aoaDeg, alphaRange(1), alphaRange(2));
-    		    end
-    		    if mach < machRange(1) || mach > machRange(2)
-        		    warning('Mach %.2f is out of range [%.2f, %.2f].', mach, machRange(1), machRange(2));
-    		    end
-    		    if alt < altRange(1) || alt > altRange(2)
-        		    warning('Altitude %.2f m is out of range [%.2f, %.2f].', alt, altRange(1), altRange(2));
-                end
-            end
-        end
     end
 end
 

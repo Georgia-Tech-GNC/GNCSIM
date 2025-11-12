@@ -1,15 +1,17 @@
-classdef Fin < handle
+classdef Fin < rocketPkg.DatcomManager
 	% FIN Represents an aerodynamic fin component on a rocket or aircraft
 
 	properties
 		finParams		% Structure containing geometric and placement parameters for this fin
         name			% String identifier for the fin (e.g., 'fin_1', 'fin_2', etc.)
-		aero			% DATCOM aerodynamic data
+					% DATCOM aerodynamic data
 	end
 
 	methods
 		% Constructor
-		function obj = Fin(name, finParams)
+		function obj = Fin(name, finParams, flightConParams)
+			obj = obj@rocketPkg.DatcomManager(flightConParams)
+
             obj.name = name;
             obj.finParams = finParams;
         end
@@ -37,7 +39,7 @@ classdef Fin < handle
            vC = cCB*(vB + cross(wB, rCb));
 
 		   % Get component forces and moments based on
-		   [fC, mC] = rocketPkg.DatcomManager.getForcesMoments(state, vC, obj.aero);
+		   [fC, mC] = obj.getForcesMomentsDatcom(state, vC);
 
            % Converting back to body frame
            cBC = cCB';

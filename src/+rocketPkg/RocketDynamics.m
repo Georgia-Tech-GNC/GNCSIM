@@ -115,7 +115,7 @@ classdef RocketDynamics < handle
             if ~isempty(log)
                 log.add(time, 'aeroforces', fBAero);
                 log.add(time, 'aeromoments', mBAero);
-                %log.add(time, 'stateestimates', stateEstimate);
+                
                 log.add(time, 'thrust', obj.getThrust(time));
                 %log.add(time, 'controlmoments', mBController);
             end

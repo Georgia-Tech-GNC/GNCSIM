@@ -1,11 +1,11 @@
 
 classdef RocketBody < rocketPkg.DatcomManager
 	% ROCKETBODY Represents the aerodynamic body of a rocket
-
+	
 	properties
 		bodyParams			% Structure containing body geometry parameters
 		bodyOutline		% [2 x n] array: row 1 = x stations, row 2 = body radii
-		aero				% DATCOM aerodynamic data
+						% DATCOM aerodynamic data
 	end
 
 	methods
@@ -33,7 +33,7 @@ classdef RocketBody < rocketPkg.DatcomManager
             vB = vB + vW;
 
 			% Compute aerodynamic forces and moments using DATCOM data
-			[fB, mB] = rocketPkg.DatcomManager.getForcesMoments(state, vB, obj.aero);
+			[fB, mB] = obj.getForcesMomentsDatcom(state, vB);
 		end
 
 		function rNose = getNoseRadii(obj, xNose)
@@ -118,6 +118,8 @@ classdef RocketBody < rocketPkg.DatcomManager
 			% Import DATCOM Data
             aeroCell = datcomimport('datcom.out');
             obj.aero = aeroCell{1};
+
+			obj.buildInterps(obj.aero);
 		end
 
 		function drawBody(obj)

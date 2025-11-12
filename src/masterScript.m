@@ -111,7 +111,7 @@ function rocketDyn = setupRocket()
     fins = rocketPkg.RocketFins(finParams, flightConParams);
 
     controller = -1;
-	aerodynamics = -1;
+	aerodynamics = [];
 
     rocketDyn = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, aerodynamics);
 
@@ -225,7 +225,7 @@ function [flight, log] = setup_flight(rocketDyn)
     mass0 = 20;
     pos0 = [0, 0, 1];
     vel0 = [20, 0, 0];
-    quat0 = Utils.eulerToQuat([0, 90, 0]).';
+    quat0 = Utils.eulerToQuat([0, -89, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
