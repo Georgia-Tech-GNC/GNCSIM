@@ -42,8 +42,10 @@ classdef Flight < handle
             log.initializeTimestep(obj.currentTime);
             log.add(obj.currentTime, 'states', x);
 
-            obj.currentXDot = zeros(14,1); % obj.rocketModel(x, log);
-            obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
+            obj.currentStateEstimate = obj.navigation.getStateEstimate(x, zeros(14,1), obj.currentTime, log);
+            obj.currentXDot = obj.rocketModel(x, log); % thrust starts at t=0s
+
+            log.add(obj.currentTime, 'statedots', obj.currentXDot);
 			log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
 
             for ii = 1:log.maxSteps - 1
@@ -64,7 +66,8 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'states', x);
 
                 obj.currentXDot = obj.rocketModel(x, log);
-                obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
+                obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime, log);
+                log.add(obj.currentTime, 'statedots', obj.currentXDot);
                 log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
             end
         end
@@ -82,10 +85,6 @@ classdef Flight < handle
 
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
-
-            if ~isempty(log)
-                log.add(obj.currentTime, 'statedots', xDot);
-            end
         end
 
         function xDot = rocketModelDeflection(obj, state, control, log)

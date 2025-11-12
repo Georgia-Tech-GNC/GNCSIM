@@ -16,10 +16,6 @@ flight.runSim(log);
 
 
 %% Analysis
-n = 1; %For single flight
-%analysis = analysisPkg.Analysis(t, x, n, fb, mb);
-%analysisPkg.GenerateAllPlots();
-
 %flight.draw_traj()
 
 %lti = analysisPkg.ReduceLTI(flight);

@@ -24,23 +24,20 @@ navigation = setupNavigation();
 rocketDynamics = setupRocket(controller, aerodynamics); % setupRocket(controller, navigation, aerodynamics);
 
 % Setup Flight Simulation
-flight = setupFlight(rocketDynamics, environment, breakPoints, navigation); % added nav obj
-
-% Setup Log
-log = setupLog(flight);
+[flight, log] = setupFlight(rocketDynamics, environment, breakPoints, navigation); % added nav obj
 
 %% Run Flight
 log = flight.runSim(log);
 log.trim();
 
-% Plot Flight
-navigation.plotAccelerations();
-% navigation.plotCovariances();
-
 %% Analysis
-analysis = analysisPkg.Analysis(log);
-analysis.generateAllPlots();
-analysis.plotAllStateEstimate();
+% Enforce custom time bounds
+analysis = analysisPkg.Analysis(log, 0, 30);
+analysis.displayPlots = false;
+
+% Default filename 'Flight_Analysis_Report.pdf' in current directory
+analysis.generatePdfFile();
+
 
 %% Setup Functions
 
@@ -254,9 +251,9 @@ function nav = setupNavigation()
 end
 
 
-function flight = setupFlight(rocketDynamics, environment, breakPoints, navigation)
+function [flight, log] = setupFlight(rocketDynamics, environment, breakPoints, navigation)
     % Flight
-    flightParams.totalTime = 10;  % length of simulation [s]
+    flightParams.totalTime = 50;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
@@ -271,9 +268,7 @@ function flight = setupFlight(rocketDynamics, environment, breakPoints, navigati
     environment = -1;
 
     flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, navigation, flightParams);
-end
 
-function log = setupLog(flight)
     % Define state names (14 states for 6DOF rocket)
     stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', ...
                   'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
@@ -282,7 +277,7 @@ function log = setupLog(flight)
     controlInputNames = {'thrust', 'gimbalX', 'gimbalY', 'gimbalZ'};
 
     % Size of log (will increase if needed)
-    maxSteps = flight.totalTime / flight.dt;
+    maxSteps = flightParams.totalTime / flightParams.dt;
     
     % Initialize Log object
     log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);

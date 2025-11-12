@@ -4,6 +4,7 @@ classdef Log < handle
         states                  % nStates x N
         stateDots               % nStates x N
         stateEstimates          % nStates x N
+        ekfCovariances
         controlInputs           % nControlInputs x N
         controlMoments          % 3 x N
         aeroForces              % 3 x N
@@ -12,6 +13,7 @@ classdef Log < handle
         
         stateNames              % Cell array of state names
         stateDotNames
+        ekfCovarianceNames
         controlInputNames       % Cell array of control input names
         controlMomentNames      % Cell array of control moment names
         aeroForcesNames
@@ -26,6 +28,7 @@ classdef Log < handle
             % Initialize logger
             obj.stateNames = stateNames;
             obj.stateDotNames = stateNames;  % Same names with 'Dot' suffix implied
+            obj.ekfCovarianceNames = {'Px', 'Py', 'Pz', 'Vx', 'Vy', 'Vz'};
             obj.controlInputNames = controlInputNames;
             obj.controlMomentNames = {'Mx', 'My', 'Mz'};
             obj.aeroForcesNames = {'Fx', 'Fy', 'Fz'};
@@ -38,6 +41,7 @@ classdef Log < handle
             obj.states = zeros(length(obj.stateNames), obj.maxSteps);
             obj.stateDots = zeros(length(obj.stateNames), obj.maxSteps);
             obj.stateEstimates = zeros(length(obj.stateNames), obj.maxSteps);
+            obj.ekfCovariances = zeros(length(obj.ekfCovarianceNames), obj.maxSteps);
             obj.controlInputs = zeros(length(obj.controlInputNames), obj.maxSteps);
             obj.controlMoments = zeros(length(obj.controlMomentNames), obj.maxSteps);
             obj.aeroForces = zeros(3, obj.maxSteps);
@@ -59,8 +63,8 @@ classdef Log < handle
         
         function add(obj, t, attributeName, value)
             % Add a vector/array to specified attribute at current timestep
-            % attributeName: 'states', 'stateDots', 'stateEstimates', 'controlInputs',
-            %                'controlMoments', 'aeroForces', 'aeroMoments', 'thrust'
+            % attributeName: 'states', 'stateDots', 'stateEstimates', 'ekfCovariances',
+            %                'controlInputs', 'controlMoments', 'aeroForces', 'aeroMoments', 'thrust'
             % value: vector/array of values to add (must match dimension)
             
             if obj.currentIdx < 1
@@ -93,7 +97,14 @@ classdef Log < handle
                               length(obj.stateNames), length(value));
                     end
                     obj.stateEstimates(:, obj.currentIdx) = value;
-                    
+
+                case 'ekfcovariances'
+                    if length(value) ~= length(obj.ekfCovarianceNames)
+                        error('EKF covariance vector size mismatch: expected %d, got %d', ...
+                              length(obj.ekfCovarianceNames), length(value));
+                    end
+                    obj.ekfCovariances(:, obj.currentIdx) = value;
+
                 case 'controlinputs'
                     if length(value) ~= length(obj.controlInputNames)
                         error('Control input vector size mismatch: expected %d, got %d', ...
@@ -130,7 +141,7 @@ classdef Log < handle
                     obj.thrust(obj.currentIdx) = value;
 
                 otherwise
-                    error('Unknown attribute "%s". Valid options: states, stateDots, stateEstimates, controlInputs, controlMoments, aeroForces, aeroMoments, thrust', ...
+                    error('Unknown attribute "%s". Valid options: states, stateDots, stateEstimates, ekfCovariances, controlInputs, controlMoments, aeroForces, aeroMoments, thrust', ...
                           attributeName);
             end
         end
@@ -141,6 +152,7 @@ classdef Log < handle
             obj.states = obj.states(:, 1:obj.currentIdx);
             obj.stateDots = obj.stateDots(:, 1:obj.currentIdx);
             obj.stateEstimates = obj.stateEstimates(:, 1:obj.currentIdx);
+            obj.ekfCovariances = obj.ekfCovariances(:, 1:obj.currentIdx);
             obj.controlInputs = obj.controlInputs(:, 1:obj.currentIdx);
             obj.controlMoments = obj.controlMoments(:, 1:obj.currentIdx);
             obj.aeroForces = obj.aeroForces(:, 1:obj.currentIdx);
@@ -157,6 +169,7 @@ classdef Log < handle
             obj.states = [obj.states, zeros(size(obj.states, 1), extraCols)];
             obj.stateDots = [obj.stateDots, zeros(size(obj.stateDots, 1), extraCols)];
             obj.stateEstimates = [obj.stateEstimates, zeros(size(obj.stateEstimates, 1), extraCols)];
+            obj.ekfCovariances = [obj.ekfCovariances, zeros(size(obj.ekfCovariances, 1), extraCols)];
             obj.controlInputs = [obj.controlInputs, zeros(size(obj.controlInputs, 1), extraCols)];
             obj.controlMoments = [obj.controlMoments, zeros(size(obj.controlMoments, 1), extraCols)];
             obj.aeroForces = [obj.aeroForces, zeros(3, extraCols)];
@@ -234,12 +247,22 @@ classdef Log < handle
             data = obj.thrust(1:obj.currentIdx);
         end
 
+        function data = getEkfCovariance(obj, name)
+            % Get specific EKF covariance by name (Px, Py, Pz, Vx, Vy, Vz)
+            idx = find(strcmp(obj.ekfCovarianceNames, name), 1);
+            if isempty(idx)
+                error('EKF covariance "%s" not found. Valid: Px, Py, Pz, Vx, Vy, Vz', name);
+            end
+            data = obj.ekfCovariances(idx, 1:obj.currentIdx);
+        end
+
         function saveToFile(obj, filename)
             % Save to .mat file
             data.time = obj.time(1:obj.currentIdx);
             data.states = obj.states(:, 1:obj.currentIdx);
             data.stateDots = obj.stateDots(:, 1:obj.currentIdx);
             data.stateEstimates = obj.stateEstimates(:, 1:obj.currentIdx);
+            data.ekfCovariances = obj.ekfCovariances(:, 1:obj.currentIdx);
             data.controlInputs = obj.controlInputs(:, 1:obj.currentIdx);
             data.controlMoments = obj.controlMoments(:, 1:obj.currentIdx);
             data.aeroForces = obj.aeroForces(:, 1:obj.currentIdx);
@@ -247,6 +270,7 @@ classdef Log < handle
             data.thrust = obj.thrust(1:obj.currentIdx);
             data.stateNames = obj.stateNames;
             data.stateDotNames = obj.stateDotNames;
+            data.ekfCovarianceNames = obj.ekfCovarianceNames;
             data.controlInputNames = obj.controlInputNames;
             data.controlMomentNames = obj.controlMomentNames;
             data.aeroForcesNames = obj.aeroForcesNames;

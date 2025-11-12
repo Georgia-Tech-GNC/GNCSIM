@@ -1,4 +1,4 @@
-classdef ParachutePayloadSystem < handle
+classdef ParachuteDynamics < handle
     % Parachute dynamics model based on: "Parachute dynamics and perturbation analysis of precision airdrop system"
     % https://www.sciencedirect.com/science/article/pii/S1000936116300218
     
@@ -27,7 +27,7 @@ classdef ParachutePayloadSystem < handle
     end
     
     methods
-        function obj = ParachutePayloadSystem(D_c, m_c)
+        function obj = ParachuteDynamics(D_c, m_c)
             % Inputs:
             %   D_c - Canopy diameter (m)
             %   m_c - Canopy mass (kg)

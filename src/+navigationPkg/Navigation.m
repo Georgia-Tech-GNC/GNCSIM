@@ -32,7 +32,6 @@ classdef Navigation < handle
         covHistory = struct('Px', [], 'Py', [], 'Pz', [], ...
                         'Vx', [], 'Vy', [], 'Vz', [], ...
                         'time', []);
-        accelHistory = struct('ax', [], 'ay', [], 'az', [], 'time', []);
 
     end
 
@@ -54,14 +53,17 @@ classdef Navigation < handle
         end
 
 
-        function ekfState = getStateEstimate(obj, state, stateDot, currentTime)
+        function ekfState = getStateEstimate(obj, state, stateDot, currentTime, log)
             obj.currentTime = currentTime;
+            
+            % Initial state estimate 
             if currentTime == 0
                 obj.q = Utils.eulerToQuat([0, -90, 0]);
                 obj.x = state(2:7);
                 ekfState = state;
                 return
             end
+
             obj.getRawData(state, stateDot);
 
             obj.cIBprior = Utils.dirCosine(obj.q)';
@@ -71,23 +73,7 @@ classdef Navigation < handle
             obj.cBI = Utils.dirCosine(obj.q);
             obj.cIB = obj.cBI.';
             
-            obj.ekf();
-
-            % TEMP REMOVE
-
-            accBody = stateDot(5:7);    
-
-
-            obj.accelHistory.ax(end+1) = accBody(1);
-            obj.accelHistory.ay(end+1) = accBody(2);
-            obj.accelHistory.az(end+1) = accBody(3);
-
-            if isempty(obj.accelHistory.time)
-                obj.accelHistory.time(1) = obj.currentTime;
-            else
-                obj.accelHistory.time(end+1) = obj.currentTime;
-            end
-
+            obj.ekf(log);
       
             ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
 
@@ -140,10 +126,7 @@ classdef Navigation < handle
 
         %% EKF Functions
 
-        function obj = ekf(obj)
-
-            % Sensor Data
-            
+        function obj = ekf(obj, log)
 
             % Predict Step
             obj.predictState();
@@ -158,19 +141,7 @@ classdef Navigation < handle
             end
 
             diagP = diag(obj.P);
-            obj.covHistory.Px(end+1) = diagP(1);
-            obj.covHistory.Py(end+1) = diagP(2);
-            obj.covHistory.Pz(end+1) = diagP(3);
-            obj.covHistory.Vx(end+1) = diagP(4);
-            obj.covHistory.Vy(end+1) = diagP(5);
-            obj.covHistory.Vz(end+1) = diagP(6);
-
-            if isempty(obj.covHistory.time)
-                obj.covHistory.time(1) = 0;
-            else
-                obj.covHistory.time(end+1) = obj.covHistory.time(end) + obj.dt;
-            end
-
+            log.add(obj.currentTime, 'ekfcovariances', diagP);
         end
 
         function obj = predictState(obj)
@@ -316,49 +287,5 @@ classdef Navigation < handle
             quatNew = quatNew / norm(quatNew);
 
         end
-       %% Plotting
-        function plotCovariances(obj)
-            t = obj.covHistory.time;
-        
-            figure;
-            subplot(2,1,1);
-            plot(t, obj.covHistory.Px, t, obj.covHistory.Py, t, obj.covHistory.Pz, 'LineWidth', 1.5);
-            grid on;
-            xlabel('Time [s]');
-            ylabel('Position Covariance');
-            legend('x', 'y', 'z');
-            title('Position Covariances');
-        
-            subplot(2,1,2);
-            plot(t, obj.covHistory.Vx, t, obj.covHistory.Vy, t, obj.covHistory.Vz, 'LineWidth', 1.5);
-            grid on;
-            xlabel('Time [s]');
-            ylabel('Velocity Covariance');
-            legend('vx', 'vy', 'vz');
-            title('Velocity Covariances');
-        end
-
-        %TEMP
-                function plotAccelerations(obj)
-            t = obj.accelHistory.time;
-            if isempty(t)
-                error('No acceleration history recorded. Make sure getStateEstimate(...) is being called with stateDot or accelerometer data.');
-            end
-
-            ax = obj.accelHistory.ax;
-            ay = obj.accelHistory.ay;
-            az = obj.accelHistory.az;
-
-            figure;
-            plot(t, ax, 'LineWidth', 1.5); hold on;
-            plot(t, ay, 'LineWidth', 1.5);
-            plot(t, az, 'LineWidth', 1.5);
-            grid on;
-            xlabel('Time [s]');
-            ylabel('Acceleration [m/s^2]');
-            legend('a_x (body)', 'a_y (body)', 'a_z (body)', 'Location', 'best');
-            title('Body-Frame Accelerations (indices 5:7 of stateDot)');
-        end
-
     end
 end
