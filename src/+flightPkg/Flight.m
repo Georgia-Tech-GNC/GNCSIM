@@ -38,7 +38,6 @@ classdef Flight < handle
             % Need setters for this
             obj.currentTime = 0.0;
             x = obj.x0(:);
-            N = obj.totalTime / obj.dt;
 
             log.initializeTimestep(obj.currentTime);
             log.add(obj.currentTime, 'states', x);
@@ -47,7 +46,7 @@ classdef Flight < handle
             obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentStateEstimate, obj.currentTime);
             
 
-            for ii = 1:N
+            for ii = 1:log.maxSteps - 1
                 k1 = obj.currentXDot;
                 k2 = obj.rocketModel(x + (k1)*obj.dt/2);
                 k3 = obj.rocketModel(x + (k2)*obj.dt/2);
@@ -81,7 +80,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints, obj.currentStateEstimate, log);
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
 
             if ~isempty(log)
@@ -89,15 +88,24 @@ classdef Flight < handle
             end
         end
 
-        function xDot = rocketModelDeflection(obj, state, control)
+        function xDot = rocketModelDeflection(obj, state, control, log)
+			arguments
+                obj
+                state 
+				control
+                log = []  % Optional, defaults to empty
+            end
             % Control: [Mx, My, Mz]
             altitude = state(4);
-            %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, obj.currentXDot, obj.breakPoints);
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             
             xDot = obj.flatEarth_EOM(state, fB, mB + control(:));
+
+			if ~isempty(log)
+                log.add(obj.currentTime, 'statedots', xDot);
+            end
         end
         
         function [stateDot] = flatEarth_EOM(obj, state, fB, mB)

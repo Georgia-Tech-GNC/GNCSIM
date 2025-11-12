@@ -96,7 +96,7 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, xdot, breakPoints, stateEstimate, log)
+        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, log)
             % computes aero forces and moments
             if isempty(obj.aerodynamics)
                  [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, disturbances);
@@ -115,7 +115,7 @@ classdef RocketDynamics < handle
             if ~isempty(log)
                 log.add(time, 'aeroforces', fBAero);
                 log.add(time, 'aeromoments', mBAero);
-                log.add(time, 'stateestimates', stateEstimate);
+                %log.add(time, 'stateestimates', stateEstimate);
                 log.add(time, 'thrust', obj.getThrust(time));
                 %log.add(time, 'controlmoments', mBController);
             end

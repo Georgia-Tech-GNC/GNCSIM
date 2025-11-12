@@ -7,12 +7,12 @@ rocketDyn = setupRocket();
 
 runDATCOM(rocketDyn)
 
-flight = setup_flight(rocketDyn);
+[flight, log] = setup_flight(rocketDyn);
 
 %flight.rocketDynamics.draw()
 
 %% Run Flight
-[t, x, fb, mb] = flight.runSim();
+flight.runSim(log);
 
 
 %% Analysis
@@ -22,12 +22,13 @@ n = 1; %For single flight
 
 %flight.draw_traj()
 
-lti = analysisPkg.ReduceLTI(flight);
-xStar = flight.flightParams.x0;
-uStar = [0 0 0].';
-lti.calculateROM(xStar, uStar)
+%lti = analysisPkg.ReduceLTI(flight);
+%xStar = flight.flightParams.x0;
+%uStar = [0 0 0].';
+%lti.calculateROM(xStar, uStar)
 
-flight.plotFlight(t, x);
+analyis = analysisPkg.Analysis(log);
+analyis.generateAllPlots()
 
 %% Functions
 function rocketDyn = setupRocket()
@@ -110,9 +111,9 @@ function rocketDyn = setupRocket()
     fins = rocketPkg.RocketFins(finParams, flightConParams);
 
     controller = -1;
-    navigation = -1;
+	aerodynamics = -1;
 
-    rocketDyn = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, navigation);
+    rocketDyn = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, aerodynamics);
 
     rocketDyn.massWet = 20;
     rocketDyn.massDry = 18;
@@ -212,22 +213,27 @@ function nav = setup_navigation()
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
 
-function flight = setup_flight(rocketDyn)
+function [flight, log] = setup_flight(rocketDyn)
     % Flight
     flightParams.totalTime = 20;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
+	maxSteps = round(flightParams.totalTime / flightParams.dt);
+	
+	% LOG
+	log = analysisPkg.Log({'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'}, {'Mx', 'My', 'Mz'}, maxSteps);  % control names are temporary
     mass0 = 20;
     pos0 = [0, 0, 1];
     vel0 = [20, 0, 0];
     quat0 = Utils.eulerToQuat([0, 90, 0]).';
-    omega0 = [0, 0.5, 0];
+    omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 
     breakPoints = -1;
     environment = -1;
-    flight = flightPkg.Flight(rocketDyn, environment, breakPoints, flightParams);
+	navigation = setup_navigation();
+    flight = flightPkg.Flight(rocketDyn, environment, breakPoints, navigation, flightParams);
 end
 
 function monte_carlo = setup_MonteCarlo()
