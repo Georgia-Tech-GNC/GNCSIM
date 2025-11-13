@@ -32,8 +32,18 @@ classdef RocketBody < rocketPkg.DatcomManager
 
             vB = vB + vW;
 
+			rCb = -obj.bodyParams.translation(:);
+			
+			% Component frame velocity and ang vel
+			wB = state(12:14);
+
+			vC = (vB + cross(wB, rCb));
+
 			% Compute aerodynamic forces and moments using DATCOM data
-			[fB, mB] = obj.getForcesMomentsDatcom(state, vB);
+			[fB, mC] = obj.getForcesMomentsDatcom(state, vC);
+
+			mBRoss = cross(rCb, fB);
+            mB = mC + mBRoss(:);
 		end
 
 		function rNose = getNoseRadii(obj, xNose)
@@ -55,7 +65,8 @@ classdef RocketBody < rocketPkg.DatcomManager
             nNosePoints = 10;   % Number of points defining the nose cone
             nBodyPoints = 5;    % Number of points defining the cylindrical body
             datcomFilename = 'BODY.dat';
-			xcg = 0.6;           % [m] Center of gravity location (temporary value)
+			xcg = obj.bodyParams.cgXWet; 
+			xw = obj.bodyParams.xWapprox;
 
 			% Generate body geometry
             totalLength = obj.bodyParams.bodyLength + obj.bodyParams.noseLength;
@@ -83,7 +94,7 @@ classdef RocketBody < rocketPkg.DatcomManager
             fprintf(obj.fileID, ' $OPTINS SREF=%.4f, CBARR=%.4f, BLREF=%.4f$\n', pi*R^2, totalLength, 2*R);
 
             % Write $SYNTHS Namelist
-            fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', 0, xcg);
+            fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', xw, xcg);
 
             fprintf(obj.fileID, ' $BODY   NX=%.1f,\n', totalPoints);
 

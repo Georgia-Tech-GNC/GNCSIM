@@ -5,7 +5,7 @@ clear; clc; close all;
 rocketDyn = setupRocket();
 %rocketDyn.draw();
 
-runDATCOM(rocketDyn)
+runDATCOM(rocketDyn);
 
 [flight, log] = setup_flight(rocketDyn);
 
@@ -13,7 +13,6 @@ runDATCOM(rocketDyn)
 
 %% Run Flight
 flight.runSim(log);
-
 
 %% Analysis
 %flight.draw_traj()
@@ -29,16 +28,23 @@ analyis.generateAllPlots()
 %% Functions
 function rocketDyn = setupRocket()
     % Vehicle Properties
-    rocketParams.longitudinalMoi = 9.15;  % [kg * m^2]
-    rocketParams.rotationalMoi = 0.112;  % [kg * m^2]
-    rocketParams.cgX = 1.84;  % [m]
+    rocketParams.longitudinalMoiWet = 9.15;  % [kg * m^2]
+    rocketParams.rotationalMoiWet = 0.112;  % [kg * m^2]
+	rocketParams.cgXWet = .6;  % [m]
+	rocketParams.massWet = 20;
+
+	rocketParams.longitudinalMoiDry = 9.15 * 0.9;  % [kg * m^2]
+    rocketParams.rotationalMoiDry = 0.112 * 0.9;  % [kg * m^2]
+    rocketParams.cgXDry = .6;  % [m]
+	rocketParams.massDry = 18;
 
     % Create Body
     bodyParams.noseLength = 0.61;  % [m]
     bodyParams.bodyLength = 2.03;  % This does not include nose code [m]
     bodyParams.rocketDiameter = 0.157;  % [m]
     totalLength = bodyParams.bodyLength + bodyParams.noseLength;
-
+	bodyParams.translation = [0, 0, 0];
+	
     % Create Fins
     finParams.numFins = 4;  % []
     finParams.rootChord = 0.203;  % [m]
@@ -50,19 +56,16 @@ function rocketDyn = setupRocket()
     flightConParams.altitudes = [0, 5000, 10000];       % Array of altitudes in feet
     flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
-    % Set wet mass
-    rocketParams.massWet = 1;
-    rocketParams.massDry = 1;
-    rocketParams.moiWet = eye(3);
-    rocketParams.moiDry = eye(3);
-    rocketParams.cgWet = 1;
-    rocketParams.cgDry = 1;
-
     % get the distance along body
     xFinRef = totalLength - finParams.rootChord;  % [m]
+	
+	quaterChord = finParams.rootChord / 4;
+	bodyParams.xWapprox = 0;
+	bodyParams.cgXWet = rocketParams.cgXWet;
 
     % set location of where to put fins
     finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
+	%finParams.translation = [xFinRe, bodyParams.rocketDiameter / 2, 0];  % [m]
 
     % Motor
     motorParams.burnTime = 13.1;
@@ -110,14 +113,6 @@ function rocketDyn = setupRocket()
 	aerodynamics = [];
 
     rocketDyn = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, aerodynamics);
-
-    rocketDyn.massWet = 20;
-    rocketDyn.massDry = 18;
-    rocketDyn.cgWet = 0.6;
-    rocketDyn.cgDry = 0.4;
-    rocketDyn.moiWet = 4 * eye(3);
-    rocketDyn.moiDry = 3 * eye(3);
-
 end
 
 
@@ -155,7 +150,6 @@ function nav = setup_navigation()
     accParams.outputRate = 100;
     accParams.outputProbability = 1;
     accParams.observationMatrix = zeros(3);
-
 
     accelerometer = navigationPkg.Accelerometer(accParams);
 
@@ -211,7 +205,7 @@ end
 
 function [flight, log] = setup_flight(rocketDyn)
     % Flight
-    flightParams.totalTime = 20;  % length of simulation [s]
+    flightParams.totalTime = 2;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
 	maxSteps = round(flightParams.totalTime / flightParams.dt);
@@ -221,8 +215,8 @@ function [flight, log] = setup_flight(rocketDyn)
     mass0 = 20;
     pos0 = [0, 0, 1];
     vel0 = [20, 0, 0];
-    quat0 = Utils.eulerToQuat([0, -89, 0]).';
-    omega0 = [0, 0, 0];
+    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    omega0 = [0, .1, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 

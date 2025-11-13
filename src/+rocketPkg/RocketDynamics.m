@@ -38,12 +38,16 @@ classdef RocketDynamics < handle
             obj.thrustCurve = motorParams.thrustCurve;
             obj.totalImpulse = motorParams.totalImpulse;
             obj.burnTime = motorParams.burnTime;
+
             obj.massWet = rocketParams.massWet;
             obj.massDry = rocketParams.massDry;
-            obj.moiWet = rocketParams.moiWet;
-            obj.moiDry = rocketParams.moiDry;
-            obj.cgWet = rocketParams.cgWet;
-            obj.cgDry = rocketParams.cgDry;
+
+            obj.moiWet = diag([rocketParams.rotationalMoiWet, rocketParams.longitudinalMoiWet, rocketParams.longitudinalMoiWet]);
+            obj.moiDry = diag([rocketParams.rotationalMoiDry, rocketParams.longitudinalMoiDry, rocketParams.longitudinalMoiDry]);
+
+            obj.cgWet = rocketParams.cgXWet;
+            obj.cgDry = rocketParams.cgXDry;
+
             obj.controller = controller;
             % obj.navigation = navigation;
             obj.aerodynamics = aerodynamics;
