@@ -96,7 +96,7 @@ classdef Utils
             % dirCosine: Converts a quaternion to a direction cosine matrix.
             %
             % This function returns a 3x3 matrix that represents a rotation
-            % from an INERTIAL frame to a BODY frame, based on the input quaternion.
+            % from an BODY frame to a INERTIAL frame, based on the input quaternion.
             %
             % INPUT:
             %   q - A 4-element column or row vector representing the quaternion [q0; q1; q2; q3],
