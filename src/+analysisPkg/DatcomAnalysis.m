@@ -30,7 +30,6 @@ classdef DatcomAnalysis
 
             axCm = subplot(3, 2, [3, 4]);
 
-
             axDelCm = subplot(3, 2, [5, 6]);
 
         end
