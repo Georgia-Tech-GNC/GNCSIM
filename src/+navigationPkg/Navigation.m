@@ -66,16 +66,17 @@ classdef Navigation < handle
 
             obj.getRawData(state, stateDot);
 
-            obj.cIBprior = Utils.dirCosine(obj.q)'; % matrix is transposed
+            obj.cIBprior = Utils.dirCosine(obj.q); % matrix is transposed
 
             obj.runAttitudeEstimation();
 
-            obj.cBI = Utils.dirCosine(obj.q);
-            obj.cIB = obj.cBI.';
+            obj.cIB = Utils.dirCosine(obj.q);
+            obj.cBI = obj.cIB';
+
             
             obj.ekf(log);
       
-            ekfState = [state(1); obj.x(:); obj.q(:); state(12:14)];
+            ekfState = [state(1); obj.x(:); obj.q(:); obj.gyroRawData];
 
             % disp('State')
             % disp(state)
@@ -147,7 +148,7 @@ classdef Navigation < handle
         function obj = predictState(obj)
 
             accI = obj.accBodytoInertial();
-            velI = obj.cIB * obj.x(4:6); % Change to cIBprior
+            velI = obj.cIBprior * obj.x(4:6); % Change to cIBprior
 
             obj.x(1) = obj.x(1) + velI(1) * obj.dt + accI(1) * ((obj.dt^2)/2);
             obj.x(2) = obj.x(2) + velI(2) * obj.dt + accI(2) * ((obj.dt^2)/2);
@@ -196,6 +197,8 @@ classdef Navigation < handle
             if ~(isempty(gpsRawDataLLA))
                 [xENU, yENU, zENU] = obj.GPS2ENU(gpsRawDataLLA(1),gpsRawDataLLA(2),gpsRawDataLLA(3));
                 obj.gpsRawData = [xENU, yENU, zENU];
+            else
+                obj.gpsRawData = [];
             end
 
             obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);

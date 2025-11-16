@@ -33,7 +33,7 @@ log.trim();
 %% Analysis
 % Enforce custom time bounds
 analysis = analysisPkg.Analysis(log, 0, 30);
-analysis.displayPlots = false;
+analysis.displayPlots = true;
 
 % Default filename 'Flight_Analysis_Report.pdf' in current directory
 analysis.generatePdfFile();

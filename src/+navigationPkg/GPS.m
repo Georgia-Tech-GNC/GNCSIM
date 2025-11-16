@@ -68,7 +68,8 @@ classdef GPS < navigationPkg.Sensor&handle
             % Converts from NED coordinates back to LLA (WGS84)
 
             % Reference ECEF
-            refECEF = lla2ecef([obj.refLLA(1), obj.refLLA(2), obj.refLLA(3)]);
+            [xECEFref, yECEFref, zECEFref] = obj.LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));
+            refECEF = [xECEFref; yECEFref; zECEFref];
 
             % Reference latitude and longitude (radians)
             phi = deg2rad(obj.refLLA(1));
@@ -118,6 +119,25 @@ classdef GPS < navigationPkg.Sensor&handle
             % Convert to degrees
             lat = rad2deg(lat);
             lon = rad2deg(lon);
+
+        end
+
+        function [xECEF, yECEF, zECEF] = LLA2ECEF(obj, lat, lon, alt)
+            % Converts from WGS84 to ECEF
+
+            WGS84_E = 0.08181;
+            WGS84_A = 6378137.0;   
+
+            % Convert latitude and longitude from degrees to radians
+            phi = deg2rad(lat);
+            lambda = deg2rad(lon);
+
+            % Convert LLA to ECEF
+            N = WGS84_A / sqrt(1 - (WGS84_E^2 * (sin(phi))^2));
+
+            xECEF = (N + alt) * cos(phi) * cos(lambda);
+            yECEF = (N + alt) * cos(phi) * sin(lambda);
+            zECEF = (N * (1.0 - WGS84_E * WGS84_E) + alt) * sin(phi);
 
         end
     end
