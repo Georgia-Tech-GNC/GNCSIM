@@ -59,6 +59,51 @@ classdef Utils
             q(4) = cy * cr * sp + sy * sr * cp;  % z component
         end
 
+        function a = quatToEuler(q)
+            % Convert a quaternion to Euler angles.
+            %
+            % Input:
+            %   q: A 4x1 or 1x4 vector representing the quaternion [w, x, y, z].
+            %
+            % Output:
+            %   a: A 3x1 vector of Euler angles [roll, pitch, yaw] in degrees.
+            
+            % Ensure q is a column vector
+            if size(q, 2) == 4
+                q = q';
+            end
+
+            q = Utils.normalizeQuat(q);
+            
+            % Extract quaternion components
+            w = q(1);
+            x = q(2);
+            y = q(3);
+            z = q(4);
+            
+            % Pre-allocate the output angles as a column vector
+            a = zeros(3, 1);
+            
+            % Roll (x-axis rotation)
+            sinr_cosp = 2 * (w * x + y * z);
+            cosr_cosp = 1 - 2 * (x * x + y * y);
+            a(1) = atan2(sinr_cosp, cosr_cosp);
+            
+            % Pitch (y-axis rotation)
+            sinp = 2 * (w * y - z * x);
+            % Clamp sinp to avoid numerical issues with asin
+            sinp = max(-1, min(1, sinp));
+            a(2) = asin(sinp);
+            
+            % Yaw (z-axis rotation)
+            siny_cosp = 2 * (w * z + x * y);
+            cosy_cosp = 1 - 2 * (y * y + z * z);
+            a(3) = atan2(siny_cosp, cosy_cosp);
+            
+            % Convert from radians to degrees
+            a = rad2deg(a);
+        end
+
         function qNorm = normalizeQuat(q)
             % normalize_quat: Normalizes a quaternion to unit length.
             %
@@ -96,7 +141,9 @@ classdef Utils
             % dirCosine: Converts a quaternion to a direction cosine matrix.
             %
             % This function returns a 3x3 matrix that represents a rotation
-            % from an BODY frame to a INERTIAL frame, based on the input quaternion.
+            % from an INERTIAL frame to a BODY frame, based on the input quaternion
+            % representing an orientation of a BODY frame with respect
+            % to an INERTIAL frame.
             %
             % INPUT:
             %   q - A 4-element column or row vector representing the quaternion [q0; q1; q2; q3],
@@ -107,6 +154,7 @@ classdef Utils
             %
 
             % Ensure q is a column vector
+            q = Utils.normalizeQuat(q);
             q = q(:);
 
             q0 = q(1); % Scalar part
@@ -120,7 +168,8 @@ classdef Utils
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
 
             dcm = quatDCM;
-		end
+        end
+
 
 		function dcm = finDcm(deltaDeg, thetaDeg)
 			% finDcm: Generates a rotation matrix based on fin location

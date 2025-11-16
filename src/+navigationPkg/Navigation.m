@@ -66,7 +66,7 @@ classdef Navigation < handle
 
             obj.getRawData(state, stateDot);
 
-            obj.cIBprior = Utils.dirCosine(obj.q)';
+            obj.cIBprior = Utils.dirCosine(obj.q)'; % matrix is transposed
 
             obj.runAttitudeEstimation();
 
