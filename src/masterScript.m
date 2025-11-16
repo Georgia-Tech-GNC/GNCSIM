@@ -22,8 +22,10 @@ flight.runSim(log);
 %uStar = [0 0 0].';
 %lti.calculateROM(xStar, uStar)
 
-analyis = analysisPkg.Analysis(log);
-analyis.generateAllPlots()
+analysis = analysisPkg.Analysis(log);
+analysis.generateAllPlots()
+analysis.generateAllEstimatePlots();
+
 
 %% Functions
 function rocketDyn = setupRocket()

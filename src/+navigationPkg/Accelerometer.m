@@ -17,7 +17,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
         
         accelB
         angVelB
-        qBI
+        q
         leverArm
         bias
         SF
@@ -49,7 +49,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
             
             %if obj.isOutputReady(currentTime)
-                obj.qBI = state(8:11);
+                obj.q = state(8:11);
                 obj.angVelB = state(12:14);
 
                 obj.accelB = stateDot(5:7); % 
@@ -71,7 +71,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
             r = zeros(3,1); % placeholder
             velCG = zeros(3,1); % Placeholder for future coupling term
             correction = cross(w, velCG) + cross(w, cross(w, r));
-            cBI = Utils.dirCosine(obj.qBI);
+            cBI = Utils.dirCosine(obj.q);
             accelIMU = obj.accelB - cBI * correction + cBI * [0; 0; 9.81];
         end
 
