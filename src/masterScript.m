@@ -137,7 +137,7 @@ function controller = setup_controller()
     %controller = FinTabsController(rocket_dyn);
 end
 
-function nav = setup_navigation()
+function nav = setup_navigation(dt)
     % Navigation
 
     % Acc
@@ -151,19 +151,20 @@ function nav = setup_navigation()
     accParams.outputProbability = 1;
     accParams.observationMatrix = zeros(3);
 
+
     accelerometer = navigationPkg.Accelerometer(accParams);
 
     % GPS
-    gpsParams.refLLA = [33.776, -84.399, 306];
+    gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
     gpsParams.verticalAccuracy = 1;
     gpsParams.horizontalAccuracy = 1;
-    gpsParams.velocityAccuracy = 1;
+    gpsParams.velocityAccuracy = .05;
 
     gpsParams.noiseCovariance = [8.4 0 0;
                                   0 4.2 0;
                                   0 0 4.2];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = .8;
+    gpsParams.outputProbability = 1;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                         0 1 0 0 0 0;
                                         0 0 1 0 0 0];
@@ -180,32 +181,30 @@ function nav = setup_navigation()
 
     gyroscope = navigationPkg.Gyroscope(gyroParams);
 
-    navParams.dt = .1;
-    dt = navParams.dt;
+    navParams.dt = dt;
     navParams.P = 0.1 * eye(6);
 
-    navParams.dfdx = @(dt, q)[1, dt*(2*q(1)^2 + 2*q(2)^2 - 1), 0,   dt*(2*q(1)*q(4) + 2*q(2)*q(3)), 0,  -dt*(2*q(1)*q(3) - 2*q(2)*q(4))
-        0,                        1, 0,                        0, 0,                        0
-        0,  -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), 1, dt*(2*q(1)^2 + 2*q(3)^2 - 1), 0,   dt*(2*q(1)*q(2) + 2*q(3)*q(4))
-        0,                        0, 0,                        1, 0,                        0
-        0,   dt*(2*q(1)*q(3) + 2*q(2)*q(4)), 0,  -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), 1, dt*(2*q(1)^2 + 2*q(4)^2 - 1)
-        0,                        0, 0,                        0, 0,                        1];
+    navParams.dfdx = @(dt, q)[1, 0, 0, dt*(2*q(1)^2 + 2*q(2)^2 - 1), dt*(2*q(1)*q(4) + 2*q(2)*q(3)), -dt*(2*q(1)*q(3) - 2*q(2)*q(4));
+                              0, 1, 0, -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), dt*(2*q(1)^2 + 2*q(3)^2 - 1), dt*(2*q(1)*q(2) + 2*q(3)*q(4)); 
+                              0, 0, 1, dt*(2*q(1)*q(3) + 2*q(2)*q(4)), -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), dt*(2*q(1)^2 + 2*q(4)^2 - 1);
+                              0, 0, 0, 1, 0, 0;
+                              0, 0, 0, 0, 1, 0;
+                              0, 0, 0, 0, 0, 1];
+    sigmaA = 5;
 
-    sigmaA = 10;
-
-    navParams.Q = sigmaA^2 .*[(dt^4)/4, (dt^3)/2,          0,           0,              0,          0;
-                     (dt^3)/2,     dt^2,          0,           0,              0,          0;
-                           0,         0,   (dt^4)/4,    (dt^3)/2,              0,          0;
-                           0,         0,   (dt^3)/2,        dt^2,              0,          0;
-                           0,         0,          0,           0,       (dt^4)/4,   (dt^3)/2;
-                           0,         0,          0,           0,       (dt^3)/2,      dt^2];
+    navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+                              0, (dt^4)/4, 0, 0, dt/2, 0;
+                              0, 0, (dt^4)/4, 0, 0, dt/2;
+                              dt/2, 0, 0, dt^2, 0, 0;
+                              0, (dt^3)/2, 0, 0, dt^2, 0;
+                              0, 0, (dt^3)/2, 0, 0, dt^2];
 
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
 
 function [flight, log] = setup_flight(rocketDyn)
     % Flight
-    flightParams.totalTime = 2;  % length of simulation [s]
+    flightParams.totalTime = 13;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
 	maxSteps = round(flightParams.totalTime / flightParams.dt);
@@ -222,7 +221,7 @@ function [flight, log] = setup_flight(rocketDyn)
 
     breakPoints = -1;
     environment = -1;
-	navigation = setup_navigation();
+	navigation = setup_navigation(flightParams.dt);
     flight = flightPkg.Flight(rocketDyn, environment, breakPoints, navigation, flightParams);
 end
 
