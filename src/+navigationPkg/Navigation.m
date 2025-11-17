@@ -176,16 +176,16 @@ obj.posHistory.time(end+1) = obj.currentTime;
         function obj = predictState(obj)
 
             accI = obj.accBodytoInertial();
-            velI = obj.cIBprior * obj.x(4:6); 
+            accB = obj.cBI * accI;
+            velI = obj.cIB * obj.x(4:6); % cIB Prior?
 
             obj.x(1) = obj.x(1) + velI(1) * obj.dt + accI(1) * ((obj.dt^2)/2);
             obj.x(2) = obj.x(2) + velI(2) * obj.dt + accI(2) * ((obj.dt^2)/2);
             obj.x(3) = obj.x(3) + velI(3) * obj.dt + accI(3) * ((obj.dt^2)/2);
-            velIx = velI(1) + accI(1) * obj.dt;
-            velIy = velI(2) + accI(2) * obj.dt;
-            velIz = velI(3) + accI(3) * obj.dt;
 
-            obj.x(4:6) = obj.cBI * [velIx; velIy; velIz];
+            obj.x(4) = obj.x(4) + accB(1) * obj.dt;
+            obj.x(5) = obj.x(5) + accB(2) * obj.dt;
+            obj.x(6) = obj.x(6) + accB(3) * obj.dt;
 
         end
 
