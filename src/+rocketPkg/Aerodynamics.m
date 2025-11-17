@@ -1,5 +1,8 @@
 % Main Authors: Patrick Barry
 
+% Meant for implementing CFD models of rockets
+% Use DATCOM if you don't have one
+
 classdef Aerodynamics < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
@@ -70,7 +73,7 @@ classdef Aerodynamics < handle
         function mAzFunction = getMAzFunc(obj)
             mAzFunction = obj.mAzFunc;
         end
-
+        
         function [fAb, mAb] = getAeroForcesMoments(obj, state, disturbances, rho, CG)
             % Inputs [u v w] in (m/s). Inputs [p r] in (rad/s). Input rho
             % in kg/m^3. Input CG in m from tip of nosecone.
@@ -78,11 +81,15 @@ classdef Aerodynamics < handle
             % placeholder - need to improve
             rho = 1.225; %kg/m^3
 
-            % need to unpack state vector
+            cBI = Utils.dirCosine(state(8:11));
+            wind = cBI* disturbances.wind;
 
-            % wind = convert to body frame (disturbances.wind)
-            % apply wind
-            [u, v, w] = [u, v, w] - wind
+            u = state(5) - wind(1);
+            v = state(6) - wind(2);
+            w = state(7) - wind(3);
+            p = state(12);
+            r = state(14);
+
 
             % Aerodynamic forces
             fAxFunction = obj.fAxFunc;

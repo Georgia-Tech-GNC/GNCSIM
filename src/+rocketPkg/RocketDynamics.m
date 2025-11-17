@@ -49,7 +49,6 @@ classdef RocketDynamics < handle
             obj.cgDry = rocketParams.cgXDry;
 
             obj.controller = controller;
-            % obj.navigation = navigation;
             obj.aerodynamics = aerodynamics;
         end
 
@@ -108,9 +107,7 @@ classdef RocketDynamics < handle
                  fBAero = fBFins + fBBody;
                  mBAero = mBFins + mBBody;
             else
-                 %[fBAero, mBAero] = obj.aerodynamics.getForcesMoments(state, disturbances);
-                 fBAero = [0;0;0];
-                 mBAero = [0;0;0];
+                 [fBAero, mBAero] = obj.aerodynamics.getForcesMoments(state, disturbances);
             end
 
             fTB = [obj.getThrust(time); 0; 0];

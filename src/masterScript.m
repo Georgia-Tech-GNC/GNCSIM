@@ -59,7 +59,7 @@ function rocketDyn = setupRocket()
     % get the distance along body
     xFinRef = totalLength - finParams.rootChord;  % [m]
 	
-	quaterChord = finParams.rootChord / 4;
+	quarterChord = finParams.rootChord / 4;
 	bodyParams.xWapprox = 0;
 	bodyParams.cgXWet = rocketParams.cgXWet;
 
