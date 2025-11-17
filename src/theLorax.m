@@ -182,7 +182,7 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
-    pos0 = [0, 0, 1];
+    pos0 = [0, 0, 0];
     vel0 = [0, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
