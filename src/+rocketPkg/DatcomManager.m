@@ -76,15 +76,14 @@ classdef DatcomManager < handle
 		end
 
 		function buildInterps(obj, aero)
-            obj.caInterp = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
-                        aero.ca, "linear");
-
-            obj.cmInterp = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
-						aero.cm, "linear");
-
-            obj.cnInterp = griddedInterpolant({aero.alpha(:), aero.mach(:), aero.alt(:)}, ...
-                        aero.cn, "linear");
-		end
+            alpha = unique(aero.alpha(:));
+            mach = unique(aero.mach(:));
+            alt = unique(aero.alt(:));
+            
+            obj.caInterp = griddedInterpolant({alpha, mach, alt}, aero.ca, "linear");
+            obj.cmInterp = griddedInterpolant({alpha, mach, alt}, aero.cm, "linear");
+            obj.cnInterp = griddedInterpolant({alpha, mach, alt}, aero.cn, "linear");
+        end
 
 		function [ca, cm, cn] = aeroInterp(obj, mach, aoaDeg, alt)
 			% TODO change this function to generate functions
@@ -115,8 +114,8 @@ classdef DatcomManager < handle
 
 			% Aerodynamic coefficients
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
-           	a = 343; % Speed of sound approximation (TODO: Replace with better approximation)
-           	M = vA/a;
+           	alpha = 343; % Speed of sound approximation (TODO: Replace with better approximation)
+           	M = vA/alpha;
            	AoA = atan2d(vC(3),vC(1));
 
            	pos = state(2:4);

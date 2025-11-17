@@ -1,4 +1,4 @@
-%% Master File
+%% The Onceler (FIN-TABS) Master Script
 clear; clc; close all;
 
 %% Instantiate Objects
@@ -64,13 +64,6 @@ function rocketDyn = setupRocket()
 
     % get the distance along body
     xFinRef = totalLength - finParams.rootChord;  % [m]
-<<<<<<< HEAD
-	
-	quarterChord = finParams.rootChord / 4;
-	bodyParams.xWapprox = 0;
-	bodyParams.cgXWet = rocketParams.cgXWet;
-=======
->>>>>>> 4adcecae3eb960003a8346ec8e23584d394d5472
 
     % set location of where to put fins
     finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
@@ -233,15 +226,6 @@ function [flight, log] = setup_flight(rocketDyn)
     flight = flightPkg.Flight(rocketDyn, environment, breakPoints, navigation, flightParams);
 end
 
-function monte_carlo = setup_MonteCarlo()
-    monte_carlo_params.set_wetRollMOI_3sigma = 1;
-    monte_carlo = analysisPkg.MonteCarlo(flight, monte_carlo_params);
-end
-
-function analysis = single_Flight_Analysis()
-    
-    
-end
 
 
 

@@ -7,7 +7,7 @@ classdef Analysis < handle
         tEnd;    % End time for plotting
         timeMask;  % Logical mask for time bounds (applied to first log)
         plotDir;  % Directory to save plots for PDF generation
-        displayPlots = true;
+        saveAsPDF = false;  % If true, save figures without displaying; if false, display normally
     end
 
     methods
@@ -108,9 +108,10 @@ classdef Analysis < handle
             title('\textbf{Trajectory}', 'Interpreter', 'latex')
             axis equal
 
-            saveas(fig, fullfile(obj.plotDir, 'trajectory.png'));
-
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'trajectory.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -168,8 +169,10 @@ classdef Analysis < handle
             title('\textbf{Velocity Components}', 'Interpreter', 'latex')
             grid on;
 
-            saveas(fig, fullfile(obj.plotDir, 'velocity.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'velocity.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -208,8 +211,10 @@ classdef Analysis < handle
             title('\textbf{Euler Angles}', 'Interpreter', 'latex')
             grid on
 
-            saveas(fig, fullfile(obj.plotDir, 'euler_angles.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'euler_angles.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -242,8 +247,10 @@ classdef Analysis < handle
             legend('show');
             title('\textbf{Angular Velocity Components}', 'Interpreter', 'latex');
 
-            saveas(fig, fullfile(obj.plotDir, 'angular_velocity.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'angular_velocity.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -267,8 +274,10 @@ classdef Analysis < handle
             ylabel('\textbf{Mass (kg)}', 'Interpreter', 'latex');
             title('\textbf{Mass}', 'Interpreter', 'latex');
 
-            saveas(fig, fullfile(obj.plotDir, 'mass.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'mass.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -292,8 +301,10 @@ classdef Analysis < handle
             ylabel('\textbf{Thrust (N)}', 'Interpreter', 'latex');
             title('\textbf{Thrust}', 'Interpreter', 'latex');
 
-            saveas(fig, fullfile(obj.plotDir, 'thrust.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'thrust.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -325,8 +336,45 @@ classdef Analysis < handle
             title('\textbf{Aerodynamic Moments}', 'Interpreter', 'latex')
             grid on;
 
-            saveas(fig, fullfile(obj.plotDir, 'aero_moments.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'aero_moments.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
+        function generateAeroForcePlot(obj)
+            fig = figure('Visible', 'off');
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                Fx = log.getAeroForce('Fx');
+                Fy = log.getAeroForce('Fy');
+                Fz = log.getAeroForce('Fz');
+                time = log.time(1:log.currentIdx);
+                Fx = Fx(obj.timeMask{i});
+                Fy = Fy(obj.timeMask{i});
+                Fz = Fz(obj.timeMask{i});
+                time = time(obj.timeMask{i});
+
+                plot(time, Fx, 'LineWidth', 2)
+                plot(time, Fy, 'LineWidth', 2)
+                plot(time, Fz, 'LineWidth', 2)
+            end
+
+            legend('Fx','Fy','Fz')
+            ylabel('\textbf{Aerodynamic Forces (N)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Aerodynamic Forces}', 'Interpreter', 'latex')
+            grid on;
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'aero_forces.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -358,8 +406,10 @@ classdef Analysis < handle
             title('\textbf{Control Moments}', 'Interpreter', 'latex')
             grid on;
 
-            saveas(fig, fullfile(obj.plotDir, 'control_moments.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'control_moments.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -392,8 +442,10 @@ classdef Analysis < handle
             title('\textbf{Acceleration Components}', 'Interpreter', 'latex')
             grid on;
 
-            saveas(fig, fullfile(obj.plotDir, 'acceleration.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'acceleration.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -461,8 +513,10 @@ classdef Analysis < handle
             grid on;
             hold off;
 
-            saveas(fig, fullfile(obj.plotDir, 'ekf_covariance.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'ekf_covariance.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -491,8 +545,10 @@ classdef Analysis < handle
             title('\textbf{Altitude vs Time}', 'Interpreter', 'latex');
             hold off;
 
-            saveas(fig1, fullfile(obj.plotDir, 'altitude.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig1, fullfile(obj.plotDir, 'altitude.png'));
+                close(fig1);
+            else
                 set(fig1, 'Visible', 'on');
             end
 
@@ -537,8 +593,10 @@ classdef Analysis < handle
             title('\textbf{Y Coordinate vs Time}', 'Interpreter', 'latex');
             hold off;
 
-            saveas(fig2, fullfile(obj.plotDir, 'position_xy.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig2, fullfile(obj.plotDir, 'position_xy.png'));
+                close(fig2);
+            else
                 set(fig2, 'Visible', 'on');
             end
         end
@@ -552,6 +610,7 @@ classdef Analysis < handle
             obj.generateMassPlot();
             obj.generateThrustPlot();
             obj.generateAeroMomentPlot();
+            obj.generateAeroForcePlot();
             obj.generateControlMomentPlot();
             obj.generateEkfCovariancePlot();
             obj.generateAltitudeAndXYPlot();
@@ -591,8 +650,10 @@ classdef Analysis < handle
             title('\textbf{Trajectory (State Estimate)}', 'Interpreter', 'latex')
             axis equal
 
-            saveas(fig, fullfile(obj.plotDir, 'trajectory_estimate.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'trajectory_estimate.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -650,8 +711,10 @@ classdef Analysis < handle
             title('\textbf{Velocity (State Estimate)}', 'Interpreter', 'latex')
             grid on;
 
-            saveas(fig, fullfile(obj.plotDir, 'velocity_estimate.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'velocity_estimate.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -690,8 +753,10 @@ classdef Analysis < handle
             title('\textbf{Euler Angles (State Estimate)}', 'Interpreter', 'latex')
             grid on
 
-            saveas(fig, fullfile(obj.plotDir, 'euler_angles_estimate.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'euler_angles_estimate.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -724,8 +789,10 @@ classdef Analysis < handle
             legend('show');
             title('\textbf{Angular Velocity (State Estimate)}', 'Interpreter', 'latex');
 
-            saveas(fig, fullfile(obj.plotDir, 'angular_velocity_estimate.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'angular_velocity_estimate.png'));
+                close(fig);
+            else
                 set(fig, 'Visible', 'on');
             end
         end
@@ -753,8 +820,10 @@ classdef Analysis < handle
             title('\textbf{Altitude vs Time (State Estimate)}', 'Interpreter', 'latex');
             hold off;
 
-            saveas(fig1, fullfile(obj.plotDir, 'altitude_estimate.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig1, fullfile(obj.plotDir, 'altitude_estimate.png'));
+                close(fig1);
+            else
                 set(fig1, 'Visible', 'on');
             end
 
@@ -799,8 +868,10 @@ classdef Analysis < handle
             title('\textbf{Y Coordinate vs Time (State Estimate)}', 'Interpreter', 'latex');
             hold off;
 
-            saveas(fig2, fullfile(obj.plotDir, 'position_xy_estimate.png'));
-            if obj.displayPlots
+            if obj.saveAsPDF
+                saveas(fig2, fullfile(obj.plotDir, 'position_xy_estimate.png'));
+                close(fig2);
+            else
                 set(fig2, 'Visible', 'on');
             end
         end
@@ -882,6 +953,9 @@ classdef Analysis < handle
 
             % Set plot directory to temp
             obj.plotDir = tempdir;
+
+            % Enable PDF mode - figures will be saved without displaying
+            obj.saveAsPDF = true;
 
             % Generate all plots (saved to plotDir)
             obj.generateAllPlots();
@@ -1021,6 +1095,9 @@ classdef Analysis < handle
             end
 
             add(rpt, sec7);
+
+            % Reset saveAsPDF flag to default
+            obj.saveAsPDF = false;
 
             % Close and view report
             close(rpt);
