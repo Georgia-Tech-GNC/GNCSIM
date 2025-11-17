@@ -101,8 +101,10 @@ classdef RocketDynamics < handle
 
         function [fB, mB] = getForcesMoments(obj, state, disturbances, time, log)
             % computes aero forces and moments
+			[currentCg, ~] = getCgMoi(obj, state(1));
+
             if isempty(obj.aerodynamics)
-                 [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, disturbances);
+                 [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, currentCg, disturbances);
                  [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
                  fBAero = fBFins + fBBody;
                  mBAero = mBFins + mBBody;
@@ -128,6 +130,14 @@ classdef RocketDynamics < handle
         function computeBuildup(obj)
             obj.body.computeBuildup()
             obj.rocketFins.computeBuildup()
+			
+			% Added scale factors in order to line up with open rocket
+			obj.body.scaleFactor = 1.51;
+			obj.body.momentScaleFactor = 0.21;
+			[~, numFins] = size(obj.rocketFins.fins);
+			for ii=1:numFins
+				obj.rocketFins.fins(ii).scaleFactor = 1.97;
+			end
         end
 
 		function draw(obj)

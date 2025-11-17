@@ -16,7 +16,7 @@ classdef Fin < rocketPkg.DatcomManager
             obj.finParams = finParams;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, currentCg, disturbances)
 
            % Rotation from inertial to body using quaternion
            q = state(8:11);
@@ -35,7 +35,7 @@ classdef Fin < rocketPkg.DatcomManager
 
            % Component frame velocity and ang vel
            wB = state(12:14);
-           rCb = -obj.finParams.translation(:);
+           rCb = -obj.finParams.translation(:) + [currentCg; 0; 0];
            vC = cCB*(vB + cross(wB, rCb));
 
 		   % Get component forces and moments based on

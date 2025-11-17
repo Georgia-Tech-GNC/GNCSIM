@@ -66,7 +66,7 @@ classdef RocketBody < rocketPkg.DatcomManager
             nBodyPoints = 5;    % Number of points defining the cylindrical body
             datcomFilename = 'BODY.dat';
 			xcg = obj.bodyParams.cgXWet; 
-			xw = obj.bodyParams.xWapprox;
+			xw = 0;
 
 			% Generate body geometry
             totalLength = obj.bodyParams.bodyLength + obj.bodyParams.noseLength;

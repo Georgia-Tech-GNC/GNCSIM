@@ -37,14 +37,14 @@ classdef RocketFins < rocketPkg.DatcomManager
             end
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, currentCg, disturbances)
             % Calculates the total aerodynamic forces and moments in the body frame
 			fB = [0, 0, 0].';
 			mB = [0, 0, 0].';
 
 			% Sum contributions from all individual fins
 			for ii=1:obj.numFins
-				[fBFin, mBFin] = obj.fins(ii).getForcesMoments(state, disturbances);
+				[fBFin, mBFin] = obj.fins(ii).getForcesMoments(state, currentCg, disturbances);
 				fB = fB + fBFin;
 				mB = mB + mBFin;
 			end

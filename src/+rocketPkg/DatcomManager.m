@@ -10,6 +10,8 @@ classdef DatcomManager < handle
 		cmInterp
 		cnInterp
 		aero
+		scaleFactor = 1;
+		momentScaleFactor = 1;
 	end
 
 	methods
@@ -87,9 +89,9 @@ classdef DatcomManager < handle
 		function [ca, cm, cn] = aeroInterp(obj, mach, aoaDeg, alt)
 			% TODO change this function to generate functions
 
-            ca = obj.caInterp(aoaDeg, mach, alt);
-            cm = obj.cmInterp(aoaDeg, mach, alt);
-			cn = obj.cnInterp(aoaDeg, mach, alt);
+            ca = obj.scaleFactor * obj.caInterp(aoaDeg, mach, alt);
+            cm = obj.momentScaleFactor * obj.cmInterp(aoaDeg, mach, alt);
+			cn = obj.scaleFactor * obj.cnInterp(aoaDeg, mach, alt);
 
 			alphaRange = [min(obj.aero.alpha(:)), max(obj.aero.alpha(:))];
     		machRange  = [0, max(obj.aero.mach(:))];
