@@ -24,7 +24,10 @@ flight.runSim(log);
 
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots()
-analysis.generateAllEstimatePlots();
+%analysis.generateAllEstimatePlots();
+
+datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDyn);
+datcomAnalysis.drawForcesAndMoments([0, 12])
 
 
 %% Functions
@@ -32,12 +35,12 @@ function rocketDyn = setupRocket()
     % Vehicle Properties
     rocketParams.longitudinalMoiWet = 9.15;  % [kg * m^2]
     rocketParams.rotationalMoiWet = 0.112;  % [kg * m^2]
-	rocketParams.cgXWet = .6;  % [m]
+	rocketParams.cgXWet = 1.84;  % [m]
 	rocketParams.massWet = 20;
 
 	rocketParams.longitudinalMoiDry = 9.15 * 0.9;  % [kg * m^2]
     rocketParams.rotationalMoiDry = 0.112 * 0.9;  % [kg * m^2]
-    rocketParams.cgXDry = .6;  % [m]
+    rocketParams.cgXDry = 1.84;  % [m]
 	rocketParams.massDry = 18;
 
     % Create Body
@@ -46,6 +49,7 @@ function rocketDyn = setupRocket()
     bodyParams.rocketDiameter = 0.157;  % [m]
     totalLength = bodyParams.bodyLength + bodyParams.noseLength;
 	bodyParams.translation = [0, 0, 0];
+	bodyParams.cgXWet = rocketParams.cgXWet;
 	
     % Create Fins
     finParams.numFins = 4;  % []
@@ -60,14 +64,9 @@ function rocketDyn = setupRocket()
 
     % get the distance along body
     xFinRef = totalLength - finParams.rootChord;  % [m]
-	
-	quaterChord = finParams.rootChord / 4;
-	bodyParams.xWapprox = 0;
-	bodyParams.cgXWet = rocketParams.cgXWet;
 
     % set location of where to put fins
     finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
-	%finParams.translation = [xFinRe, bodyParams.rocketDiameter / 2, 0];  % [m]
 
     % Motor
     motorParams.burnTime = 13.1;
