@@ -13,7 +13,7 @@ classdef Flight < handle
         x0
         dt
 
-        useGravity = false
+        useGravity = true
     end
     methods
         function obj = Flight(rocketDynamics, environment, breakPoints, navigation, flightParams)
