@@ -4,14 +4,16 @@ classdef Flight < handle
         environment
         breakPoints
         navigation
-
         flightParams
+
         totalTime
         currentTime
         currentXDot
         currentStateEstimate
         x0
         dt
+
+        useGravity = false
     end
     methods
         function obj = Flight(rocketDynamics, environment, breakPoints, navigation, flightParams)
@@ -20,6 +22,7 @@ classdef Flight < handle
             obj.breakPoints = breakPoints;
             obj.navigation = navigation;
             obj.flightParams = flightParams;
+
 
             obj.dt = obj.flightParams.dt;
             obj.x0 = obj.flightParams.x0;
@@ -97,6 +100,7 @@ classdef Flight < handle
             % Control: [Mx, My, Mz]
             altitude = state(4);
             disturbances.wind = zeros(3);
+            obj.currentTime = 0;
 
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             
@@ -128,8 +132,12 @@ classdef Flight < handle
 
             cBI = Utils.dirCosine(quat);
             cIB = cBI.';
-
-            g = [0;0;-9.81];
+            
+            if obj.useGravity
+                g = [0;0;-9.81];
+            else
+                g = [0;0;0];
+            end
             fG = mass * g;
 
             fB = fB + cBI * fG;
