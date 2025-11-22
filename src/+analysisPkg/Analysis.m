@@ -241,7 +241,7 @@ classdef Analysis < handle
             end
 
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex');
-            ylabel('\textbf{Angular Velocity (rad/s)}', 'Interpreter', 'latex');
+            ylabel('\textbf{Angular Velocity (deg/s)}', 'Interpreter', 'latex');
             grid on;
             hold off;
             legend('show');
