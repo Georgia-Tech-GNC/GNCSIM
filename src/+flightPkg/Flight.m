@@ -86,7 +86,8 @@ classdef Flight < handle
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
         end
-
+        
+        % need to explain what this is
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments
                 obj

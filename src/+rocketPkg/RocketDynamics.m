@@ -4,7 +4,6 @@ classdef RocketDynamics < handle
 		rocketFins
 		motorParams 
 		controller
-        % navigation
         aerodynamics = []
         
         thrustCurve
@@ -21,14 +20,13 @@ classdef RocketDynamics < handle
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, aerodynamics) % RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, navigation, aerodynamics)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, aerodynamics)
             arguments
                 body
                 rocketFins
                 rocketParams
                 motorParams
                 controller
-                % navigation
                 aerodynamics = []
             end
 

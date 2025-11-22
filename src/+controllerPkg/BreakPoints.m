@@ -16,7 +16,7 @@ classdef BreakPoints < Handle
         % Trajectory with respect to accumulated velocity
         x_optimal_av;
         u_optimal_av;
-        optimal_av
+        optimal_av;
 
         N_av;
     end

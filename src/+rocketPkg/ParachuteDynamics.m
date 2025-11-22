@@ -186,6 +186,7 @@ classdef ParachuteDynamics < handle
             I_total = [obj.I_p(1) + obj.a44; 
                        obj.I_p(2) + obj.a66; 
                        obj.I_p(3) + obj.a66];
+
             I_mat = diag(I_total);
             
             % Gravity in parachute frame
@@ -236,7 +237,6 @@ classdef ParachuteDynamics < handle
 end
 
 %% Helper Functions
-
 function R = quatToRotMat(q)
     % Convert quaternion to rotation matrix
     % Input: q = [q0; q1; q2; q3] 
