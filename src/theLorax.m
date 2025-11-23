@@ -198,3 +198,4 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary  
 	log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);  
 end
+

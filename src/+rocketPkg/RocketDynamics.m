@@ -5,7 +5,8 @@ classdef RocketDynamics < handle
 		motorParams 
 		controller
         aerodynamics = []
-        
+        firstChute
+        secondChute
         thrustCurve
         totalImpulse
         burnTime
@@ -20,13 +21,14 @@ classdef RocketDynamics < handle
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, aerodynamics)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, parachuteObjects, aerodynamics)
             arguments
                 body
                 rocketFins
                 rocketParams
                 motorParams
                 controller
+                parachuteObjects
                 aerodynamics = []
             end
 
@@ -48,6 +50,11 @@ classdef RocketDynamics < handle
 
             obj.controller = controller;
             obj.aerodynamics = aerodynamics;
+            obj.firstChute = parachuteObjects(1);
+            if length(parachuteObjects) >1
+                obj.secondChute = parachuteObjects.(2);
+            end
+
         end
 
         function currentThrust = getThrust(obj, t)
@@ -101,6 +108,16 @@ classdef RocketDynamics < handle
             % computes aero forces and moments
 			[currentCg, ~] = getCgMoi(obj, state(1));
 
+            % % Get Parachute Forces
+            % rocketVel = state(2:4);
+            % rocketAngularVel = state(12:14);
+            % rocketQuat = state(8:11);
+            % if atApogee(state, time)
+            %     [F_rocket_com, M_rocket_com] = obj.firstChute.getForcesAndMoments(rocketVel, rocketAngularVel, rocketQuat, timeStep);
+            % 
+            % end
+
+
             if isempty(obj.aerodynamics)
                  [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, currentCg, disturbances);
                  [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
@@ -112,6 +129,8 @@ classdef RocketDynamics < handle
 
             fTB = [obj.getThrust(time); 0; 0];
             %[fBController, mBController] = obj.controller.getForcesMoments(stateEstimate, obj, CG, breakPoints, time, log);
+            
+            
 
             if ~isempty(log)
                 log.add(time, 'aeroforces', fBAero);
@@ -205,6 +224,31 @@ classdef RocketDynamics < handle
 
             view(30,20);
         end
+
+        function [reachedApogee] = atApogee(state, time)
+            persistent timeCheck
+            
+            velBody = state(5:7);
+            body2InertialQuat = state(8:11);
+            body2InertialDCM = utils.dirCosine(body2InertialQuat);
+            velInertial = body2InertialDCM * velBody;
+            velNorth = velInertial(3);
+            
+            if velNorth < 0
+                if isempty(timeCheck)
+                    timeCheck = time + 1;
+                elseif time >= timeCheck
+                    reachedApogee = true;
+                else
+                    reachedApogee = false;
+                end
+            else
+                reachedApogee = false;
+            end
+        end
+
+
+
     end
 end
 
