@@ -58,7 +58,7 @@
     "mach_numbers": [0.2, 0.4, 0.6],
     "altitudes_ft": [0, 5000, 10000],
     "alphas_deg": [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
- }
+ },
 
  "flight": {
     "sim_time": 20,

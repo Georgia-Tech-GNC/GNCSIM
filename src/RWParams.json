@@ -1,0 +1,66 @@
+{
+ "rocket": {
+    "longitudinalMoiWet": 0.615,
+    "rotationalMoiWet": 0.0010015,
+    "longitudinalMoiDry": 0.558,
+    "rotationalMoiDry": 0.00098775,
+    "cgXWet": 1.32,
+    "cgXDry": 1.17,
+    "massWet": 1.823,
+    "massDry": 2.573
+ },
+
+ "body": {
+    "noseLength": 0.406,
+    "bodyLength": 1.422,
+    "rocketDiameter": 0.1016,
+    "translation": [0,0,0]
+ },
+
+ "fins": {
+    "numFins": 4,
+    "rootChord": 0.2,
+    "tipChord": 0.15,
+    "finSpan": 0.13,
+    "sweepDeg": 37
+ },
+
+ "motor": {
+     "thrustCurve": [
+         [0.023, 148.274],
+         [0.211, 196.341],
+         [0.398, 167.827],
+         [0.797, 149.903],
+         [1.395, 135.239],
+         [2.238, 122.204],
+         [3.199, 99.392],
+         [4.711, 69.249],
+         [5.367, 48.882],
+         [6.246, 29.329],
+         [6.926, 15.479],
+         [7.395, 11.406],
+         [8.496, 0.0]
+     ],
+     "mass": 0.752,
+     "xRef": -1,
+     "totalImpulse": 660,
+     "burnTime": 7.55
+ },
+
+ "flightCon": {
+    "machNumbers": [0.2, 0.4, 0.6],
+    "altitudes": [0, 5000, 10000],
+    "alphasDeg": [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
+ },
+
+ "flight": {
+    "totalTime": 20,
+    "dt": 0.01,
+    "pos0": [0, 0, 0],
+    "vel0": [100, 0, 0],
+    "quat0": [1, 0, 0, 0],
+    "omega0": [0, 0, 0]
+}
+
+
+}
