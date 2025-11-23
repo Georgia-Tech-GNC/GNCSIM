@@ -1,3 +1,5 @@
+% Main Authors: Conor Foley (mfoley40@gatech.edu)
+
 classdef Accelerometer < navigationPkg.Sensor&handle
     
     properties 

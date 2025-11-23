@@ -1,3 +1,5 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+
 classdef RocketFins < rocketPkg.DatcomManager
 	% ROCKETFINS Manages the geometry, forces, and moments for a cluster
 	% of equally-spaced fins on a rocket. Inherits from DatcomManager

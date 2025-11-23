@@ -1,3 +1,5 @@
+% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
+
 classdef Analysis < handle
 
     properties

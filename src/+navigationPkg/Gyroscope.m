@@ -1,3 +1,5 @@
+% Main Authors: Conor Foley (mfoley40@gatech.edu)
+
 classdef Gyroscope < navigationPkg.Sensor&handle
 
     properties 

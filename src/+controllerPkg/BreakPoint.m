@@ -1,3 +1,5 @@
+% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
+
 classdef BreakPoint < handle
 
     properties

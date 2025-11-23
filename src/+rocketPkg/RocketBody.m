@@ -1,3 +1,4 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef RocketBody < rocketPkg.DatcomManager
 	% ROCKETBODY Represents the aerodynamic body of a rocket

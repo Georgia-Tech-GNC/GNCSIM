@@ -1,3 +1,5 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+
 classdef Flight < handle
     properties
         rocketDynamics
@@ -30,10 +32,6 @@ classdef Flight < handle
             
             %obj.rocket_dyn.calc_moi()
         end
-
-        % TODO: Build setters for all attributes
-            
-        %end
 
         function log = runSim(obj, log)
             % This function propagates the dynamics using RK4
@@ -88,9 +86,12 @@ classdef Flight < handle
 
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
+
+            % actuatorStateDot =
+            % obj.rocketDynamics.controller.actuatorModel()
         end
         
-        % need to explain what this is
+        % === TEMPORARY ===
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments
                 obj
@@ -139,6 +140,7 @@ classdef Flight < handle
             else
                 g = [0;0;0];
             end
+
             fG = mass * g;
 
             fB = fB + cBI * fG;
