@@ -24,7 +24,7 @@ classdef ParachuteDynamics < handle
         g           % Gravitational acceleration (m/s^2)
         
         % Parachute state
-        q_p         % Quaternion: earth frame to parachute frame [q0; q1; q2; q3]
+        q_p         % Quaternion: inertial frame to parachute frame [q0; q1; q2; q3]
         omega_p     % Parachute angular velocity in parachute frame (rad/s)
     end
     
@@ -205,7 +205,7 @@ classdef ParachuteDynamics < handle
             gyro_term = cross(obj.omega_p, I_mat * obj.omega_p);
             domega_par = I_mat \ (M_total_par - gyro_term);
             
-            % Integrate Angulat Velocity
+            % Integrate Angular Velocity
             obj.omega_p = obj.omega_p + domega_par * dt;
             
             % Update Quaternion

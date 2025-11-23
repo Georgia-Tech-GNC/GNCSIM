@@ -3,34 +3,24 @@
 
 classdef Utils
     methods (Static)
-        % get rotation matrix from a given quaternion
-        function vb = quatRotate(q,va)
 
-            % quat_rotate Rotates vec data set using qab from b to a i.e.
-            % qBI is Inertial to Body
-            % va - 3d vector in b frame (1x3 row or 3x1 column)
-            % vb - 3d vec in a frame (same shape as va)
+        function nextState = RK4(f, state, dt)
+            % Fourth-order Runge-Kutta integration step
+            %
+            % Inputs:
+            %   f     - Function handle that computes the state derivative: xdot = f(x)
+            %   state - Current state vector (column vector)
+            %   dt    - Time step size
+            %
+            % Output:
+            %   nextState - State vector after one RK4 step
+            
+            k1 = f(state);
+            k2 = f(state + (k1)*dt/2);
+            k3 = f(state + (k2)*dt/2);
+            k4 = f(state + (k3)*dt);
 
-            % Check if va is column vector and convert to row
-            was_column = false;
-            if size(va, 1) == 3 && size(va, 2) == 1
-                va = va';
-                was_column = true;
-            end
-
-            % Normalize quaternion
-            qU = Utils.normalizeQuat(q);
-
-            % quat rotation: q_conj * [0, va] * q
-            % Convert vector to pure quaternion [0, vx, vy, vz]
-            vaQuat = [0, va];
-            [~, vB1, vB2, vB3] = parts(quaternion(quatconj(qU)) .* quaternion(vaQuat) .* quaternion(qU));
-            vb = [vB1, vB2, vB3];
-
-            % Convert back to column if input was column
-            if was_column
-                vb = vb';
-            end
+            nextState = state + dt*((1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4);
         end
 
         function q = eulerToQuat(a)

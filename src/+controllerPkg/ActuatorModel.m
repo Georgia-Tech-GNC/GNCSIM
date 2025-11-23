@@ -2,12 +2,12 @@
 
 classdef (Abstract) ActuatorModel < handle
     properties
-        location %used to compute moment wrt CG
-        qBA % quaternion of actuator frame wrt body frame
-        actuatorState % states describing the actuator's position
+        location % used to compute moment wrt CG
+        actuatorState % quaternion of actuator frame wrt body frame and omega
     end
     methods (Abstract)
         [fB, mB] = getForcesMoments(obj, controlInput, rocket, CG)
+        [actuatorStateDot] = actuatorDynamics(obj, actuatorState)
     end
 
 end

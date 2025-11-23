@@ -10,10 +10,9 @@ classdef Flight < handle
 
         totalTime
         currentTime
-        currentXDot
-        currentStateEstimate
-        x0
         dt
+
+        rocketInitialState
 
         useGravity = true
     end
@@ -27,49 +26,38 @@ classdef Flight < handle
 
 
             obj.dt = obj.flightParams.dt;
-            obj.x0 = obj.flightParams.x0;
+            obj.rocketInitialState = obj.flightParams.x0;
             obj.totalTime = obj.flightParams.totalTime;
-            
-            %obj.rocket_dyn.calc_moi()
+                
         end
 
         function log = runSim(obj, log)
-            % This function propagates the dynamics using RK4
-
-            % Need setters for this
             obj.currentTime = 0.0;
-            x = obj.x0(:);
-
             log.initializeTimestep(obj.currentTime);
-            log.add(obj.currentTime, 'states', x);
 
-            obj.currentStateEstimate = obj.navigation.getStateEstimate(x, zeros(14,1), obj.currentTime, log);
-            obj.currentXDot = obj.rocketModel(x, log); % thrust starts at t=0s
+            rocketState = obj.rocketInitialState(:);
+            rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
+            rocketStateDot = obj.rocketModel(rocketState, log); % thrust starts at t=0s
 
-            log.add(obj.currentTime, 'statedots', obj.currentXDot);
-			log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
+            log.add(obj.currentTime, 'states', rocketState);
+            log.add(obj.currentTime, 'statedots', rocketStateDot);
+			log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             for ii = 1:log.maxSteps - 1
-                k1 = obj.currentXDot;
-                k2 = obj.rocketModel(x + (k1)*obj.dt/2);
-                k3 = obj.rocketModel(x + (k2)*obj.dt/2);
-                k4 = obj.rocketModel(x + (k3)*obj.dt);
-
                 obj.currentTime = ii * obj.dt;
-
-                x = x + obj.dt*((1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4);
-
-                quat = x(8:11);
-                quatNorm = Utils.normalizeQuat(quat);
-                x(8:11) = quatNorm;     
-
                 log.initializeTimestep(obj.currentTime);
-                log.add(obj.currentTime, 'states', x);
 
-                obj.currentXDot = obj.rocketModel(x, log);
-                obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime, log);
-                log.add(obj.currentTime, 'statedots', obj.currentXDot);
-                log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
+                rocketState = Utils.RK4(@obj.rocketModel, rocketState, obj.dt);
+                quat = rocketState(8:11);
+                quatNorm = Utils.normalizeQuat(quat);
+                rocketState(8:11) = quatNorm;  
+
+                rocketStateDot = obj.rocketModel(rocketState, log);
+                rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
+
+                log.add(obj.currentTime, 'states', rocketState);
+                log.add(obj.currentTime, 'statedots', rocketStateDot);
+                log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
             end
         end
 
@@ -86,11 +74,8 @@ classdef Flight < handle
 
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
-
-            % actuatorStateDot =
-            % obj.rocketDynamics.controller.actuatorModel()
         end
-        
+
         % === TEMPORARY ===
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments

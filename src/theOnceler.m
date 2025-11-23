@@ -22,7 +22,12 @@ runDATCOM(rocketDynamics);
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints);
 
 %% Run Flight
-log = flight.runSim(log);
+
+tic;
+log = flight.runSimV2(log);
+elapsed_time = toc;
+fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
+
 log.trim();
 
 %% Analysis
