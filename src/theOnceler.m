@@ -15,11 +15,11 @@ controller = -1;
 breakPoints = -1;
 
 % Rocket Dynamics
-rocketDynamics = setupRocket(controller); 
+rocketDynamics = setupRocket(controller);
 runDATCOM(rocketDynamics);
 
 % Setup Flight Simulation (sets up navigation too)
-[flight, log] = setupFlight(rocketDynamics, environment, breakPoints); 
+[flight, log] = setupFlight(rocketDynamics, environment, breakPoints);
 
 %% Run Flight
 log = flight.runSim(log);
@@ -36,167 +36,167 @@ datcomAnalysis.drawForcesAndMoments([0, 12])
 
 %% Functions
 function rocketDyn = setupRocket(controller)
-    % Vehicle Properties
-    rocketParams.longitudinalMoiWet = 13.33;  % [kg * m^2]
-    rocketParams.rotationalMoiWet = 0.12;  % [kg * m^2]
-	rocketParams.cgXWet = 1.98;  % [m]
-	rocketParams.massWet = 29.04; % [kg]
+% Vehicle Properties
+rocketParams.longitudinalMoiWet = 13.33;  % [kg * m^2]
+rocketParams.rotationalMoiWet = 0.12;  % [kg * m^2]
+rocketParams.cgXWet = 1.98;  % [m]
+rocketParams.massWet = 29.04; % [kg]
 
-	rocketParams.longitudinalMoiDry = 11.95;  % [kg * m^2]
-    rocketParams.rotationalMoiDry = 0.11;  % [kg * m^2]
-    rocketParams.cgXDry = 1.9;  % [m]
-	rocketParams.massDry = 24.72; % [kg]
+rocketParams.longitudinalMoiDry = 11.95;  % [kg * m^2]
+rocketParams.rotationalMoiDry = 0.11;  % [kg * m^2]
+rocketParams.cgXDry = 1.9;  % [m]
+rocketParams.massDry = 24.72; % [kg]
 
-    % Create Body
-    bodyParams.noseLength = 0.61;  % [m]
-    bodyParams.bodyLength = 2.2856;  % This does not include nose code [m]
-    bodyParams.rocketDiameter = 0.157;  % [m]
-    totalLength = bodyParams.bodyLength + bodyParams.noseLength;
-	bodyParams.translation = [0, 0, 0];
-	bodyParams.cgXWet = rocketParams.cgXWet;
-	
-    % Create Fins
-    finParams.numFins = 4;  % []
-    finParams.rootChord = 0.203;  % [m]
-    finParams.tipChord = 0.17;  % [m]
-    finParams.finSpan = 0.144;  % [m]
-	finParams.sweepDeg = 12.9;  % [deg]
+% Create Body
+bodyParams.noseLength = 0.61;  % [m]
+bodyParams.bodyLength = 2.2856;  % This does not include nose code [m]
+bodyParams.rocketDiameter = 0.157;  % [m]
+totalLength = bodyParams.bodyLength + bodyParams.noseLength;
+bodyParams.translation = [0, 0, 0];
+bodyParams.cgXWet = rocketParams.cgXWet;
 
-    flightConParams.machNumbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
-    flightConParams.altitudes = [0, 5000, 10000];       % Array of altitudes in feet
-    flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
+% Create Fins
+finParams.numFins = 4;  % []
+finParams.rootChord = 0.203;  % [m]
+finParams.tipChord = 0.17;  % [m]
+finParams.finSpan = 0.144;  % [m]
+finParams.sweepDeg = 12.9;  % [deg]
 
-    % get the distance along body
-    xFinRef = totalLength - finParams.rootChord;  % [m]
+flightConParams.machNumbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
+flightConParams.altitudes = [0, 5000, 10000];       % Array of altitudes in feet
+flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
-    % set location of where to put fins
-    finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
+% get the distance along body
+xFinRef = totalLength - finParams.rootChord;  % [m]
 
-    % Motor
-    motorParams.burnTime = 12.0;
-    tmp = load("+theOncelerFiles\thrust_curve_fin_tabs.mat");
-    motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
-    motorParams.mass = 0.4;  % [kg]
-    motorParams.xRef = -1;  % [m]
-    motorParams.totalImpulse = 7561.0; % N-sec
+% set location of where to put fins
+finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
 
-    % Create rocket dynamics object
-    body = rocketPkg.RocketBody(bodyParams, flightConParams);
-    fins = rocketPkg.RocketFins(finParams, flightConParams);
+% Motor
+motorParams.burnTime = 12.0;
+tmp = load("+theOncelerFiles\thrust_curve_fin_tabs.mat");
+motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
+motorParams.mass = 0.4;  % [kg]
+motorParams.xRef = -1;  % [m]
+motorParams.totalImpulse = 7561.0; % N-sec
 
-	aerodynamics = [];
+% Create rocket dynamics object
+body = rocketPkg.RocketBody(bodyParams, flightConParams);
+fins = rocketPkg.RocketFins(finParams, flightConParams);
 
-    rocketDyn = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, aerodynamics);
+aerodynamics = [];
+
+rocketDyn = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, aerodynamics);
 end
 
 
 function runDATCOM(rocketDyn)
-    % Run DATCOM and compute aerodynamics
-    % Note that you can also load and save lookup tables
-    rocketDyn.computeBuildup()
-    %rocketDyn.drawBuildup()
-    %rocketDyn.saveBuildup()
-    %rocketDyn.saveBuildup_figs()
-    %rocketDyn.loadBuildup_figs()
+% Run DATCOM and compute aerodynamics
+% Note that you can also load and save lookup tables
+rocketDyn.computeBuildup()
+%rocketDyn.drawBuildup()
+%rocketDyn.saveBuildup()
+%rocketDyn.saveBuildup_figs()
+%rocketDyn.loadBuildup_figs()
 end
 
 function environment = setupEnvironment()
-    %environment_params.x1 = -1;
-    %environment_params.x2 = -1;
-    %environment = Environment(environment_params);
+%environment_params.x1 = -1;
+%environment_params.x2 = -1;
+%environment = Environment(environment_params);
 end
 
 function controller = setupController()
-    %Controller
-    %controller = FinTabsController(rocket_dyn);
+%Controller
+%controller = FinTabsController(rocket_dyn);
 end
 
 function nav = setupNavigation(dt)
-    % Navigation
+% Navigation
 
-    % Acc
-    accParams.VRW = -1;
-    accParams.leverArm = -1;
-    accParams.SF = -1;
-    accParams.bias = -1;
+% Acc
+accParams.VRW = -1;
+accParams.leverArm = -1;
+accParams.SF = -1;
+accParams.bias = -1;
 
-    accParams.noiseCovariance = -1;
-    accParams.outputRate = 100;
-    accParams.outputProbability = 1;
-    accParams.observationMatrix = zeros(3);
+accParams.noiseCovariance = -1;
+accParams.outputRate = 100;
+accParams.outputProbability = 1;
+accParams.observationMatrix = zeros(3);
 
 
-    accelerometer = navigationPkg.Accelerometer(accParams);
+accelerometer = navigationPkg.Accelerometer(accParams);
 
-    % GPS
-    gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
-    gpsParams.verticalAccuracy = 1;
-    gpsParams.horizontalAccuracy = 1;
-    gpsParams.velocityAccuracy = .05;
+% GPS
+gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
+gpsParams.verticalAccuracy = 1;
+gpsParams.horizontalAccuracy = 1;
+gpsParams.velocityAccuracy = .05;
 
-    gpsParams.noiseCovariance = [8.4 0 0;
-                                  0 4.2 0;
-                                  0 0 4.2];
-    gpsParams.outputRate = 10;
-    gpsParams.outputProbability = 1;
-    gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
-                                        0 1 0 0 0 0;
-                                        0 0 1 0 0 0];
-    gps = navigationPkg.GPS(gpsParams);
+gpsParams.noiseCovariance = [8.4 0 0;
+    0 4.2 0;
+    0 0 4.2];
+gpsParams.outputRate = 10;
+gpsParams.outputProbability = 1;
+gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
+    0 1 0 0 0 0;
+    0 0 1 0 0 0];
+gps = navigationPkg.GPS(gpsParams);
 
-    % Gyro
-    gyroParams.ARW = -1;
-    gyroParams.bias = -1;
+% Gyro
+gyroParams.ARW = -1;
+gyroParams.bias = -1;
 
-    gyroParams.noiseCovariance = -1;
-    gyroParams.outputRate = 100;
-    gyroParams.outputProbability = 1;
-    gyroParams.observationMatrix = zeros(3);
+gyroParams.noiseCovariance = -1;
+gyroParams.outputRate = 100;
+gyroParams.outputProbability = 1;
+gyroParams.observationMatrix = zeros(3);
 
-    gyroscope = navigationPkg.Gyroscope(gyroParams);
+gyroscope = navigationPkg.Gyroscope(gyroParams);
 
-    navParams.dt = dt;
-    navParams.P = 0.1 * eye(6);
+navParams.dt = dt;
+navParams.P = 0.1 * eye(6);
 
-    navParams.dfdx = @(dt, q)[1, 0, 0, dt*(2*q(1)^2 + 2*q(2)^2 - 1), dt*(2*q(1)*q(4) + 2*q(2)*q(3)), -dt*(2*q(1)*q(3) - 2*q(2)*q(4));
-                              0, 1, 0, -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), dt*(2*q(1)^2 + 2*q(3)^2 - 1), dt*(2*q(1)*q(2) + 2*q(3)*q(4)); 
-                              0, 0, 1, dt*(2*q(1)*q(3) + 2*q(2)*q(4)), -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), dt*(2*q(1)^2 + 2*q(4)^2 - 1);
-                              0, 0, 0, 1, 0, 0;
-                              0, 0, 0, 0, 1, 0;
-                              0, 0, 0, 0, 0, 1];
-    sigmaA = 5;
+navParams.dfdx = @(dt, q)[1, 0, 0, dt*(2*q(1)^2 + 2*q(2)^2 - 1), dt*(2*q(1)*q(4) + 2*q(2)*q(3)), -dt*(2*q(1)*q(3) - 2*q(2)*q(4));
+    0, 1, 0, -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), dt*(2*q(1)^2 + 2*q(3)^2 - 1), dt*(2*q(1)*q(2) + 2*q(3)*q(4));
+    0, 0, 1, dt*(2*q(1)*q(3) + 2*q(2)*q(4)), -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), dt*(2*q(1)^2 + 2*q(4)^2 - 1);
+    0, 0, 0, 1, 0, 0;
+    0, 0, 0, 0, 1, 0;
+    0, 0, 0, 0, 0, 1];
+sigmaA = 5;
 
-    navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
-                              0, (dt^4)/4, 0, 0, dt/2, 0;
-                              0, 0, (dt^4)/4, 0, 0, dt/2;
-                              dt/2, 0, 0, dt^2, 0, 0;
-                              0, (dt^3)/2, 0, 0, dt^2, 0;
-                              0, 0, (dt^3)/2, 0, 0, dt^2];
+navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+    0, (dt^4)/4, 0, 0, dt/2, 0;
+    0, 0, (dt^4)/4, 0, 0, dt/2;
+    dt/2, 0, 0, dt^2, 0, 0;
+    0, (dt^3)/2, 0, 0, dt^2, 0;
+    0, 0, (dt^3)/2, 0, 0, dt^2];
 
-    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
+nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end
 
 function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
-    % Flight
-    flightParams.totalTime = 22;  % length of simulation [s]
-    flightParams.dt = 0.01;  % time step [s]
+% Flight
+flightParams.totalTime = 22;  % length of simulation [s]
+flightParams.dt = 0.01;  % time step [s]
 
-    mass0 = rocketDynamics.massWet;
-    pos0 = [0, 0, 0];
-    vel0 = [0, 0, 0];
-    quat0 = Utils.eulerToQuat([0, -90, 0]).';
-    omega0 = [0, 0, 0];
-    state0 = [mass0, pos0, vel0, quat0, omega0].';
-    flightParams.x0 = state0;
+mass0 = rocketDynamics.massWet;
+pos0 = [0, 0, 0];
+vel0 = [0, 0, 0];
+quat0 = Utils.eulerToQuat([0, -90, 0]).';
+omega0 = [0, 0, 0];
+state0 = [mass0, pos0, vel0, quat0, omega0].';
+flightParams.x0 = state0;
 
-    navigation = setupNavigation(flightParams.dt);
-    flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, navigation, flightParams);
-	
-	% LOG
-    maxSteps = round(flightParams.totalTime / flightParams.dt);
-    stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
-    controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary  
-	log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);  
+navigation = setupNavigation(flightParams.dt);
+flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, navigation, flightParams);
+
+% LOG
+maxSteps = round(flightParams.totalTime / flightParams.dt);
+stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
+controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary
+log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);
 end
 
 

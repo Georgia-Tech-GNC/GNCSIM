@@ -1,3 +1,5 @@
+% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
+
 classdef Log < handle
     properties
         time                    % 1 x N

@@ -1,3 +1,5 @@
+% Main Authors: Zhanna Shorokhova (zshorokhova3@gatech.edu)
+
 classdef Exportable < handle
     % Exportable - Base class that provides automatic export functionality
     % 

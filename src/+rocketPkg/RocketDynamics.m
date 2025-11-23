@@ -1,3 +1,7 @@
+% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
+%               David Reynolds (dreynolds45@gatech.edu)
+%               Kandarp Vadia (kvadia3@gatech.edu)
+
 classdef RocketDynamics < handle
     properties
 		body
@@ -126,6 +130,7 @@ classdef RocketDynamics < handle
         end
 
         function computeBuildup(obj)
+            % Main Author: David Reynolds
             obj.body.computeBuildup()
             obj.rocketFins.computeBuildup()
 			
@@ -139,6 +144,7 @@ classdef RocketDynamics < handle
         end
 
 		function draw(obj)
+            % Main Author: Kandarp Vadia
             % ========== ROCKET ==========
             rBody = obj.body.bodyParams;
             fins = obj.rocketFins.finParams;

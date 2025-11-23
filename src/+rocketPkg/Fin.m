@@ -1,3 +1,5 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+
 classdef Fin < rocketPkg.DatcomManager
 	% FIN Represents an aerodynamic fin component on a rocket or aircraft
 

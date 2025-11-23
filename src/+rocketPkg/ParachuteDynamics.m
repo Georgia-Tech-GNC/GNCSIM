@@ -1,3 +1,5 @@
+% Main Authors: Aditya Swami (aswami8@gatech.edu)
+
 classdef ParachuteDynamics < handle
     % Parachute dynamics model based on: "Parachute dynamics and perturbation analysis of precision airdrop system"
     % https://www.sciencedirect.com/science/article/pii/S1000936116300218

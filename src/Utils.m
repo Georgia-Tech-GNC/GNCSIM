@@ -1,7 +1,11 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+%               Karsten Caillet (kcaillet3@gatech.edu)
+
 classdef Utils
     methods (Static)
         % get rotation matrix from a given quaternion
         function vb = quatRotate(q,va)
+
             % quat_rotate Rotates vec data set using qab from b to a i.e.
             % qBI is Inertial to Body
             % va - 3d vector in b frame (1x3 row or 3x1 column)

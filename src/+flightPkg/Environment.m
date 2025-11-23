@@ -1,5 +1,7 @@
-% Main Authors: Hridai Ambati (ported from GNCSIM 1.0, might need to tweak
-% stuff)
+% Main Authors: Hridai Ambati (hambati3@gatech.edu)
+% 
+% (ported from GNCSIM 1.0, might need to tweak stuff)
+
 classdef Environment < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
