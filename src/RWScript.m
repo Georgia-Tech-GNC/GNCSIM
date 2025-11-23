@@ -12,29 +12,34 @@ jsonData = jsondecode(jsonString);
 % All flight parameters
 
 
-function rocket_dyn = setupRocket(jsonData)
+function rocketDyn = setupRocket(jsonData)
 
 % Extract parameters for rocket setup
-rocket_params = jsonData.rocket;
-body_params = jsonData.body;
-fin_params = jsonData.fins;
-motor_params = jsonData.motor;
-flight_con_params = jsonData.flight;
+rocketParams = jsonData.rocket;
+bodyParams = jsonData.body;
+finParams = jsonData.fins;
+motorParams = jsonData.motor;
+flightConParams = jsonData.flight;
 
 % Calculate total rocket length
-total_length = body_params.nose_cone_length + body_params.body_length;
+totalLength = bodyParams.nose_cone_length + bodyParams.body_length;
 
 % Calculate fin x position
-x_fin_ref = total_length - rocket_params.cg_x - fin_params.root_chord;
-fin_params.translation = [x_fin_ref, body_params.rocket_diameter / 2, 0];
+xFinRef = totalLength - rocketParams.cg_x - finParams.root_chord;
+finParams.translation = [xFinRef, bodyParams.rocket_diameter / 2, 0];
 
 % Create instances of RocketBody and RocketFins using the extracted parameters
-body = rocket_pkg.RocketBody(body_params, flight_con_params);
-fins = rocket_pkg.RocketFins(fin_params, flight_con_params);
+body = rocket_pkg.RocketBody(bodyParams, flightConParams);
+fins = rocket_pkg.RocketFins(finParams, flightConParams);
 
 % Initialize the rocket dynamics simulation parameters
-rocket_dyn = rocket_pkg.RocketDynamics(body, fins, rocket_params, motor_params);
+rocketDyn = rocket_pkg.RocketDynamics(body, fins, rocketParams, motorParams);
 
 end
 
-% rocket_dyn = setupRocket(jsonData)
+function runDATCOM(rocketDyn)
+rocketDyn.compute_buildup();
+end
+
+%rocket_dyn = setupRocket(jsonData)
+%runDATCOM(rocket_dyn);
