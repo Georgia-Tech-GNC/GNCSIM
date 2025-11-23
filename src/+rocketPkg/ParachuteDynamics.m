@@ -10,7 +10,9 @@ classdef ParachuteDynamics < handle
         I_p         % Parachute inertia
         L_p         % Vector from attachment to canopy CG (parachute frame) (m)
         S_p         % Parachute reference area (m^2)
-        D_c         % Canopy diameter (m
+        D_c         % Canopy diameter (m)
+        L_s         % Suspension Line Length (m)
+        deployAltitude % Altitude the Chute is Deployed At (m)
                 
         % Added mass coefficients (from paper Eq. 1-2)
         a11, a33, a44, a66
@@ -29,25 +31,24 @@ classdef ParachuteDynamics < handle
     end
     
     methods
-        function obj = ParachuteDynamics(D_c, m_c)
+        function obj = ParachuteDynamics(D_c, m_c, L_s, deployAltitude)
             % Inputs:
             %   D_c - Canopy diameter (m)
             %   m_c - Canopy mass (kg)
+            %   L_s - Suspension Line Length (m)
             
             % Set basic parameters
             obj.D_c = D_c;
             obj.m_c = m_c;
             obj.rho = 1.225;
             obj.g = 9.81;
+            obj.L_s = L_s;
             
             % Reference area
             obj.S_p = pi * (D_c/2)^2;
             
-            % Suspension line length NEED TO CHANGE
-            L_s = 1.5;
-            
             % Vector from attachment to canopy CG in parachute frame
-            obj.L_p = [0; 0; L_s/2];
+            obj.L_p = [0; 0; obj.L_s/2];
             
             % Parachute inertia NEED TO CHANGE
             r = D_c/2;
@@ -67,6 +68,7 @@ classdef ParachuteDynamics < handle
             % Initial parachute orientation
             obj.q_p = [1; 0; 0; 0];
             obj.omega_p = [0; 0; 0];
+            obj.deployAltitude = deployAltitude;
         end
         
         function initAeroCoefficients(obj)
@@ -77,20 +79,22 @@ classdef ParachuteDynamics < handle
         end
         
         function [F_rocket_com, M_rocket_com] = getForcesAndMoments(obj, ...
-                v_com_earth, omega_com_earth, q_rocket, r_attach_rocket, dt)
+                v_com_earth, omega_com_earth, q_rocket, dt)
             % Compute forces and moments from parachute system
             %
             % Inputs:
             %   v_com_earth - Rocket COM velocity in earth frame
             %   omega_com_earth - Rocket angular velocity in earth frame
             %   q_rocket - Rocket quaternion: earth to rocket [q0; q1; q2; q3]
-            %   r_attach_rocket - Attachment point from rocket COM in rocket frame
             %   dt - Time step
             %
             % Outputs:
             %   F_rocket_com - Total force in earth frame
             %   M_rocket_com - Total moment about rocket COM in earth frame
             
+            % Get Attachment point from rocketCOM in rocket frame
+            r_attach_rocket = [obj.L_s ; 0; 0];
+
             % Normalize quaternions
             q_rocket = q_rocket / norm(q_rocket);
             obj.q_p = obj.q_p / norm(obj.q_p);

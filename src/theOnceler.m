@@ -18,6 +18,9 @@ breakPoints = -1;
 rocketDynamics = setupRocket(controller);
 runDATCOM(rocketDynamics);
 
+% Parachute Dynamics
+parachuteDynamics = setupParachute();
+
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints);
 
@@ -206,7 +209,19 @@ end
 
 
 
+function parachuteObjects =  setupParachute()
+drogueDiameter = .508; % m
+drogueMass = 0.016811267; % kg
+drogueCordLength = 1.52; %m
+drogueDynamics = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCordLength);
 
+MainParachuteDiameter = 2.54; %m
+MainParachuteMass = 0.3430292; %kg
+MainParachuteCordLength = 1.78; %m
+MainParachuteDynamics = rocketPkg.ParachuteDynamics(MainParachuteDiameter, MainParachuteMass,MainParachuteCordLength);
+
+parachuteObjects = [MainParachuteDynamics,drogueDynamics];
+end
 
 
 
