@@ -1,10 +1,10 @@
 {
  "rocket": {
-    "longitudinal_moi": 1,
-    "rotational_moi": 1,
-    "cg_x": 0,
-    "mass_wet": 1,
-    "mass_dry": 1,
+    "longitudinal_moi": 0.615,
+    "rotational_moi": 0.0010015,
+    "cg_x": 1.32,
+    "mass_wet": 1.823,
+    "mass_dry": 2.573,
     "moi_wet" : [
         [1, 0, 0],
         [0, 1, 0],
@@ -35,7 +35,7 @@
  },
 
  "motor": {
-     "thrust_curve": [
+     "tc": [
          [0.023, 148.274],
          [0.211, 196.341],
          [0.398, 167.827],
@@ -50,8 +50,8 @@
          [7.395, 11.406],
          [8.496, 0.0]
      ],
-     "mass": 1,
-     "x_ref":1
+     "mass": 0.752,
+     "x_ref": -1
  },
 
  "flight": {
