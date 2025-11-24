@@ -97,13 +97,13 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances, time, log)
+        function [fB, mB] = getForcesMoments(obj, state, deflections, disturbances, time, log)
             % computes aero forces and moments
 			[currentCg, ~] = getCgMoi(obj, state(1));
 
             if isempty(obj.aerodynamics)
-                 [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, currentCg, disturbances);
-                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
+                 [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, deflections, currentCg, disturbances);
+                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances)
                  fBAero = fBFins + fBBody;
                  mBAero = mBFins + mBBody;
             else
@@ -141,7 +141,6 @@ classdef RocketDynamics < handle
 		function draw(obj)
             % ========== ROCKET ==========
             rBody = obj.body.bodyParams;
-            fins = obj.rocketFins.finParams;
             r = rBody.rocketDiameter/2;
             xNose = linspace(rBody.noseLength, 0, 100);
 
@@ -172,35 +171,41 @@ classdef RocketDynamics < handle
 
             % ========== FINS ==========
             % Fin base position (at end of body)
-            xBase = rBody.noseLength + rBody.bodyLength - fins.rootChord;  % where root leading edge starts
-            finColor = [0.2 0.5 0.8];
+            for ii=1:length(obj.rocketFins.finParamsArr)
+                fins = obj.rocketFins.finParamsArr(ii);
+                translation = fins.translation;
 
-            % Define one fin shape in X–Y plane before rotation
-            leRoot = [0, 0];
-            teRoot = [fins.rootChord, 0];
-            leTip  = [fins.finSpan * tand(fins.sweepDeg), fins.finSpan];
-            teTip  = [leTip(1) + fins.tipChord, fins.finSpan];
-
-            finX = [leRoot(1), teRoot(1), teTip(1), leTip(1)];
-            finY = [leRoot(2), teRoot(2), teTip(2), leTip(2)];
-
-            % For each fin, rotate and position around body
-            for i = 1:fins.numFins
-                theta2 = 2*pi*(i-1)/fins.numFins;  % angular position
-                % Rotation matrix around X-axis (rocket axis)
-                Rz = [1 0 0; 0 cos(theta2) -sin(theta2); 0 sin(theta2) cos(theta2)];
-
-                % Shift fin so its root attaches to rocket body
-                Xf = finX + xBase;
-                Yf = r + finY;
-                Zf = zeros(size(finY));
-
-                % Stack to rotate (not necessary here because we rotate by construction)
-                finLocal = [Xf; Yf; Zf];
-                fin = Rz * finLocal;
-
-                % Draw fin as patch
-                fill3(Xf, fin(2,:), fin(3,:), finColor, 'FaceAlpha', 0.9, 'EdgeColor', 'k');
+                %xBase = rBody.noseLength + rBody.bodyLength - fins.rootChord;  % where root leading edge starts
+                xBase = translation(1);
+                finColor = [0.2 0.5 0.8];
+    
+                % Define one fin shape in X–Y plane before rotation
+                leRoot = [0, 0];
+                teRoot = [fins.rootChord, 0];
+                leTip  = [fins.finSpan * tand(fins.sweepDeg), fins.finSpan];
+                teTip  = [leTip(1) + fins.tipChord, fins.finSpan];
+    
+                finX = [leRoot(1), teRoot(1), teTip(1), leTip(1)];
+                finY = [leRoot(2), teRoot(2), teTip(2), leTip(2)];
+    
+                % For each fin, rotate and position around body
+                for jj = 1:fins.numFins
+                    theta2 = 2*pi*(jj-1)/fins.numFins;  % angular position
+                    % Rotation matrix around X-axis (rocket axis)
+                    Rz = [1 0 0; 0 cos(theta2) -sin(theta2); 0 sin(theta2) cos(theta2)];
+    
+                    % Shift fin so its root attaches to rocket body
+                    Xf = finX + xBase;
+                    Yf = r + finY;
+                    Zf = zeros(size(finY));
+    
+                    % Stack to rotate (not necessary here because we rotate by construction)
+                    finLocal = [Xf; Yf; Zf];
+                    fin = Rz * finLocal;
+    
+                    % Draw fin as patch
+                    fill3(Xf, fin(2,:), fin(3,:), finColor, 'FaceAlpha', 0.9, 'EdgeColor', 'k');
+                end
             end
 
             view(30,20);

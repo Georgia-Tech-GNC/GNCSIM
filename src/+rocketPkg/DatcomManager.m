@@ -116,7 +116,7 @@ classdef DatcomManager < handle
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
            	alpha = 343; % Speed of sound approximation (TODO: Replace with better approximation)
            	M = vA/alpha;
-           	AoA = atan2d(vC(3),vC(1));
+           	AoA = atan2d(vC(3),vC(1));  % FIX: For body the AoA need to be with respect to vz and vy
 
            	pos = state(2:4);
            	altitude = pos(3);  % z componet of position

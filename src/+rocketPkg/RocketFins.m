@@ -1,50 +1,77 @@
+% Main Authors: David Reynolds
+
 classdef RocketFins < rocketPkg.DatcomManager
 	% ROCKETFINS Manages the geometry, forces, and moments for a cluster
 	% of equally-spaced fins on a rocket. Inherits from DatcomManager
 	% to facilitate DATCOM analysis.
 
 	properties
-		finParams		% Structure containing fin geometry parameters
-		numFins			% Total number of fins
-		fins			% Array of individual rocket_pkg.Fin objects
-		finVertices		% (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
-		%flightConParams
+		finParamsArr		% Array of structs containing fin geometry parameters
+		fins			    % Array of individual rocket_pkg.Fin objects
+		finVertices		    % (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
+        numFins
+        numMovableFins
+        numMovableIndex = []
     end
 
 	methods
         % Constructor
-		function obj = RocketFins(finParams, flightConParams)
+		function obj = RocketFins(finParamsArr, flightConParams)
 			% Call superclass constructor (required for inheritance)
 			obj = obj@rocketPkg.DatcomManager(flightConParams)
-			%obj.flightConParams = flightConParams;
-			obj.finParams = finParams;
-			obj.numFins = finParams.numFins;
-			translation = finParams.translation;
+			obj.finParamsArr = finParamsArr;
 
-			% Create and space the individual Fin objects
-            finParams.angle = 0;
-            mainFin = rocketPkg.Fin("fin", finParams, flightConParams);  % master fin
-            obj.fins = mainFin;
+			for ii=1:length(finParamsArr)
+                finParams = finParamsArr(ii);
+                translation = finParams.translation;
+                name = finParams.name;
 
-            for ii=1:obj.numFins - 1
+                % Create and space the individual Fin objects
+                finParams.angle = 0;
+                mainFin = rocketPkg.Fin(name, finParams, flightConParams);  % master fin
+                obj.fins = [obj.fins, mainFin];
 
-				% Calculate angle for current fin
-                finParams.angle = (360 / obj.numFins) * ii;
-				finParams.translation = Utils.finDcm(0, finParams.angle) * translation(:);
-
-                fin = rocketPkg.Fin("fin", finParams, flightConParams);
-                obj.fins = [obj.fins, fin];
+                numFins = finParams.numFins;
+    
+                for jj=1:numFins - 1
+				    % Calculate angle for current fin
+                    finParams.angle = (360 / numFins) * jj;
+				    finParams.translation = Utils.finDcm(0, finParams.angle) * translation(:);
+    
+                    fin = rocketPkg.Fin(name, finParams, flightConParams);
+                    obj.fins = [obj.fins, fin];
+                end
             end
+
+            % Get number of fins
+            obj.numFins = length(obj.fins);
+            
+            % Get number of movable fins
+            numMovableFins = 0;
+            for ii=1:obj.numFins
+                if obj.fins(ii).finParams.movable == true
+                    numMovableFins = numMovableFins + 1;
+                    obj.numMovableIndex = [obj.numMovableIndex, ii];
+                end
+            end
+            obj.numMovableFins = numMovableFins;
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, currentCg, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, disturbances)
             % Calculates the total aerodynamic forces and moments in the body frame
 			fB = [0, 0, 0].';
 			mB = [0, 0, 0].';
 
 			% Sum contributions from all individual fins
-			for ii=1:obj.numFins
-				[fBFin, mBFin] = obj.fins(ii).getForcesMoments(state, currentCg, disturbances);
+			for ii=1:length(obj.fins)
+                fin = obj.fins(ii);
+                deflection = 0;
+                if ismember(ii, obj.numMovableIndex)
+                    idx = ii == obj.numMovableIndex;
+                    deflection = deflections(idx);
+                end
+
+				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, disturbances);
 				fB = fB + fBFin;
 				mB = mB + mBFin;
 			end
@@ -52,72 +79,77 @@ classdef RocketFins < rocketPkg.DatcomManager
 
         function computeBuildup(obj)
 			% Generates the DATCOM input file, runs the executable, and loads the data
+            
+            for ii=1:length(obj.finParamsArr)
+                finParams = obj.finParamsArr(ii);
+                
+			    % Geometry Setup
+                rootChord  = finParams.rootChord;     % [m] Chord length at the wing root
+                tipChord   = finParams.tipChord;      % [m] Chord length at the wing tip
+                semiSpan   = finParams.finSpan;       % [m] Span of one wing (from centerline to tip)
+                sweepDeg   = finParams.sweepDeg;      % [deg] Leading-edge sweep angle
+                name       = finParams.name;
+                xcg = 0;  % Keep at zero
+    
+                airfoilNaca = 'NACA 0012';
+                datcomFilename = [name, '.dat'];
+    
+                % Convert angles to radians for MATLAB's trig functions
+                sweepRad = deg2rad(sweepDeg);
+    
+			    % Calculate Reference Geometry
+                obj.calculateRefGeometry(rootChord, tipChord, semiSpan, sweepRad)
+    
+                % Wing span (for a single panel, this is just the semi-span)
+                blref = semiSpan;
+    
+                % Taper ratio (lambda)
+                taperRatio = tipChord / rootChord;
+    
+                % Wing area (area of one trapezoid)
+                sref = semiSpan * (rootChord + tipChord) / 2;
+    
+                % Mean Aerodynamic Chord (MAC)
+                cbarr = (2/3) * rootChord * (1 + taperRatio + taperRatio^2) / (1 + taperRatio);
+    
+			    % Open DATCOM file
+			    obj.openDatcom(datcomFilename)
+    
+			    % Adds flight conditions section into DATCOM file
+			    obj.addFlightCondition()
+    
+                % Write $OPTINS Namelist
+                fprintf(obj.fileID, ' $OPTINS SREF=%.4f, CBARR=%.4f, BLREF=%.4f$\n', sref, cbarr, blref);
+    
+                % Write $SYNTHS Namelist
+                fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', 0, xcg);
+    
+                % Write $WGPLNF Namelist
+                fprintf(obj.fileID, ' $WGPLNF CHRDR=%.4f, CHRDTP=%.4f, SSPN=%.4f, SSPNE=%.4f,\n', ...
+                    rootChord, tipChord, semiSpan, semiSpan);
+    
+			    % Write sweep angle and dihedral angle (should be zero)
+                fprintf(obj.fileID, ' SAVSI=%.4f, DHDADI=%.4f, TYPE=1.0$\n', sweepDeg, 0);
+    
+			    % Write NACA airfoil type (should be symetric
+			    fprintf(obj.fileID, 'NACA W 4 %s\n', airfoilNaca);
+    
+                % Close DATCOM file
+                obj.closeDatcom();
+    
+			    % Run the .exe DATCOM file
+			    obj.runDatcom(datcomFilename)
+    
+			    % Import DATCOM Data
+                aeroCell = datcomimport('datcom.out');
+                aero = aeroCell{1};
 
-			% Geometry Setup
-            rootChord  = obj.finParams.rootChord;     % [m] Chord length at the wing root
-            tipChord   = obj.finParams.tipChord;      % [m] Chord length at the wing tip
-            semiSpan   = obj.finParams.finSpan;       % [m] Span of one wing (from centerline to tip)
-            sweepDeg   = obj.finParams.sweepDeg;      % [deg] Leading-edge sweep angle
-			translation = obj.finParams.translation;    % [m] Refrance position in body frame
-            xcg = 0;  % Keep at zero
-
-            airfoilNaca = 'NACA 0012';
-            datcomFilename = 'FIN.dat';
-
-            % Convert angles to radians for MATLAB's trig functions
-            sweepRad = deg2rad(sweepDeg);
-
-			% Calculate Reference Geometry
-            obj.calculateRefGeometry(rootChord, tipChord, semiSpan, sweepRad)
-
-            % Wing span (for a single panel, this is just the semi-span)
-            blref = semiSpan;
-
-            % Taper ratio (lambda)
-            taperRatio = tipChord / rootChord;
-
-            % Wing area (area of one trapezoid)
-            sref = semiSpan * (rootChord + tipChord) / 2;
-
-            % Mean Aerodynamic Chord (MAC)
-            cbarr = (2/3) * rootChord * (1 + taperRatio + taperRatio^2) / (1 + taperRatio);
-
-			% Open DATCOM file
-			obj.openDatcom(datcomFilename)
-
-			% Adds flight conditions section into DATCOM file
-			obj.addFlightCondition()
-
-            % Write $OPTINS Namelist
-            fprintf(obj.fileID, ' $OPTINS SREF=%.4f, CBARR=%.4f, BLREF=%.4f$\n', sref, cbarr, blref);
-
-            % Write $SYNTHS Namelist
-            fprintf(obj.fileID, ' $SYNTHS XW=%.4f, XCG=%.4f$\n', 0, xcg);
-
-            % Write $WGPLNF Namelist
-            fprintf(obj.fileID, ' $WGPLNF CHRDR=%.4f, CHRDTP=%.4f, SSPN=%.4f, SSPNE=%.4f,\n', ...
-                rootChord, tipChord, semiSpan, semiSpan);
-
-			% Write sweep angle and dihedral angle (should be zero)
-            fprintf(obj.fileID, ' SAVSI=%.4f, DHDADI=%.4f, TYPE=1.0$\n', sweepDeg, 0);
-
-			% Write NACA airfoil type (should be symetric
-			fprintf(obj.fileID, 'NACA W 4 %s\n', airfoilNaca);
-
-            % Close DATCOM file
-            obj.closeDatcom();
-
-			% Run the .exe DATCOM file
-			obj.runDatcom(datcomFilename)
-
-			% Import DATCOM Data
-            aeroCell = datcomimport('datcom.out');
-            aero = aeroCell{1};
-
-			% Takes DATCOM aero data and adds it to each fin object
-            for ii=1:length(obj.fins)
-                obj.fins(ii).aero = aero;
-				obj.fins(ii).buildInterps(aero);
+                for jj=1:length(obj.fins)
+                    if isequal(obj.fins(jj).name, finParams.name)
+                        obj.fins(jj).aero = aero;
+                        obj.fins(jj).buildInterps(aero);
+                    end
+                end
             end
 		end
 

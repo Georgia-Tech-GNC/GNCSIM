@@ -21,6 +21,8 @@ runDATCOM(rocketDynamics);
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints); 
 
+%rocketDynamics.draw()
+
 %% Run Flight
 log = flight.runSim(log);
 log.trim();
@@ -30,8 +32,8 @@ analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
 % analysis.generateAllEstimatePlots();
 
-datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
-datcomAnalysis.drawForcesAndMoments([0, 12])
+%datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
+%datcomAnalysis.drawForcesAndMoments([0, 12])
 
 
 %% Functions
@@ -54,23 +56,38 @@ function rocketDyn = setupRocket(controller)
     totalLength = bodyParams.bodyLength + bodyParams.noseLength;
 	bodyParams.translation = [0, 0, 0];
 	bodyParams.cgXWet = rocketParams.cgXWet;
+
+    finTabLength = 0.05;
 	
-    % Create Fins
-    finParams.numFins = 4;  % []
-    finParams.rootChord = 0.203;  % [m]
-    finParams.tipChord = 0.17;  % [m]
-    finParams.finSpan = 0.144;  % [m]
-	finParams.sweepDeg = 12.9;  % [deg]
+    % Create Static Fins
+    finParamsStatic.numFins = 4;  % []
+    finParamsStatic.rootChord = 0.203 - finTabLength;  % [m]
+    finParamsStatic.tipChord = 0.17 - finTabLength;  % [m]
+    finParamsStatic.finSpan = 0.144;  % [m]
+	finParamsStatic.sweepDeg = 12.9;  % [deg]
+    finParamsStatic.movable = true;
+    finParamsStatic.name = 'STATIC_FIN';
+
+    finParamsTabs.numFins = 4;
+    finParamsTabs.rootChord = finTabLength;  % [m]
+    finParamsTabs.tipChord = finTabLength;  % [m]
+    finParamsTabs.finSpan = 0.144;  % [m]
+	finParamsTabs.sweepDeg = 0.0;  % [deg]
+    finParamsTabs.movable = true;
+    finParamsTabs.name = 'DYNAMIC_FIN';
 
     flightConParams.machNumbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
     flightConParams.altitudes = [0, 5000, 10000];       % Array of altitudes in feet
     flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
 
     % get the distance along body
-    xFinRef = totalLength - finParams.rootChord;  % [m]
+    xFinRef = totalLength - finParamsStatic.rootChord;  % [m]
 
     % set location of where to put fins
-    finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
+    finParamsStatic.translation = [xFinRef-finTabLength, bodyParams.rocketDiameter / 2, 0];  % [m]
+    finParamsTabs.translation = [xFinRef+finParamsStatic.rootChord-finTabLength, bodyParams.rocketDiameter / 2, 0];  % [m]
+
+    finParamsArr = [finParamsStatic];
 
     % Motor
     motorParams.burnTime = 12.0;
@@ -82,7 +99,7 @@ function rocketDyn = setupRocket(controller)
 
     % Create rocket dynamics object
     body = rocketPkg.RocketBody(bodyParams, flightConParams);
-    fins = rocketPkg.RocketFins(finParams, flightConParams);
+    fins = rocketPkg.RocketFins(finParamsArr, flightConParams);
 
 	aerodynamics = [];
 
@@ -183,7 +200,7 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
 
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [0, 0, 0];
+    vel0 = [20, 1, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';

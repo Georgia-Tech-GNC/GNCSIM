@@ -200,7 +200,7 @@ classdef Analysis < handle
                 quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
                 quat_rotated = quat * quat_y90;
 
-                eul = rad2deg(quat2eul(quat_rotated, 'ZYX'));
+                eul = rad2deg(quat2eul(quat_rotated, 'XYZ'));
                 plot(time, eul, 'LineWidth', 2)
             end
 

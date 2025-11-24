@@ -1,10 +1,10 @@
 classdef Fin < rocketPkg.DatcomManager
 	% FIN Represents an aerodynamic fin component on a rocket or aircraft
+    % Main Aurther
 
 	properties
 		finParams		% Structure containing geometric and placement parameters for this fin
         name			% String identifier for the fin (e.g., 'fin_1', 'fin_2', etc.)
-					% DATCOM aerodynamic data
 	end
 
 	methods
@@ -16,7 +16,7 @@ classdef Fin < rocketPkg.DatcomManager
             obj.finParams = finParams;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, currentCg, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, deflection, currentCg, disturbances)
 
            % Rotation from inertial to body using quaternion
            q = state(8:11);
@@ -24,14 +24,15 @@ classdef Fin < rocketPkg.DatcomManager
 
            % Body frame velocity
            vB = state(5:7);
-
-           % vW = cBI * disturbances.wind
+            
+           % Convert wind from inertial to body
            vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
-
+            
+           % Add componet velocity and wind velocity
            vB = vB + vW;
 
            % Rotation from body frame to component (fin) frame
-		   cCB = Utils.finDcm(0, obj.finParams.angle);
+		   cCB = Utils.finDcm(deflection, obj.finParams.angle);
 
            % Component frame velocity and ang vel
            wB = state(12:14);
@@ -44,8 +45,8 @@ classdef Fin < rocketPkg.DatcomManager
            % Converting back to body frame
            cBC = cCB';
            fB = cBC*fC;
-           mBRoss = cross(rCb, fB);
-           mB = cBC*mC + mBRoss(:);
+           mBCoss = cross(rCb, fB);
+           mB = cBC*mC + mBCoss(:);
 		end
 	end
 end
