@@ -27,8 +27,7 @@ classdef Fin < rocketPkg.DatcomManager
            % Body frame velocity
            vB = state(5:7);
 
-           % vW = cBI * disturbances.wind
-           vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
+           vW = cBI * disturbances.wind; % Wind velocity (0 for now)
 
            vB = vB + vW;
 

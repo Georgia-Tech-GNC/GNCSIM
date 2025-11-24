@@ -1,6 +1,7 @@
 % Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
 %               David Reynolds (dreynolds45@gatech.edu)
 %               Kandarp Vadia (kvadia3@gatech.edu)
+%               Aditya Swami (aswami8@gatech.edu)
 
 classdef RocketDynamics < handle
     properties
@@ -252,9 +253,6 @@ classdef RocketDynamics < handle
                 reachedApogee = false;
             end
         end
-
-
-
     end
 end
 

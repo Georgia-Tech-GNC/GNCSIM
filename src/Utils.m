@@ -14,7 +14,7 @@ classdef Utils
             %
             % Output:
             %   nextState - State vector after one RK4 step
-            
+
             k1 = f(state);
             k2 = f(state + (k1)*dt/2);
             k3 = f(state + (k2)*dt/2);
@@ -231,6 +231,17 @@ classdef Utils
                 % Central difference
                 J(:, i) = (f_plus - f_minus) / (2 * h(i));
             end
+        end
+
+        function quatDot = quatDerivative(quat, omega)
+            mat_omega = [
+                0, -omega(1), -omega(2), -omega(3);
+                omega(1), 0, omega(3), -omega(2);
+                omega(2), -omega(3), 0, omega(1);
+                omega(3), omega(2), -omega(1), 0
+            ];
+
+            quatDot = 0.5 * mat_omega * quat;
         end
     end
 end

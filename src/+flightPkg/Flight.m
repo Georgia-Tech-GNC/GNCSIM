@@ -1,4 +1,5 @@
 % Main Authors: David Reynolds (dreynolds45@gatech.edu)
+%               Karsten Caillet (kcaillet3@gatech.edu)
 
 classdef Flight < handle
     properties
@@ -68,9 +69,9 @@ classdef Flight < handle
                 log = []  % Optional, defaults to empty
             end
 
-            altitude = state(4);
-            %disturbances.wind = obj.environment.getWindspeed(altitude);
-            disturbances.wind = zeros(3);
+            % altitude = state(4);
+            % disturbances.wind = obj.environment.getWindspeed(altitude);
+            disturbances.wind = zeros(3, 1);
 
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
@@ -93,7 +94,7 @@ classdef Flight < handle
             
             xDot = obj.flatEarth_EOM(state, fB, mB + control(:));
 
-			if ~isempty(log)
+		    if ~isempty(log)
                 log.add(obj.currentTime, 'statedots', xDot);
             end
         end
@@ -103,14 +104,6 @@ classdef Flight < handle
             vel = state(5:7);
             quat = state(8:11);
             omega = state(12:14);
-
-            mat_omega = [
-                0, -omega(1), -omega(2), -omega(3);
-                omega(1), 0, omega(3), -omega(2);
-                omega(2), -omega(3), 0, omega(1);
-                omega(3), omega(2), -omega(1), 0
-            ];
-
 
             % preventing mass to go below massDry
             mass = max(mass, obj.rocketDynamics.massDry);
@@ -133,7 +126,7 @@ classdef Flight < handle
             massDot = obj.rocketDynamics.getMDot(obj.currentTime);
             posDot = cIB * vel;
             velDot = fB / mass - cross(omega, vel);
-            quatDot = 0.5 * mat_omega * quat;
+            quatDot = Utils.quatDerivative(quat, omega);
             omegaDot = Ib\(mB - cross(omega, Ib*omega));
             stateDot = [massDot; posDot; velDot; quatDot; omegaDot];
         end
