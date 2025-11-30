@@ -41,10 +41,9 @@ classdef Flight < handle
             % Need setters for this
             obj.currentTime = 0.0;
             x = obj.x0(:);
-            %u = [0; -1; 0; -1];  % positive yaw
-            %u = [1; 0; -1; 0];  % positive pitch
-            %u = [0; 1; 0; -1];
-            u = [0; 0; 0; 0];
+            %u = [0; -1; 0; -1];  % positive roll (correct)
+			%u = [0; 1; 0; -1];  % positive yaw (correct)
+            u = 2 * [-1; 0; 1; 0];  % positive pitch (correct)
 
             log.initializeTimestep(obj.currentTime);
             log.add(obj.currentTime, 'states', x);
@@ -91,7 +90,7 @@ classdef Flight < handle
             %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, deflections, disturbances, obj.currentTime, log)
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, deflections, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
         end
         

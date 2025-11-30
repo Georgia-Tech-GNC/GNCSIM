@@ -186,12 +186,6 @@ classdef Utils
 			% Convert the angles from degrees to radians
 			delta = deg2rad(deltaDeg);
 			theta = deg2rad(thetaDeg);
-
-            R_z_delta = [
-                cos(delta),   -sin(delta),   0;
-                sin(delta),    cos(delta),   0;
-                0,             0,            1
-            ];  
 			
 			% Define the first rotation matrix (Rotation about the Y-axis by delta: R_y(delta))
 			R_y_delta = [

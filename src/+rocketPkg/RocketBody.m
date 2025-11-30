@@ -40,7 +40,7 @@ classdef RocketBody < rocketPkg.DatcomManager
 			vC = (vB + cross(wB, rCb));
 
 			% Compute aerodynamic forces and moments using DATCOM data
-			[fB, mC] = obj.getForcesMomentsDatcom(state, vC);
+			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC);
 
 			mBRoss = cross(rCb, fB);
             mB = mC + mBRoss(:);

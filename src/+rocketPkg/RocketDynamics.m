@@ -103,7 +103,7 @@ classdef RocketDynamics < handle
 
             if isempty(obj.aerodynamics)
                  [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, deflections, currentCg, disturbances);
-                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances)
+                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
                  fBAero = fBFins + fBBody;
                  mBAero = mBFins + mBBody;
             else

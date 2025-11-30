@@ -65,7 +65,7 @@ function rocketDyn = setupRocket(controller)
     finParamsStatic.tipChord = 0.17 - finTabLength;  % [m]
     finParamsStatic.finSpan = 0.144;  % [m]
 	finParamsStatic.sweepDeg = 12.9;  % [deg]
-    finParamsStatic.movable = true;
+    finParamsStatic.movable = false;
     finParamsStatic.name = 'STATIC_FIN';
 
     finParamsTabs.numFins = 4;
@@ -87,7 +87,7 @@ function rocketDyn = setupRocket(controller)
     finParamsStatic.translation = [xFinRef-finTabLength, bodyParams.rocketDiameter / 2, 0];  % [m]
     finParamsTabs.translation = [xFinRef+finParamsStatic.rootChord-finTabLength, bodyParams.rocketDiameter / 2, 0];  % [m]
 
-    finParamsArr = [finParamsStatic];
+    finParamsArr = [finParamsTabs, finParamsStatic];
 
     % Motor
     motorParams.burnTime = 12.0;
@@ -195,12 +195,12 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     % Flight
-    flightParams.totalTime = 22;  % length of simulation [s]
+    flightParams.totalTime = 35;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [20, 1, 0];
+    vel0 = [20, 0.01, -0.01];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
