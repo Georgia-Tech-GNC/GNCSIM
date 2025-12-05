@@ -17,6 +17,7 @@ classdef RocketDynamics < handle
         cgDry (1,1) double {mustBePositive} = 1
 
         useThrust = true
+        allocationMatrix
 	end
 
 	methods
@@ -48,6 +49,15 @@ classdef RocketDynamics < handle
 
             obj.controller = controller;
             obj.aerodynamics = aerodynamics;
+            
+            % This is a mapping from pitch, yaw and roll to the four fin
+            % deflections
+            obj.allocationMatrix = [-1, 0, 1, 0;
+                                    0, 1, 0, -1;
+                                    0, -1, 0, -1].';
+            %u = [0; -1; 0; -1];  % positive roll (correct)
+			%u = [0; 1; 0; -1];  % positive yaw (correct)
+            %u = [-1; 0; 1; 0];  % positive pitch (correct)
         end
 
         function currentThrust = getThrust(obj, t)

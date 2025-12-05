@@ -6,12 +6,12 @@ classdef RocketFins < rocketPkg.DatcomManager
 	% to facilitate DATCOM analysis.
 
 	properties
-		finParamsArr		% Array of structs containing fin geometry parameters
-		fins			    % Array of individual rocket_pkg.Fin objects
-		finVertices		    % (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
-        numFins
-        numMovableFins
-        numMovableIndex = []
+		finParamsArr		    % Array of structs containing fin geometry parameters
+		fins			        % Array of individual rocket_pkg.Fin objects
+		finVertices		        % (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
+        numFins                 % Number of Fins in set
+        numMovableFins          % Number of Fins in set that can deflect
+        numMovableIndex = []    % The index of which fins can deflect
     end
 
 	methods
@@ -20,7 +20,8 @@ classdef RocketFins < rocketPkg.DatcomManager
 			% Call superclass constructor (required for inheritance)
 			obj = obj@rocketPkg.DatcomManager(flightConParams)
 			obj.finParamsArr = finParamsArr;
-
+            
+            % Loop over each fin set
 			for ii=1:length(finParamsArr)
                 finParams = finParamsArr(ii);
                 translation = finParams.translation;
@@ -66,11 +67,16 @@ classdef RocketFins < rocketPkg.DatcomManager
 			for ii=1:length(obj.fins)
                 fin = obj.fins(ii);
                 deflection = 0;
+
+                % if the fin is movable then use the defelction in the array
                 if ismember(ii, obj.numMovableIndex)
                     idx = ii == obj.numMovableIndex;
                     deflection = deflections(idx);
                 end
-
+                
+                % Compute the current fin forces and moments based on
+                % state, current deflection, cg location and any
+                % disterbances
 				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, disturbances);
 				fB = fB + fBFin;
 				mB = mB + mBFin;

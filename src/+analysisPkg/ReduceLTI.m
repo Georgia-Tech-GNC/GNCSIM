@@ -9,29 +9,60 @@ classdef ReduceLTI < handle
             obj.flight = flight;
         end
 
-        function sys = generateROM(obj, xStar)
-            uStar = [0 0 0].';
-            [A, B] = obj.calculateROM(xStar(:), uStar);
+        function [sysPitch, sysRoll] = generateROM(obj, xStar)
+            [A3, B3] = obj.calculateROMpitch(xStar(:), 0);
             C = [0 0 1];
             D = 0;
             
-            sys = ss(A, B, C, D);
+            sysPitch = ss(A3, B3, C, D);
+
+            [A2, B2] = obj.calculateROMroll(xStar(:), 0);
+            C = [0 1];
+            D = 0;
+            
+            sysRoll = ss(A2, B2, C, D);
         end
 
-        function [A3, B3] = calculateROM(obj, xStar, uStar)
-            f = @(x, u) obj.flight.rocketModelDeflection(x, u);
-            fx = @(x) f(x, uStar);
+        function [fx, fu] = pitchDeflection(obj, deflection)
+            f = @(x, deflection) obj.flight.rocketModel(x, [0, 0, deflection]);
+            fx = @(x) f(x, deflection);
             fu = @(u) f(xStar, u);
-            A = Utils.numericalJacobian(fx, xStar);
-            B = Utils.numericalJacobian(fu, uStar);
+        end
+
+        function rollDeflection(obj)
             
-            g = @(x) obj.reduce(x);
+        end
+
+        function [A3, B3] = calculateROMpitch(obj, xStar, deflection)
+            f = @(x, u) obj.flight.rocketModel(x, u);
+            fx = @(x) f(x, [0, 0, deflection].');
+            fu = @(u_in) f(xStar, [u_in, 0, 0].');
+            A = Utils.numericalJacobian(fx, xStar);
+            B = Utils.numericalJacobian(fu, deflection);
+            
+            g = @(x) obj.pitchReduce(x);
 
             Jg = Utils.numericalJacobian(g, xStar);
             T = pinv(Jg);
 
             A3 = Jg*A*T;
             B3 = Jg*B;
+        end
+
+        function [A2, B2] = calculateROMroll(obj, xStar, deflection)
+            f = @(x, u) obj.flight.rocketModel(x, u);
+            fx = @(x) f(x, [0, 0, deflection].');
+            fu = @(u_in) f(xStar, [0, 0, u_in].');
+            A = Utils.numericalJacobian(fx, xStar);
+            B = Utils.numericalJacobian(fu, deflection);
+            
+            g = @(x) obj.rollReduce(x);
+
+            Jg = Utils.numericalJacobian(g, xStar);
+            T = pinv(Jg);
+
+            A2 = Jg*A*T;
+            B2 = Jg*B;
         end
 
         function drawROM(obj, sys)
@@ -112,7 +143,7 @@ classdef ReduceLTI < handle
             grid on;
         end
 
-        function x3 = reduce(obj, x14)
+        function x3 = pitchReduce(obj, x14)
             u = x14(5);
             v = x14(6);
             w = x14(7);
@@ -132,6 +163,20 @@ classdef ReduceLTI < handle
             q = q_body(2); % body y-axis rate
         
             x3 = [alpha; q; theta];
+        end
+
+        function x2 = rollReduce(obj, x14)
+            % roll from quaternion
+            qw = x14(8);
+            qx = x14(9);
+            qy = x14(10);
+            qz = x14(11);
+            phi = atan2(2*(qw*qx + qy*qz), 1 - 2*(qx^2 + qy^2));
+            
+            % roll rate
+            p = x14(12); 
+
+            x2 = [phi; p];
         end
     end
 end

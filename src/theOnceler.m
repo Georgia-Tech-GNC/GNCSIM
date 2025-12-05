@@ -21,15 +21,20 @@ runDATCOM(rocketDynamics);
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints); 
 
-%rocketDynamics.draw()
-
 %% Run Flight
 log = flight.runSim(log);
 log.trim();
 
+lti = analysisPkg.ReduceLTI(flight);
+xStar = flight.x0;
+xStar(5:7) = [20, 0, 0].';
+xStar(12:14) = [0, 0, 0].';
+lti.generateROM(xStar);
+
+
 %% Analysis
-analysis = analysisPkg.Analysis(log);
-analysis.generateAllPlots();
+%analysis = analysisPkg.Analysis(log);
+%analysis.generateAllPlots();
 % analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
@@ -195,14 +200,14 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     % Flight
-    flightParams.totalTime = 35;  % length of simulation [s]
+    flightParams.totalTime = 22;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [20, 0.01, -0.01];
+    vel0 = [20, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
-    omega0 = [0, 0, 0];
+    omega0 = [0, 0.1, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 

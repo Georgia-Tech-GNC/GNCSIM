@@ -43,12 +43,18 @@ classdef Flight < handle
             x = obj.x0(:);
             %u = [0; -1; 0; -1];  % positive roll (correct)
 			%u = [0; 1; 0; -1];  % positive yaw (correct)
-            u = 2 * [-1; 0; 1; 0];  % positive pitch (correct)
-
+            %u = [-1; 0; 1; 0];  % positive pitch (correct)
+            u = [0; 0; 0];
+            
+            % Initialize logger time step
             log.initializeTimestep(obj.currentTime);
             log.add(obj.currentTime, 'states', x);
-
+            
+            % Get state estimate
             obj.currentStateEstimate = obj.navigation.getStateEstimate(x, zeros(14,1), obj.currentTime, log);
+            
+            %controlDeflections = obj.rocketDynamics.
+
             obj.currentXDot = obj.rocketModel(x, u, log); % thrust starts at t=0s
 
             log.add(obj.currentTime, 'statedots', obj.currentXDot);
@@ -78,23 +84,28 @@ classdef Flight < handle
             end
         end
 
-        function xDot = rocketModel(obj, state, deflections, log)
+        function xDot = rocketModel(obj, state, control, log)
             arguments
                 obj
                 state 
-                deflections
+                control  % array of 3 elements
                 log = []  % Optional, defaults to empty
             end
 
             altitude = state(4);
             %disturbances.wind = obj.environment.getWindspeed(altitude);
             disturbances.wind = zeros(3);
+            
+            % Mapping from control deflections (pitch, yaw, roll) to fin
+            % deflections (fin 1, 2, 3, 4)
+            deflections = obj.rocketDynamics.allocationMatrix * control;
 
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, deflections, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
         end
         
         % need to explain what this is
+        %{
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments
                 obj
@@ -115,6 +126,7 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'statedots', xDot);
             end
         end
+        %}
         
         function [stateDot] = flatEarth_EOM(obj, state, fB, mB)
             mass = state(1);

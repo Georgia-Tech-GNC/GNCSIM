@@ -8,8 +8,9 @@ classdef (Abstract) Controller < handle&Exportable
 
     methods (Abstract)
         % comments
-        [fB, mB] = getForcesMoments(state, disturbances, motorParams, CG, breakPoints, time);
-        gain = computeGain()
+        %[fB, mB] = getForcesMoments(state, disturbances, motorParams, CG, breakPoints, time);
+        %gain = computeGain()
+        control = computeControl(state)
     end
 
     methods 
