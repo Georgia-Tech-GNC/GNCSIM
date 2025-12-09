@@ -82,9 +82,6 @@ classdef BreakPoints < Handle
             step = 0.05;
             s_new = 0:step:1;
             s_new(end) = 1;
-
-            
-
         end
 
         function generateBreakPoints(obj)
@@ -104,7 +101,6 @@ classdef BreakPoints < Handle
             % TODO: Closed-loop stability analysis and classical controller
             % performance for each breakpoint (root locus, % overshoot,
             % settling time, rise time, peak time, etc)
-
         end
 
         function gain_scheduling_interpolated()

@@ -23,7 +23,6 @@ classdef Flight < handle
             obj.navigation = navigation;
             obj.flightParams = flightParams;
 
-
             obj.dt = obj.flightParams.dt;
             obj.x0 = obj.flightParams.x0;
             obj.totalTime = obj.flightParams.totalTime;
@@ -105,7 +104,7 @@ classdef Flight < handle
         end
         
         % need to explain what this is
-        %{
+        
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments
                 obj
@@ -113,20 +112,19 @@ classdef Flight < handle
 				control
                 log = []  % Optional, defaults to empty
             end
-            % Control: [Mx, My, Mz]
+
             altitude = state(4);
             disturbances.wind = zeros(3);
             obj.currentTime = 0;
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, control, disturbances, obj.currentTime, log);
             
-            xDot = obj.flatEarth_EOM(state, fB, mB + control(:));
+            xDot = obj.flatEarth_EOM(state, fB, mB);
 
 			if ~isempty(log)
                 log.add(obj.currentTime, 'statedots', xDot);
             end
         end
-        %}
         
         function [stateDot] = flatEarth_EOM(obj, state, fB, mB)
             mass = state(1);

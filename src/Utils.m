@@ -221,6 +221,7 @@ classdef Utils
             n = length(x0);
             m = length(f0);
             J = zeros(m, n);
+			eps = 1e-7;
         
             % Finite difference step size
             h = sqrt(eps) * max(abs(x0), 1);

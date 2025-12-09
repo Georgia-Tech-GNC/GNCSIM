@@ -16,7 +16,7 @@ breakPoints = -1;
 
 % Rocket Dynamics
 rocketDynamics = setupRocket(controller); 
-runDATCOM(rocketDynamics);
+rocketDynamics.computeBuildup()
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints); 
@@ -29,7 +29,8 @@ lti = analysisPkg.ReduceLTI(flight);
 xStar = flight.x0;
 xStar(5:7) = [20, 0, 0].';
 xStar(12:14) = [0, 0, 0].';
-lti.generateROM(xStar);
+%lti.generateROM(xStar);
+lti.performComparison(log)
 
 
 %% Analysis
@@ -112,16 +113,6 @@ function rocketDyn = setupRocket(controller)
 end
 
 
-function runDATCOM(rocketDyn)
-    % Run DATCOM and compute aerodynamics
-    % Note that you can also load and save lookup tables
-    rocketDyn.computeBuildup()
-    %rocketDyn.drawBuildup()
-    %rocketDyn.saveBuildup()
-    %rocketDyn.saveBuildup_figs()
-    %rocketDyn.loadBuildup_figs()
-end
-
 function environment = setupEnvironment()
     %environment_params.x1 = -1;
     %environment_params.x2 = -1;
@@ -200,7 +191,7 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     % Flight
-    flightParams.totalTime = 22;  % length of simulation [s]
+    flightParams.totalTime = 15;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
 
     mass0 = rocketDynamics.massWet;
