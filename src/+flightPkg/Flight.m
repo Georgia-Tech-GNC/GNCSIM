@@ -15,7 +15,7 @@ classdef Flight < handle
 
         rocketInitialState
 
-        useGravity = true
+        useGravity = false
     end
     methods
         function obj = Flight(rocketDynamics, environment, breakPoints, navigation, flightParams)
@@ -33,7 +33,7 @@ classdef Flight < handle
 
         function log = runSim(obj, log)
             obj.currentTime = 0.0;
-            x = obj.x0(:);
+            rocketState = obj.rocketInitialState(:);
             %u = [0; -1; 0; -1];  % positive roll (correct)
 			%u = [0; 1; 0; -1];  % positive yaw (correct)
             %u = [-1; 0; 1; 0];  % positive pitch (correct)
@@ -41,41 +41,41 @@ classdef Flight < handle
             
             % Initialize logger time step
             log.initializeTimestep(obj.currentTime);
-            log.add(obj.currentTime, 'states', x);
             
             % Get state estimate
-            obj.currentStateEstimate = obj.navigation.getStateEstimate(x, zeros(14,1), obj.currentTime, log);
+            rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
             
             %controlDeflections = obj.rocketDynamics.
 
-            obj.currentXDot = obj.rocketModel(x, u, log); % thrust starts at t=0s
-
+           rocketStateDot = obj.rocketModel(rocketState, u, log); % thrust starts at t=0s
 
             log.add(obj.currentTime, 'states', rocketState);
             log.add(obj.currentTime, 'statedots', rocketStateDot);
 			      log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             for ii = 1:log.maxSteps - 1
-                k1 = obj.currentXDot;
-                k2 = obj.rocketModel(x + (k1)*obj.dt/2, u);
-                k3 = obj.rocketModel(x + (k2)*obj.dt/2, u);
-                k4 = obj.rocketModel(x + (k3)*obj.dt, u);
+                %k1 = obj.currentXDot;
+                %k2 = obj.rocketModel(x + (k1)*obj.dt/2, u);
+                %k3 = obj.rocketModel(x + (k2)*obj.dt/2, u);
+                %k4 = obj.rocketModel(x + (k3)*obj.dt, u);
 
                 obj.currentTime = ii * obj.dt;
                 log.initializeTimestep(obj.currentTime);
-
-                rocketState = Utils.RK4(@obj.rocketModel, rocketState, obj.dt);
+                
+                rocketDyn = @(x) obj.rocketModel(x, u);
+                rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
                 quat = rocketState(8:11);
                 quatNorm = Utils.normalizeQuat(quat);
                 rocketState(8:11) = quatNorm;  
 
-                rocketStateDot = obj.rocketModel(rocketState, log);
+                rocketStateDot = obj.rocketModel(rocketState, u, log);
                 rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
-                obj.currentXDot = obj.rocketModel(x, u, log);
-                obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime, log);
-                log.add(obj.currentTime, 'statedots', obj.currentXDot);
-                log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
+                %rocketStateDot = obj.rocketModel(x, u, log);
+                %obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime, log);
+                log.add(obj.currentTime, 'states', rocketState);
+                log.add(obj.currentTime, 'statedots', rocketStateDot);
+                log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             end
         end
