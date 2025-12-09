@@ -3,34 +3,55 @@
 classdef BreakPoints < Handle
 
     properties
-        % Fill in properties as needed
-        breakPointList;
+        rocketDynamics
+        numBreakPoints
+        maxSpeed
+        
+        nominalPos = [0, 0, 0].';
+        %nominalVel = [up, yaw, pitch]
+        nominalQuat = Utils.eulerToQuat([0, -90, 0]).';
+        nominalOmega = [0, 0, 0].';
 
-        % Number of states and controls 
-        nx;
-        nu;
-
-        % Trajectory with respect to time
-        x_optimal_time;
-        u_optimal_time;
-        optimal_time;
-
-        % Trajectory with respect to accumulated velocity
-        x_optimal_av;
-        u_optimal_av;
-        optimal_av;
-
-        N_av;
     end
 
     methods
 
-        function obj = BreakPoints()
-            % Default test trajectory
-            compute_dumb_trajectory();
+        function obj = BreakPoints(rocketDynamics, numBreakPoints, maxSpeed)
+            obj.rocketDynamics = rocketDynamics;
+            obj.numBreakPoints = numBreakPoints;
+            obj.maxSpeed = maxSpeed;
+            %compute_dumb_trajectory();
 
         end
-    
+
+        function x = xBar(obj, zx, speed)
+            mass = obj.rocketDynamics.rocketParams.massWet;
+            pos = obj.nominalPos;
+            vel = [speed*cos(zx), 0, speed*sin(zx)].';
+            quat = obj.nominalQuat;
+            omega = obj.nominalOmega;
+            x = [mass; pos; vel; quat; omega];
+        end
+
+        function u = uBar(obj, zu)
+            u = [zu, 0, 0].';
+        end
+
+
+
+        function generateBreakPoints(obj, rocketDynamics)
+            
+            
+            
+            % TODO: Break trajectory based on accumulated velocity or
+            % altitude and corresponding hyper parameters. Compute A and B
+            % (x_dot = Ax + Bu)
+            % for each break point
+            
+        end
+        
+        % Depercated at the moment (Sorry Hridai)
+        %{
         function compute_optimal_trajectory(obj, rocketDynamics)
             % TODO: Port Danil's work here 
         end
@@ -86,14 +107,8 @@ classdef BreakPoints < Handle
             s_new(end) = 1;
         end
 
-        function generateBreakPoints(obj)
-            % TODO: Break trajectory based on accumulated velocity or
-            % altitude and corresponding hyper parameters. Compute A and B
-            % (x_dot = Ax + Bu)
-            % for each break point
-            
-        end
-
+        
+        
         function compute_gains(obj, controller)
             % TODO: Call controller for each breakPoint and compute gains
             
@@ -108,6 +123,26 @@ classdef BreakPoints < Handle
         function gain_scheduling_interpolated()
             
         end
+
+        % Fill in properties as needed
+        breakPointList;
+
+        % Number of states and controls 
+        nx;
+        nu;
+
+        % Trajectory with respect to time
+        x_optimal_time;
+        u_optimal_time;
+        optimal_time;
+
+        % Trajectory with respect to accumulated velocity
+        x_optimal_av;
+        u_optimal_av;
+        optimal_av;
+
+        N_av;
+        %}
 
     end
 
