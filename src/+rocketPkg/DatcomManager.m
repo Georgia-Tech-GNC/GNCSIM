@@ -113,13 +113,55 @@ classdef DatcomManager < handle
             end
 		end
 
-        function [fC, mC] = getForcesMomentsDatcom(obj, state, vC)
+		function [fC, mC] = getForcesMomentsDatcomBody(obj, state, vC)
+			% Aerodynamic coefficients
+           	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
+           	alpha = 343; % Speed of sound approximation (TODO: Replace with better approximation)
+           	M = vA/alpha;
+           	AoAz = atan2d(vC(3), vC(1));  % main AoA
+			AoAy = atan2d(vC(2), vC(1));  % AoA for y axis (very similar to sideslip)
+
+			% compute total angle of attack
+			totalAoA = acosd(cosd(AoAz) * cosd(AoAy));
+
+			theta = atan2(vC(2), vC(3) + 1e-6);
+			
+			Rx = [
+				1,           0,          0;
+				0,           cos(theta), sin(theta);
+				0,           -sin(theta), cos(theta)
+			];
+			
+			% calculate coeffients in wind frame
+			pos = state(2:4);
+           	altitude = pos(3);  % z componet of position
+			[ca, cm, cn] = obj.aeroInterp(M, totalAoA, altitude);
+	
+           	S = obj.aero.sref;
+           	c = obj.aero.cbar;
+			% TODO change rho (density) to function of height
+			rho = 1.225;
+           	q = 0.5 * vA^2 * rho;
+
+			% Forces + Moments in component frame
+           	N = cn*q*S;
+           	A = ca*q*S;
+           	M = cm*q*c;
+           	fW = [-A; 0; -N];
+		   	mW = [0; M; 0];
+			
+			% Rotate forces and moments back to componet frame
+			fC = Rx * fW;
+			mC = Rx * mW;
+		end
+
+		function [fC, mC] = getForcesMomentsDatcom(obj, state, vC)
 
 			% Aerodynamic coefficients
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
            	alpha = 343; % Speed of sound approximation (TODO: Replace with better approximation)
            	M = vA/alpha;
-           	AoA = atan2d(vC(3),vC(1));
+           	AoA = atan2d(vC(3),vC(1));  % main AoA
 
            	pos = state(2:4);
            	altitude = pos(3);  % z componet of position

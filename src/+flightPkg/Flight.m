@@ -25,7 +25,6 @@ classdef Flight < handle
             obj.navigation = navigation;
             obj.flightParams = flightParams;
 
-
             obj.dt = obj.flightParams.dt;
             obj.rocketInitialState = obj.flightParams.x0;
             obj.totalTime = obj.flightParams.totalTime;
@@ -34,17 +33,34 @@ classdef Flight < handle
 
         function log = runSim(obj, log)
             obj.currentTime = 0.0;
+            x = obj.x0(:);
+            %u = [0; -1; 0; -1];  % positive roll (correct)
+			%u = [0; 1; 0; -1];  % positive yaw (correct)
+            %u = [-1; 0; 1; 0];  % positive pitch (correct)
+            u = [0; 0; 0];
+            
+            % Initialize logger time step
             log.initializeTimestep(obj.currentTime);
+            log.add(obj.currentTime, 'states', x);
+            
+            % Get state estimate
+            obj.currentStateEstimate = obj.navigation.getStateEstimate(x, zeros(14,1), obj.currentTime, log);
+            
+            %controlDeflections = obj.rocketDynamics.
 
-            rocketState = obj.rocketInitialState(:);
-            rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
-            rocketStateDot = obj.rocketModel(rocketState, log); % thrust starts at t=0s
+            obj.currentXDot = obj.rocketModel(x, u, log); % thrust starts at t=0s
+
 
             log.add(obj.currentTime, 'states', rocketState);
             log.add(obj.currentTime, 'statedots', rocketStateDot);
-			log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+			      log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             for ii = 1:log.maxSteps - 1
+                k1 = obj.currentXDot;
+                k2 = obj.rocketModel(x + (k1)*obj.dt/2, u);
+                k3 = obj.rocketModel(x + (k2)*obj.dt/2, u);
+                k4 = obj.rocketModel(x + (k3)*obj.dt, u);
+
                 obj.currentTime = ii * obj.dt;
                 log.initializeTimestep(obj.currentTime);
 
@@ -56,28 +72,38 @@ classdef Flight < handle
                 rocketStateDot = obj.rocketModel(rocketState, log);
                 rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
-                log.add(obj.currentTime, 'states', rocketState);
-                log.add(obj.currentTime, 'statedots', rocketStateDot);
-                log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+                obj.currentXDot = obj.rocketModel(x, u, log);
+                obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime, log);
+                log.add(obj.currentTime, 'statedots', obj.currentXDot);
+                log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
+
             end
         end
 
-        function xDot = rocketModel(obj, state, log)
+        function xDot = rocketModel(obj, state, control, log)
             arguments
                 obj
                 state 
+                control  % array of 3 elements
                 log = []  % Optional, defaults to empty
             end
 
-            % altitude = state(4);
-            % disturbances.wind = obj.environment.getWindspeed(altitude);
-            disturbances.wind = zeros(3, 1);
+            altitude = state(4);
+            %disturbances.wind = obj.environment.getWindspeed(altitude);
+            disturbances.wind = zeros(3);
+            
+            % Mapping from control deflections (pitch, yaw, roll) to fin
+            % deflections (fin 1, 2, 3, 4)
+            deflections = obj.rocketDynamics.allocationMatrix * control;
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
+
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, deflections, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
         end
+        
+        % need to explain what this is
+        
 
-        % === TEMPORARY ===
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments
                 obj
@@ -85,14 +111,14 @@ classdef Flight < handle
 				control
                 log = []  % Optional, defaults to empty
             end
-            % Control: [Mx, My, Mz]
+
             altitude = state(4);
             disturbances.wind = zeros(3);
             obj.currentTime = 0;
 
-            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, disturbances, obj.currentTime, log);
+            [fB, mB] = obj.rocketDynamics.getForcesMoments(state, control, disturbances, obj.currentTime, log);
             
-            xDot = obj.flatEarth_EOM(state, fB, mB + control(:));
+            xDot = obj.flatEarth_EOM(state, fB, mB);
 
 		    if ~isempty(log)
                 log.add(obj.currentTime, 'statedots', xDot);

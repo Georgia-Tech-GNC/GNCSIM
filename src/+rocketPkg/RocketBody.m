@@ -28,19 +28,24 @@ classdef RocketBody < rocketPkg.DatcomManager
             % Body frame velocity
             vB = state(5:7);
 
-            vW = cBI * disturbances.wind; % Wind velocity (0 for now)
+            % vW = cBI * disturbances.wind
+            vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
+			
+			      % add wind velocity to body velocity
 
             vB = vB + vW;
-
+			
+			% get translation vector to center of mass from nose tip
 			rCb = -obj.bodyParams.translation(:);
 			
 			% Component frame velocity and ang vel
 			wB = state(12:14);
-
+			
+			% Componet velocity with angular rotation
 			vC = (vB + cross(wB, rCb));
 
 			% Compute aerodynamic forces and moments using DATCOM data
-			[fB, mC] = obj.getForcesMomentsDatcom(state, vC);
+			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC);
 
 			mBRoss = cross(rCb, fB);
             mB = mC + mBRoss(:);

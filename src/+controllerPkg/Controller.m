@@ -6,7 +6,10 @@ classdef (Abstract) Controller < handle
     end
 
     methods (Abstract)
-        [fB, mB] = getForcesMoments(state, disturbances, motorParams, CG, breakPoints, time);
-        gain = computeGain()
+        % comments
+        %[fB, mB] = getForcesMoments(state, disturbances, motorParams, CG, breakPoints, time);
+        %gain = computeGain()
+        control = computeControl(state)
+
     end
 end

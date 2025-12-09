@@ -1,62 +1,112 @@
 % Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef ReduceLTI < handle
+	% ReduceLTI  Class for generating and analyzing Reduced Order Models (ROM) 
+    % for Linear Time-Invariant (LTI) flight dynamics.
     properties
-        flight
+        flight		% Handle to the main flight/rocket physics model
     end
 
     methods
         function obj = ReduceLTI(flight)
             obj.flight = flight;
-        end
+		end
+		
+        function [sysPitch, sysRoll] = generateROM(obj, xStar)
+			% Generates LTI State-Space (ss) objects for Pitch and Roll channels
 
-        function sys = generateROM(obj, xStar)
-            uStar = [0 0 0].';
-            [A, B] = obj.calculateROM(xStar(:), uStar);
-            C = [0 0 1];
+			% Pitch Dynamics
+            [A3, B3] = obj.calculateROMpitch(xStar(:), 0);
+            C = [0 0 1];  % output is pitch (theta)
             D = 0;
-            
-            sys = ss(A, B, C, D);
-        end
+            sysPitch = ss(A3, B3, C, D);
+			
+			% Roll Dynamics
+            [A2, B2] = obj.calculateROMroll(xStar(:), 0);
+            C = [0 1];  % output is roll (phi)
+            D = 0;
+            sysRoll = ss(A2, B2, C, D);
+		end
 
-        function [A3, B3] = calculateROM(obj, xStar, uStar)
-            f = @(x, u) obj.flight.rocketModelDeflection(x, u);
-            fx = @(x) f(x, uStar);
-            fu = @(u) f(xStar, u);
+        function [A3, B3] = calculateROMpitch(obj, xStar, deflection)
+			% Linearizes full dynamics and projects them onto 3-state Pitch space
+			
+			% Define function handles for numerical differentiation
+            f = @(x, u) obj.flight.rocketModel(x, u);
+            fx = @(x) f(x, [0, 0, deflection].');
+            fu = @(u_in) f(xStar, [u_in, 0, 0].');
+
+			% Calculate Full Jacobians (14x14)
             A = Utils.numericalJacobian(fx, xStar);
-            B = Utils.numericalJacobian(fu, uStar);
+            B = Utils.numericalJacobian(fu, deflection);
             
-            g = @(x) obj.reduce(x);
-
+			% Project to Reduced Space (3x3)
+            g = @(x) obj.pitchReduce(x);
+			
+			% Reduction mapping matrix (3x14)
             Jg = Utils.numericalJacobian(g, xStar);
-            T = pinv(Jg);
 
+			% Pseudo-inverse for projection (14x3)
+            T = pinv(Jg);
+			
+			% Projected System Matrix
             A3 = Jg*A*T;
+
+			% Projected Control Matrix
             B3 = Jg*B;
         end
 
-        function drawROM(obj, sys)
-            x0 = [0; 0.1; 0];
+        function [A2, B2] = calculateROMroll(obj, xStar, deflection)
+			% Linearizes full dynamics and projects them onto 2-state Roll space
+			
+			% Define function handles for numerical differentiation
+            f = @(x, u) obj.flight.rocketModel(x, u);
+            fx = @(x) f(x, [0, 0, deflection].');
+            fu = @(u_in) f(xStar, [0, 0, u_in].');
+
+			% Calculate Full Jacobians (14x14)
+            A = Utils.numericalJacobian(fx, xStar);
+            B = Utils.numericalJacobian(fu, deflection);
+            
+			% Project to Reduced Space (2x2)
+            g = @(x) obj.rollReduce(x);
+			
+			% Reduction mapping matrix (2x14)
+            Jg = Utils.numericalJacobian(g, xStar);
+
+			% Pseudo-inverse for projection (14x3)
+            T = pinv(Jg);
+			
+			% Projected System Matrix
+            A2 = Jg*A*T;
+
+			% Projected Control Matrix
+            B2 = Jg*B;
+		end
+
+		function drawROM(obj, sys)
+            % Simulates the LTI system response to an initial condition and plots
+            x0 = [0; 0.1; 0]; % Initial perturbation
             tspan = 0:0.01:10; 
             [~, t, X] = initial(sys, x0, tspan);
-
+            
             figure;
             X = rad2deg(X);
-
-            % Subplot 1: State x_1(t)
+            
+            % Plot Alpha (Angle of Attack)
             subplot(3, 1, 1);
             plot(t, X(:, 1), 'r', 'LineWidth', 1.5);
             ylabel('Angle of Attack \alpha (deg)');
             title('Initial Condition Response of System States');
             grid on;
-
-            % Subplot 2: State x_2(t)
+            
+            % Plot Pitch Rate (q)
             subplot(3, 1, 2);
             plot(t, X(:, 2), 'g', 'LineWidth', 1.5);
             ylabel('Pitch Rate (deg/s');
             grid on;
-
-            % Subplot 3: State x_3(t)
+            
+            % Plot Pitch Angle (Theta)
             subplot(3, 1, 3);
             plot(t, X(:, 3), 'b', 'LineWidth', 1.5);
             xlabel('Time (s)');
@@ -65,13 +115,14 @@ classdef ReduceLTI < handle
         end
 
         function performComparison(obj, log)
-            % NOTE: Make sure thrust and gravity is off
+            % Compares the Linearized ROM against the full Nonlinear Simulation Log
+            % NOTE: Make sure thrust and gravity is off for fair comparison
 
             % Get LTI System
             xStar = log.states(:, 1);
             omega0 = log.states(13, 1);
             xStar(12:14) = [0; 0; 0];
-            sys = obj.generateROM(xStar);
+            [sys, ~] = obj.generateROM(xStar);
 
             time = log.time;
             x0 = [0; omega0; 0];
@@ -80,7 +131,7 @@ classdef ReduceLTI < handle
             figure;
             subplot(2, 1, 1);
             
-
+			% Compare Angular Velocity
             wyNonLTI = log.getState('wy');
             plot(time, rad2deg(wyNonLTI), 'g', 'LineWidth', 2, 'DisplayName', 'Nonlinear');
             hold on
@@ -89,7 +140,8 @@ classdef ReduceLTI < handle
             ylabel('\textbf{Angular Velocity (deg/s)}', 'Interpreter', 'latex');
             grid on;
             legend;
-
+			
+			% Compare Euler Angles
             subplot(2, 1, 2);
             
             % Euler Comparison
@@ -97,7 +149,8 @@ classdef ReduceLTI < handle
             q1 = log.getState('q1');
             q2 = log.getState('q2');
             q3 = log.getState('q3');
-
+			
+			% Adjust frame (90 deg Y rotation)
             quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
             quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
             quat_rotated = quat * quat_y90;
@@ -111,13 +164,17 @@ classdef ReduceLTI < handle
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
             legend;
             grid on;
-        end
+		end
+	end
 
-        function x3 = reduce(obj, x14)
-            u = x14(5);
-            v = x14(6);
-            w = x14(7);
-            q_body = x14(12:14); % p,q,r
+	methods (Static)
+        function x3 = pitchReduce(x14)
+			% Maps full 14-state vector to Pitch states: [Alpha; q; Theta]
+			% https://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
+
+
+            u = x14(5); v = x14(6); w = x14(7);
+            q_body = x14(12:14);
         
             % angle of attack
             alpha = atan2(w, u);
@@ -129,10 +186,26 @@ classdef ReduceLTI < handle
             qz = x14(11);
             theta = atan2(2*(qw*qy + qx*qz), 1 - 2*(qy^2 + qz^2));
         
-            % pitch rate
+            % pitch rate (q)
             q = q_body(2); % body y-axis rate
         
             x3 = [alpha; q; theta];
         end
-    end
+
+        function x2 = rollReduce(x14)
+            % Maps full 14-state vector to Roll states: [Phi; p]
+			
+			% Roll angle (phi) from quaternion
+            qw = x14(8);
+            qx = x14(9);
+            qy = x14(10);
+            qz = x14(11);
+            phi = atan2(2*(qw*qx + qy*qz), 1 - 2*(qx^2 + qy^2));
+            
+            % roll rate
+            p = x14(12); 
+
+            x2 = [p; phi];
+        end
+	end
 end
