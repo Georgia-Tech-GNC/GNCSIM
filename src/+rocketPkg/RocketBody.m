@@ -1,3 +1,4 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef RocketBody < rocketPkg.DatcomManager
 	% ROCKETBODY Represents the aerodynamic body of a rocket
@@ -30,7 +31,8 @@ classdef RocketBody < rocketPkg.DatcomManager
             % vW = cBI * disturbances.wind
             vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
 			
-			% add wind velocity to body velocity
+			      % add wind velocity to body velocity
+
             vB = vB + vW;
 			
 			% get translation vector to center of mass from nose tip

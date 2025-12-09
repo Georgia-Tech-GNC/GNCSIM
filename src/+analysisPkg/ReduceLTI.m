@@ -1,3 +1,4 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef ReduceLTI < handle
 	% ReduceLTI  Class for generating and analyzing Reduced Order Models (ROM) 

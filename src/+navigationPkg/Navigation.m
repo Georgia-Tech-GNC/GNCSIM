@@ -1,3 +1,5 @@
+% Main Authors: Conor Foley (mfoley40@gatech.edu)
+
 classdef Navigation < handle
     % Sensor Modeling & State Estimation
     % Frame transform for gps data

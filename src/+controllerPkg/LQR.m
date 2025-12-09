@@ -1,3 +1,5 @@
+% Main Authors: Aditya Swami (aswami8@gatech.edu)
+
 classdef LQR < Controller
     properties
         Q       % State weighting matrix

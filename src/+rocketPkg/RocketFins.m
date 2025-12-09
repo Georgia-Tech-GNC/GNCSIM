@@ -1,4 +1,5 @@
-% Main Authors: David Reynolds
+
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef RocketFins < rocketPkg.DatcomManager
 	% ROCKETFINS Manages the geometry, forces, and moments for a cluster

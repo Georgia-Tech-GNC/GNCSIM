@@ -1,3 +1,5 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+
 classdef DatcomAnalysis
     %DATCOMANALYSIS Summary of this class goes here
     %   Detailed explanation goes here

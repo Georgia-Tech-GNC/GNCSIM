@@ -1,3 +1,5 @@
+% Main Authors: Conor Foley (mfoley40@gatech.edu)
+
 classdef Magnetometer < navigationPkg.Sensor&handle
     properties 
         name = "Magnetometer"

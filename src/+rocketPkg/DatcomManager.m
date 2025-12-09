@@ -1,3 +1,6 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+%               Kandarp Vadia (kvadia3@gatech.edu)
+
 classdef DatcomManager < handle
 	% DATCOMMANAGER Base class for managing DATCOM file generation,
 	% execution, and aerodynamic data import. Provides functionality for

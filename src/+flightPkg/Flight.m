@@ -1,3 +1,6 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
+%               Karsten Caillet (kcaillet3@gatech.edu)
+
 classdef Flight < handle
     properties
         rocketDynamics
@@ -8,10 +11,9 @@ classdef Flight < handle
 
         totalTime
         currentTime
-        currentXDot
-        currentStateEstimate
-        x0
         dt
+
+        rocketInitialState
 
         useGravity = true
     end
@@ -24,20 +26,12 @@ classdef Flight < handle
             obj.flightParams = flightParams;
 
             obj.dt = obj.flightParams.dt;
-            obj.x0 = obj.flightParams.x0;
+            obj.rocketInitialState = obj.flightParams.x0;
             obj.totalTime = obj.flightParams.totalTime;
-            
-            %obj.rocket_dyn.calc_moi()
+                
         end
 
-        % TODO: Build setters for all attributes
-            
-        %end
-
         function log = runSim(obj, log)
-            % This function propagates the dynamics using RK4
-
-            % Need setters for this
             obj.currentTime = 0.0;
             x = obj.x0(:);
             %u = [0; -1; 0; -1];  % positive roll (correct)
@@ -56,8 +50,10 @@ classdef Flight < handle
 
             obj.currentXDot = obj.rocketModel(x, u, log); % thrust starts at t=0s
 
-            log.add(obj.currentTime, 'statedots', obj.currentXDot);
-			log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
+
+            log.add(obj.currentTime, 'states', rocketState);
+            log.add(obj.currentTime, 'statedots', rocketStateDot);
+			      log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             for ii = 1:log.maxSteps - 1
                 k1 = obj.currentXDot;
@@ -66,20 +62,21 @@ classdef Flight < handle
                 k4 = obj.rocketModel(x + (k3)*obj.dt, u);
 
                 obj.currentTime = ii * obj.dt;
-
-                x = x + obj.dt*((1/6)*k1 + (1/3)*k2 + (1/3)*k3 + (1/6)*k4);
-
-                quat = x(8:11);
-                quatNorm = Utils.normalizeQuat(quat);
-                x(8:11) = quatNorm;     
-
                 log.initializeTimestep(obj.currentTime);
-                log.add(obj.currentTime, 'states', x);
+
+                rocketState = Utils.RK4(@obj.rocketModel, rocketState, obj.dt);
+                quat = rocketState(8:11);
+                quatNorm = Utils.normalizeQuat(quat);
+                rocketState(8:11) = quatNorm;  
+
+                rocketStateDot = obj.rocketModel(rocketState, log);
+                rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
                 obj.currentXDot = obj.rocketModel(x, u, log);
                 obj.currentStateEstimate = obj.navigation.getStateEstimate(x, obj.currentXDot, obj.currentTime, log);
                 log.add(obj.currentTime, 'statedots', obj.currentXDot);
                 log.add(obj.currentTime, 'stateestimates', obj.currentStateEstimate);
+
             end
         end
 
@@ -99,12 +96,14 @@ classdef Flight < handle
             % deflections (fin 1, 2, 3, 4)
             deflections = obj.rocketDynamics.allocationMatrix * control;
 
+
             [fB, mB] = obj.rocketDynamics.getForcesMoments(state, deflections, disturbances, obj.currentTime, log);
             xDot = obj.flatEarth_EOM(state, fB, mB);
         end
         
         % need to explain what this is
         
+
         function xDot = rocketModelDeflection(obj, state, control, log)
 			arguments
                 obj
@@ -121,7 +120,7 @@ classdef Flight < handle
             
             xDot = obj.flatEarth_EOM(state, fB, mB);
 
-			if ~isempty(log)
+		    if ~isempty(log)
                 log.add(obj.currentTime, 'statedots', xDot);
             end
         end
@@ -131,14 +130,6 @@ classdef Flight < handle
             vel = state(5:7);
             quat = state(8:11);
             omega = state(12:14);
-
-            mat_omega = [
-                0, -omega(1), -omega(2), -omega(3);
-                omega(1), 0, omega(3), -omega(2);
-                omega(2), -omega(3), 0, omega(1);
-                omega(3), omega(2), -omega(1), 0
-            ];
-
 
             % preventing mass to go below massDry
             mass = max(mass, obj.rocketDynamics.massDry);
@@ -153,6 +144,7 @@ classdef Flight < handle
             else
                 g = [0;0;0];
             end
+
             fG = mass * g;
 
             fB = fB + cBI * fG;
@@ -160,7 +152,7 @@ classdef Flight < handle
             massDot = obj.rocketDynamics.getMDot(obj.currentTime);
             posDot = cIB * vel;
             velDot = fB / mass - cross(omega, vel);
-            quatDot = 0.5 * mat_omega * quat;
+            quatDot = Utils.quatDerivative(quat, omega);
             omegaDot = Ib\(mB - cross(omega, Ib*omega));
             stateDot = [massDot; posDot; velDot; quatDot; omegaDot];
         end

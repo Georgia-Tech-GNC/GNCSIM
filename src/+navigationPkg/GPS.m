@@ -1,3 +1,5 @@
+% Main Authors: Conor Foley (mfoley40@gatech.edu)
+
 classdef GPS < navigationPkg.Sensor&handle
     % Model of in-flight GPS
 

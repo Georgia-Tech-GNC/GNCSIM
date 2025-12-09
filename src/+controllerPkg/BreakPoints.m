@@ -1,3 +1,5 @@
+% Main Authors: Hridai Ambati (hambati3@gatech.edu)
+
 classdef BreakPoints < Handle
 
     properties
