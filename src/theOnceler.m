@@ -20,7 +20,7 @@ rocketDynamics.computeBuildup()
 
 
 % Parachute Dynamics
-parachuteDynamics = setupParachute();
+%parachuteDynamics = setupParachute();
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints);
@@ -28,14 +28,14 @@ parachuteDynamics = setupParachute();
 %% Run Flight
 
 tic;
-log = flight.runSimV2(log);
+log = flight.runSim(log);
 elapsed_time = toc;
 fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 log.trim();
 
 lti = analysisPkg.ReduceLTI(flight);
-xStar = flight.x0;
+xStar = flight.rocketInitialState;
 xStar(5:7) = [20, 0, 0].';
 xStar(12:14) = [0, 0, 0].';
 %lti.generateROM(xStar);
@@ -45,7 +45,7 @@ lti.performComparison(log)
 %% Analysis
 %analysis = analysisPkg.Analysis(log);
 %analysis.generateAllPlots();
-% analysis.generateAllEstimatePlots();
+%analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %datcomAnalysis.drawForcesAndMoments([0, 12])
@@ -69,8 +69,8 @@ function rocketDyn = setupRocket(controller)
     bodyParams.bodyLength = 2.2856;  % This does not include nose code [m]
     bodyParams.rocketDiameter = 0.157;  % [m]
     totalLength = bodyParams.bodyLength + bodyParams.noseLength;
-	  bodyParams.translation = [0, 0, 0];
-	  bodyParams.cgXWet = rocketParams.cgXWet;
+	bodyParams.translation = [0, 0, 0];
+	bodyParams.cgXWet = rocketParams.cgXWet;
 
     finTabLength = 0.05;
 	
@@ -79,7 +79,7 @@ function rocketDyn = setupRocket(controller)
     finParamsStatic.rootChord = 0.203 - finTabLength;  % [m]
     finParamsStatic.tipChord = 0.17 - finTabLength;  % [m]
     finParamsStatic.finSpan = 0.144;  % [m]
-	  finParamsStatic.sweepDeg = 12.9;  % [deg]
+	finParamsStatic.sweepDeg = 12.9;  % [deg]
     finParamsStatic.movable = false;
     finParamsStatic.name = 'STATIC_FIN';
 
@@ -87,7 +87,7 @@ function rocketDyn = setupRocket(controller)
     finParamsTabs.rootChord = finTabLength;  % [m]
     finParamsTabs.tipChord = finTabLength;  % [m]
     finParamsTabs.finSpan = 0.144;  % [m]
-	  finParamsTabs.sweepDeg = 0.0;  % [deg]
+	finParamsTabs.sweepDeg = 0.0;  % [deg]
     finParamsTabs.movable = true;
     finParamsTabs.name = 'DYNAMIC_FIN';
 
