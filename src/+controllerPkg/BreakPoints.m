@@ -1,6 +1,6 @@
 % Main Authors: Hridai Ambati (hambati3@gatech.edu)
 
-classdef BreakPoints < Handle
+classdef BreakPoints < handle
 
     properties
         rocketDynamics
@@ -9,25 +9,25 @@ classdef BreakPoints < Handle
         
         nominalPos = [0, 0, 0].';
         %nominalVel = [up, yaw, pitch]
-        nominalQuat = Utils.eulerToQuat([0, -90, 0]).';
+        nominalQuat = Utils.eulerToQuat([0, -90, 0]);
         nominalOmega = [0, 0, 0].';
 
     end
 
     methods
-
         function obj = BreakPoints(rocketDynamics, numBreakPoints, maxSpeed)
             obj.rocketDynamics = rocketDynamics;
             obj.numBreakPoints = numBreakPoints;
             obj.maxSpeed = maxSpeed;
-            %compute_dumb_trajectory();
-
         end
 
-        function x = xBar(obj, zx, speed)
-            mass = obj.rocketDynamics.rocketParams.massWet;
+        function x = xBar(obj)
+			alpha = 0;
+			speed = 20;
+
+            mass = obj.rocketDynamics.massWet;
             pos = obj.nominalPos;
-            vel = [speed*cos(zx), 0, speed*sin(zx)].';
+            vel = [speed*cosd(alpha), 0, speed*sind(alpha)].';
             quat = obj.nominalQuat;
             omega = obj.nominalOmega;
             x = [mass; pos; vel; quat; omega];
@@ -36,19 +36,52 @@ classdef BreakPoints < Handle
         function u = uBar(obj, zu)
             u = [zu, 0, 0].';
         end
+		
+		function cost = objectiveFunc(obj, z)
+			
+			x = obj.xBar();
+			u = obj.uBar(z(1));
 
+			g = @(x) controllerPkg.pitchReduce(x);
+			Jg = Utils.numericalJacobian(g, x);
+			xDot = obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
 
+			cost = norm(Jg * xDot);
+		end
 
-        function generateBreakPoints(obj, rocketDynamics)
-            
-            
+        function generateBreakPoints(obj)
+			z0 = [0];
+			%options = optimset('Display','iter','PlotFcns',@optimplotfval);
+            [zStar, zCost] = fminsearch(@(z) obj.objectiveFunc(z), z0);
+
+			xStar = obj.xBar();
+			uStar = obj.uBar(zStar(1));
+
+			g = @(x) controllerPkg.pitchReduce(x);
+			Jg = Utils.numericalJacobian(g, xStar);
+			xDot14 = obj.rocketDynamics.rocketModel(xStar, uStar, 0, [], false, false);
+
+			f = @(x, u) obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
+            fx = @(x) f(x, uStar);
+
+			% Calculate Full Jacobians (14x14)
+            A = Utils.numericalJacobian(fx, xStar);
+
+			T = pinv(Jg);
+			
+			% Projected System Matrix
+            A3 = Jg*A*T;
+
+			xDot3 = Jg * xDot14;
+			disp(1);
+		end
             
             % TODO: Break trajectory based on accumulated velocity or
             % altitude and corresponding hyper parameters. Compute A and B
             % (x_dot = Ax + Bu)
             % for each break point
             
-        end
+        
         
         % Depercated at the moment (Sorry Hridai)
         %{
@@ -144,6 +177,5 @@ classdef BreakPoints < Handle
         N_av;
         %}
 
-    end
-
+	end
 end

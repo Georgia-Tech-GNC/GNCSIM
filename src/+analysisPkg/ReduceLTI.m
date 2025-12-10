@@ -32,7 +32,7 @@ classdef ReduceLTI < handle
 			% Linearizes full dynamics and projects them onto 3-state Pitch space
 			
 			% Define function handles for numerical differentiation
-            f = @(x, u) obj.flight.rocketModel(x, u);
+            f = @(x, u) obj.flight.rocketDynamics.rocketModel(x, u, 0, [], false, false);
             fx = @(x) f(x, [0, 0, deflection].');
             fu = @(u_in) f(xStar, [u_in, 0, 0].');
 
@@ -41,7 +41,7 @@ classdef ReduceLTI < handle
             B = Utils.numericalJacobian(fu, deflection);
             
 			% Project to Reduced Space (3x3)
-            g = @(x) obj.pitchReduce(x);
+            g = @(x) controllerPkg.pitchReduce(x);
 			
 			% Reduction mapping matrix (3x14)
             Jg = Utils.numericalJacobian(g, xStar);
@@ -60,7 +60,7 @@ classdef ReduceLTI < handle
 			% Linearizes full dynamics and projects them onto 2-state Roll space
 			
 			% Define function handles for numerical differentiation
-            f = @(x, u) obj.flight.rocketModel(x, u);
+            f = @(x, u) obj.flight.rocketDynamics.rocketModel(x, u, 0, [], false, false);
             fx = @(x) f(x, [0, 0, deflection].');
             fu = @(u_in) f(xStar, [0, 0, u_in].');
 
@@ -69,7 +69,7 @@ classdef ReduceLTI < handle
             B = Utils.numericalJacobian(fu, deflection);
             
 			% Project to Reduced Space (2x2)
-            g = @(x) obj.rollReduce(x);
+            g = @(x) controllerPkg.rollReduce(x);
 			
 			% Reduction mapping matrix (2x14)
             Jg = Utils.numericalJacobian(g, xStar);
@@ -165,47 +165,5 @@ classdef ReduceLTI < handle
             legend;
             grid on;
 		end
-	end
-
-	methods (Static)
-        function x3 = pitchReduce(x14)
-			% Maps full 14-state vector to Pitch states: [Alpha; q; Theta]
-			% https://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
-
-
-            u = x14(5); v = x14(6); w = x14(7);
-            q_body = x14(12:14);
-        
-            % angle of attack
-            alpha = atan2(w, u);
-        
-            % pitch from quaternion
-            qw = x14(8);
-            qx = x14(9);
-            qy = x14(10);
-            qz = x14(11);
-            theta = atan2(2*(qw*qy + qx*qz), 1 - 2*(qy^2 + qz^2));
-        
-            % pitch rate (q)
-            q = q_body(2); % body y-axis rate
-        
-            x3 = [alpha; q; theta];
-        end
-
-        function x2 = rollReduce(x14)
-            % Maps full 14-state vector to Roll states: [Phi; p]
-			
-			% Roll angle (phi) from quaternion
-            qw = x14(8);
-            qx = x14(9);
-            qy = x14(10);
-            qz = x14(11);
-            phi = atan2(2*(qw*qx + qy*qz), 1 - 2*(qx^2 + qy^2));
-            
-            % roll rate
-            p = x14(12); 
-
-            x2 = [p; phi];
-        end
 	end
 end
