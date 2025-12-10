@@ -20,13 +20,12 @@ breakPoints.generateBreakPoints();
 
 % Setup Controller
 %controller = controllerPkg.Controller(breakPoints);
-controller = -1;
 
 % Parachute Dynamics
 %parachuteDynamics = setupParachute();
 
 % Setup Flight Simulation (sets up navigation too)
-[flight, log] = setupFlight(rocketDynamics, environment, breakPoints);
+[flight, log] = setupFlight(rocketDynamics, breakPoints, environment);
 
 %% Run Flight
 
@@ -46,8 +45,8 @@ lti.performComparison(log)
 
 
 %% Analysis
-%analysis = analysisPkg.Analysis(log);
-%analysis.generateAllPlots();
+analysis = analysisPkg.Analysis(log);
+analysis.generateAllPlots();
 %analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
@@ -93,7 +92,6 @@ function rocketDyn = setupRocket(controller)
 	finParamsTabs.sweepDeg = 0.0;  % [deg]
     finParamsTabs.movable = true;
     finParamsTabs.name = 'DYNAMIC_FIN';
-
 
     flightConParams.machNumbers = [0.2, 0.4, 0.6];        % Array of Mach numbers to test
     flightConParams.altitudes = [0, 5000, 10000];       % Array of altitudes in feet
@@ -212,7 +210,7 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     pos0 = [0, 0, 0];
     vel0 = [20, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
-    omega0 = [0, .1, 0];
+    omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
     

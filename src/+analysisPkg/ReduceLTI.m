@@ -33,7 +33,7 @@ classdef ReduceLTI < handle
 			
 			% Define function handles for numerical differentiation
             f = @(x, u) obj.flight.rocketDynamics.rocketModel(x, u, 0, [], false, false);
-            fx = @(x) f(x, [0, 0, deflection].');
+            fx = @(x) f(x, [deflection, 0, 0].');
             fu = @(u_in) f(xStar, [u_in, 0, 0].');
 
 			% Calculate Full Jacobians (14x14)

@@ -45,7 +45,6 @@ classdef Flight < handle
             % Get state estimate
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
             
-            %controlDeflections = obj.rocketDynamics.
 
            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, u, obj.currentTime, log); % thrust starts at t=0s
 
@@ -57,14 +56,28 @@ classdef Flight < handle
 
                 obj.currentTime = ii * obj.dt;
                 log.initializeTimestep(obj.currentTime);
+
+                [K2, K3] = obj.getGains(rocketState);
+                [pitchErr, yawErr, rollErr] = obj.getError(rocketState);
                 
-                rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, u, obj.currentTime);
+                %pitchControl = K3 * [0, 0, pitchErr(3)].';
+                pitchControl = K3 * pitchErr;
+                yawControl = K3 * yawErr;
+                rollControl = K2 * rollErr;
+
+                %if obj.currentTime > 1
+                %    disp(1);
+                %end
+
+                rocketControl = [pitchControl, yawControl, 0].';
+                
+                rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, rocketControl, obj.currentTime);
                 rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
                 quat = rocketState(8:11);
                 quatNorm = Utils.normalizeQuat(quat);
                 rocketState(8:11) = quatNorm;  
 
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, u, obj.currentTime, log);
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, rocketControl, obj.currentTime, log);
                 rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
                 log.add(obj.currentTime, 'states', rocketState);
@@ -72,6 +85,45 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             end
+        end
+
+        function [pitchErr, yawErr, rollErr] = getError(obj, rocketState)
+            time = obj.currentTime;
+            x3Pitch = controllerPkg.pitchReduce(rocketState);
+            x3Yaw = controllerPkg.pitchReduce(rocketState, true);
+            x2Roll = controllerPkg.rollReduce(rocketState);
+
+            pitchRef = [0; 0; 2];
+            yawRef = [0; 0; 0];
+            rollRef = [0; 0];
+
+            pitchErr = pitchRef - x3Pitch;
+            yawErr = yawRef - x3Yaw;
+            rollErr = rollRef - x2Roll;
+            %{
+            q0 = x14(8);
+            q1 = x14(9);
+            q2 = x14(10);
+            q3 = x14(11);
+
+            quat = quaternion([q0, q1, q2, q3]);  % 1 x 4 matrix
+            quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
+            quat_rotated = quat * quat_y90;
+            eul = quat2eul(quat_rotated, 'XYZ');
+            %}
+        end
+
+        function [K2, K3] = getGains(obj, state)
+            N = length(obj.breakPoints.breakPointArr);
+            speedArr = zeros(1, N);
+            for ii=1:length(obj.breakPoints.breakPointArr)
+                params = obj.breakPoints.breakPointArr.breakParam;
+                speedArr(ii) = params.speed;
+            end
+            currentSpeed = norm(state(5:7));
+            [~,I] = min(abs(speedArr - currentSpeed));
+            K2 = obj.breakPoints.breakPointArr(I).K2;
+            K3 = obj.breakPoints.breakPointArr(I).K3;
         end
 		
 		%{
