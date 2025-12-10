@@ -23,6 +23,7 @@ classdef RocketDynamics < handle
         cgDry (1,1) double {mustBePositive} = 1
 
         useThrust = false
+		useGravity = false
         allocationMatrix
 	end
 
@@ -75,10 +76,7 @@ classdef RocketDynamics < handle
             end
         
             % If beyond burn time, thrust is zero
-            if ~obj.useThrust
-                currentThrust = 0;
-                return
-            elseif t > obj.burnTime
+            if t > obj.burnTime
                 currentThrust = 0;
                 return
             end
@@ -115,7 +113,16 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, deflections, disturbances, time, log)
+        function [fB, mB] = getForcesMoments(obj, state, deflections, disturbances, time, log, useThrust)
+			arguments
+                obj
+                state 
+                deflections  % array of 3 elements
+				disturbances  % current time in seconds
+				time
+                log = []  % Optional, defaults to empty
+				useThrust = true;
+            end
             % computes aero forces and moments
 			[currentCg, ~] = getCgMoi(obj, state(1));
 
@@ -128,7 +135,6 @@ classdef RocketDynamics < handle
             % 
             % end
 
-
             if isempty(obj.aerodynamics)
                  [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, deflections, currentCg, disturbances);
                  [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
@@ -137,12 +143,11 @@ classdef RocketDynamics < handle
             else
                  [fBAero, mBAero] = obj.aerodynamics.getForcesMoments(state, disturbances);
             end
-
-            fTB = [obj.getThrust(time); 0; 0];
-            %[fBController, mBController] = obj.controller.getForcesMoments(stateEstimate, obj, CG, breakPoints, time, log);
+			fTB = zeros(3,1);
+			if useThrust && obj.useThrust
+				fTB = [obj.getThrust(time); 0; 0];
+			end
             
-            
-
             if ~isempty(log)
                 log.add(time, 'aeroforces', fBAero);
                 log.add(time, 'aeromoments', mBAero);
@@ -153,6 +158,68 @@ classdef RocketDynamics < handle
 
             fB = fTB + fBAero;
             mB = mBAero;
+		end
+
+		function xDot = rocketModel(obj, state, control, time, log, useGravity, useThrust)
+            arguments
+                obj
+                state 
+                control  % array of 3 elements
+				time = 0  % current time in seconds
+                log = []  % Optional, defaults to empty
+				useGravity = true;
+				useThrust = true;
+            end
+
+            altitude = state(4);
+            %disturbances.wind = obj.environment.getWindspeed(altitude);
+            disturbances.wind = zeros(3);
+            
+            % Mapping from control deflections (pitch, yaw, roll) to fin
+            % deflections (fin 1, 2, 3, 4)
+            deflections = obj.allocationMatrix * control;
+
+            [fB, mB] = obj.getForcesMoments(state, deflections, disturbances, time, log, useThrust);
+            xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity);
+		end
+
+		function stateDot = flatEarth_EOM(obj, state, time, fB, mB, useGravity)
+			arguments
+                obj
+                state 
+                time
+				fB
+				mB
+				useGravity = true;
+            end
+            mass = state(1);
+            vel = state(5:7);
+            quat = state(8:11);
+            omega = state(12:14);
+
+            % preventing mass to go below massDry
+            mass = max(mass, obj.massDry);
+
+            [~, Ib] = obj.getCgMoi(mass);
+
+            cBI = Utils.dirCosine(quat);
+            cIB = cBI.';
+            
+			g = [0;0;0];
+            if useGravity && obj.useGravity
+                g = [0;0;-9.81];
+            end
+
+            fG = mass * g;
+
+            fB = fB + cBI * fG;
+
+            massDot = obj.getMDot(time);
+            posDot = cIB * vel;
+            velDot = fB / mass - cross(omega, vel);
+            quatDot = Utils.quatDerivative(quat, omega);
+            omegaDot = Ib\(mB - cross(omega, Ib*omega));
+            stateDot = [massDot; posDot; velDot; quatDot; omegaDot];
         end
 
         function computeBuildup(obj)

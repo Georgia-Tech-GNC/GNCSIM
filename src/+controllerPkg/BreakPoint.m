@@ -3,12 +3,26 @@
 classdef BreakPoint < handle
 
     properties
-        breakParam % altitude or acc velocity
-        x0 % optimal state
-        u0 % optimal control input
-        A   % state matrix
-        B   % control matrix
-        gain % can be a single value or a struct of gains
+        breakParam		% altitude or acc velocity
+		
+		zStar
+		xStar
+		uStar
+
+		A14
+		B14
+		
+		A3
+		B3
+		Q3		%  (only used for LQR)
+		R3
+		K3
+
+		A2
+		B2
+		Q2
+		R2
+		K2
     end
 
 end

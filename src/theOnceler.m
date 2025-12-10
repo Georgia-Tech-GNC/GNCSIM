@@ -14,9 +14,9 @@ rocketDynamics.computeBuildup()
 % Setup BreakPoints
 numBreakPoints = 20;
 maxSpeed = 200;  % m/s
-%breakPoints = controllerPkg.BreakPoint(rocketDynamics, numBreakPoints, maxSpeed);
-%breakPoints.generateBreakPoints();
-breakPoints = -1;
+breakPoints = controllerPkg.BreakPoints(rocketDynamics, numBreakPoints, maxSpeed);
+breakPoints.generateBreakPoints();
+%breakPoints = -1;
 
 % Setup Controller
 %controller = controllerPkg.Controller(breakPoints);
@@ -37,17 +37,17 @@ fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 log.trim();
 
-%lti = analysisPkg.ReduceLTI(flight);
-%xStar = flight.rocketInitialState;
-%xStar(5:7) = [20, 0, 0].';
-%xStar(12:14) = [0, 0, 0].';
-%lti.generateROM(xStar);
-%lti.performComparison(log)
+lti = analysisPkg.ReduceLTI(flight);
+xStar = flight.rocketInitialState;
+xStar(5:7) = [20, 0, 0].';
+xStar(12:14) = [0, 0, 0].';
+lti.generateROM(xStar);
+lti.performComparison(log)
 
 
 %% Analysis
-analysis = analysisPkg.Analysis(log);
-analysis.generateAllPlots();
+%analysis = analysisPkg.Analysis(log);
+%analysis.generateAllPlots();
 %analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
@@ -212,7 +212,7 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     pos0 = [0, 0, 0];
     vel0 = [20, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
-    omega0 = [0, 0, 0];
+    omega0 = [0, .1, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
     
