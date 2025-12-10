@@ -11,7 +11,7 @@ classdef BreakPoints < handle
         %nominalVel = [up, yaw, pitch]
         nominalQuat = Utils.eulerToQuat([0, -90, 0]);
         nominalOmega = [0, 0, 0].';
-
+        breakPointArr = [];
     end
 
     methods
@@ -21,15 +21,15 @@ classdef BreakPoints < handle
             obj.maxSpeed = maxSpeed;
         end
 
-        function x = xBar(obj)
-			alpha = 0;
-			speed = 20;
+        function x = xBar(obj, zq, params)
+			alpha = params.alpha;
+			speed = params.speed;
 
             mass = obj.rocketDynamics.massWet;
             pos = obj.nominalPos;
             vel = [speed*cosd(alpha), 0, speed*sind(alpha)].';
             quat = obj.nominalQuat;
-            omega = obj.nominalOmega;
+            omega = [0, zq, 0].';
             x = [mass; pos; vel; quat; omega];
         end
 
@@ -37,43 +37,111 @@ classdef BreakPoints < handle
             u = [zu, 0, 0].';
         end
 		
-		function cost = objectiveFunc(obj, z)
-			
-			x = obj.xBar();
-			u = obj.uBar(z(1));
+		function cost = objectiveFunc(obj, z, params)
+			x = obj.xBar(z(1), params);
+			u = obj.uBar(z(2));
 
 			g = @(x) controllerPkg.pitchReduce(x);
 			Jg = Utils.numericalJacobian(g, x);
 			xDot = obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
 
-			cost = norm(Jg * xDot);
+            x3Dot = Jg * xDot;
+
+			cost = norm(x3Dot(1:2));
 		end
 
         function generateBreakPoints(obj)
-			z0 = [0];
-			%options = optimset('Display','iter','PlotFcns',@optimplotfval);
-            [zStar, zCost] = fminsearch(@(z) obj.objectiveFunc(z), z0);
+            speedArr = linspace(10, obj.maxSpeed, obj.numBreakPoints);
+            params.alpha = 0;
+            obj.breakPointArr = controllerPkg.BreakPoint.empty(0, obj.numBreakPoints);
+            for ii=1:length(speedArr)
+                params.speed = speedArr(ii);
+                breakPoint = obj.solveBreakPoint(params);
+                obj.breakPointArr(ii) = breakPoint;
+            end
+        end
 
-			xStar = obj.xBar();
-			uStar = obj.uBar(zStar(1));
-
-			g = @(x) controllerPkg.pitchReduce(x);
-			Jg = Utils.numericalJacobian(g, xStar);
-			xDot14 = obj.rocketDynamics.rocketModel(xStar, uStar, 0, [], false, false);
-
-			f = @(x, u) obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
-            fx = @(x) f(x, uStar);
+        function [A3, B3] = calculateROMpitch(obj, xStar, deflection)
+			% Linearizes full dynamics and projects them onto 3-state Pitch space
+			
+			% Define function handles for numerical differentiation
+            f = @(x, u) obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
+            fx = @(x) f(x, [deflection, 0, 0].');
+            fu = @(u_in) f(xStar, [u_in, 0, 0].');
 
 			% Calculate Full Jacobians (14x14)
             A = Utils.numericalJacobian(fx, xStar);
+            B = Utils.numericalJacobian(fu, deflection);
+            
+			% Project to Reduced Space (3x3)
+            g = @(x) controllerPkg.pitchReduce(x);
+			
+			% Reduction mapping matrix (3x14)
+            Jg = Utils.numericalJacobian(g, xStar);
 
-			T = pinv(Jg);
+			% Pseudo-inverse for projection (14x3)
+            T = pinv(Jg);
 			
 			% Projected System Matrix
             A3 = Jg*A*T;
 
-			xDot3 = Jg * xDot14;
-			disp(1);
+			% Projected Control Matrix
+            B3 = Jg*B;
+        end
+
+        function [A2, B2] = calculateROMroll(obj, xStar, deflection)
+			% Linearizes full dynamics and projects them onto 2-state Roll space
+			
+			% Define function handles for numerical differentiation
+            f = @(x, u) obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
+            fx = @(x) f(x, [0, 0, deflection].');
+            fu = @(u_in) f(xStar, [0, 0, u_in].');
+
+			% Calculate Full Jacobians (14x14)
+            A = Utils.numericalJacobian(fx, xStar);
+            B = Utils.numericalJacobian(fu, deflection);
+            
+			% Project to Reduced Space (2x2)
+            g = @(x) controllerPkg.rollReduce(x);
+			
+			% Reduction mapping matrix (2x14)
+            Jg = Utils.numericalJacobian(g, xStar);
+
+			% Pseudo-inverse for projection (14x3)
+            T = pinv(Jg);
+			
+			% Projected System Matrix
+            A2 = Jg*A*T;
+
+			% Projected Control Matrix
+            B2 = Jg*B;
+        end
+
+        function breakPoint = solveBreakPoint(obj, params)
+			z0 = [0, 0];
+			%options = optimset('Display','iter','PlotFcns',@optimplotfval);
+
+            objective_handle = @(z) obj.objectiveFunc(z, params);
+            [zStar, ~] = fminsearch(@(z) objective_handle(z), z0);
+
+			xStar = obj.xBar(zStar(1), params);
+			uStar = obj.uBar(zStar(2));
+            pitchStar = uStar(1);
+
+            [A3, B3] = obj.calculateROMpitch(xStar, pitchStar);
+            [A2, B2] = obj.calculateROMroll(xStar, pitchStar);
+
+            breakPoint = controllerPkg.BreakPoint(params);
+
+            % load breakpoint info into object
+            breakPoint.zStar = zStar;
+            breakPoint.xStar = xStar;
+            breakPoint.uStar = uStar;
+            breakPoint.A3 = A3;
+            breakPoint.B3 = B3;
+            breakPoint.A2 = A2;
+            breakPoint.B2 = B2;   
+            breakPoint.computeGain()
 		end
             
             % TODO: Break trajectory based on accumulated velocity or
