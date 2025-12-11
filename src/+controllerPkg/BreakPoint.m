@@ -18,7 +18,7 @@ classdef BreakPoint < handle
 		
 		A3
 		B3
-		Q3 = diag([1 1 1])		%  (only used for LQR)
+		Q3 = 2 * diag([1 1 1])		%  (only used for LQR)
 		R3 = 1                  %  (only used for LQR)
 		K3                      %  (only used for LQR)
         
