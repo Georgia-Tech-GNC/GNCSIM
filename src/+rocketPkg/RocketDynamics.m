@@ -22,8 +22,8 @@ classdef RocketDynamics < handle
         cgWet (1,1) double {mustBePositive} = 1
         cgDry (1,1) double {mustBePositive} = 1
 
-        useThrust = false
-		useGravity = false
+        useThrust = true
+		useGravity = true
         allocationMatrix
 	end
 
