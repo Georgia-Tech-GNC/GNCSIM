@@ -106,7 +106,6 @@ function rocketDyn = setupRocket(controller)
 
     finParamsArr = [finParamsTabs, finParamsStatic];
 
-
     % Motor
     motorParams.burnTime = 12.0;
     tmp = load("+theOncelerFiles\thrust_curve_fin_tabs.mat");

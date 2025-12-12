@@ -60,22 +60,11 @@ classdef Flight < handle
                 [K2, K3] = obj.getGains(rocketState);
                 [pitchErr, yawErr, rollErr] = obj.getError(rocketState);
                 
-                %pitchControl = K3 * [0, 0, pitchErr(3)].';
-                %pitchControl = K3 * [0, pitchErr(2), pitchErr(3)].';
                 pitchControl = K3 * pitchErr;
 				yawControl = K3 * yawErr;
                 rollControl = K2 * rollErr;
 
-                %if obj.currentTime > 1
-                %    disp(1);
-                %end
-				%if obj.currentTime > 10
-			%		disp(1)
-				%end
-				%	rocketControl = [-2,0,0].';
-				%end
-
-                rocketControlRad = [pitchControl, 0, 0].';
+                rocketControlRad = [pitchControl, yawControl, 0].';
 				rocketControl = rad2deg(rocketControlRad);
                 
                 rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, rocketControl, obj.currentTime);
@@ -101,15 +90,16 @@ classdef Flight < handle
             x2Roll = controllerPkg.rollReduce(rocketState);
 			
 			if time < 5
-				pitchRef = deg2rad([0; 0; 0]);
+				yawRef = deg2rad([0; 0; 5*time]);
 			elseif time >= 5 && time < 10
-				pitchRef = deg2rad([0; 0; 5]);
+				yawRef = deg2rad([0; 0; 25 - (time-5)*5]);
 			else
-				pitchRef = deg2rad([0; 0; 0]);
+				yawRef = deg2rad([0; 0; 0]);
 			end
-
-            yawRef = [0; 0; 0];
-            rollRef = [0; 0];
+			
+			%yawRef = deg2rad([0; 0; 0]);
+            pitchRef = deg2rad([0; 0; 0]);
+            rollRef = deg2rad([0; 5]);
 
             pitchErr = pitchRef - x3Pitch;
             yawErr = yawRef - x3Yaw;
