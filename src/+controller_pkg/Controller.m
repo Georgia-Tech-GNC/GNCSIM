@@ -4,6 +4,6 @@ classdef (Abstract) Controller < handle
     end
 
     methods (Abstract)
-        [F_b, M_b] = get_forces_and_moments(state, disturbances, motor_params, CG, breakPoints, time);
+        [F_b, M_b] = get_forces_and_moments(state, CG, breakPoints, time);
     end
 end
