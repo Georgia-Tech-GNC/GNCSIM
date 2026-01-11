@@ -159,11 +159,11 @@ classdef Analysis < handle
                 end
             end
 
-            averageMaxMachNumber = mean(machMax);
-            disp(['Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
+            %averageMaxMachNumber = mean(machMax);
+            %disp(['Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
 
-            averageMaxAltitude = mean(altMax);
-            disp(['Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
+            %averageMaxAltitude = mean(altMax);
+            %disp(['Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
 
             legend('v_x','v_y','v_z')
             ylabel('\textbf{Velocity in Body Frame (m/s)}', 'Interpreter', 'latex')
@@ -601,7 +601,52 @@ classdef Analysis < handle
             else
                 set(fig2, 'Visible', 'on');
             end
-        end
+		end
+
+		function printReliventInfo(obj)
+			a = 340; % m/s (Speed of sound PLACEHOLDER)
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Get velocity component estimates
+                vx = log.getState('vx');
+                vy = log.getState('vy');
+                vz = log.getState('vz');
+                vx = vx(obj.timeMask{i});
+                vy = vy(obj.timeMask{i});
+                vz = vz(obj.timeMask{i});
+				time = log.time(1:log.currentIdx);
+
+                % Calculate Mach number
+                velMag = sqrt(vx.^2 + vy.^2 + vz.^2);
+                machNumbers = velMag ./ a;
+                if ~isempty(machNumbers)
+                    machMax(i) = max(machNumbers);
+					velMax(i) = max(velMag);
+                end
+
+                % Get altitude (z position estimate)
+                z_pos = log.getState('z');
+                z_pos = z_pos(obj.timeMask{i});
+                if ~isempty(z_pos)
+                    altMax(i) = max(z_pos);
+                end
+            end
+
+            averageMaxMachNumber = mean(machMax);
+            disp(['[Estimate] Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
+
+			averageMaxVel = mean(velMax);
+            disp(['[Estimate] Average Maximum Velocity from all flights: ', num2str(averageMaxVel)]);
+
+			[~, locs] = findpeaks(z_pos);
+			appoIndex = max(locs);
+			timeAtAppo = time(appoIndex);
+			disp(['[Estimate] Average Time to Apogee: ', num2str(timeAtAppo)]);
+
+            averageMaxAltitude = mean(altMax);
+            disp(['[Estimate] Average maximum altitude from all flights: ', num2str(averageMaxAltitude),' m']);
+		end
 
         function generateAllPlots(obj)
             obj.generateTrajectoryPlot();
@@ -616,6 +661,7 @@ classdef Analysis < handle
             obj.generateControlMomentPlot();
             obj.generateEkfCovariancePlot();
             obj.generateAltitudeAndXYPlot();
+			obj.printReliventInfo();
         end
 
         % State Estimate Plotting Functions
@@ -701,11 +747,11 @@ classdef Analysis < handle
                 end
             end
 
-            averageMaxMachNumber = mean(machMax);
-            disp(['[Estimate] Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
+            %averageMaxMachNumber = mean(machMax);
+            %disp(['[Estimate] Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
 
-            averageMaxAltitude = mean(altMax);
-            disp(['[Estimate] Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
+            %averageMaxAltitude = mean(altMax);
+            %disp(['[Estimate] Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
 
             legend('v_x','v_y','v_z')
             ylabel('\textbf{Velocity in Body Frame (m/s)}', 'Interpreter', 'latex')
