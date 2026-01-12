@@ -47,6 +47,11 @@ lti.performComparison(log)
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
+
+%% Animation
+close all
+ani = analysisPkg.Animation(log, rocketDynamics);
+ani.run()
 %analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
