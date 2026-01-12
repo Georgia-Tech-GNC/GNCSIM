@@ -1,4 +1,3 @@
-
 % Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef RocketFins < rocketPkg.DatcomManager
@@ -69,7 +68,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 fin = obj.fins(ii);
                 deflection = 0;
 
-                % if the fin is movable then use the defelction in the array
+                % if the fin is movable then use the deflection in the array
                 if ismember(ii, obj.numMovableIndex)
                     idx = ii == obj.numMovableIndex;
                     deflection = deflections(idx);

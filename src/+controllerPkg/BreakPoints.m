@@ -1,249 +1,195 @@
-% Main Authors: Hridai Ambati (hambati3@gatech.edu)
+% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
 
 classdef BreakPoints < handle
 
     properties
-        rocketDynamics
+        nominalTrajLog
         numBreakPoints
-        maxSpeed
-        
-        nominalPos = [0, 0, 0].';
-        %nominalVel = [up, yaw, pitch]
-        nominalQuat = Utils.eulerToQuat([0, -90, 0]);
-        nominalOmega = [0, 0, 0].';
-        breakPointArr = [];
+        cumVelocityInterval % time interval to add up velocity [s]
+
+        % Breakpoint data arrays
+        cumVelocity      % 1 x numBreakPoints array
+        time             % 1 x numBreakPoints array
+        state            % cell array of state vectors {nStates x 1}
+        controlInput     % cell array of control input vectors {nInputs x 1}
+        actuatorState    % cell array of actuator state vectors {nActuators x 1}
+        stateMatrix      % cell array of cell arrays {{A1}, {A2}, ...}
+        controlMatrix    % cell array of cell arrays {{B1}, {B2}, ...}
+        gain             % cell array of cell arrays {{K1}, {K2}, ...}
     end
 
     methods
-        function obj = BreakPoints(rocketDynamics, numBreakPoints, maxSpeed)
-            obj.rocketDynamics = rocketDynamics;
+
+        function obj = BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval)
+            obj.nominalTrajLog = nominalTrajLog;
             obj.numBreakPoints = numBreakPoints;
-            obj.maxSpeed = maxSpeed;
+            obj.cumVelocityInterval = cumVelocityInterval;
+
+            obj.generateBreakPoints();
         end
-
-        function x = xBar(obj, zq, params)
-			alpha = params.alpha;
-			speed = params.speed;
-
-            mass = obj.rocketDynamics.massWet;
-            pos = obj.nominalPos;
-            vel = [speed*cosd(alpha), 0, speed*sind(alpha)].';
-            quat = obj.nominalQuat;
-            omega = [0, zq, 0].';
-            x = [mass; pos; vel; quat; omega];
-        end
-
-        function u = uBar(obj, zu)
-            u = [zu, 0, 0].';
-        end
-		
-		function cost = objectiveFunc(obj, z, params)
-			x = obj.xBar(z(1), params);
-			u = obj.uBar(z(2));
-
-			g = @(x) controllerPkg.pitchReduce(x);
-			Jg = Utils.numericalJacobian(g, x);
-			xDot = obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
-
-            x3Dot = Jg * xDot;
-
-			cost = norm(x3Dot(1:2));
-		end
 
         function generateBreakPoints(obj)
-            speedArr = linspace(10, obj.maxSpeed, obj.numBreakPoints);
-            params.alpha = 0;
-            obj.breakPointArr = controllerPkg.BreakPoint.empty(0, obj.numBreakPoints);
-            for ii=1:length(speedArr)
-                params.speed = speedArr(ii);
-                breakPoint = obj.solveBreakPoint(params);
-                obj.breakPointArr(ii) = breakPoint;
+            timeNominal = obj.nominalTrajLog.time;
+            states = obj.nominalTrajLog.states;
+            controlInputs = obj.nominalTrajLog.controlInputs;
+            actuatorStates = obj.nominalTrajLog.actuatorState;
+
+            % Stop at apogee
+            [~, timeNominal, states, controlInputs, actuatorStates] = controllerPkg.BreakPoints.cropToApogee(timeNominal, states, controlInputs, actuatorStates);
+
+            % Reduce time and state to every cumVelocityInterval
+            [timeNominal, states, controlInputs, actuatorStates] = obj.reduceToInterval(timeNominal, states, controlInputs, actuatorStates);
+
+            % Get cumulated velocity for each time (magnitude at each time step)
+            vx = states(5, :);
+            vy = states(6, :);
+            vz = states(7, :);
+            vel = sqrt(vx.^2 + vy.^2 + vz.^2);
+            cumVelocityFull = cumsum(vel);
+
+            % Get breakpoint indices
+            indices = round(linspace(1, length(cumVelocityFull), obj.numBreakPoints));
+
+            % Preallocate arrays
+            obj.cumVelocity = zeros(1, obj.numBreakPoints);
+            obj.time = zeros(1, obj.numBreakPoints);
+            obj.state = cell(1, obj.numBreakPoints);
+            obj.controlInput = cell(1, obj.numBreakPoints);
+            obj.actuatorState = cell(1, obj.numBreakPoints);
+            obj.stateMatrix = cell(1, obj.numBreakPoints);
+            obj.controlMatrix = cell(1, obj.numBreakPoints);
+            obj.gain = cell(1, obj.numBreakPoints);
+
+            % Populate each breakpoint
+            for i = 1:obj.numBreakPoints
+                idx = indices(i);
+                obj.cumVelocity(i) = cumVelocityFull(idx);
+                obj.time(i) = timeNominal(idx);
+                obj.state{i} = states(:, idx);
+                obj.controlInput{i} = controlInputs(:, idx);
+                obj.actuatorState{i} = actuatorStates(:, idx);
+                obj.stateMatrix{i} = {};
+                obj.controlMatrix{i} = {};
+                obj.gain{i} = {};
             end
         end
 
-        function [A3, B3] = calculateROMpitch(obj, xStar, deflection)
-			% Linearizes full dynamics and projects them onto 3-state Pitch space
-			
-			% Define function handles for numerical differentiation
-            f = @(x, u) obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
-            fx = @(x) f(x, [deflection, 0, 0].');
-            fu = @(u_in) f(xStar, [u_in, 0, 0].');
+        function [interpolatedGains, interpolatedControlReference] = interpolateGain(obj, currentCumVelocity)
+            % Interpolate gain(s) and reference control based on current cumulative velocity
+            %
+            % Inputs:
+            %   currentCumVelocity - Current cumulative velocity value
+            %
+            % Outputs:
+            %   interpolatedGains          - Cell array of interpolated gain matrices
+            %   interpolatedControlReference - Interpolated reference control input
 
-			% Calculate Full Jacobians (14x14)
-            A = Utils.numericalJacobian(fx, xStar);
-            B = Utils.numericalJacobian(fu, deflection);
-            
-			% Project to Reduced Space (3x3)
-            g = @(x) controllerPkg.pitchReduce(x);
-			
-			% Reduction mapping matrix (3x14)
-            Jg = Utils.numericalJacobian(g, xStar);
-
-			% Pseudo-inverse for projection (14x3)
-            T = pinv(Jg);
-			
-			% Projected System Matrix
-            A3 = Jg*A*T;
-
-			% Projected Control Matrix
-            B3 = Jg*B;
-        end
-
-        function [A2, B2] = calculateROMroll(obj, xStar, deflection)
-			% Linearizes full dynamics and projects them onto 2-state Roll space
-			
-			% Define function handles for numerical differentiation
-            f = @(x, u) obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
-            fx = @(x) f(x, [0, 0, deflection].');
-            fu = @(u_in) f(xStar, [0, 0, u_in].');
-
-			% Calculate Full Jacobians (14x14)
-            A = Utils.numericalJacobian(fx, xStar);
-            B = Utils.numericalJacobian(fu, deflection);
-            
-			% Project to Reduced Space (2x2)
-            g = @(x) controllerPkg.rollReduce(x);
-			
-			% Reduction mapping matrix (2x14)
-            Jg = Utils.numericalJacobian(g, xStar);
-
-			% Pseudo-inverse for projection (14x3)
-            T = pinv(Jg);
-			
-			% Projected System Matrix
-            A2 = Jg*A*T;
-
-			% Projected Control Matrix
-            B2 = Jg*B;
-        end
-
-        function breakPoint = solveBreakPoint(obj, params)
-			z0 = [0, 0];
-			%options = optimset('Display','iter','PlotFcns',@optimplotfval);
-
-            objective_handle = @(z) obj.objectiveFunc(z, params);
-            [zStar, ~] = fminsearch(@(z) objective_handle(z), z0);
-
-			xStar = obj.xBar(zStar(1), params);
-			uStar = obj.uBar(zStar(2));
-            pitchStar = uStar(1);
-
-            [A3, B3] = obj.calculateROMpitch(xStar, pitchStar);
-            [A2, B2] = obj.calculateROMroll(xStar, pitchStar);
-
-            breakPoint = controllerPkg.BreakPoint(params);
-
-            % load breakpoint info into object
-            breakPoint.zStar = zStar;
-            breakPoint.xStar = xStar;
-            breakPoint.uStar = uStar;
-            breakPoint.A3 = A3;
-            breakPoint.B3 = B3;
-            breakPoint.A2 = A2;
-            breakPoint.B2 = B2;   
-            breakPoint.computeGain()
-		end
-            
-            % TODO: Break trajectory based on accumulated velocity or
-            % altitude and corresponding hyper parameters. Compute A and B
-            % (x_dot = Ax + Bu)
-            % for each break point
-            
-        
-        
-        % Depercated at the moment (Sorry Hridai)
-        %{
-        function compute_optimal_trajectory(obj, rocketDynamics)
-            % TODO: Port Danil's work here 
-        end
-
-        function compute_dumb_trajectory(obj)
-
-            % generate trivial trajectory
-            x_0 = [0; 0; 0];
-            x_f = [0; 0; 1000];     % 3x1
-            dt = 0.1;               % s
-            T = 20;             % s
-            obj.nu
-            
-            % Grid and kinematics
-            N  = max(2, floor(T/dt)+1);
-            t  = (0:N-1)*dt;
-            d  = x_f - x_0;                   % 3x1
-            s  = linspace(0,1,N);             % 1xN (progress)
-            pos = x_0 + d*s;                  % 3xN (implicit expansion)
-            v   = d / ((N-1)*dt);             % 3x1 constant vel
-            vel = repmat(v,1,N);              % 3xN
-            
-            % Outputs
-            obj.x_optimal_time = [pos; vel];      % 6xN
-            obj.u_optimal_time = zeros(obj.nu, obj.N_t);    % nu x N (all zeros)
-            obj.time_optimal = t;
-               
-        end
-
-        function generate_trajectory_av(obj)
-
-            % Velocity and |Velocity|
-            vel_optimal_time = obj.x_optimal_time(4:6,:);
-            vel_optimal_time_mag = vecnorm(vel_optimal_time,2,1);
-            
-            % Integrate to find Max Accumulated Velocity
-            dt = diff(time_optimal);
-
-            raw_optimal_av = zeros(size(vel_optimal_time_mag));
-
-            for i = 2:(size(vel_optimal_time,2))
-                raw_optimal_av(i) = raw_optimal_av(i-1) + dt(i-1)*vel_optimal_time_mag(i-1);
+            % Handle edge cases
+            if currentCumVelocity <= obj.cumVelocity(1)
+                % Below first breakpoint - return first values
+                interpolatedGains = obj.gain{1};
+                interpolatedControlReference = obj.controlInput{1};
+                return;
+            elseif currentCumVelocity >= obj.cumVelocity(end)
+                % Above last breakpoint - return last values
+                interpolatedGains = obj.gain{end};
+                interpolatedControlReference = obj.controlInput{end};
+                return;
             end
 
-            max_av = raw_optimal_av(end);
-            
-            % Normalizing
-            norm_optimal_av = raw_optimal_av./max_av;
-            
-            % New uniform grid
-            step = 0.05;
-            s_new = 0:step:1;
-            s_new(end) = 1;
+            % Find bracketing breakpoints
+            % Find largest index where cumVel <= currentCumVelocity
+            lowerIdx = find(obj.cumVelocity <= currentCumVelocity, 1, 'last');
+            upperIdx = lowerIdx + 1;
+
+            % Get bracketing values
+            cumVel_lower = obj.cumVelocity(lowerIdx);
+            cumVel_upper = obj.cumVelocity(upperIdx);
+
+            % Compute interpolation weight (0 at lower, 1 at upper)
+            lambda = (currentCumVelocity - cumVel_lower) / (cumVel_upper - cumVel_lower);
+
+            % Get gain cell arrays and control inputs from both breakpoints
+            gains_lower = obj.gain{lowerIdx};
+            gains_upper = obj.gain{upperIdx};
+            controlInput_lower = obj.controlInput{lowerIdx};
+            controlInput_upper = obj.controlInput{upperIdx};
+
+            % Number of gains (should be same for all breakpoints)
+            n_gains = length(gains_lower);
+
+            % Preallocate output cell array
+            interpolatedGains = cell(1, n_gains);
+
+            % Interpolate each gain matrix
+            for j = 1:n_gains
+                interpolatedGains{j} = (1 - lambda) * gains_lower{j} + ...
+                                        lambda * gains_upper{j};
+            end
+
+            % Interpolate reference control input
+            interpolatedControlReference = (1 - lambda) * controlInput_lower + ...
+                                            lambda * controlInput_upper;
         end
 
-        
-        
-        function compute_gains(obj, controller)
-            % TODO: Call controller for each breakPoint and compute gains
-            
+        function [time, states, controlInputs, actuatorStates] = reduceToInterval(obj, time, states, controlInputs, actuatorStates)
+            % Downsample to exact cumVelocityInterval using interp1
+            if obj.cumVelocityInterval <= 0
+                return;
+            end
+
+            % Create new time vector at exact intervals
+            timeNew = time(1):obj.cumVelocityInterval:time(end);
+
+            % Interpolate states, control inputs, and actuator states
+            statesNew = interp1(time, states', timeNew, 'linear')';
+            controlInputsNew = interp1(time, controlInputs', timeNew, 'linear')';
+            actuatorStatesNew = interp1(time, actuatorStates', timeNew, 'linear')';
+
+            fprintf('reduceToInterval: Resampled from %d to %d points\n', ...
+                    length(time), length(timeNew));
+
+            time = timeNew;
+            states = statesNew;
+            controlInputs = controlInputsNew;
+            actuatorStates = actuatorStatesNew;
         end
+    end
 
-        function stability_analysis(obj)
-            % TODO: Closed-loop stability analysis and classical controller
-            % performance for each breakpoint (root locus, % overshoot,
-            % settling time, rise time, peak time, etc)
-        end
+    methods (Access = private, Static)
 
-        function gain_scheduling_interpolated()
-            
-        end
+        function [timeOfApogee, time, states, controlInputs, actuatorStates] = cropToApogee(time, states, controlInputs, actuatorStates)
+            % Detect apogee and crop trajectory data to before apogee
 
-        % Fill in properties as needed
-        breakPointList;
+            % Extract altitude and compute derivatives
+            time_derivative = time(100:end); % Ignore first 1s
+            z = states(4, 100:end); % Ignore first 1s
+            dz = gradient(z, time_derivative);   % Vertical velocity
+            d2z = gradient(dz, time_derivative); % Vertical acceleration
 
-        % Number of states and controls 
-        nx;
-        nu;
+            % Find points where vertical velocity is near zero
+            idx = find(abs(dz) < 0.1);
 
-        % Trajectory with respect to time
-        x_optimal_time;
-        u_optimal_time;
-        optimal_time;
+            % Filter for points with negative acceleration (true apogee)
+            valid_idx = idx(d2z(idx) < 0);
 
-        % Trajectory with respect to accumulated velocity
-        x_optimal_av;
-        u_optimal_av;
-        optimal_av;
+            if ~isempty(valid_idx)
+                % Use first valid point as apogee
+                apogee_idx = valid_idx(1);
+                timeOfApogee = time(apogee_idx);
 
-        N_av;
-        %}
-
-	end
+                % Crop all data to before apogee
+                mask = time < timeOfApogee;
+                time = time(mask);
+                states = states(:, mask);
+                controlInputs = controlInputs(:, mask);
+                actuatorStates = actuatorStates(:, mask);
+                fprintf("BreakPoints: Apogee detected at t=%.2f - cropping nominal flight.\n", timeOfApogee)
+            else
+                timeOfApogee = 0;
+                fprintf("BreakPoints: No apogee detected - using full nominal flight.")
+            end
+        end    
+    end
 end
+

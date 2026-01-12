@@ -195,7 +195,8 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
 	% LOG
     maxSteps = round(flightParams.totalTime / flightParams.dt);
     stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
-    controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary  
-	log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);  
+    controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary
+    actuatorStateNames = {'delta1', 'delta2', 'delta3', 'delta4'}; % fin deflections
+	log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 

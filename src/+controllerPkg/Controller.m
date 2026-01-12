@@ -1,39 +1,40 @@
 % Main Authors: Aditya Swami (aswami8@gatech.edu)
-%               David Reynolds (dreynolds45@gatech.edu)
+%               Karsten Caillet (kcaillet3@gatech.edu)
 
+classdef (Abstract) Controller < handle
 
-classdef Controller < handle
-    properties
+    properties (Abstract)
         breakPoints
+        referenceAttitudes % (5xn) time and quaternion for every timestep.
     end
 
-    methods
-        function obj = Controller(breakPoints)
-            obj.breakPoints = breakPoints;
-        end
+    methods (Abstract)
+        u = getControl(obj, state);
+        % Get control input based on state and breakpoints
 
-        function gain = getGain(state)
-            % Finds gains of the controller based on the state
-            
-        end
-
-        function u = getControl(state)
-            % Finds optimal fin deflection based on state
-            
-        end
+        populateBreakPoints(obj);
+        % Populate breakPoints with A, B, and gain(s)
     end
+
+    methods (Static)
+        function check_controllability(A, B)
+            C = ctrb(A, B);
+            r = rank(C);
+            n = size(A, 1);
+        
+            fprintf('rank(C) = %d\n', r);
+            fprintf('n       = %d\n', n);
+        
+            if r == n
+                fprintf('System is CONTROLLABLE.\n');
+            else
+                fprintf('System is NOT controllable.\n');
+            end
+        end
+
+    end
+
 end
 
-% classdef (Abstract) Controller < handle
-%     properties 
-%         actuator
-%     end
-% 
-%     methods (Abstract)
-%         % comments
-%         %[fB, mB] = getForcesMoments(state, disturbances, motorParams, CG, breakPoints, time);
-%         %gain = computeGain()
-%         control = computeControl(state)
-% 
-%     end
-% end
+
+      

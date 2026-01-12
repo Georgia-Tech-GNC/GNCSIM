@@ -2,7 +2,6 @@
 
 classdef Fin < rocketPkg.DatcomManager
 	% FIN Represents an aerodynamic fin component on a rocket or aircraft
-    % Main Aurther
 
 	properties
 		finParams		% Structure containing geometric and placement parameters for this fin

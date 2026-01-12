@@ -416,6 +416,40 @@ classdef Analysis < handle
             end
         end
 
+        function generateActuatorStatePlot(obj)
+            fig = figure('Visible', 'off');
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                time = log.time(1:log.currentIdx);
+                time = time(obj.timeMask{i});
+
+                % Plot all actuator states
+                for j = 1:length(log.actuatorStateNames)
+                    actuatorData = log.getActuatorState(log.actuatorStateNames{j});
+                    actuatorData = actuatorData(obj.timeMask{i});
+                    plot(time, actuatorData, 'LineWidth', 2)
+                end
+            end
+
+            if ~isempty(obj.logs{1}.actuatorStateNames)
+                legend(obj.logs{1}.actuatorStateNames)
+            end
+            ylabel('\textbf{Actuator States}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Actuator States}', 'Interpreter', 'latex')
+            grid on;
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'actuator_states.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
         function generateAccelerationPlot(obj)
             fig = figure('Visible', 'off');
             hold on;
@@ -614,6 +648,7 @@ classdef Analysis < handle
             obj.generateAeroMomentPlot();
             obj.generateAeroForcePlot();
             obj.generateControlMomentPlot();
+            obj.generateActuatorStatePlot();
             obj.generateEkfCovariancePlot();
             obj.generateAltitudeAndXYPlot();
         end

@@ -3,7 +3,7 @@
 % Meant for implementing CFD models of rockets
 % Use DATCOM if you don't have one
 
-classdef Aerodynamics < handle
+classdef AerodynamicsCFD < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -17,7 +17,7 @@ classdef Aerodynamics < handle
     end
 
     methods
-        function obj = Aerodynamics()
+        function obj = AerodynamicsCFD()
             % Construct an instance of this class
 
             % TODO Future project: Define a default basic aerodynamic model for

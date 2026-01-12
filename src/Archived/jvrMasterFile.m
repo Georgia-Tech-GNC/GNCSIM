@@ -291,11 +291,14 @@ function [flight, log] = setupFlight(rocketDynamics, environment, breakPoints, n
     % Define control input names
     controlInputNames = {'thrust', 'gimbalX', 'gimbalY', 'gimbalZ'};
 
+    % Define actuator state names (adjust based on your actuator model)
+    actuatorStateNames = {'actuator1', 'actuator2', 'actuator3', 'actuator4'};
+
     % Size of log (will increase if needed)
     maxSteps = flightParams.totalTime / flightParams.dt;
-    
+
     % Initialize Log object
-    log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);
+    log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 
 
