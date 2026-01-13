@@ -50,6 +50,20 @@ classdef BreakPoints < handle
             % Get breakpoint indices
             indices = round(linspace(1, length(cumVelocityFull), obj.numBreakPoints));
 
+            % Filter out breakpoints from first second of flight (no control authority)
+            tIgnore = 1.0; % seconds
+            validMask = timeNominal(indices) > tIgnore;
+            indices = indices(validMask);
+            numValidBreakPoints = length(indices);
+
+            fprintf('BreakPoints: Filtered out %d breakpoints from first %.1f seconds (no control authority).\n', ...
+                    obj.numBreakPoints - numValidBreakPoints, tIgnore);
+            fprintf('BreakPoints: Using %d breakpoints from t=%.2fs to t=%.2fs.\n', ...
+                    numValidBreakPoints, timeNominal(indices(1)), timeNominal(indices(end)));
+
+            % Update numBreakPoints to actual count
+            obj.numBreakPoints = numValidBreakPoints;
+
             % Preallocate arrays
             obj.cumVelocity = zeros(1, obj.numBreakPoints);
             obj.time = zeros(1, obj.numBreakPoints);
@@ -84,6 +98,10 @@ classdef BreakPoints < handle
             %   interpolatedGains          - Cell array of interpolated gain matrices
             %   interpolatedControlReference - Interpolated reference control input
 
+            if isnan(currentCumVelocity)
+                error("NaN currentCumVelocity")
+            end
+            
             % Handle edge cases
             if currentCumVelocity <= obj.cumVelocity(1)
                 % Below first breakpoint - return first values
@@ -112,6 +130,7 @@ classdef BreakPoints < handle
             % Get gain cell arrays and control inputs from both breakpoints
             gains_lower = obj.gain{lowerIdx};
             gains_upper = obj.gain{upperIdx};
+
             controlInput_lower = obj.controlInput{lowerIdx};
             controlInput_upper = obj.controlInput{upperIdx};
 

@@ -21,42 +21,10 @@ classdef FullStateLQR < controllerPkg.Controller
         function rocketControl = getControl(obj, state, currentCumVelocity, currentTime)
             [interpolatedGains, interpolatedControlReference] = obj.breakPoints.interpolateGain(currentCumVelocity);
 
-            [K2, K3] = interpolatedGains{:};
-            [rollControlRef, pitchControlRef, yawControlRef] = interpolatedControlReference{:};
-
-            [pitchErr, yawErr, rollErr] = obj.getError(state, currentTime);
-
-            rollControl = rollControlRef - K2 * rollErr;
-            pitchControl = pitchControlRef - K3 * pitchErr;
-            yawControl = yawControlRef - K3 * yawErr;
-
-            rocketControlRad = [0, pitchControl, yawControl].';
-            rocketControl = rad2deg(rocketControlRad);
         end
            
         function [rollErr, pitchErr, yawErr] = getError(obj, rocketState, currentTime)
-            x3Pitch = obj.reduceLTI.pitchReduce(rocketState);
-            x3Yaw = obj.reduceLTI.pitchReduce(rocketState, true);
-            x2Roll = obj.reduceLTI.rollReduce(rocketState);
 
-            % Find the index in reference that corresponds to current time
-            time_vec = obj.referenceAttitudes(1, :);
-            [~, idx] = min(abs(time_vec - currentTime));
-            
-            % Extract reference quaternion at current time
-            quat_ref = obj.referenceAttitudes(2:5, idx);
-            
-            % Convert quaternion to Euler angles
-            euler_ref = quat2eul(quat_ref.', 'XYZ');  % Returns [roll, pitch, yaw]
-            
-            % Extract individual reference angles
-            rollRef = euler_ref(1);
-            pitchRef = euler_ref(2);
-            yawRef = euler_ref(3);
-            
-            rollErr = rollRef - x2Roll;
-            pitchErr = pitchRef - x3Pitch;
-            yawErr = yawRef - x3Yaw;
         end
         
         function populateBreakPoints(obj)

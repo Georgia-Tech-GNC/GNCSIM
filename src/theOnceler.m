@@ -10,15 +10,14 @@ rocketDynamics.computeBuildup()
 parachuteDynamics = setupParachute();
 
 % Setup Controller
-% controller = setupDecoupledLQR(rocketDynamics);
-controller = -1;
+controller = setupDecoupledLQR(rocketDynamics);
 
 % Setup Environment
 environment = setupEnvironment();
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
-flight.runClosedLoop = false;
+flight.runClosedLoop = true;
 
 %% Run Flight
 
@@ -36,7 +35,7 @@ log.trim();
 % lti.generateROM(xStar);
 % lti.performComparison(log)
 
-log.saveToFile("theOncelerNominalFlightLog")
+% log.saveToFile("theOncelerNominalFlightLog")
 
 %% Analysis
 analysis = analysisPkg.Analysis(log);
@@ -128,9 +127,10 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-
-    timeConstant = 0.05; % [s]
-    actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix);
+    timeConstant = 0.001; % [s]
+    limits.maxDeflection = 15;        % deg
+    limits.maxRate       = 1000;       % deg/s
+    actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
 
     rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, aerodynamics);
 end
@@ -166,7 +166,7 @@ function controller = setupDecoupledLQR(rocketDynamics)
     
     % Convert each Euler angle to quaternion
     for i = 1:n
-        eulerAngles = [0, 0, yaw_rad(i)];  % [roll, pitch, yaw]
+        eulerAngles = [0, 0, yaw_rad(i)];  % [roll, pitch, yaw] in radians
         % eul2quat returns [w, x, y, z] (scalar first)
         quat = eul2quat(eulerAngles, 'XYZ');
         % Store as column vector [w; x; y; z] or reorder if needed
@@ -179,15 +179,15 @@ function controller = setupDecoupledLQR(rocketDynamics)
     % Generate Breakpoints
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
     nominalTrajLog = tmp.data;
-    numBreakPoints = 100;
+    numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
 
     % Get controller
-	Q2 = diag([1 1]);       
-	R2 = 1;   	
-	Q3 = 1 * diag([1 1 1]);
-	R3 = 1; 
+	Q2 = 0.01 * diag([1 1]);       
+	R2 = 10;   	
+	Q3 = 0.01 * diag([1 1 1]);
+	R3 = 10; 
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI);
@@ -261,14 +261,14 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     % Flight
-    flightParams.totalTime = 25;  % length of simulation [s]
+    flightParams.totalTime = 15;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
     
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [20, 0, 0];
+    vel0 = [0, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
-    omega0 = [0, 0.2, 0];
+    omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 

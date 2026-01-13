@@ -5,13 +5,15 @@ classdef TheOncelerActuatorModel < controllerPkg.ActuatorModel
         allocationMatrix
         rocketFins
         timeConstant
+        limits
     end
     methods 
         % Actuator State is fin deflections in degrees
-        function obj = TheOncelerActuatorModel(rocketFins, timeConstant, allocationMatrix)            
+        function obj = TheOncelerActuatorModel(rocketFins, timeConstant, allocationMatrix, limits)            
             obj.rocketFins = rocketFins; % movable fins object
             obj.timeConstant = timeConstant; % time constant for 1st order model
             obj.allocationMatrix = allocationMatrix;
+            obj.limits = limits;
             obj.computeBuildup();
         end
 
@@ -21,8 +23,21 @@ classdef TheOncelerActuatorModel < controllerPkg.ActuatorModel
 
         function actuatorStateDot = actuatorDynamics(obj, controlInput, actuatorState)
             % first order actuation model
+            % Saturate cmd
             actuatorStateCmd = obj.allocationMatrix * controlInput;
+            deltaMax = obj.limits.maxDeflection;
+            actuatorStateCmd = min(max(actuatorStateCmd, -deltaMax), deltaMax);
+            
+            % saturate actuation rate
             actuatorStateDot = 1/obj.timeConstant .* (actuatorStateCmd - actuatorState);
+            rateMax = obj.limits.maxRate;
+            actuatorStateDot = min(max(actuatorStateDot, -rateMax), rateMax);
+            
+            % prevent going past limits
+            atUpper = actuatorState >=  deltaMax & actuatorStateDot > 0;
+            atLower = actuatorState <= -deltaMax & actuatorStateDot < 0;
+        
+            actuatorStateDot(atUpper | atLower) = 0;
         end
 
         function computeBuildup(obj)

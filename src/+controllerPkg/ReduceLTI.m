@@ -45,9 +45,8 @@ classdef ReduceLTI < handle
             A = Utils.numericalJacobian(fx, xStar); % (14x14)
             B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
             B_actuator = Utils.numericalJacobian(hu, pitchControlInput); % (4x1)
+            % B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 2); % no actuator lag
             B = B_aero * B_actuator; % (14x1)
-
-            controllerPkg.Controller.check_controllability(A, B_aero);
             
 			% Project to Reduced Space (3x3)
             g = @(x) controllerPkg.ReduceLTI.pitchReduce(x);
@@ -82,6 +81,7 @@ classdef ReduceLTI < handle
             A = Utils.numericalJacobian(fx, xStar); % (14x14)
             B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
             B_actuator = Utils.numericalJacobian(hu, rollControlInput); % (4x1)
+            % B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 1);
             B = B_aero * B_actuator; % (14x1)
             
 			% Project to Reduced Space (2x2)

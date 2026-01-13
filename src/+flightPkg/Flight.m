@@ -74,9 +74,10 @@ classdef Flight < handle
                         vel = sqrt(vx.^2 + vy.^2 + vz.^2);
                         obj.cumVelocity = obj.cumVelocity + vel;
                     end
-                    actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
-                    actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
                 end
+                actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
+                actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
+                % actuatorState = obj.rocketDynamics.actuatorModel.allocationMatrix * controlInput; % no actuator lag
 
                 rocketDyn = @(x) obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime);
                 rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);

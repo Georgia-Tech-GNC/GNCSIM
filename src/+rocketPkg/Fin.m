@@ -47,8 +47,8 @@ classdef Fin < rocketPkg.DatcomManager
            % Converting back to body frame
            cBC = cCB';
            fB = cBC*fC;
-           mBCoss = cross(rCb, fB);
-           mB = cBC*mC + mBCoss(:);
+           mBCross = cross(rCb, fB);
+           mB = cBC*mC + mBCross(:);
 		end
 	end
 end

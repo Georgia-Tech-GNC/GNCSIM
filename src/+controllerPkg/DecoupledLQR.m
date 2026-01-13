@@ -26,10 +26,14 @@ classdef DecoupledLQR < controllerPkg.Controller
         function rocketControl = getControl(obj, state, currentCumVelocity, currentTime)
             [interpolatedGains, interpolatedControlReference] = obj.breakPoints.interpolateGain(currentCumVelocity);
 
-            [K2, K3] = interpolatedGains{:};
-            [rollControlRef, pitchControlRef, yawControlRef] = interpolatedControlReference{:};
+            K2 = interpolatedGains{1};
+            K3 = interpolatedGains{2};
 
-            [pitchErr, yawErr, rollErr] = obj.getError(state, currentTime);
+            rollControlRef = interpolatedControlReference(1);
+            pitchControlRef = interpolatedControlReference(2);
+            yawControlRef = interpolatedControlReference(3);
+
+            [rollErr, pitchErr, yawErr] = obj.getError(state, currentTime);
 
             rollControl = rollControlRef - K2 * rollErr;
             pitchControl = pitchControlRef - K3 * pitchErr;
@@ -40,6 +44,12 @@ classdef DecoupledLQR < controllerPkg.Controller
         end
            
         function [rollErr, pitchErr, yawErr] = getError(obj, rocketState, currentTime)
+            % Rotate orientation by +90 deg pitch to avoid gimbal lock
+            q = rocketState(8:11);
+            q_pitch90 = [cos(pi/4); 0; sin(pi/4); 0];
+            q_new = quatmultiply(q_pitch90.', q.').'; 
+            rocketState(8:11) = q_new;
+
             x3Pitch = obj.reduceLTI.pitchReduce(rocketState);
             x3Yaw = obj.reduceLTI.pitchReduce(rocketState, true);
             x2Roll = obj.reduceLTI.rollReduce(rocketState);
@@ -59,9 +69,9 @@ classdef DecoupledLQR < controllerPkg.Controller
             pitchRef = euler_ref(2);
             yawRef = euler_ref(3);
             
-            rollErr = rollRef - x2Roll;
-            pitchErr = pitchRef - x3Pitch;
-            yawErr = yawRef - x3Yaw;
+            rollErr = [0; rollRef] - x2Roll;
+            pitchErr = [0; 0; pitchRef] - x3Pitch;
+            yawErr = [0; 0; yawRef] - x3Yaw;
         end
         
         function populateBreakPoints(obj)
@@ -75,34 +85,12 @@ classdef DecoupledLQR < controllerPkg.Controller
                 [A3, B3] = obj.reduceLTI.calculateROMpitch(state, controlInput(2), actuatorState, time);
                 [A2, B2] = obj.reduceLTI.calculateROMroll(state, controlInput(1), actuatorState, time);
 
-                controllerPkg.Controller.check_controllability(A3, B3);
-                controllerPkg.Controller.check_controllability(A2, B2);
-
                 K3 = lqr(A3, B3, obj.Q3, obj.R3);
                 K2 = lqr(A2, B2, obj.Q2, obj.R2);
 
                 obj.breakPoints.stateMatrix{i} = {A2, A3};
                 obj.breakPoints.controlMatrix{i} = {B2, B3};
-                obj.breakPoints.gain{i} = {K2, K3};
-            end
-        end
-
-        function check_controllability(obj, A, B)
-            %CHECK_CONTROLLABILITY Prints rank of controllability matrix and system order
-            %
-            %   check_controllability(A,B)
-            
-            C = ctrb(A, B);
-            r = rank(C);
-            n = size(A, 1);
-        
-            fprintf('rank(C) = %d\n', r);
-            fprintf('n       = %d\n', n);
-        
-            if r == n
-                fprintf('System is CONTROLLABLE.\n');
-            else
-                fprintf('System is NOT controllable.\n');
+                obj.breakPoints.gain{i} = {K2, K3};               
             end
         end
     end
