@@ -180,10 +180,10 @@ classdef RocketDynamics < handle
             deflections = obj.allocationMatrix * control;
 
             [fB, mB] = obj.getForcesMoments(state, deflections, disturbances, time, log, useThrust);
-            xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity);
+            xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity, useThrust);
 		end
 
-		function stateDot = flatEarth_EOM(obj, state, time, fB, mB, useGravity)
+		function stateDot = flatEarth_EOM(obj, state, time, fB, mB, useGravity, useThrust)
 			arguments
                 obj
                 state 
@@ -191,6 +191,7 @@ classdef RocketDynamics < handle
 				fB
 				mB
 				useGravity = true;
+                useThrust = true;
             end
             mass = state(1);
             vel = state(5:7);
@@ -214,7 +215,11 @@ classdef RocketDynamics < handle
 
             fB = fB + cBI * fG;
 
-            massDot = obj.getMDot(time);
+            massDot = 0;
+            if obj.useThrust
+                massDot = obj.getMDot(time);
+            end
+            
             posDot = cIB * vel;
             velDot = fB / mass - cross(omega, vel);
             quatDot = Utils.quatDerivative(quat, omega);

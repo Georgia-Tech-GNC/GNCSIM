@@ -45,12 +45,11 @@ classdef Flight < handle
             % Get state estimate
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
             
-
-           rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, u, obj.currentTime, log); % thrust starts at t=0s
+            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, u, obj.currentTime, log); % thrust starts at t=0s
 
             log.add(obj.currentTime, 'states', rocketState);
             log.add(obj.currentTime, 'statedots', rocketStateDot);
-			      log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+			log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
 
             for ii = 1:log.maxSteps - 1
 

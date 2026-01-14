@@ -1,3 +1,4 @@
+% Main Authors: David Reynolds (dreynolds45@gatech.edu)
 
 classdef Animation
 	properties
@@ -32,7 +33,6 @@ classdef Animation
 			axis equal tight vis3d off
 			camproj('perspective');
 			camva(40);
-			f.GraphicsSmoothing = 'on';
 			hold on
 			rotate3d on % rotation pre selcted
 		end
@@ -171,9 +171,12 @@ classdef Animation
 			x_pos = obj.log.getState('x');
             y_pos = obj.log.getState('y');
             z_pos = obj.log.getState('z');
+            vx = obj.log.getState('vx');
+            vy = obj.log.getState('vy');
+            vz = obj.log.getState('vz');
             time = obj.log.time(1:obj.log.currentIdx);
 
-			aniState = [q0; q1; q2; q3; x_pos; y_pos; z_pos];
+			aniState = [q0; q1; q2; q3; x_pos; y_pos; z_pos; vx; vy; vz];
 			aniState = aniState(:, 1:obj.log.currentIdx);
 
 			txtHandle = annotation('textbox', [0.05, 0.8, 0.3, 0.15], ...
@@ -203,6 +206,8 @@ classdef Animation
 				stateInterp = interp1(time, aniState.' ,simTime);
 
 				quat = stateInterp(1:4);       % [q0, q1, q2, q3]
+                vel = stateInterp(8:10);
+                speed = norm(vel);
 				%quat_rotated = quat * quat_y90;
 				
 				pos = stateInterp(5:7);     % [x, y, z]
@@ -224,7 +229,7 @@ classdef Animation
 				txtHandle.String = { ...
             	sprintf('Time: %.2f s', simTime), ...
             	sprintf('Altitude: %.1f m', pos(3)), ...
-            	sprintf('Velocity: %.2f m/s', 5)};
+            	sprintf('Speed: %.2f m/s', speed)};
 
         		drawnow;
 			end

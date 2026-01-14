@@ -43,7 +43,7 @@ classdef BreakPoints < handle
 
 			g = @(x) controllerPkg.pitchReduce(x);
 			Jg = Utils.numericalJacobian(g, x);
-			xDot = obj.rocketDynamics.rocketModel(x, u, 0, [], false, false);
+			xDot = obj.rocketDynamics.rocketModel(x, u, 0, [], false);
 
             x3Dot = Jg * xDot;
 

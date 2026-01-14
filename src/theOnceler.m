@@ -36,12 +36,12 @@ fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 log.trim();
 
-lti = analysisPkg.ReduceLTI(flight);
-xStar = flight.rocketInitialState;
-xStar(5:7) = [20, 0, 0].';
-xStar(12:14) = [0, 0, 0].';
-lti.generateROM(xStar);
-lti.performComparison(log)
+%lti = analysisPkg.ReduceLTI(flight);
+%xStar = flight.rocketInitialState;
+%xStar(5:7) = [20, 0, 0].';
+%xStar(12:14) = [0, 0, 0].';
+%lti.generateROM(xStar);
+%lti.performComparison(log)
 
 
 %% Analysis

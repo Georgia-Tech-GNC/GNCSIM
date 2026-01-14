@@ -114,7 +114,7 @@ classdef ReduceLTI < handle
             grid on;
         end
 
-        function performComparison(obj, log)
+        function performComparison(obj, log, rocketDyn)
             % Compares the Linearized ROM against the full Nonlinear Simulation Log
             % NOTE: Make sure thrust and gravity is off for fair comparison
 
@@ -128,8 +128,8 @@ classdef ReduceLTI < handle
             x0 = [0; omega0; 0];
             [~, ~, X] = initial(sys, x0, time);
             
-            figure;
-            subplot(2, 1, 1);
+            figure('Position', [200, 200, 1300, 600]);
+            subplot(3, 3, 5:6);
             
 			% Compare Angular Velocity
             wyNonLTI = log.getState('wy');
@@ -142,7 +142,7 @@ classdef ReduceLTI < handle
             legend;
 			
 			% Compare Euler Angles
-            subplot(2, 1, 2);
+            subplot(3, 3, 8:9);
             
             % Euler Comparison
             q0 = log.getState('q0');
@@ -164,6 +164,78 @@ classdef ReduceLTI < handle
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
             legend;
             grid on;
+            
+            subplot(3, 3, [4,7]);
+            pzmap(sys);
+            %grid on;
+            axis tight;
+            xlim([-1, .1]);
+            ylim([-6, 6]);
+
+            hPoles = findobj(gca, 'Type', 'line', 'Marker', 'x');
+            hZeros = findobj(gca, 'Type', 'line', 'Marker', 'o');
+            
+            set(hPoles, 'MarkerSize', 12, 'LineWidth', 2);
+            set(hZeros, 'MarkerSize', 12, 'LineWidth', 2);
+
+            subplot(3, 3, 1:3)
+            rBody = rocketDyn.body.bodyParams;
+            r = rBody.rocketDiameter/2;
+            
+            % Nose Profile
+            xNose = linspace(rBody.noseLength, 0, 100);
+            yNoseProfile = rocketDyn.body.getNoseRadii(xNose);
+            
+            % Body Profile
+            l = rBody.noseLength + rBody.bodyLength;
+            xBody = [rBody.noseLength, rBody.noseLength + rBody.bodyLength];
+            yBody = [r, r];
+            
+            % Combine to create the upper and lower silhouette
+            xFull = [xBody, xNose];
+            yUpper = [yBody, yNoseProfile];
+            yLower = -yUpper; % Mirror for the bottom half
+            
+            % Draw the main body outline
+            plot(xFull, yUpper, 'k', 'LineWidth', 1.5); % Top edge
+            hold on
+            grid on
+            axis equal
+            plot(xFull, yLower, 'k', 'LineWidth', 1.5); % Bottom edge
+            plot([l, l], [r, -r], 'k', 'LineWidth', 1.5);
+            
+            % Draw the base (closing the rocket)
+            line([xFull(end), xFull(end)], [yUpper(end), yLower(end)], 'Color', 'k', 'LineWidth', 1.5);
+        
+            % ========== FINS (Side Projection) ==========
+            for ii = 1:length(rocketDyn.rocketFins.finParamsArr)
+                fins = rocketDyn.rocketFins.finParamsArr(ii);
+                xBase = fins.translation(1);
+                
+                % Define 2D fin shape relative to the root
+                % Shape: [Leading Edge, Trailing Edge Tip, Trailing Edge Root]
+                leRoot = [0, 0];
+                teRoot = [fins.rootChord, 0];
+                leTip  = [fins.finSpan * tand(fins.sweepDeg), fins.finSpan];
+                teTip  = [leTip(1) + fins.tipChord, fins.finSpan];
+                
+                % Close the polygon for the line plot
+                finX = [leRoot(1), leTip(1), teTip(1), teRoot(1), leRoot(1)];
+                finY = [leRoot(2), leTip(2), teTip(2), teRoot(2), leRoot(2)];
+                
+                % Plot the top fin
+                plot(xBase + finX, r + finY, 'b', 'LineWidth', 1.2);
+                
+                % Plot the bottom fin
+                plot(xBase + finX, -(r + finY), 'b', 'LineWidth', 1.2);
+                
+                % Optional: If you want to show "internal" wireframe lines for 
+                % fins pointing toward/away from the viewer (for a 4-fin setup)
+                if fins.numFins == 4
+                     line([xBase, xBase + fins.rootChord], [0, 0], 'Color', [0.5 0.5 0.5], 'LineStyle', '--');
+                end
+            end
+
 		end
 	end
 end
