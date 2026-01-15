@@ -29,7 +29,7 @@ classdef DecoupledLQR < controllerPkg.Controller
             [interpolatedGains, interpolatedControlReference] = obj.breakPoints.interpolateGain(currentCumVelocity);
 
             K2 = interpolatedGains{1};
-            K3 = interpolatedGains{2}
+            K3 = interpolatedGains{2};
 
             rollControlRef = interpolatedControlReference(1);
             pitchControlRef = interpolatedControlReference(2);
@@ -37,9 +37,9 @@ classdef DecoupledLQR < controllerPkg.Controller
 
             [rollErr, pitchErr, yawErr] = obj.getError(state, currentTime);
 
-            rollControl = rollControlRef - K2 * rollErr;
-            pitchControl = pitchControlRef - K3 * pitchErr;
-            yawControl = yawControlRef - K3 * yawErr;
+            rollControl = K2 * rollErr;
+            pitchControl = K3 * pitchErr;
+            yawControl = K3 * yawErr;
 
             rocketControlRad = [0, pitchControl, yawControl].';
             rocketControl = rad2deg(rocketControlRad);

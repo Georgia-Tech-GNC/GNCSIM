@@ -260,7 +260,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [0, 0, 0];
+    vel0 = [10, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
