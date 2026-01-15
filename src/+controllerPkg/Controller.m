@@ -6,6 +6,7 @@ classdef (Abstract) Controller < handle
     properties (Abstract)
         breakPoints
         referenceAttitudes % (5xn) time and quaternion for every timestep.
+        useActuatorModel
     end
 
     methods (Abstract)

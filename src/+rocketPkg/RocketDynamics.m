@@ -101,6 +101,21 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
+        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
+            arguments
+                obj
+                state 
+                controlInput
+                disturbances % wind
+				time  % current time in seconds
+                log = []  % Optional, defaults to empty
+				useGravity = true;
+				useThrust = true;
+            end
+            actuatorState = obj.actuatorModel.allocationMatrix * controlInput;
+            xDot = obj.rocketModel(state, actuatorState, disturbances, time, log, useGravity, useThrust);
+        end
+
 		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, log, useGravity, useThrust)
             arguments
                 obj
@@ -115,7 +130,7 @@ classdef RocketDynamics < handle
             
             [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, log, useThrust);
             xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity);
-		end
+        end
 
         function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, log, useThrust)
 			arguments

@@ -10,7 +10,8 @@ rocketDynamics.computeBuildup()
 parachuteDynamics = setupParachute();
 
 % Setup Controller
-controller = setupDecoupledLQR(rocketDynamics);
+useActuatorModel = false;
+controller = setupDecoupledLQR(rocketDynamics, useActuatorModel);
 
 % Setup Environment
 environment = setupEnvironment();
@@ -139,7 +140,7 @@ function environment = setupEnvironment()
     environment = -1;
 end
 
-function controller = setupDecoupledLQR(rocketDynamics)
+function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     % Compute Reference Attitudes
     dt = 0.01;  % or whatever your timestep is
     controlTime = 15;  % or whatever your total time is
@@ -161,21 +162,14 @@ function controller = setupDecoupledLQR(rocketDynamics)
     % Convert to radians
     yaw_rad = deg2rad(yaw_deg);
     
-    % Preallocate reference attitudes [4×n]
-    referenceAttitudes = zeros(4, n);
+    % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
+    referenceAttitudes = [
+        time;
+        zeros(1, n);  % roll = 0
+        zeros(1, n);  % pitch = 0
+        yaw_rad       % yaw trajectory
+    ];
     
-    % Convert each Euler angle to quaternion
-    for i = 1:n
-        eulerAngles = [0, 0, yaw_rad(i)];  % [roll, pitch, yaw] in radians
-        % eul2quat returns [w, x, y, z] (scalar first)
-        quat = eul2quat(eulerAngles, 'XYZ');
-        % Store as column vector [w; x; y; z] or reorder if needed
-        referenceAttitudes(:, i) = quat.';
-    end
-    
-    % Append time array to top of reference [5×n]
-    referenceAttitudes = [time; referenceAttitudes];
-
     % Generate Breakpoints
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
     nominalTrajLog = tmp.data;
@@ -184,13 +178,13 @@ function controller = setupDecoupledLQR(rocketDynamics)
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
 
     % Get controller
-	Q2 = 0.01 * diag([1 1]);       
-	R2 = 10;   	
-	Q3 = 0.01 * diag([1 1 1]);
-	R3 = 10; 
+	Q2 = diag([1 1]);       
+	R2 = 1;   	
+	Q3 = diag([1 1 1]);
+	R3 = 1; 
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
-    controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI);
+    controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
 end
 

@@ -28,25 +28,36 @@ classdef ReduceLTI < handle
             sysRoll = ss(A2, B2, C, D);
 		end
 
-        function [A3, B3] = calculateROMpitch(obj, xStar, pitchControlInput, actuatorState, time)
+        function [A3, B3] = calculateROMpitch(obj, xStar, pitchControlInput, actuatorState, time, useActuatorModel)
 			% Linearizes full dynamics and projects them onto 3-state Pitch space
 			% Now uses actual actuatorState from the operating point
 
             disturbances.wind = [0, 0, 0].';
-
-			% Define function handles for numerical differentiation
-            f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, [], true, true);
-            h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
-            fx = @(x) f(x, actuatorState);
-            fdel = @(del_in) f(xStar, del_in);
-            hu = @(u_in) h([0, u_in, 0].', actuatorState);
-
-			% Calculate Full Jacobians
-            A = Utils.numericalJacobian(fx, xStar); % (14x14)
-            B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
-            B_actuator = Utils.numericalJacobian(hu, pitchControlInput); % (4x1)
-            % B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 2); % no actuator lag
-            B = B_aero * B_actuator; % (14x1)
+            
+            if useActuatorModel
+			    % Define function handles for numerical differentiation
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, [], true, true);
+                h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
+                fx = @(x) f(x, actuatorState);
+                fdel = @(del_in) f(xStar, del_in);
+                hu = @(u_in) h([0, u_in, 0].', actuatorState);
+    
+			    % Calculate Full Jacobians
+                A = Utils.numericalJacobian(fx, xStar); % (14x14)
+                B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
+                B_actuator = Utils.numericalJacobian(hu, pitchControlInput); % (4x1)
+                % B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 2); % no actuator lag
+                B = B_aero * B_actuator; % (14x1)
+            else
+                % Define function handles for numerical differentiation
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, [], true, true);
+                fx = @(x) f(x, [0, pitchControlInput, 0].');
+                fu = @(u_in) f(xStar, [0, u_in, 0].');
+    
+			    % Calculate Full Jacobians
+                A = Utils.numericalJacobian(fx, xStar); % (14x14)
+                B = Utils.numericalJacobian(fu, pitchControlInput); % (14x1)
+            end
             
 			% Project to Reduced Space (3x3)
             g = @(x) controllerPkg.ReduceLTI.pitchReduce(x);
@@ -64,25 +75,35 @@ classdef ReduceLTI < handle
             B3 = Jg*B;
         end
 
-        function [A2, B2] = calculateROMroll(obj, xStar, rollControlInput, actuatorState, time)
+        function [A2, B2] = calculateROMroll(obj, xStar, rollControlInput, actuatorState, time, useActuatorModel)
 			% Linearizes full dynamics and projects them onto 2-state Roll space
 			% Now uses actual actuatorState from the operating point
 
             disturbances.wind = [0, 0, 0].';
-
-			% Define function handles for numerical differentiation
-            f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, [], true, true);
-            h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
-            fx = @(x) f(x, actuatorState);
-            fdel = @(del_in) f(xStar, del_in);
-            hu = @(u_in) h([u_in, 0, 0].', actuatorState);
-
-			% Calculate Full Jacobians
-            A = Utils.numericalJacobian(fx, xStar); % (14x14)
-            B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
-            B_actuator = Utils.numericalJacobian(hu, rollControlInput); % (4x1)
-            % B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 1);
-            B = B_aero * B_actuator; % (14x1)
+            if useActuatorModel
+			    % Define function handles for numerical differentiation
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, [], true, true);
+                h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
+                fx = @(x) f(x, actuatorState);
+                fdel = @(del_in) f(xStar, del_in);
+                hu = @(u_in) h([u_in, 0, 0].', actuatorState);
+    
+			    % Calculate Full Jacobians
+                A = Utils.numericalJacobian(fx, xStar); % (14x14)
+                B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
+                B_actuator = Utils.numericalJacobian(hu, rollControlInput); % (4x1)
+                % B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 1);
+                B = B_aero * B_actuator; % (14x1)
+            else
+                % Define function handles for numerical differentiation
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, [], true, true);
+                fx = @(x) f(x, [rollControlInput, 0, 0].');
+                fu = @(u_in) f(xStar, [u_in, 0, 0].');
+    
+			    % Calculate Full Jacobians
+                A = Utils.numericalJacobian(fx, xStar); % (14x14)
+                B = Utils.numericalJacobian(fu, rollControlInput); % (14x1)
+            end
             
 			% Project to Reduced Space (2x2)
             g = @(x) controllerPkg.ReduceLTI.rollReduce(x);

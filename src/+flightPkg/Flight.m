@@ -18,6 +18,7 @@ classdef Flight < handle
         actuatorInitialState
 
         runClosedLoop = true
+        useActuatorModel
 	end
 	
     methods
@@ -32,7 +33,8 @@ classdef Flight < handle
             obj.rocketInitialState = obj.flightParams.x0;
             obj.actuatorInitialState = obj.flightParams.del0;
             obj.totalTime = obj.flightParams.totalTime;
-                
+
+            obj.useActuatorModel = controller.useActuatorModel;      
         end
 
         function log = runSim(obj, log)
@@ -42,9 +44,6 @@ classdef Flight < handle
             actuatorState = obj.actuatorInitialState(:);
 
             controlInput = [0, 0, 0].';
-
-            % disturbances = environment.smth (initial atmospheric
-            % conditions)
             disturbances.wind = [0, 0, 0].';
             
             % Initialize logger time step
@@ -52,7 +51,12 @@ classdef Flight < handle
             
             % Get state estimate
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
-            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); % thrust starts at t=0s
+
+            if obj.useActuatorModel 
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); % thrust starts at t=0s
+            else
+                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, log);
+            end
 
             log.add(obj.currentTime, 'states', rocketState);
             log.add(obj.currentTime, 'statedots', rocketStateDot);
@@ -75,26 +79,32 @@ classdef Flight < handle
                         obj.cumVelocity = obj.cumVelocity + vel;
                     end
                 end
-                actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
-                actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
-                % actuatorState = obj.rocketDynamics.actuatorModel.allocationMatrix * controlInput; % no actuator lag
+                
+                if obj.useActuatorModel
+                    actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
+                    actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
+                    rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime);
+                else
+                    rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime);
+                end
 
-                rocketDyn = @(x) obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime);
                 rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
                 quat = rocketState(8:11);
                 quatNorm = Utils.normalizeQuat(quat);
                 rocketState(8:11) = quatNorm;
 
-                % altitude = state(4)
-                % disturbances.wind = obj.environment.getWind();
                 disturbances.wind = [0, 0, 0].';
                 
                 if obj.runClosedLoop
-                    % controlInput = obj.controller.getControl(rocketStateEstimate, currentCumVelocity, obj.currentTime);
                     controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
                 end
 
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log);
+                if obj.useActuatorModel 
+                    rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); 
+                else
+                    rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, log);
+                end
+
                 rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
                 log.add(obj.currentTime, 'states', rocketState);
