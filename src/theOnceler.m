@@ -10,7 +10,7 @@ rocketDynamics.computeBuildup()
 parachuteDynamics = setupParachute();
 
 % Setup Controller
-useActuatorModel = false;
+useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel);
 
 % Setup Environment
@@ -128,9 +128,9 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-    timeConstant = 0.001; % [s]
+    timeConstant = 0.05; % [s]
     limits.maxDeflection = 15;        % deg
-    limits.maxRate       = 1000;       % deg/s
+    limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
 
     rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, aerodynamics);

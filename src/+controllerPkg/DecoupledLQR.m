@@ -37,9 +37,9 @@ classdef DecoupledLQR < controllerPkg.Controller
 
             [rollErr, pitchErr, yawErr] = obj.getError(state, currentTime);
 
-            rollControl = K2 * rollErr;
-            pitchControl = K3 * pitchErr;
-            yawControl = K3 * yawErr;
+            rollControl = rollControlRef + K2 * rollErr;
+            pitchControl = pitchControlRef + K3 * pitchErr;
+            yawControl = yawControlRef + K3 * yawErr;
 
             rocketControlRad = [0, pitchControl, yawControl].';
             rocketControl = rad2deg(rocketControlRad);
