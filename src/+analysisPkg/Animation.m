@@ -39,7 +39,7 @@ classdef Animation
 
 		function drawStatic(obj)
 			% Draw Grid
-			gridLength = 200;
+			gridLength = 400;
 			numLines = 11;
 			originLength = 3;
 			
@@ -163,6 +163,8 @@ classdef Animation
 		end
 		
 		function animate(obj, rocketTransform)
+            saveVideo = true;
+            filename = 'animation.mp4';
 			
 			q0 = obj.log.getState('q0');
             q1 = obj.log.getState('q1');
@@ -197,11 +199,29 @@ classdef Animation
 
 			flipX = diag([-1, -1, 1]);
 
+            if saveVideo
+                fps = 30; % Frames per second for the output file
+                v = VideoWriter(filename, 'MPEG-4');
+                v.FrameRate = fps;
+                v.Quality = 95;
+                open(v);
+                dt = 1/fps; % Fixed time step for video
+            else
+                dt = 0;
+                tic;
+            end
+
 			simTime = 0.0;
-			tic;
+			
 			camup('manual');
-			while simTime < totalSimTime - 1
-				simTime = toc;
+			while simTime < totalSimTime
+				if saveVideo
+                    simTime = simTime + dt;
+                else
+                    simTime = toc;
+                end
+
+                if simTime > totalSimTime, break; end
 				
 				stateInterp = interp1(time, aniState.' ,simTime);
 
@@ -232,7 +252,15 @@ classdef Animation
             	sprintf('Speed: %.2f m/s', speed)};
 
         		drawnow;
-			end
+                if saveVideo
+                    frame = getframe(gcf);
+                    writeVideo(v, frame);
+                end
+            end
+            if saveVideo
+                close(v);
+                fprintf('Video saved as %s\n', filename);
+            end
 		end
 	end
 
