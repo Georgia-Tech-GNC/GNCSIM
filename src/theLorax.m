@@ -20,6 +20,12 @@ runDATCOM(rocketDynamics);
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, environment, breakPoints); 
 
+
+%% Compute PID constats through mu-synthesis
+% We should add the uncertainties out of RobustSynthesis
+controller = controllerPkg.RobustSynthesis(rocketParams);
+breakPoints.compute_gains(controller, flight);
+
 %% Run Flight
 log = flight.runSim(log);
 log.trim();
@@ -31,6 +37,7 @@ analysis.generateAllPlots();
 
 datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 datcomAnalysis.drawForcesAndMoments([0, 12])
+
 
 %% Functions
 function rocketDynamics = setupRocket(controller)
@@ -100,6 +107,7 @@ end
 
 function breakPoints = setupBreakPoints()
     % TODO
+    % Here the PID gains should be computed I guess
 end 
 
 function controller = setupController() % Where should I implement trimpoints?

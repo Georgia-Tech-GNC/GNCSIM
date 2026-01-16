@@ -24,6 +24,13 @@ classdef RocketDynamics < handle
 
         useThrust = true
         allocationMatrix
+        
+        uncertainMassWet = []
+        uncertainMassDry = []
+        uncertainMoiWet = []
+        uncertainMoiDry = []
+        uncertainCgWet = []
+        uncertainCgDry = []
 	end
 
 	methods
@@ -62,10 +69,25 @@ classdef RocketDynamics < handle
             obj.allocationMatrix = [-1, 0, 1, 0;
                                     0, 1, 0, -1;
                                     0, -1, 0, -1].';
-            %u = [0; -1; 0; -1];  % positive roll (correct)
-		      	%u = [0; 1; 0; -1];  % positive yaw (correct)
-            %u = [-1; 0; 1; 0];  % positive pitch (correct)
 
+        end
+        
+        function setUncertainParameters(obj, massWet, massDry, moiWet, moiDry, cgWet, cgDry)
+            obj.uncertainMassWet = massWet;
+            obj.uncertainMassDry = massDry;
+            obj.uncertainMoiWet = moiWet;
+            obj.uncertainMoiDry = moiDry;
+            obj.uncertainCgWet = cgWet;
+            obj.uncertainCgDry = cgDry;
+        end
+        
+        function clearUncertainParameters(obj)
+            obj.uncertainMassWet = [];
+            obj.uncertainMassDry = [];
+            obj.uncertainMoiWet = [];
+            obj.uncertainMoiDry = [];
+            obj.uncertainCgWet = [];
+            obj.uncertainCgDry = [];
         end
 
         function currentThrust = getThrust(obj, t)
@@ -93,26 +115,50 @@ classdef RocketDynamics < handle
         end
 
         function [currentCg, currentMoi] = getCgMoi(obj, mass)
-            % Error check
-            if ~isnumeric(mass)
-                error('Error: Mass must be numeric.')
+            if ~isnumeric(mass) && ~isa(mass, 'ureal')
+                error('Error: Mass must be numeric or ureal.')
             end
 
-            % If beyond burn time, thrust is zero
-            if mass <= obj.massDry
-                currentCg = obj.cgDry;
-                currentMoi = obj.moiDry;
+            masswet = obj.uncertainMassWet;
+            massdry = obj.uncertainMassDry;
+            moiwet = obj.uncertainMoiWet;
+            moidry = obj.uncertainMoiDry;
+            cgwet = obj.uncertainCgWet;
+            cgdry = obj.uncertainCgDry;
+            
+            % In case we are not computing gains, which is most of the time
+            if isempty(masswet)
+                masswet = obj.massWet;
+                massdry = obj.massDry;
+                moiwet = obj.moiWet;
+                moidry = obj.moiDry;
+                cgwet = obj.cgWet;
+                cgdry = obj.cgDry;
+            end
+
+            if mass <= massdry
+                currentCg = cgdry;
+                currentMoi = moidry;
                 return
             end
 
-            % Linear interpolation wrt mass
-            currentCg = obj.cgDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.cgWet - obj.cgDry);
-            currentMoi = obj.moiDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) .* (obj.moiWet - obj.moiDry);
+            currentCg = cgdry + (mass - massdry)/(masswet - massdry) .* (cgwet - cgdry);
+            currentMoi = moidry + (mass - massdry)/(masswet - massdry) .* (moiwet - moidry);
         end
 
         function mDot = getMDot(obj, time)
+            
+            masswet = obj.uncertainMassWet;
+            massdry = obj.uncertainMassDry;
+            
+            % In case we are not computing gains, which is most of the time
+            if isempty(masswet)
+                masswet = obj.massWet;
+                massdry = obj.massDry;
+            end
+
             T = obj.getThrust(time);
-            mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
+            mDot = - T * (masswet - massdry) / obj.totalImpulse;
         end
 
         function [fB, mB] = getForcesMoments(obj, state, deflections, disturbances, time, log)

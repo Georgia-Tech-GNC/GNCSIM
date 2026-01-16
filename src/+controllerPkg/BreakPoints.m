@@ -91,12 +91,24 @@ classdef BreakPoints < Handle
             % altitude and corresponding hyper parameters. Compute A and B
             % (x_dot = Ax + Bu)
             % for each break point
+        end
             
+        function setController(obj, controller)
+            obj.controller = controller;
+        end
+        
+        function setFlight(obj, flight)
+            obj.flight = flight;
         end
 
-        function compute_gains(obj, controller)
-            % TODO: Call controller for each breakPoint and compute gains
-            
+        function compute_gains(obj, controller, flight)
+            for i=1:length(obj.breakPointList)
+                x = obj.breakPointList(i).x;
+                u = obj.breakPointList(i).u;
+                gains_i = controller.synthesize(x, u, flight);
+                % We store Kp, Ki, Kd, Tp for each breakpoint.
+                obj.breakPointList(i).gains = gains_i;
+            end
         end
 
         function stability_analysis(obj)
