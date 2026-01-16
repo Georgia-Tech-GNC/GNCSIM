@@ -128,7 +128,7 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-    timeConstant = 0.5; % [s]
+    timeConstant = 0.05; % [s]
     limits.maxDeflection = 15;        % deg
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
