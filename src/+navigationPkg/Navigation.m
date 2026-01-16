@@ -4,6 +4,10 @@ classdef Navigation < handle
     % Sensor Modeling & State Estimation
     % Frame transform for gps data
 
+    properties (Constant)
+        idx = StateIndices
+    end
+
     properties (SetAccess = private)
         
         dt
@@ -62,10 +66,10 @@ classdef Navigation < handle
         function ekfState = getStateEstimate(obj, state, stateDot, currentTime, log)
             obj.currentTime = currentTime;
             
-            % Initial state estimate 
+            % Initial state estimate
             if currentTime == 0
                 obj.q = Utils.eulerToQuat([0, -90, 0]);
-                obj.x = state(2:7);
+                obj.x = state([obj.idx.pos, obj.idx.vel]);
                 ekfState = state;
                 return
             end
@@ -82,8 +86,8 @@ classdef Navigation < handle
 
             
             obj.ekf(log);
-      
-            ekfState = [state(1); obj.x(:); obj.q(:); obj.gyroRawData];
+
+            ekfState = [state(obj.idx.mass); obj.x(:); obj.q(:); obj.gyroRawData];
 
             % disp('State')
             % disp(state)
@@ -121,9 +125,9 @@ classdef Navigation < handle
             % disp(orthonormality);
 
 
-            obj.posHistory.trueX(end+1) = state(2);
-obj.posHistory.trueY(end+1) = state(3);
-obj.posHistory.trueZ(end+1) = state(4);
+            obj.posHistory.trueX(end+1) = state(obj.idx.x);
+obj.posHistory.trueY(end+1) = state(obj.idx.y);
+obj.posHistory.trueZ(end+1) = state(obj.idx.z);
 
 % ---- GPS Position (ENU) ----
 if isempty(obj.gpsRawData)

@@ -3,7 +3,7 @@ clear; clc; close all;
 
 %% Instantiate Classes
 % Rocket Dynamics
-rocketDynamics = setupRocket(); 
+rocketDynamics = setupRocket();
 rocketDynamics.computeBuildup()
 
 % Parachute Dynamics
@@ -128,7 +128,7 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-    timeConstant = 0.05; % [s]
+    timeConstant = 0.5; % [s]
     limits.maxDeflection = 15;        % deg
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
@@ -261,7 +261,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [10, 0, 0];
+    vel0 = [0, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';

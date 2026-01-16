@@ -127,8 +127,8 @@ classdef ReduceLTI < handle
 
             % Get LTI System
             xStar = log.states(:, 1);
-            omega0 = log.states(13, 1);
-            xStar(12:14) = [0; 0; 0];
+            omega0 = log.states(StateIndices.omega_y, 1);
+            xStar(StateIndices.omega) = [0; 0; 0];
             [sys, ~] = obj.generateROM(xStar);
 
             time = log.time;
@@ -187,33 +187,33 @@ classdef ReduceLTI < handle
 	        if yaw
                 %q = Utils.eulerToQuat([90 0 0]);
 		        %DCM = Utils.dirCosine(q);
-        
-		        q0 = x14(8);
-    	        q1 = x14(9);
-    	        q2 = x14(10);
-    	        q3 = x14(11);
-        
+
+		        q0 = x14(StateIndices.q0);
+    	        q1 = x14(StateIndices.q1);
+    	        q2 = x14(StateIndices.q2);
+    	        q3 = x14(StateIndices.q3);
+
 		        quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
                         quat_x90 = quaternion(Utils.eulerToQuat([-90, 0, 0])');
                         quat_rotated = quat * quat_x90;
-        
+
 		        DCM = Utils.dirCosine(compact(quat_x90));
-		        x14(8:11) = compact(quat_rotated);
-		        x14(5:7) = DCM * x14(5:7);
-		        x14(12:14) = DCM * x14(12:14);
+		        x14(StateIndices.quat) = compact(quat_rotated);
+		        x14(StateIndices.vel) = DCM * x14(StateIndices.vel);
+		        x14(StateIndices.omega) = DCM * x14(StateIndices.omega);
             end
-        
-            u = x14(5); v = x14(6); w = x14(7);
-            q_body = x14(12:14);
-	        
+
+            u = x14(StateIndices.vx); v = x14(StateIndices.vy); w = x14(StateIndices.vz);
+            q_body = x14(StateIndices.omega);
+
 	        % angle of attack
 	        alpha = atan2(w, u);
-	        
+
             % pitch from quaternion
-            qw = x14(8);
-            qx = x14(9);
-            qy = x14(10);
-            qz = x14(11);
+            qw = x14(StateIndices.q0);
+            qx = x14(StateIndices.q1);
+            qy = x14(StateIndices.q2);
+            qz = x14(StateIndices.q3);
         
 	        c = cos(pi/4);
 	        s = sin(pi/4);
@@ -237,14 +237,14 @@ classdef ReduceLTI < handle
 
         function x2 = rollReduce(x14)
             % Maps full 14-state vector to Roll states: [Phi; p]
-            
+
             % Roll rate (p) - Body frame rate is typically used directly
-            p = x14(12); 
-        
-            qw = x14(8);
-            qx = x14(9);
-            qy = x14(10);
-            qz = x14(11);
+            p = x14(StateIndices.omega_x);
+
+            qw = x14(StateIndices.q0);
+            qx = x14(StateIndices.q1);
+            qy = x14(StateIndices.q2);
+            qz = x14(StateIndices.q3);
             
             %{
             c = cos(pi/4);

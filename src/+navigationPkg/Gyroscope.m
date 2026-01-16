@@ -13,6 +13,7 @@ classdef Gyroscope < navigationPkg.Sensor&handle
 
     properties (Constant)
         SENSOR_TYPE = navigationPkg.SensorType.GYROSCOPE
+        idx = StateIndices
     end
 
     properties
@@ -42,9 +43,9 @@ classdef Gyroscope < navigationPkg.Sensor&handle
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            
+
            % if obj.isOutputReady(currentTime)
-                obj.w = state(12:14);
+                obj.w = state(obj.idx.omega);
                 measurement = obj.w; %obj.addNoise(); % Add noise + make []
             %else
              %   measurement = [];
