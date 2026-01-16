@@ -4,6 +4,10 @@
 %               Aditya Swami (aswami8@gatech.edu)
 
 classdef RocketDynamics < handle
+    properties (Constant)
+        idx = StateIndices
+    end
+
     properties
 		body
 		rocketFins
@@ -143,7 +147,7 @@ classdef RocketDynamics < handle
 				useThrust = true;
             end
 
-			[currentCg, ~] = obj.getCgMoi(state(1));
+			[currentCg, ~] = obj.getCgMoi(state(obj.idx.mass));
 
             % compute passive aero forces and moments
             if isempty(obj.aerodynamicsCFD)
@@ -187,10 +191,10 @@ classdef RocketDynamics < handle
 				mB
 				useGravity = true;
             end
-            mass = state(1);
-            vel = state(5:7);
-            quat = state(8:11);
-            omega = state(12:14);
+            mass = state(obj.idx.mass);
+            vel = state(obj.idx.vel);
+            quat = state(obj.idx.quat);
+            omega = state(obj.idx.omega);
 
             % preventing mass to go below massDry
             mass = max(mass, obj.massDry);

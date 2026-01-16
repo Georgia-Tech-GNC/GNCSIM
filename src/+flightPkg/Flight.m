@@ -2,6 +2,9 @@
 %               Karsten Caillet (kcaillet3@gatech.edu)
 
 classdef Flight < handle
+    properties (Constant)
+        idx = StateIndices
+    end
     properties
         rocketDynamics
         controller
@@ -72,9 +75,9 @@ classdef Flight < handle
                 if obj.runClosedLoop
                     % Calculate cumulated velocity every interval
                     if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2 
-                        vx = rocketState(5);
-                        vy = rocketState(6);
-                        vz = rocketState(7);
+                        vx = rocketState(obj.idx.vx);
+                        vy = rocketState(obj.idx.vy);
+                        vz = rocketState(obj.idx.vz);
                         vel = sqrt(vx.^2 + vy.^2 + vz.^2);
                         obj.cumVelocity = obj.cumVelocity + vel;
                     end
@@ -89,9 +92,9 @@ classdef Flight < handle
                 end
 
                 rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
-                quat = rocketState(8:11);
+                quat = rocketState(obj.idx.quat);
                 quatNorm = Utils.normalizeQuat(quat);
-                rocketState(8:11) = quatNorm;
+                rocketState(obj.idx.quat) = quatNorm;
 
                 disturbances.wind = [0, 0, 0].';
                 

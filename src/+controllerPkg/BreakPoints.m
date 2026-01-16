@@ -1,6 +1,9 @@
 % Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
 
 classdef BreakPoints < handle
+    properties (Constant)
+        idx = StateIndices
+    end
 
     properties
         nominalTrajLog
@@ -35,15 +38,15 @@ classdef BreakPoints < handle
             actuatorStates = obj.nominalTrajLog.actuatorState;
 
             % Stop at apogee
-            [~, timeNominal, states, controlInputs, actuatorStates] = controllerPkg.BreakPoints.cropToApogee(timeNominal, states, controlInputs, actuatorStates);
+            [~, timeNominal, states, controlInputs, actuatorStates] = obj.cropToApogee(timeNominal, states, controlInputs, actuatorStates);
 
             % Reduce time and state to every cumVelocityInterval
             [timeNominal, states, controlInputs, actuatorStates] = obj.reduceToInterval(timeNominal, states, controlInputs, actuatorStates);
 
             % Get cumulated velocity for each time (magnitude at each time step)
-            vx = states(5, :);
-            vy = states(6, :);
-            vz = states(7, :);
+            vx = states(obj.idx.vx, :);
+            vy = states(obj.idx.vy, :);
+            vz = states(obj.idx.vz, :);
             vel = sqrt(vx.^2 + vy.^2 + vz.^2);
             cumVelocityFull = cumsum(vel);
 
@@ -175,22 +178,22 @@ classdef BreakPoints < handle
         end
     end
 
-    methods (Access = private, Static)
+    methods (Access = private)
 
-        function [timeOfApogee, time, states, controlInputs, actuatorStates] = cropToApogee(time, states, controlInputs, actuatorStates)
+        function [timeOfApogee, time, states, controlInputs, actuatorStates] = cropToApogee(obj, time, states, controlInputs, actuatorStates)
             % Detect apogee and crop trajectory data to before apogee
 
             % Extract altitude and compute derivatives
             time_derivative = time(100:end); % Ignore first 1s
-            z = states(4, 100:end); % Ignore first 1s
+            z = states(obj.idx.z, 100:end); % Ignore first 1s
             dz = gradient(z, time_derivative);   % Vertical velocity
             d2z = gradient(dz, time_derivative); % Vertical acceleration
 
             % Find points where vertical velocity is near zero
-            idx = find(abs(dz) < 0.1);
+            index = find(abs(dz) < 0.1);
 
             % Filter for points with negative acceleration (true apogee)
-            valid_idx = idx(d2z(idx) < 0);
+            valid_idx = index(d2z(index) < 0);
 
             if ~isempty(valid_idx)
                 % Use first valid point as apogee

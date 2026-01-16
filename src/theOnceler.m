@@ -161,12 +161,13 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     
     % Convert to radians
     yaw_rad = deg2rad(yaw_deg);
+    pitch_rad = yaw_rad;
     
     % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
     referenceAttitudes = [
         time;
         zeros(1, n);  % roll = 0
-        zeros(1, n);  % pitch = 0
+        pitch_rad;  % pitch traj (same as yaw)
         yaw_rad       % yaw trajectory
     ];
     
@@ -255,7 +256,7 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     % Flight
-    flightParams.totalTime = 15;  % length of simulation [s]
+    flightParams.totalTime = 21;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
     
     mass0 = rocketDynamics.massWet;
