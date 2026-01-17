@@ -244,6 +244,54 @@ classdef Utils
 
             quatDot = 0.5 * mat_omega * quat;
         end
+
+        function L = quatLeftMultiplyMatrix(q)
+            % Quaternion left multiplication matrix
+            % Input: q = [qw; qx; qy; qz] (4x1 vector)
+            % Output: L (4x4 matrix) such that q1 ⊗ q2 = L(q1) * q2
+            q = q(:);
+            
+            qw = q(1);
+            qx = q(2);
+            qy = q(3);
+            qz = q(4);
+            
+            L = [
+                qw, -qx, -qy, -qz;
+                qx,  qw, -qz,  qy;
+                qy,  qz,  qw, -qx;
+                qz, -qy,  qx,  qw
+            ];
+        end
+
+        function H = quatHatMapMatrix()
+            % Quaternion hat map matrix
+            % Output: H (4x3 matrix) such that qHat = H * v
+            %         where v is 3x1 and qHat is 4x1 pure quaternion
+            
+            H = [
+                0, 0, 0;
+                1, 0, 0;
+                0, 1, 0;
+                0, 0, 1
+            ];
+        end
+
+        function R = quatRightMultiplyMatrix(p)
+            %Matrix such that q ⊗ p = R(p) * q
+            %
+            % Quaternion format: [w x y z]'
+            
+            w = p(1);
+            x = p(2);
+            y = p(3);
+            z = p(4);
+        
+            R = [w, -x, -y, -z;
+                 x,  w,  z, -y;
+                 y, -z,  w,  x;
+                 z,  y, -x,  w ];
+        end
     end
 end
 

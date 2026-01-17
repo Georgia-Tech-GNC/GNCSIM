@@ -79,12 +79,12 @@ classdef BreakPoints < handle
 
             % Populate each breakpoint
             for i = 1:obj.numBreakPoints
-                idx = indices(i);
-                obj.cumVelocity(i) = cumVelocityFull(idx);
-                obj.time(i) = timeNominal(idx);
-                obj.state{i} = states(:, idx);
-                obj.controlInput{i} = controlInputs(:, idx);
-                obj.actuatorState{i} = actuatorStates(:, idx);
+                index = indices(i);
+                obj.cumVelocity(i) = cumVelocityFull(index);
+                obj.time(i) = timeNominal(index);
+                obj.state{i} = states(:, index);
+                obj.controlInput{i} = controlInputs(:, index);
+                obj.actuatorState{i} = actuatorStates(:, index);
                 obj.stateMatrix{i} = {};
                 obj.controlMatrix{i} = {};
                 obj.gain{i} = {};

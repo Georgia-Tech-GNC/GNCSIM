@@ -11,7 +11,7 @@ parachuteDynamics = setupParachute();
 
 % Setup Controller
 useActuatorModel = true;
-controller = setupDecoupledLQR(rocketDynamics, useActuatorModel);
+controller = setupFullStateLQR(rocketDynamics, useActuatorModel);
 
 % Setup Environment
 environment = setupEnvironment();
@@ -146,23 +146,23 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     controlTime = 15;  % or whatever your total time is
     time = linspace(dt, controlTime, controlTime/dt);
     n = length(time);
-    
+
     % Preallocate yaw angles
     yaw_deg = zeros(1, n);
-    
+
     % Compute yaw for all time steps (vectorized)
     mask1 = time < 5;
     mask2 = (time >= 5) & (time < 10);
     mask3 = time >= 10;
-    
+
     yaw_deg(mask1) = 5 * time(mask1);
     yaw_deg(mask2) = 25 - (time(mask2) - 5) * 5;
     yaw_deg(mask3) = 0;
-    
+
     % Convert to radians
     yaw_rad = deg2rad(yaw_deg);
     pitch_rad = yaw_rad;
-    
+
     % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
     referenceAttitudes = [
         time;
@@ -170,7 +170,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
         pitch_rad;  % pitch traj (same as yaw)
         yaw_rad       % yaw trajectory
     ];
-    
+
     % Generate Breakpoints
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
     nominalTrajLog = tmp.data;
@@ -179,13 +179,71 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
 
     % Get controller
-	Q2 = diag([1 1]);       
-	R2 = 1;   	
+	Q2 = diag([1 1]);
+	R2 = 1;
 	Q3 = diag([1 1 1]);
-	R3 = 1; 
+	R3 = 1;
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
+    controller.populateBreakPoints();
+end
+
+function controller = setupFullStateLQR(rocketDynamics, useActuatorModel)
+    % Compute Reference Attitudes (as quaternions)
+    dt = 0.01;
+    controlTime = 15;
+    time = linspace(dt, controlTime, controlTime/dt);
+    n = length(time);
+
+    % Preallocate reference attitudes [5×n]: [time; q0; q1; q2; q3]
+    referenceAttitudes = zeros(5, n);
+    referenceAttitudes(1, :) = time;
+
+    % Compute desired Euler angles (same trajectory as DecoupledLQR)
+    yaw_deg = zeros(1, n);
+    mask1 = time < 5;
+    mask2 = (time >= 5) & (time < 10);
+    mask3 = time >= 10;
+
+    yaw_deg(mask1) = 5 * time(mask1);
+    yaw_deg(mask2) = 25 - (time(mask2) - 5) * 5;
+    yaw_deg(mask3) = 0;
+
+    roll_deg = zeros(1 , n);   % Keep at 0 for now
+    pitch_deg = yaw_deg;  % Keep at 0 for now
+    yaw_deg = zeros(1, n);
+
+    % Base rotation: pitch up -90 degrees (computed once)
+    qPitchUp = Utils.eulerToQuat([0, -90, 0]);
+
+    % Convert each Euler angle to quaternion and compose with base rotation
+    for i = 1:n
+        % Desired rotation in upright frame (no gimbal lock)
+        qDesired = Utils.eulerToQuat([roll_deg(i), pitch_deg(i), yaw_deg(i)]);
+
+        % Compose: first pitch up, then apply desired rotation
+        LPitchUp = Utils.quatLeftMultiplyMatrix(qPitchUp);
+        qRef = LPitchUp * qDesired;
+        qRef = qRef / norm(qRef);
+
+        referenceAttitudes(2:5, i) = qRef;
+    end
+
+    % Generate Breakpoints
+    tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
+    nominalTrajLog = tmp.data;
+    numBreakPoints = 50;
+    cumVelocityInterval = 0.1;
+    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
+
+    % Get controller - 12 state LQR
+    % State: [pos(3); vel(3); attitude_error(3); omega(3)]
+    % Q12 = diag([0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]);
+    Q12 = diag([10, 100, 100, 1, 1, 1]);
+    R3 = diag([1, 1, 1]);
+
+    controller = controllerPkg.FullStateLQR(rocketDynamics, breakPoints, referenceAttitudes, Q12, R3, useActuatorModel);
     controller.populateBreakPoints();
 end
 

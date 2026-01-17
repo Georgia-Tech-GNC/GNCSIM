@@ -37,9 +37,9 @@ classdef DecoupledLQR < controllerPkg.Controller
 
             [rollErr, pitchErr, yawErr] = obj.getError(state, currentTime);
 
-            rollControl = rollControlRef + K2 * rollErr;
-            pitchControl = pitchControlRef + K3 * pitchErr;
-            yawControl = yawControlRef + K3 * yawErr;
+            rollControl = rollControlRef - K2 * rollErr;
+            pitchControl = pitchControlRef - K3 * pitchErr;
+            yawControl = yawControlRef - K3 * yawErr;
 
             rocketControlRad = [0, pitchControl, yawControl].';
             rocketControl = rad2deg(rocketControlRad);
@@ -52,16 +52,16 @@ classdef DecoupledLQR < controllerPkg.Controller
 
             % Find the index in reference that corresponds to current time
             time_vec = obj.referenceAttitudes(1, :);
-            [~, idx] = min(abs(time_vec - currentTime));
+            [~, index] = min(abs(time_vec - currentTime));
             
             % Extract reference quaternion at current time
-            rollRef = obj.referenceAttitudes(2, idx);
-            pitchRef = obj.referenceAttitudes(3, idx);
-            yawRef = obj.referenceAttitudes(4, idx);
+            rollRef = obj.referenceAttitudes(2, index);
+            pitchRef = obj.referenceAttitudes(3, index);
+            yawRef = obj.referenceAttitudes(4, index);
 
-            rollErr = [0; rollRef] - x2Roll;
-            pitchErr = [0; 0; pitchRef] - x3Pitch;
-            yawErr = [0; 0; yawRef] - x3Yaw;
+            rollErr = x2Roll - [0; rollRef];
+            pitchErr = x3Pitch - [0; 0; pitchRef];
+            yawErr = x3Yaw - [0; 0; yawRef];
         end
         
         function populateBreakPoints(obj)
