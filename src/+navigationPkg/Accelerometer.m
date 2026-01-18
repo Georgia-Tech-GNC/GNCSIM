@@ -1,5 +1,3 @@
-% Main Authors: Conor Foley (mfoley40@gatech.edu)
-
 classdef Accelerometer < navigationPkg.Sensor&handle
     
     properties 
@@ -80,8 +78,8 @@ classdef Accelerometer < navigationPkg.Sensor&handle
 
         function noisyAccel = addNoise(obj, accelIMU)
             % Add noise, bias, and scale factor
-            noise = obj.VRW .* sqrt(obj.outputRate) .* randn(3,1);
-            noisyAccel = (1 + obj.SF) .* accelIMU + obj.bias + noise;
+            % Recheck this why was randn multiplied times 
+            noisyAccel = (1 + obj.SF) .* accelIMU .* obj.outputRate + obj.bias .* obj.outputRate + obj.VRW .* sqrt(obj.outputRate) + randn(3,1);
 
         end
 

@@ -41,7 +41,7 @@ log.trim();
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
-%analysis.generateAllEstimatePlots();
+analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %datcomAnalysis.drawForcesAndMoments([0, 12])
@@ -208,18 +208,18 @@ function nav = setupNavigation(dt)
     
     % GPS
     gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
-    gpsParams.verticalAccuracy = 1;
-    gpsParams.horizontalAccuracy = 1;
+    gpsParams.verticalAccuracy = 8.4;
+    gpsParams.horizontalAccuracy = 4.2;
     gpsParams.velocityAccuracy = .05;
     
     gpsParams.noiseCovariance = [8.4 0 0;
         0 4.2 0;
         0 0 4.2];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = 1;
+    gpsParams.outputProbability = rand();
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
-        0 1 0 0 0 0;
-        0 0 1 0 0 0];
+                                       0 1 0 0 0 0;
+                                       0 0 1 0 0 0];
     gps = navigationPkg.GPS(gpsParams);
     
     % Gyro
@@ -236,16 +236,16 @@ function nav = setupNavigation(dt)
     navParams.dt = dt;
     navParams.P = 0.1 * eye(6);
     
-    navParams.dfdx = @(dt, q)[1, 0, 0, dt*(2*q(1)^2 + 2*q(2)^2 - 1), dt*(2*q(1)*q(4) + 2*q(2)*q(3)), -dt*(2*q(1)*q(3) - 2*q(2)*q(4));
-        0, 1, 0, -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), dt*(2*q(1)^2 + 2*q(3)^2 - 1), dt*(2*q(1)*q(2) + 2*q(3)*q(4));
-        0, 0, 1, dt*(2*q(1)*q(3) + 2*q(2)*q(4)), -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), dt*(2*q(1)^2 + 2*q(4)^2 - 1);
-        0, 0, 0, 1, 0, 0;
-        0, 0, 0, 0, 1, 0;
-        0, 0, 0, 0, 0, 1];
+    navParams.dfdx = @(dt) [1, 0, 0, dt, 0,  0;  
+                            0, 1, 0, 0,  dt, 0;  
+                            0, 0, 1, 0,  0,  dt; 
+                            0, 0, 0, 1,  0,  0;  
+                            0, 0, 0, 0,  1,  0;  
+                            0, 0, 0, 0,  0,  1]; 
     sigmaA = 5;
     
     navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
-        0, (dt^4)/4, 0, 0, dt/2, 0;
+                                  0, (dt^4)/4, 0, 0, dt/2, 0;
         0, 0, (dt^4)/4, 0, 0, dt/2;
         dt/2, 0, 0, dt^2, 0, 0;
         0, (dt^3)/2, 0, 0, dt^2, 0;

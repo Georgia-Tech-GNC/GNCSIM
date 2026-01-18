@@ -1,5 +1,3 @@
-% Main Authors: Conor Foley (mfoley40@gatech.edu)
-
 classdef Gyroscope < navigationPkg.Sensor&handle
 
     properties 
@@ -57,8 +55,10 @@ classdef Gyroscope < navigationPkg.Sensor&handle
 
         function noisyGyro = addNoise(obj)
             
+
+            % Fix white noise
             noise = obj.ARW .* sqrt(obj.outputRate) .* randn(3,1);
-            noisyGyro = obj.w + obj.bias + noise;
+            noisyGyro = obj.w + obj.bias .* obj.outputRate + noise;
 
         end
 

@@ -159,11 +159,11 @@ classdef Analysis < handle
                 end
             end
 
-            %averageMaxMachNumber = mean(machMax);
-            %disp(['Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
+            averageMaxMachNumber = mean(machMax);
+            disp(['Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
 
-            %averageMaxAltitude = mean(altMax);
-            %disp(['Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
+            averageMaxAltitude = mean(altMax);
+            disp(['Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
 
             legend('v_x','v_y','v_z')
             ylabel('\textbf{Velocity in Body Frame (m/s)}', 'Interpreter', 'latex')
