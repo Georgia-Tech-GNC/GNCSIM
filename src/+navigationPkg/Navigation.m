@@ -2,6 +2,10 @@ classdef Navigation < handle
     % Sensor Modeling & State Estimation
     % Frame transform for gps data
 
+    properties (Constant)
+        idx = StateIndices
+    end
+
     properties (SetAccess = private)
         
         dt
@@ -61,10 +65,11 @@ classdef Navigation < handle
 % Clean up use of cIB prior, posterior, initial state estimate
             obj.currentTime = currentTime;
             
-            % Initial state estimate 
+            % Initial state estimate
             if currentTime == 0
                 obj.q = Utils.eulerToQuat([0, -90, 0]);
                 obj.x = [state(2:7)];
+
                 ekfState = state;
                 return
             end
@@ -81,8 +86,8 @@ classdef Navigation < handle
 
             
             obj.ekf(log);
-      
-            ekfState = [state(1); obj.x(:); obj.q(:); obj.gyroRawData];
+
+            ekfState = [state(obj.idx.mass); obj.x(:); obj.q(:); obj.gyroRawData];
 
             % disp('State')
             % disp(state)
@@ -92,12 +97,12 @@ classdef Navigation < handle
             % disp(ekfState)
             % disp("Time")
             % disp(currentTime)
-
            
 
 obj.posHistory.trueX(end+1) = state(2);
 obj.posHistory.trueY(end+1) = state(3);
 obj.posHistory.trueZ(end+1) = state(4);
+
 
 % ---- GPS Position (ENU) ----
 if isempty(obj.gpsRawData)

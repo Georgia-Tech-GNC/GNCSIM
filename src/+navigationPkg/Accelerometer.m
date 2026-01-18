@@ -11,6 +11,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
 
     properties (Constant)
         SENSOR_TYPE = navigationPkg.SensorType.ACCELEROMETER
+        idx = StateIndices
     end
     
     properties
@@ -47,12 +48,12 @@ classdef Accelerometer < navigationPkg.Sensor&handle
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            
-            %if obj.isOutputReady(currentTime)
-                obj.q = state(8:11);
-                obj.angVelB = state(12:14);
 
-                obj.accelB = stateDot(5:7); % 
+            %if obj.isOutputReady(currentTime)
+                obj.q = state(obj.idx.quat);
+                obj.angVelB = state(obj.idx.omega);
+
+                obj.accelB = stateDot(obj.idx.vel); % 
     
                 measurement = obj.accLeverArm();
                  %obj.addNoise(accelIMU);

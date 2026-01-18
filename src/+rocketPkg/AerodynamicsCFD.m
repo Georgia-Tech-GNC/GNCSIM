@@ -7,6 +7,10 @@ classdef AerodynamicsCFD < handle
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
 
+    properties (Constant)
+        idx = StateIndices
+    end
+
     properties (Access = private)
         fAxFunc;
         fAyFunc;
@@ -81,14 +85,14 @@ classdef AerodynamicsCFD < handle
             % placeholder - need to improve
             rho = 1.225; %kg/m^3
 
-            cBI = Utils.dirCosine(state(8:11));
+            cBI = Utils.dirCosine(state(obj.idx.quat));
             wind = cBI* disturbances.wind;
 
-            u = state(5) - wind(1);
-            v = state(6) - wind(2);
-            w = state(7) - wind(3);
-            p = state(12);
-            r = state(14);
+            u = state(obj.idx.vx) - wind(1);
+            v = state(obj.idx.vy) - wind(2);
+            w = state(obj.idx.vz) - wind(3);
+            p = state(obj.idx.omega_x);
+            r = state(obj.idx.omega_z);
 
 
             % Aerodynamic forces
