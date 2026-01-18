@@ -1,5 +1,3 @@
-% Main Authors: Conor Foley (mfoley40@gatech.edu)
-
 classdef GPS < navigationPkg.Sensor&handle
     % Model of in-flight GPS
 
@@ -67,7 +65,7 @@ classdef GPS < navigationPkg.Sensor&handle
 
         function [lat, lon, alt] = ENU2LLA(obj)
 
-            % Converts from NED coordinates back to LLA (WGS84)
+
 
             % Reference ECEF
             [xECEFref, yECEFref, zECEFref] = obj.LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));

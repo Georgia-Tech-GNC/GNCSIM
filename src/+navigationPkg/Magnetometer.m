@@ -46,6 +46,7 @@ classdef Magnetometer < navigationPkg.Sensor&handle
                 
                 obj.posI = state(2:4);
                 LLA = obj.NED2LLA(); % clean up
+                % Dircosine instead of quatRotate
                 [mag,~,~,~,~] = Utils.quatRotate(state(8:11),wrldmagm(LLA(3),LLA(1),LLA(2)));
                 measurement = mag' ./ 1e3; 
             else
