@@ -1,5 +1,3 @@
-% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
-
 classdef (Abstract) Sensor < handle
     properties (Abstract)
         name

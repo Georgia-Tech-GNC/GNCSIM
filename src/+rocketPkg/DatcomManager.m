@@ -6,6 +6,10 @@ classdef DatcomManager < handle
 	% execution, and aerodynamic data import. Provides functionality for
 	% creating input files, defining flight conditions, and running DATCOM.
 
+	properties (Constant)
+		idx = StateIndices
+	end
+
 	properties
 		fileID				% File identifier for the currently open DATCOM input file
 		flightConParams		% Structure containing flight condition parameters (Mach, altitude, alpha)
@@ -133,7 +137,7 @@ classdef DatcomManager < handle
 			];
 			
 			% calculate coeffients in wind frame
-			pos = state(2:4);
+			pos = state(obj.idx.pos);
            	altitude = pos(3);  % z componet of position
 			[ca, cm, cn] = obj.aeroInterp(M, totalAoA, altitude);
 	
@@ -163,7 +167,7 @@ classdef DatcomManager < handle
            	M = vA/alpha;
            	AoA = atan2d(vC(3),vC(1));  % main AoA
 
-           	pos = state(2:4);
+           	pos = state(obj.idx.pos);
            	altitude = pos(3);  % z componet of position
            	[ca, cm, cn] = obj.aeroInterp(M, AoA, altitude);
 	

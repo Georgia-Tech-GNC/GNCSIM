@@ -12,6 +12,7 @@ classdef Magnetometer < navigationPkg.Sensor&handle
 
     properties (Constant)
         SENSOR_TYPE = navigationPkg.SensorType.MAGNETOMETER
+        idx = StateIndices
     end
 
     properties
@@ -43,10 +44,13 @@ classdef Magnetometer < navigationPkg.Sensor&handle
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
 
             if obj.isOutputReady(currentTime)
-                
-                obj.posI = state(2:4);
+
+                obj.posI = state(obj.idx.pos);
                 LLA = obj.NED2LLA(); % clean up
+                
+                % Dircosine instead of quatRotate
                 [mag,~,~,~,~] = Utils.quatRotate(state(8:11),wrldmagm(LLA(3),LLA(1),LLA(2)));
+
                 measurement = mag' ./ 1e3; 
             else
                 measurement = [];

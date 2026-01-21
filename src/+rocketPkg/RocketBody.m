@@ -2,7 +2,7 @@
 
 classdef RocketBody < rocketPkg.DatcomManager
 	% ROCKETBODY Represents the aerodynamic body of a rocket
-	
+    
 	properties
 		bodyParams			% Structure containing body geometry parameters
 		bodyOutline		% [2 x n] array: row 1 = x stations, row 2 = body radii
@@ -22,24 +22,23 @@ classdef RocketBody < rocketPkg.DatcomManager
            	% Computes aerodynamic forces and moments on the body
 
            	% Rotation from inertial frame to body frame using quaternion
-           	q = state(8:11);
+           	q = state(obj.idx.quat);
             cBI = Utils.dirCosine(q);
 
             % Body frame velocity
-            vB = state(5:7);
+            vB = state(obj.idx.vel);
 
             % vW = cBI * disturbances.wind
             vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
-			
-			      % add wind velocity to body velocity
 
+			% add wind velocity to body velocity
             vB = vB + vW;
-			
+
 			% get translation vector to center of mass from nose tip
 			rCb = -obj.bodyParams.translation(:);
-			
+
 			% Component frame velocity and ang vel
-			wB = state(12:14);
+			wB = state(obj.idx.omega);
 			
 			% Componet velocity with angular rotation
 			vC = (vB + cross(wB, rCb));
