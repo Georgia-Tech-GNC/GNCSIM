@@ -20,46 +20,6 @@ environment = setupEnvironment();
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
 flight.runClosedLoop = true;
 
-%% Robust Control
-
-uncertainties.massRange = [-10, 15];  % ±10% a +15% sobre nominal
-uncertainties.moiRange = [-15, 15];   % ±15% sobre MOI nominal
-
-synthesis = controllerPkg.RobustSynthesis(flight, uncertainties);
-
-% Configurar weighting functions personalizados (opcional)
-synthesis.weightingFunctions.Ws.M = 2.0;    % Pico de sensibilidad
-synthesis.weightingFunctions.Ws.wb = 2.0;   % Bandwidth deseado [rad/s]
-synthesis.weightingFunctions.Wt.M = 1.5;    % Robustez
-synthesis.weightingFunctions.Wu = 0.05;     % Penalización de control
-synthesis.weightingFunctions.Wn.M = 0.1;    % Rechazo de ruido a alta freq
-
-% Configurar modelos de ruido (basados en tu navigation package)
-% Gyro noise (ARW típico de MEMS)
-synthesis.noiseModels.gyro.ARW = 0.001;           % [rad/√s]
-synthesis.noiseModels.gyro.bias = 0.01;           % [rad/s]
-synthesis.noiseModels.gyro.bandwidth = 100;       % [Hz]
-
-% Actuator dynamics (fin tabs)
-synthesis.noiseModels.actuator.bandwidth = 20;    % [Hz]
-synthesis.noiseModels.actuator.damping = 0.7;     % []
-synthesis.noiseModels.actuator.noiseStd = 0.1;    % [deg]
-
-% Select critical points of trayectory
-altitudes = [0, 500, 700, 1000];        % [m]
-machs = [0.3, 0.5, 0.7, 0.8];             % []
-alphas = [0, 2, 5, 8];                     % [deg]
-
-synthesis.defineTrimPoints(altitudes, machs, alphas);
-
-tic;
-synthesis.synthesizeAllControllers();
-elapsed = toc;
-
-filename = 'robust_pid_gains.mat';
-synthesis.exportGains(filename);
-
-
 %% Run Flight
 
 tic;
@@ -223,9 +183,12 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
 	R2 = 1;   	
 	Q3 = diag([1 1 1]);
 	R3 = 1; 
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
-    controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
+    
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
+    
+    controller = controllerPkg.PID(breakPoints, referenceAttitudes, reduceLTI, useActuatorModel);
+    %controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
 end
 

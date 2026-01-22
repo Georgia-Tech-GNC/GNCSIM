@@ -50,7 +50,7 @@ classdef RobustSynthesis < handle
 
         end
 
-        function gains = synthesize(obj, x, u, flight)
+        function gains = musynthesis(obj, A, B)
 
             moiDryVal = obj.rocketParams.longitudinalMoiDry;
             moiWetVal = obj.rocketParams.longitudinalMoiWet;
@@ -73,18 +73,14 @@ classdef RobustSynthesis < handle
                 diag([flight.rocketDynamics.moiDry(1,1), moiDry, moiDry]), ...
                 cgWet, cgDry);
             
-            reduceLti = analysisPkg.ReduceLTI(flight);
-
-            [A3, B3] = reduceLti.calculateROMpitch(x, u);
-
             flight.rocketDynamics.clearUncertainParameters();
             
-            C = [1 0 0];
+            C = [0 0 1];
             D = 0;
             
-            sysPlant = ss(A3, B3, C, D);
-            sysPlant.StateName = {'theta', 'thetaDot', 'alpha'};
-            sysPlant.OutputName = {'theta'};
+            sysPlant = ss(A, B, C, D);
+            sysPlant.StateName = {'angle', 'angleDot', 'alpha'};
+            sysPlant.OutputName = {'angle'};
             sysPlant.InputName = 'u';
 
             % Define PID structure
@@ -97,7 +93,7 @@ classdef RobustSynthesis < handle
             C_PID.OutputName = 'uPID';
 
             sum1 = sumblk('e = r - yTrack');
-            sum2 = sumblk('yTrack = theta + n');
+            sum2 = sumblk('yTrack = angle + n');
             sum3 = sumblk('u = uPID + d');
 
             P_uncertain = connect(sysPlant, C_PID,...
