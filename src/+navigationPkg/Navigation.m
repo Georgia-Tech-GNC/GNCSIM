@@ -86,8 +86,9 @@ classdef Navigation < handle
 
             
             obj.ekf(log);
-
-            ekfState = [state(obj.idx.mass); obj.x(:); obj.q(:); obj.gyroRawData];
+            
+            
+            ekfState = [state(obj.idx.mass); obj.x(1:3); obj.cBI * obj.x(4:6); obj.q(:); obj.gyroRawData];
 
             % disp('State')
             % disp(state)
