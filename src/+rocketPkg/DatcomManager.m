@@ -197,9 +197,47 @@ classdef DatcomManager < handle
                     error('"%s" not found in the current directory.', executableName);
                 end
                 command = sprintf('echo %s | %s', datcomFilename, executableName);
-            elseif isunix
+            elseif isunix || ismac
 				% --- Unix / macOS ---
-                disp("imagine being on mac. could not be me.")
+                % Using fullfile ensures the path works across different shells
+                executableName = fullfile('.', 'DATCOM/datcom_unix'); 
+                
+                if exist(executableName, 'file') ~= 2
+                    error('"%s" not found. Did you forget to compile it with gfortran?', executableName);
+                end
+                
+                executableName = './DATCOM/datcom_unix';
+    
+                % Force the input file to be 'FOR005'
+                copyfile(datcomFilename, 'for005');
+                
+                % Pipe the filename string INTO the program
+                command = sprintf('echo "for005\n" | %s', executableName);
+                
+                [status, cmdout] = system(command);
+               
+            else
+                error('Unsupported Operating System.');
+            end
+            
+            % Cleanup
+            if exist('FOR006', 'file')
+                movefile('FOR006', 'datcom.out');
+            elseif exist('for006.dat', 'file')
+                movefile('for006.dat', 'datcom.out');
+            end
+            
+            % Identify all other potential 'FORxxx' files
+            % This handles both FOR005, for0013, etc.
+            leftovers = [dir('FOR0*'); dir('for0*'); dir('*.PTR'); dir('*.SRF')];
+            
+            % Delete them all
+            for k = 1:length(leftovers)
+                fileName = leftovers(k).name;
+                % Don't delete the file you just saved as datcom.out
+                if ~strcmpi(fileName, 'datcom.out') && ~strcmpi(fileName, datcomFilename)
+                    delete(fileName);
+                end
             end
 
 			% Run DATCOM and display completion message
