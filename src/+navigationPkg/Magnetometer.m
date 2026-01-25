@@ -7,6 +7,8 @@ classdef Magnetometer < navigationPkg.Sensor&handle
         outputProbability
         observationMatrix
         date
+        softIronMatrix
+        hardIronBias
     end
     
     properties (Constant)
@@ -31,6 +33,18 @@ classdef Magnetometer < navigationPkg.Sensor&handle
             obj.nextOutputTime = obj.outputPeriod;
             obj.refLLA = magParams.refLLA;
             obj.date = magParams.date; % Give in dd-mmm-yyyy 
+            
+            if isfield(magParams, 'softIronMatrix')
+                obj.softIronMatrix = magParams.softIronMatrix;
+            else
+                obj.softIronMatrix = eye(3);
+            end
+            
+            if isfield(magParams, 'hardIronBias')
+                obj.hardIronBias = magParams.hardIronBias;
+            else
+                obj.hardIronBias = zeros(3, 1);
+            end
         end
         
         function magReadingsBody = getMeasurement(obj, state, stateDot, currentTime)
@@ -53,7 +67,10 @@ classdef Magnetometer < navigationPkg.Sensor&handle
             body2EnuDCM = Utils.dirCosine(body2EnuQuat);
             
             % Rotate ENU magnetic field vector to body frame
-            magReadingsBody = body2EnuDCM' * magFieldENU;
+            magVecBody = body2EnuDCM' * magFieldENU;
+            
+            % Get the magnetometer reading
+            magReadingsBody = obj.softIronMatrix \ magVecBody + obj.hardIronBias;
         end
         
         function [lat, lon, alt] = ENU2LLA(obj)
