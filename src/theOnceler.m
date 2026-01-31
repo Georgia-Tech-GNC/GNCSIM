@@ -10,7 +10,7 @@ rocketDynamics.computeBuildup()
 parachuteDynamics = setupParachute();
 
 % Setup Controller
-useActuatorModel = false;
+useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel);
 
 % Setup Environment
@@ -127,7 +127,7 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-    timeConstant = 0.5; % [s]
+    timeConstant = 0.1; % [s]
     limits.maxDeflection = 15;        % deg
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
@@ -146,26 +146,31 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     time = linspace(dt, controlTime, controlTime/dt);
     n = length(time);
     
-    % Preallocate yaw angles
-    yaw_deg = zeros(1, n);
-    
-    % Compute yaw for all time steps (vectorized)
-    mask1 = time > 5;
-    
-    yaw_deg = 5 * ones(1, n);
-    
-    % Convert to radians
-    yaw_rad = deg2rad(yaw_deg);
-    pitch_rad = yaw_rad;
-    
-    % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
-    referenceAttitudes = [
-        time;
-        zeros(1, n);     % roll = 0
-        zeros(1, n);       % pitch traj (same as yaw)
-        zeros(1, n);       % yaw trajectory
-    ];
-    
+	% --- Define Trajectories in Degrees ---
+	roll_deg  = zeros(1, n);
+	pitch_deg = zeros(1, n);
+	yaw_deg   = zeros(1, n);
+	
+	% Apply the step at 6 seconds
+	% Logical mask for time >= 6 seconds
+	mask_step = (time >= 6.0);
+	
+	% Set pitch to 12 degrees for all points where time >= 6
+	pitch_deg(mask_step) = 10.0;
+
+	roll_rad  = deg2rad(roll_deg);
+	pitch_rad = deg2rad(pitch_deg);
+	yaw_rad   = deg2rad(yaw_deg);
+	
+	% --- Build Reference Attitudes [4 x n] ---
+	% Format: [Time; Roll; Pitch; Yaw]
+	referenceAttitudes = [
+    	time;
+    	roll_rad;
+    	pitch_rad;
+    	yaw_rad
+	];
+    	
     % Generate Breakpoints
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
     nominalTrajLog = tmp.log;
@@ -175,7 +180,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
 
     % Get controller
 	Q2 = diag([1 1]);       
-	R2 = 1;   	
+	R2 = 10;   	
 	Q3 = diag([1 1 1]);
 	R3 = 1; 
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
@@ -257,7 +262,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
-    quat0 = Utils.eulerToQuat([0, 3, 0]).';
+    quat0 = Utils.eulerToQuat([5, 5, 5]).';  % roll, pitch, yaw
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;

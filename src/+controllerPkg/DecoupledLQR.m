@@ -41,7 +41,7 @@ classdef DecoupledLQR < controllerPkg.Controller
             pitchControl = pitchControlRef + K3 * pitchErr;
             yawControl = yawControlRef + K3 * yawErr;
 
-            rocketControlRad = [0, pitchControl, 0].';
+            rocketControlRad = [rollControl, pitchControl, yawControl].';  % roll, pitch, yaw
             rocketControl = rad2deg(rocketControlRad);
         end
            
@@ -75,10 +75,8 @@ classdef DecoupledLQR < controllerPkg.Controller
                 [A3, B3] = obj.reduceLTI.calculateROMpitch(state, controlInput(2), actuatorState, time, obj.useActuatorModel);
                 [A2, B2] = obj.reduceLTI.calculateROMroll(state, controlInput(1), actuatorState, time, obj.useActuatorModel);
 				
-				pitchRef = controllerPkg.ReduceLTI.pitchReduce(state);
-				yawRef = controllerPkg.ReduceLTI.pitchReduce(state, true);
-				RollRef = controllerPkg.ReduceLTI.rollReduce(state);
-
+				A3(1,3) = 0;
+				A3(1,2) = 1;
                 K3 = lqr(A3, B3, obj.Q3, obj.R3);
                 K2 = lqr(A2, B2, obj.Q2, obj.R2);
 

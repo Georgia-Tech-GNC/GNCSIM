@@ -33,24 +33,20 @@ classdef Utils
             %   q: A 4x1 vector representing the quaternion [w, x, y, z].
 
             % Convert the angles from degrees to radians
-            a = deg2rad(a);
-
-            % Pre-calculate sines and cosines of half angles
-            cy = cos(a(2) * 0.5);  % Cosine of half pitch
-            sy = sin(a(2) * 0.5);  % Sine of half pitch
-            cr = cos(a(1) * 0.5);  % Cosine of half roll
-            sr = sin(a(1) * 0.5);  % Sine of half roll
-            cp = cos(a(3) * 0.5);  % Cosine of half yaw
-            sp = sin(a(3) * 0.5);  % Sine of half yaw
-
-            % Pre-allocate the output quaternion as a column vector
-            q = zeros(4, 1);
-
-            % Calculate the quaternion components
-            q(1) = cy * cr * cp + sy * sr * sp;  % w component
-            q(2) = cy * sr * cp - sy * cr * sp;  % x component
-            q(3) = sy * cr * cp - cy * sr * sp;  % y component
-            q(4) = cy * cr * sp + sy * sr * cp;  % z component
+    		a = deg2rad(a);
+    		
+    		% Shorthand for half-angles
+    		% a(1)=Roll (phi), a(2)=Pitch (theta), a(3)=Yaw (psi)
+    		cR = cos(a(1)*0.5); sR = sin(a(1)*0.5);
+    		cP = cos(a(2)*0.5); sP = sin(a(2)*0.5);
+    		cY = cos(a(3)*0.5); sY = sin(a(3)*0.5);
+		
+    		q = zeros(4, 1);
+    		% Standard ZYX rotation sequence equations
+    		q(1) = cY*cP*cR + sY*sP*sR; % w
+    		q(2) = cY*cP*sR - sY*sP*cR; % x
+    		q(3) = cY*sP*cR + sY*cP*sR; % y
+    		q(4) = sY*cP*cR - cY*sP*sR; % z
         end
 
 		function a = quatToEuler(q)
@@ -218,7 +214,7 @@ classdef Utils
             n = length(x0);
             m = length(f0);
             J = zeros(m, n);
-			eps = 1e-7;
+			eps = 1e-6;
         
             % Finite difference step size
             h = sqrt(eps) * max(abs(x0), 1);
