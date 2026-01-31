@@ -53,50 +53,53 @@ classdef Utils
             q(4) = cy * cr * sp + sy * sr * cp;  % z component
         end
 
-        function a = quatToEuler(q)
-            % Convert a quaternion to Euler angles.
-            %
-            % Input:
-            %   q: A 4x1 or 1x4 vector representing the quaternion [w, x, y, z].
-            %
-            % Output:
-            %   a: A 3x1 vector of Euler angles [roll, pitch, yaw] in degrees.
-            
-            % Ensure q is a column vector
-            if size(q, 2) == 4
-                q = q';
-            end
-
-            q = Utils.normalizeQuat(q);
-            
-            % Extract quaternion components
-            w = q(1);
-            x = q(2);
-            y = q(3);
-            z = q(4);
-            
-            % Pre-allocate the output angles as a column vector
-            a = zeros(3, 1);
-            
-            % Roll (x-axis rotation)
-            sinr_cosp = 2 * (w * x + y * z);
-            cosr_cosp = 1 - 2 * (x * x + y * y);
-            a(1) = atan2(sinr_cosp, cosr_cosp);
-            
-            % Pitch (y-axis rotation)
-            sinp = 2 * (w * y - z * x);
-            % Clamp sinp to avoid numerical issues with asin
-            sinp = max(-1, min(1, sinp));
-            a(2) = asin(sinp);
-            
-            % Yaw (z-axis rotation)
-            siny_cosp = 2 * (w * z + x * y);
-            cosy_cosp = 1 - 2 * (y * y + z * z);
-            a(3) = atan2(siny_cosp, cosy_cosp);
-            
-            % Convert from radians to degrees
-            a = rad2deg(a);
-        end
+		function a = quatToEuler(q)
+    		% Convert an N x 4 array of quaternions to Euler angles.
+    		%
+    		% Input:
+    		%   q: An N x 4 array representing quaternions [w, x, y, z].
+    		%
+    		% Output:
+    		%   a: An N x 3 array of Euler angles [roll, pitch, yaw] in degrees.
+    		
+    		% Ensure q is N x 4 (if user passes 4 x N, transpose it)
+    		if size(q, 2) ~= 4 && size(q, 1) == 4
+        		q = q';
+    		end
+    		
+    		% Normalize each row (assuming Utils.normalizeQuat handles matrices, 
+    		% otherwise use: q = q ./ sqrt(sum(q.^2, 2));)
+    		q = Utils.normalizeQuat(q);
+    		
+    		% Extract columns
+    		w = q(:, 1);
+    		x = q(:, 2);
+    		y = q(:, 3);
+    		z = q(:, 4);
+    		
+    		% Pre-allocate output: N rows, 3 columns
+    		numQuats = size(q, 1);
+    		a = zeros(numQuats, 3);
+    		
+    		% Roll (x-axis rotation)
+    		sinr_cosp = 2 .* (w .* x + y .* z);
+    		cosr_cosp = 1 - 2 .* (x .* x + y .* y);
+    		a(:, 1) = atan2(sinr_cosp, cosr_cosp);
+    		
+    		% Pitch (y-axis rotation)
+    		sinp = 2 .* (w .* y - z .* x);
+    		% Clamp sinp to [-1, 1] for all rows to avoid complex results from asin
+    		sinp = max(-1, min(1, sinp));
+    		a(:, 2) = asin(sinp);
+    		
+    		% Yaw (z-axis rotation)
+    		siny_cosp = 2 .* (w .* z + x .* y);
+    		cosy_cosp = 1 - 2 .* (y .* y + z .* z);
+    		a(:, 3) = atan2(siny_cosp, cosy_cosp);
+    		
+    		% Convert the entire matrix from radians to degrees
+    		a = rad2deg(a);
+		end
 
         function qNorm = normalizeQuat(q)
             % normalize_quat: Normalizes a quaternion to unit length.
@@ -155,13 +158,13 @@ classdef Utils
             q1 = q(2); % Vector part x
             q2 = q(3); % Vector part y
             q3 = q(4); % Vector part z
-
-
+			
+			Ry = [0 0 1; 0 1 0; -1 0 0];
             quatDCM = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
                     2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
 
-            dcm = quatDCM;
+            dcm = Ry * quatDCM;
         end
 
 

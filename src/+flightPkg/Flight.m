@@ -79,7 +79,7 @@ classdef Flight < handle
                         vy = rocketState(obj.idx.vy);
                         vz = rocketState(obj.idx.vz);
                         vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-                        obj.cumVelocity = obj.cumVelocity + vel;
+                        obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
                     end
                 end
                 

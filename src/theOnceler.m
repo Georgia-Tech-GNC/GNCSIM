@@ -10,7 +10,7 @@ rocketDynamics.computeBuildup()
 parachuteDynamics = setupParachute();
 
 % Setup Controller
-useActuatorModel = true;
+useActuatorModel = false;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel);
 
 % Setup Environment
@@ -21,7 +21,6 @@ environment = setupEnvironment();
 flight.runClosedLoop = true;
 
 %% Run Flight
-
 tic;
 log = flight.runSim(log);
 elapsed_time = toc;
@@ -41,7 +40,7 @@ log.trim();
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
-analysis.generateAllEstimatePlots();
+%analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %datcomAnalysis.drawForcesAndMoments([0, 12])
@@ -151,13 +150,9 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     yaw_deg = zeros(1, n);
     
     % Compute yaw for all time steps (vectorized)
-    mask1 = time < 5;
-    mask2 = (time >= 5) & (time < 10);
-    mask3 = time >= 10;
+    mask1 = time > 5;
     
-    yaw_deg(mask1) = 5 * time(mask1);
-    yaw_deg(mask2) = 25 - (time(mask2) - 5) * 5;
-    yaw_deg(mask3) = 0;
+    yaw_deg = 5 * ones(1, n);
     
     % Convert to radians
     yaw_rad = deg2rad(yaw_deg);
@@ -166,14 +161,14 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
     referenceAttitudes = [
         time;
-        zeros(1, n);  % roll = 0
-        pitch_rad;  % pitch traj (same as yaw)
-        yaw_rad       % yaw trajectory
+        zeros(1, n);     % roll = 0
+        zeros(1, n);       % pitch traj (same as yaw)
+        zeros(1, n);       % yaw trajectory
     ];
     
     % Generate Breakpoints
-    tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
-    nominalTrajLog = tmp.data;
+    tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
+    nominalTrajLog = tmp.log;
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
@@ -261,8 +256,8 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [0, 0, 0];
-    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    vel0 = [1, 0, 0];
+    quat0 = Utils.eulerToQuat([0, 3, 0]).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;

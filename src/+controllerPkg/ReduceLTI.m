@@ -182,52 +182,37 @@ classdef ReduceLTI < handle
             arguments
                 x14
                 yaw = false;
-	        end
+			end
         
 	        if yaw
-                %q = Utils.eulerToQuat([90 0 0]);
-		        %DCM = Utils.dirCosine(q);
-
-		        q0 = x14(StateIndices.q0);
-    	        q1 = x14(StateIndices.q1);
-    	        q2 = x14(StateIndices.q2);
-    	        q3 = x14(StateIndices.q3);
+                q0 = x14(StateIndices.q0);
+	        	q1 = x14(StateIndices.q1);
+	        	q2 = x14(StateIndices.q2);
+	        	q3 = x14(StateIndices.q3);
 
 		        quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
-                        quat_x90 = quaternion(Utils.eulerToQuat([-90, 0, 0])');
-                        quat_rotated = quat * quat_x90;
+                quat_x90 = quaternion(Utils.eulerToQuat([-90, 0, 0])');
+                quat_rotated = quat * quat_x90;
 
 		        DCM = Utils.dirCosine(compact(quat_x90));
 		        x14(StateIndices.quat) = compact(quat_rotated);
 		        x14(StateIndices.vel) = DCM * x14(StateIndices.vel);
 		        x14(StateIndices.omega) = DCM * x14(StateIndices.omega);
             end
+			
+			q0 = x14(StateIndices.q0);
+	        q1 = x14(StateIndices.q1);
+	        q2 = x14(StateIndices.q2);
+	        q3 = x14(StateIndices.q3);
 
             u = x14(StateIndices.vx); v = x14(StateIndices.vy); w = x14(StateIndices.vz);
             q_body = x14(StateIndices.omega);
 
 	        % angle of attack
 	        alpha = atan2(w, u);
-
-            % pitch from quaternion
-            qw = x14(StateIndices.q0);
-            qx = x14(StateIndices.q1);
-            qy = x14(StateIndices.q2);
-            qz = x14(StateIndices.q3);
-        
-	        c = cos(pi/4);
-	        s = sin(pi/4);
-            
-            % Manual Quaternion Multiplication: q_new = q * [c, 0, s, 0]
-            qw_rot = c*qw - s*qy;
-            qx_rot = c*qx - s*qz;
-            qy_rot = c*qy + s*qw;
-            qz_rot = c*qz + s*qx;
          
             % Extract Pitch (Theta) - Default
-            % Note: Using asin avoids singularity issues better than atan2 for pitch
-            theta = asin(2*(qw_rot*qy_rot - qx_rot*qz_rot));
-        
+            theta = asin(2*(q0*q2 - q1*q3));
         
 	        % pitch rate (q) - Default
 	        q = q_body(2); 
