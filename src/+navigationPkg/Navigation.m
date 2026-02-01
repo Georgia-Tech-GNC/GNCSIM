@@ -32,6 +32,7 @@ classdef Navigation < handle
         accelerometer
         gyroscope
         gps
+        magnetometer
 
         leverArm
         accBias
@@ -51,7 +52,7 @@ classdef Navigation < handle
 
     methods
 
-        function obj = Navigation(navParams, gps, gyroscope, accelerometer)
+        function obj = Navigation(navParams, gps, gyroscope, accelerometer, magnetometer, magParams)
 
                 obj.dt = navParams.dt;
                 obj.P = navParams.P;
@@ -62,6 +63,7 @@ classdef Navigation < handle
                 obj.gps = gps;
                 obj.gyroscope = gyroscope;
                 obj.accelerometer = accelerometer;
+                obj.magnetometer = magnetometer;
                 obj.generateObservationMatrices;
 
                 obj.leverArm = navParams.leverArm;
@@ -144,6 +146,48 @@ obj.posHistory.time(end+1) = obj.currentTime;
             qDelt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz);
             qNew = obj.quatMulitply(obj.q, qDelt);
             obj.q = qNew;
+
+        end
+
+        %% Preflight Attitude Estimation
+        function initialAttitudeQuat = preFlightAttitudeEstimation(obj, state, stateDot, wMag, wAccel, Si, bhi)
+            % Si is soft iron matrix found from calibration
+            % bhi is hard iron vector found from calibration
+
+            magReadingBody = obj.magnetometer.getMeasurement(state, stateDot, obj.currentTime);
+            
+            % Remove Hard and Soft Iron Bias
+            magReadingBody = Si * (magReadingBody - bhi);
+
+            magReadingBodyUnit = magReadingBody/norm(magReadingBody);
+
+            [gravReadingBody, trueMagInertial] = obj.accelerometer.getMeasurement(state, stateDot, obj.currentTime);
+            gravReadingBodyUnit = -gravReadingBody/norm(gravReadingBody);
+            trueMagInertialUnit = trueMagInertial/norm(trueMagInertial);
+
+
+            trueGravInertial = obj.cIB' * [0;0;-9.8];
+            trueGravInertialUnit = trueGravInertial/norm(trueGravInertial);
+
+            % Construct B Matrix
+            B = wMag * trueMagInertialUnit' * magReadingBodyUnit + wAccel * trueGravInertialUnit' * gravReadingBodyUnit;
+
+            % Construct K Matrix
+            S = B + B';
+            mu = trace(B);
+            zVec = [B(2,3) - B(3,2); B(3,1) - B(1,3); B(1,2) - B(2,1)];
+
+            K = [mu, zVec'; zVec, (S - mu(eye(3)))];
+
+            % Get Eigenvalues of K
+            [V, D] = eig(K);
+            [~, ind] = max(diag(D));
+            maxEigVec = V(:, ind);
+
+            % Convert maxEigVec to unit quaternion
+            initialAttitudeQuat = maxEigVec/norm(maxEigVec);
+
+            obj.q = initialAttitudeQuat;
 
         end
 

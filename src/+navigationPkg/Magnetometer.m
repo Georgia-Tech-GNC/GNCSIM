@@ -47,7 +47,7 @@ classdef Magnetometer < navigationPkg.Sensor&handle
             end
         end
         
-        function magReadingsBody = getMeasurement(obj, state, stateDot, currentTime)
+        function [magReadingsBody, trueMagReadingInertial] = getMeasurement(obj, state, stateDot, currentTime)
             % Gives output in nanotesla in body frame
             
             % Get current position in ENU
@@ -61,6 +61,9 @@ classdef Magnetometer < navigationPkg.Sensor&handle
             
             % Convert from NED to ENU
             magFieldENU = [magE; magN; -magD];
+
+            % Return True Reading
+            trueMagReadingInertial = magFieldENU;
             
             % Get body to ENU DCM
             body2EnuQuat = state(obj.idx.quat);
