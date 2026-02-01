@@ -19,6 +19,7 @@ classdef BreakPoints < handle
         stateMatrix      % cell array of cell arrays {{A1}, {A2}, ...}
         controlMatrix    % cell array of cell arrays {{B1}, {B2}, ...}
         gain             % cell array of cell arrays {{K1}, {K2}, ...}
+		%refState         % cell array of cell arrays {{refROM}}
     end
 
     methods
@@ -33,9 +34,10 @@ classdef BreakPoints < handle
 
         function generateBreakPoints(obj)
             timeNominal = obj.nominalTrajLog.time;
+			
             states = obj.nominalTrajLog.states;
             controlInputs = obj.nominalTrajLog.controlInputs;
-            actuatorStates = obj.nominalTrajLog.actuatorState;
+            actuatorStates = obj.nominalTrajLog.actuatorStates;
 
             % Stop at apogee
             [~, timeNominal, states, controlInputs, actuatorStates] = obj.cropToApogee(timeNominal, states, controlInputs, actuatorStates);
@@ -48,7 +50,8 @@ classdef BreakPoints < handle
             vy = states(obj.idx.vy, :);
             vz = states(obj.idx.vz, :);
             vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-            cumVelocityFull = cumsum(vel);
+			dt = timeNominal(2) - timeNominal(1);
+            cumVelocityFull = cumsum(vel * dt);
 
             % Get breakpoint indices
             indices = round(linspace(1, length(cumVelocityFull), obj.numBreakPoints));
@@ -76,18 +79,20 @@ classdef BreakPoints < handle
             obj.stateMatrix = cell(1, obj.numBreakPoints);
             obj.controlMatrix = cell(1, obj.numBreakPoints);
             obj.gain = cell(1, obj.numBreakPoints);
+			%obj.refState = cell(1, obj.numBreakPoints);
 
             % Populate each breakpoint
-            for i = 1:obj.numBreakPoints
-                idx = indices(i);
-                obj.cumVelocity(i) = cumVelocityFull(idx);
-                obj.time(i) = timeNominal(idx);
-                obj.state{i} = states(:, idx);
-                obj.controlInput{i} = controlInputs(:, idx);
-                obj.actuatorState{i} = actuatorStates(:, idx);
-                obj.stateMatrix{i} = {};
-                obj.controlMatrix{i} = {};
-                obj.gain{i} = {};
+            for ii = 1:obj.numBreakPoints
+                idx = indices(ii);
+                obj.cumVelocity(ii) = cumVelocityFull(idx);
+                obj.time(ii) = timeNominal(idx);
+                obj.state{ii} = states(:, idx);
+                obj.controlInput{ii} = controlInputs(:, idx);
+                obj.actuatorState{ii} = actuatorStates(:, idx);
+                obj.stateMatrix{ii} = {};
+                obj.controlMatrix{ii} = {};
+                obj.gain{ii} = {};
+				%obj.refState{ii} = {};
             end
         end
 

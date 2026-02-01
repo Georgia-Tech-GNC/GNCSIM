@@ -41,7 +41,7 @@ classdef DecoupledLQR < controllerPkg.Controller
             pitchControl = pitchControlRef + K3 * pitchErr;
             yawControl = yawControlRef + K3 * yawErr;
 
-            rocketControlRad = [0, pitchControl, yawControl].';
+            rocketControlRad = [rollControl, pitchControl, yawControl].';  % roll, pitch, yaw
             rocketControl = rad2deg(rocketControlRad);
         end
            
@@ -66,21 +66,24 @@ classdef DecoupledLQR < controllerPkg.Controller
         
         function populateBreakPoints(obj)
             % Only call this function before running flight
-            for i = 1:obj.breakPoints.numBreakPoints
-                time = obj.breakPoints.time(i);
-                state = obj.breakPoints.state{i};
-                controlInput = obj.breakPoints.controlInput{i};
-                actuatorState = obj.breakPoints.actuatorState{i};
+            for ii = 1:obj.breakPoints.numBreakPoints
+                time = obj.breakPoints.time(ii);
+                state = obj.breakPoints.state{ii};
+                controlInput = obj.breakPoints.controlInput{ii};
+                actuatorState = obj.breakPoints.actuatorState{ii};
 
                 [A3, B3] = obj.reduceLTI.calculateROMpitch(state, controlInput(2), actuatorState, time, obj.useActuatorModel);
                 [A2, B2] = obj.reduceLTI.calculateROMroll(state, controlInput(1), actuatorState, time, obj.useActuatorModel);
-
+				
+				A3(1,3) = 0;
+				A3(1,2) = 1;
                 K3 = lqr(A3, B3, obj.Q3, obj.R3);
                 K2 = lqr(A2, B2, obj.Q2, obj.R2);
 
-                obj.breakPoints.stateMatrix{i} = {A2, A3};
-                obj.breakPoints.controlMatrix{i} = {B2, B3};
-                obj.breakPoints.gain{i} = {K2, K3};               
+                obj.breakPoints.stateMatrix{ii} = {A2, A3};
+                obj.breakPoints.controlMatrix{ii} = {B2, B3};
+                obj.breakPoints.gain{ii} = {K2, K3};
+				%obj.breakPoints.refState{ii} = {pitchRef, yawRef, RollRef};
             end
         end
     end

@@ -175,65 +175,47 @@ classdef ReduceLTI < handle
     end
 
     methods (Static)
-        function x3 = pitchReduce(x14, yaw)
-	        % Maps full 14-state vector to Pitch states: [Alpha; q; Theta]
-	        % https://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
-        
-            arguments
-                x14
-                yaw = false;
-	        end
-        
-	        if yaw
-                %q = Utils.eulerToQuat([90 0 0]);
-		        %DCM = Utils.dirCosine(q);
+		function x3 = pitchReduce(x14, yaw)
+    		arguments
+        		x14
+        		yaw = false;
+    		end
+		
+    		% Extract basic states
+    		q_vec = x14(StateIndices.quat); % [q0, q1, q2, q3]
+    		u = x14(StateIndices.vx); 
+    		v = x14(StateIndices.vy); 
+    		w = x14(StateIndices.vz);
+    		omega = x14(StateIndices.omega); % [p; q; r]
 
-		        q0 = x14(StateIndices.q0);
-    	        q1 = x14(StateIndices.q1);
-    	        q2 = x14(StateIndices.q2);
-    	        q3 = x14(StateIndices.q3);
+			a = deg2rad(Utils.quatToEuler(q_vec));
+		
+    		if yaw
+        		% --- YAW CHANNEL MAPPING ---
+        		% 1. Sideslip (Beta) acts as our 'Alpha'
+        		% We use atan2(v, u) to get the lateral flow angle
+        		alpha_eff = atan2(v, u);
+		
+        		% 2. Yaw Rate (r) acts as our 'q'
+        		q_eff = -omega(3); 
 
-		        quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
-                        quat_x90 = quaternion(Utils.eulerToQuat([-90, 0, 0])');
-                        quat_rotated = quat * quat_x90;
-
-		        DCM = Utils.dirCosine(compact(quat_x90));
-		        x14(StateIndices.quat) = compact(quat_rotated);
-		        x14(StateIndices.vel) = DCM * x14(StateIndices.vel);
-		        x14(StateIndices.omega) = DCM * x14(StateIndices.omega);
-            end
-
-            u = x14(StateIndices.vx); v = x14(StateIndices.vy); w = x14(StateIndices.vz);
-            q_body = x14(StateIndices.omega);
-
-	        % angle of attack
-	        alpha = atan2(w, u);
-
-            % pitch from quaternion
-            qw = x14(StateIndices.q0);
-            qx = x14(StateIndices.q1);
-            qy = x14(StateIndices.q2);
-            qz = x14(StateIndices.q3);
-        
-	        c = cos(pi/4);
-	        s = sin(pi/4);
-            
-            % Manual Quaternion Multiplication: q_new = q * [c, 0, s, 0]
-            qw_rot = c*qw - s*qy;
-            qx_rot = c*qx - s*qz;
-            qy_rot = c*qy + s*qw;
-            qz_rot = c*qz + s*qx;
-         
-            % Extract Pitch (Theta) - Default
-            % Note: Using asin avoids singularity issues better than atan2 for pitch
-            theta = asin(2*(qw_rot*qy_rot - qx_rot*qz_rot));
-        
-        
-	        % pitch rate (q) - Default
-	        q = q_body(2); 
-        
-            x3 = [alpha; q; theta];
-        end 
+				theta_eff = -a(3);
+		
+        		% 3. Heading (Psi) acts as our 'Theta'
+        		% Extracting Psi from Quaternions: atan2(2(q0q3 + q1q2), 1 - 2(q2^2 + q3^2))
+        		%theta_eff = atan2(2*(q_vec(1)*q_vec(4) + q_vec(2)*q_vec(3)), ...
+                %          		1 - 2*(q_vec(3)^2 + q_vec(4)^2));
+    		else
+        		% --- PITCH CHANNEL MAPPING (Standard) ---
+        		alpha_eff = atan2(w, u);
+        		q_eff = omega(2); 
+        		% Standard Pitch: asin(2(q0q2 - q3q1))
+				theta_eff = a(2);
+        		%theta_eff = real(asin(2*(q_vec(1)*q_vec(3) - q_vec(4)*q_vec(2))));
+    		end
+		
+    		x3 = [alpha_eff; q_eff; theta_eff];
+		end
 
         function x2 = rollReduce(x14)
             % Maps full 14-state vector to Roll states: [Phi; p]
@@ -241,10 +223,9 @@ classdef ReduceLTI < handle
             % Roll rate (p) - Body frame rate is typically used directly
             p = x14(StateIndices.omega_x);
 
-            qw = x14(StateIndices.q0);
-            qx = x14(StateIndices.q1);
-            qy = x14(StateIndices.q2);
-            qz = x14(StateIndices.q3);
+            q_vec = x14(StateIndices.quat); % [q0, q1, q2, q3]
+
+			a = deg2rad(Utils.quatToEuler(q_vec));
             
             %{
             c = cos(pi/4);
@@ -258,7 +239,7 @@ classdef ReduceLTI < handle
             %}
         
             % Using standard ZYX roll formula on the new components
-            phi = atan2(2*(qw*qx + qy*qz), 1 - 2*(qx^2 + qy^2));
+            phi = a(1);
             x2 = [p; phi];
         end
 
