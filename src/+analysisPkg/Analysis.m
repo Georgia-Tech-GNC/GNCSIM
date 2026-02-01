@@ -198,12 +198,11 @@ classdef Analysis < handle
                 q3 = q3(obj.timeMask{i});
                 time = time(obj.timeMask{i});
 
-                %quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
-                %quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
-                %quat_rotated = quat * quat_y90;
-				quat = [q0', q1', q2', q3'];  % N x 4 matrix
+                quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
+                quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
+                quat_rotated = quat * quat_y90;
 
-                eul = Utils.quatToEuler(quat);
+                eul = rad2deg(quat2eul(quat_rotated, 'XYZ'));
                 plot(time, eul, 'LineWidth', 2)
             end
 

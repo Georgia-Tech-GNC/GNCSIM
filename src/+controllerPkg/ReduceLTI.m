@@ -177,53 +177,80 @@ classdef ReduceLTI < handle
 
     methods (Static)
 		function x3 = pitchReduce(x14, yaw)
+    		% Maps full 14-state vector to Pitch (or Yaw) states: [Alpha/Beta; q/r; Theta/Psi]
+    		% Reference: https://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
+		
     		arguments
         		x14
         		yaw = false;
     		end
 		
-    		% Extract basic states
-    		q_vec = x14(StateIndices.quat); % [q0, q1, q2, q3]
+    		% Get velocities
     		u = x14(StateIndices.vx); 
     		v = x14(StateIndices.vy); 
     		w = x14(StateIndices.vz);
-    		omega = x14(StateIndices.omega); % [p; q; r]
-
-			a = deg2rad(Utils.quatToEuler(q_vec));
+    		omega = x14(StateIndices.omega);
+		
+    		% Target orientation: Vertical Up [0, -90, 0]
+    		q0 = Utils.eulerToQuat([0, -90, 0]);
 		
     		if yaw
-        		% --- YAW CHANNEL MAPPING ---
-        		% We use atan2(v, u) to get the lateral flow angle
-        		alpha_eff = atan2(v, u);
-		
-        		% Yaw Rate (r) acts as our 'q'
-        		q_eff = -omega(3); 
-
-				theta_eff = -a(3);
+        		% --- YAW REDUCTION LOGIC ---
+        		% Alpha becomes Beta (sideslip)
+        		angle_of_attack = atan2(v, u); 
+        		% Rate becomes r (yaw rate)
+        		rate = -omega(3); 
+        		
+        		% Rotate target by 90 deg to extract Yaw error into the 'theta' slot
+        		% This effectively maps the Yaw deviation to the state output
+        		[psi_err, ~, ~] = controllerPkg.ReduceLTI.getEulerErrors(x14, q0);
+        		attitude_err = -psi_err;
     		else
-        		% --- PITCH CHANNEL MAPPING (Standard) ---
-        		alpha_eff = atan2(w, u);
-        		q_eff = omega(2); 
-				theta_eff = a(2);
+        		% --- PITCH REDUCTION LOGIC ---
+        		% Standard Alpha
+        		angle_of_attack = atan2(w, u);
+        		% Rate is q (pitch rate)
+        		rate = omega(2);
+        		
+        		% Extract Pitch error relative to vertical
+        		[~, theta_err, ~] = controllerPkg.ReduceLTI.getEulerErrors(x14, q0);
+        		attitude_err = theta_err;
     		end
 		
-    		x3 = [alpha_eff; q_eff; theta_eff];
+    		x3 = [angle_of_attack; rate; attitude_err];
 		end
-
-        function x2 = rollReduce(x14)
-            % Maps full 14-state vector to Roll states: [Phi; p]
-
-            % Roll rate (p) - Body frame rate is typically used directly
-            p = x14(StateIndices.omega_x);
-
-            q_vec = x14(StateIndices.quat); % [q0, q1, q2, q3]
-
-			a = deg2rad(Utils.quatToEuler(q_vec));
-        
-            % Using standard ZYX roll formula on the new components
-            phi = a(1);
-            x2 = [p; phi];
-        end
+		
+		function x2 = rollReduce(x14)
+    		% Maps full 14-state vector to Roll states: [p; Phi]
+    		p = -x14(StateIndices.omega_x);
+    		
+    		q0 = Utils.eulerToQuat([0, -90, 0]);
+    		[~, ~, phi_err] = controllerPkg.ReduceLTI.getEulerErrors(x14, q0);
+    		
+    		x2 = [p; -phi_err];
+		end
+		
+		%% Helper to calculate clean errors relative to any target (e.g., vertical)
+		function [psi, theta, phi] = getEulerErrors(x14, q_target)
+    		q_actual = x14(StateIndices.quat); 
+    		
+    		% Error Quaternion: q_err = q_target^-1 * q_actual
+    		q_inv = [q_target(1); -q_target(2:4)];
+    		
+    		w1 = q_inv(1); x1 = q_inv(2); y1 = q_inv(3); z1 = q_inv(4);
+    		w2 = q_actual(1); x2 = q_actual(2); y2 = q_actual(3); z2 = q_actual(4);
+    		
+    		qe_w = w1*w2 - x1*x2 - y1*y2 - z1*z2;
+    		qe_x = w1*x2 + x1*w2 + y1*z2 - z1*y2;
+    		qe_y = w1*y2 - x1*z2 + y1*w2 + z1*x2;
+    		qe_z = w1*z2 + x1*y2 - y1*x2 + z1*w2;
+    		
+    		% Standard ZYX extraction from the error quaternion
+    		% Since error is small, this is stable and singularity-free
+    		phi   = real(atan2(2*(qe_w*qe_x + qe_y*qe_z), 1 - 2*(qe_x^2 + qe_y^2)));
+    		theta = real(asin(2*(qe_w*qe_y - qe_z*qe_x)));
+    		psi   = real(atan2(2*(qe_w*qe_z + qe_x*qe_y), 1 - 2*(qe_y^2 + qe_z^2)));
+		end
 
 		function drawROM(sys)
             % Simulates the LTI system response to an initial condition and plots

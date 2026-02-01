@@ -26,7 +26,7 @@ environment = setupEnvironment();
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
-flight.runClosedLoop = false;
+flight.runClosedLoop = true;
 
 %% Run Flight
 tic;
@@ -253,10 +253,10 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	
 	% Apply the step at 6 seconds
 	% Logical mask for time >= 6 seconds
-	mask_step = (time >= 6.0);
+	mask_step = (time >= 0.0);
 	
 	% Set pitch to 12 degrees for all points where time >= 6
-	roll_deg(mask_step) = 10.0;
+	%yaw_deg(mask_step) = 10.0;
 
 	roll_rad  = deg2rad(roll_deg);
 	pitch_rad = deg2rad(pitch_deg);
@@ -266,9 +266,9 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	% Format: [Time; Roll; Pitch; Yaw]
 	referenceAttitudes = [
     	time;
-    	yaw_rad;
+    	roll_rad;
     	pitch_rad;
-    	roll_rad
+    	yaw_rad
 	];
 
     % Generate Breakpoints
@@ -362,7 +362,9 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
-    quat0 = Utils.eulerToQuat([0, 0, 0]).';  % yaw, pitch, roll
+	initAngle = Utils.eulerToQuat([0, 0, 5]).'; % yaw, pitch, roll
+	quatRot = Utils.eulerToQuat([0, -90, 0]).';
+    quat0 = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;

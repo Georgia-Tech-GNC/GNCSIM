@@ -33,69 +33,70 @@ classdef Utils
             %   q: A 4x1 vector representing the quaternion [w, x, y, z].
 
             % Convert the angles from degrees to radians
-    		a = deg2rad(a);
-    		
-    		% Shorthand for half-angles
-    		% a(1)=Roll (phi), a(2)=Pitch (theta), a(3)=Yaw (psi)
-    		cR = cos(a(1)*0.5); sR = sin(a(1)*0.5);
-    		cP = cos(a(2)*0.5); sP = sin(a(2)*0.5);
-    		cY = cos(a(3)*0.5); sY = sin(a(3)*0.5);
-		
-    		q = zeros(4, 1);
-    		% Standard ZYX rotation sequence equations
-    		q(1) = cY*cP*cR + sY*sP*sR; % w
-    		q(2) = cY*cP*sR - sY*sP*cR; % x
-    		q(3) = cY*sP*cR + sY*cP*sR; % y
-    		q(4) = sY*cP*cR - cY*sP*sR; % z
+            a = deg2rad(a);
+
+            % Pre-calculate sines and cosines of half angles
+            cy = cos(a(2) * 0.5);  % Cosine of half pitch
+            sy = sin(a(2) * 0.5);  % Sine of half pitch
+            cr = cos(a(1) * 0.5);  % Cosine of half roll
+            sr = sin(a(1) * 0.5);  % Sine of half roll
+            cp = cos(a(3) * 0.5);  % Cosine of half yaw
+            sp = sin(a(3) * 0.5);  % Sine of half yaw
+
+            % Pre-allocate the output quaternion as a column vector
+            q = zeros(4, 1);
+
+            % Calculate the quaternion components
+            q(1) = cy * cr * cp + sy * sr * sp;  % w component
+            q(2) = cy * sr * cp - sy * cr * sp;  % x component
+            q(3) = sy * cr * cp - cy * sr * sp;  % y component
+            q(4) = cy * cr * sp + sy * sr * cp;  % z component
         end
 
-		function a = quatToEuler(q)
-    		% Convert an N x 4 array of quaternions to Euler angles.
-    		%
-    		% Input:
-    		%   q: An N x 4 array representing quaternions [w, x, y, z].
-    		%
-    		% Output:
-    		%   a: An N x 3 array of Euler angles [roll, pitch, yaw] in degrees.
-    		
-    		% Ensure q is N x 4 (if user passes 4 x N, transpose it)
-    		if size(q, 2) ~= 4 && size(q, 1) == 4
-        		q = q';
-    		end
-    		
-    		% Normalize each row (assuming Utils.normalizeQuat handles matrices, 
-    		% otherwise use: q = q ./ sqrt(sum(q.^2, 2));)
-    		q = Utils.normalizeQuat(q);
-    		
-    		% Extract columns
-    		w = q(:, 1);
-    		x = q(:, 2);
-    		y = q(:, 3);
-    		z = q(:, 4);
-    		
-    		% Pre-allocate output: N rows, 3 columns
-    		numQuats = size(q, 1);
-    		a = zeros(numQuats, 3);
-    		
-    		% Roll (x-axis rotation)
-    		sinr_cosp = 2 .* (w .* x + y .* z);
-    		cosr_cosp = 1 - 2 .* (x .* x + y .* y);
-    		a(:, 1) = atan2(sinr_cosp, cosr_cosp);
-    		
-    		% Pitch (y-axis rotation)
-    		sinp = 2 .* (w .* y - z .* x);
-    		% Clamp sinp to [-1, 1] for all rows to avoid complex results from asin
-    		sinp = max(-1, min(1, sinp));
-    		a(:, 2) = asin(sinp);
-    		
-    		% Yaw (z-axis rotation)
-    		siny_cosp = 2 .* (w .* z + x .* y);
-    		cosy_cosp = 1 - 2 .* (y .* y + z .* z);
-    		a(:, 3) = atan2(siny_cosp, cosy_cosp);
-    		
-    		% Convert the entire matrix from radians to degrees
-    		a = rad2deg(a);
-		end
+        function a = quatToEuler(q)
+            % Convert a quaternion to Euler angles.
+            %
+            % Input:
+            %   q: A 4x1 or 1x4 vector representing the quaternion [w, x, y, z].
+            %
+            % Output:
+            %   a: A 3x1 vector of Euler angles [roll, pitch, yaw] in degrees.
+            
+            % Ensure q is a column vector
+            if size(q, 2) == 4
+                q = q';
+            end
+
+            q = Utils.normalizeQuat(q);
+            
+            % Extract quaternion components
+            w = q(1);
+            x = q(2);
+            y = q(3);
+            z = q(4);
+            
+            % Pre-allocate the output angles as a column vector
+            a = zeros(3, 1);
+            
+            % Roll (x-axis rotation)
+            sinr_cosp = 2 * (w * x + y * z);
+            cosr_cosp = 1 - 2 * (x * x + y * y);
+            a(1) = atan2(sinr_cosp, cosr_cosp);
+            
+            % Pitch (y-axis rotation)
+            sinp = 2 * (w * y - z * x);
+            % Clamp sinp to avoid numerical issues with asin
+            sinp = max(-1, min(1, sinp));
+            a(2) = asin(sinp);
+            
+            % Yaw (z-axis rotation)
+            siny_cosp = 2 * (w * z + x * y);
+            cosy_cosp = 1 - 2 * (y * y + z * z);
+            a(3) = atan2(siny_cosp, cosy_cosp);
+            
+            % Convert from radians to degrees
+            a = rad2deg(a);
+        end
 
         function qNorm = normalizeQuat(q)
             % normalize_quat: Normalizes a quaternion to unit length.
@@ -154,13 +155,13 @@ classdef Utils
             q1 = q(2); % Vector part x
             q2 = q(3); % Vector part y
             q3 = q(4); % Vector part z
+
 			
-			Ry = [0 0 1; 0 1 0; -1 0 0];
             quatDCM = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
                     2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
 
-            dcm = Ry * quatDCM;
+            dcm = quatDCM;
         end
 
 
@@ -214,7 +215,7 @@ classdef Utils
             n = length(x0);
             m = length(f0);
             J = zeros(m, n);
-			eps = 1e-6;
+			eps = 1e-7;
         
             % Finite difference step size
             h = sqrt(eps) * max(abs(x0), 1);
@@ -242,7 +243,36 @@ classdef Utils
             ];
 
             quatDot = 0.5 * mat_omega * quat;
-        end
+		end
+
+		function qout = quatMult(q, p)
+            % quatMult: Performs quaternion multiplication (Hamilton product).
+            % Represents the combined rotation of q followed by p (q * p).
+            %
+            % INPUTS:
+            %   q, p: Quaternions in [w, x, y, z] format.
+            %
+            % OUTPUT:
+            %   qout: Resulting quaternion [w, x, y, z].
+            
+            % Ensure column vectors for calculation
+            q = q(:); 
+            p = p(:);
+            
+            w1 = q(1); x1 = q(2); y1 = q(3); z1 = q(4);
+            w2 = p(1); x2 = p(2); y2 = p(3); z2 = p(4);
+            
+            qout = [
+                w1*w2 - x1*x2 - y1*y2 - z1*z2;
+                w1*x2 + x1*w2 + y1*z2 - z1*y2;
+                w1*y2 - x1*z2 + y1*w2 + z1*x2;
+                w1*z2 + x1*y2 - y1*x2 + z1*w2
+            ];
+            
+            % If inputs were row vectors, return a row vector
+            if size(q, 2) > size(q, 1) || size(p, 2) > size(p, 1)
+                qout = qout';
+            end
+		end
     end
 end
-

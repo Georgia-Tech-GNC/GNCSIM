@@ -52,7 +52,7 @@ classdef DecoupledLQR < controllerPkg.Controller
             yawControl = yawControlRef + K3 * yawErr;
             
             % Get rocket control
-            rocketControlRad = [rollControl, pitchControl, yawControl].';  % roll, pitch, yaw
+            rocketControlRad = [0, pitchControl, yawControl].';  % roll, pitch, yaw
             rocketControl = rad2deg(rocketControlRad);
         end
            
