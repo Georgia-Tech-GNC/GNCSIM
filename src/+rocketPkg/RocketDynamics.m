@@ -105,6 +105,29 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
+        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
+
+            arguments
+                obj
+                state 
+                controlInput
+                disturbances % wind
+				time  % current time in seconds
+                log = []  % Optional, defaults to empty
+				useGravity = true;
+				useThrust = true;
+            end
+            
+            [Nx, Nt] = size(state);
+            xDot = zeros(Nx, Nt);
+
+            for i = 1:Nt
+                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), log, useGravity, useThrust);
+            end
+               
+
+        end
+
         function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
             arguments
                 obj
