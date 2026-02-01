@@ -19,7 +19,6 @@ classdef BreakPoints < handle
         stateMatrix      % cell array of cell arrays {{A1}, {A2}, ...}
         controlMatrix    % cell array of cell arrays {{B1}, {B2}, ...}
         gain             % cell array of cell arrays {{K1}, {K2}, ...}
-		%refState         % cell array of cell arrays {{refROM}}
     end
 
     methods

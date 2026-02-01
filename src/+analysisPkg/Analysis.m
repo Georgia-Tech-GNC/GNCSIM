@@ -208,7 +208,7 @@ classdef Analysis < handle
             end
 
 
-            legend('Roll','Pitch','Yaw')
+            legend('Yaw','Pitch','Roll')
             ylabel('\textbf{Euler Angles (deg)}', 'Interpreter', 'latex')
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
             title('\textbf{Euler Angles}', 'Interpreter', 'latex')

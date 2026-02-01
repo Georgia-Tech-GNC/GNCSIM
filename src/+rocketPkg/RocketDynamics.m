@@ -174,7 +174,7 @@ classdef RocketDynamics < handle
 
             % compute passive aero forces and moments
             if isempty(obj.aerodynamicsCFD)
-                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, disturbances); % arg = [] because static fins
+                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, actuatorState, currentCg, disturbances); % arg = [] because static fins
                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
                 fBAero = fBFins + fBBody;
                 mBAero = mBFins + mBBody;
@@ -182,7 +182,7 @@ classdef RocketDynamics < handle
                  [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, disturbances);
                  fprintf("I'm being a none.")
             end
-            
+
             % compute thrust
 			fTB = zeros(3,1);
 			if useThrust && obj.useThrust
