@@ -253,10 +253,11 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	
 	% Apply the step at 6 seconds
 	% Logical mask for time >= 6 seconds
-	mask_step = (time >= 0.0);
+	mask_step = (time >= 6.0);
 	
 	% Set pitch to 12 degrees for all points where time >= 6
-	%yaw_deg(mask_step) = 10.0;
+	roll_deg(mask_step) = 10.0;
+	pitch_deg(mask_step) = 10.0;
 
 	roll_rad  = deg2rad(roll_deg);
 	pitch_rad = deg2rad(pitch_deg);
@@ -280,9 +281,9 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 
     % Get controller
 	Q2 = diag([1 1]);       
-	R2 = 10;   	
+	R2 = 20;   	
 	Q3 = diag([1 1 1]);
-	R3 = 1; 
+	R3 = 2; 
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
