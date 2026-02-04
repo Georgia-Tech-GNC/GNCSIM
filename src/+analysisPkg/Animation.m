@@ -16,8 +16,8 @@ classdef Animation
 			obj.initFig()
 			obj.drawStatic()
 			obj.drawTraj()
-			hT = obj.drawRocket();
-			obj.animate(hT);
+			[hT, tT] = obj.drawRocket();
+			obj.animate(hT, tT);
 		end
 
 		function f = initFig(obj)
@@ -59,7 +59,7 @@ classdef Animation
 			plot3([0, 0], [0, 0], [0, originLength], 'LineWidth', 2, 'Color', [0 0 1]);
 		end
 		
-		function hT = drawRocket(obj)
+		function [hT, hThrust] = drawRocket(obj)
 			hT = hgtransform('Parent', gca);
 
             % ========== ROCKET ==========
@@ -125,6 +125,16 @@ classdef Animation
                     fill3(Xf, fin(2,:), fin(3,:), finColor, 'FaceAlpha', 0.9, 'EdgeColor', 'k', 'Parent', hT);
                 end
 			end
+
+			xBase = rBody.noseLength + rBody.bodyLength;
+    			
+			% Initialize an empty line. We use [xBase, xBase] so it starts at the tail.
+			% We'll update the second X point and Y/Z points in the animation loop.
+			hThrust = line([xBase, xBase], [0, 0], [0, 0], ...
+    			'Color', [1, 0.5, 0], ... % Orange thrust
+    			'LineWidth', 2, ...
+    			'Parent', hT);
+
 		end
 
 		function drawTraj(obj)
@@ -162,9 +172,11 @@ classdef Animation
 			end
 		end
 		
-		function animate(obj, rocketTransform)
+		function animate(obj, rocketTransform, thrustTransform)
             saveVideo = true;
             filename = 'animation.mp4';
+			rBody = obj.rocketDyn.body.bodyParams;
+			thrustScale = 4 / max(obj.log.thrust);
 			
 			q0 = obj.log.getState('q0');
             q1 = obj.log.getState('q1');
@@ -200,7 +212,7 @@ classdef Animation
 			flipX = diag([-1, -1, 1]);
 
             if saveVideo
-                fps = 30; % Frames per second for the output file
+                fps = 60; % Frames per second for the output file
                 v = VideoWriter(filename, 'MPEG-4');
                 v.FrameRate = fps;
                 v.Quality = 95;
@@ -224,6 +236,7 @@ classdef Animation
                 if simTime > totalSimTime, break; end
 				
 				stateInterp = interp1(time, aniState.' ,simTime);
+				currentThrust = interp1(time, obj.log.thrust, simTime);
 
 				quat = stateInterp(1:4);       % [q0, q1, q2, q3]
                 vel = stateInterp(8:10);
@@ -240,6 +253,12 @@ classdef Animation
 				cameraPoint = pos + camOffset;
         		
         		set(rocketTransform, 'Matrix', T);
+
+				xBase = rBody.noseLength + rBody.bodyLength;
+    			newXData = [xBase, xBase + currentThrust * thrustScale];
+    			
+    			% Update the handle
+    			set(thrustTransform, 'XData', newXData);
 
 				camtarget(pos);
 				campos(cameraPoint);

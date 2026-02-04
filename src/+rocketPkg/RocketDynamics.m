@@ -4,39 +4,40 @@
 %               Aditya Swami (aswami8@gatech.edu)
 
 classdef RocketDynamics < handle
+    properties (Constant)
+        idx = StateIndices
+    end
+
     properties
 		body
 		rocketFins
 		motorParams 
-		controller
-        aerodynamics = []
-        firstChute
-        secondChute
         thrustCurve
         totalImpulse
         burnTime
-        massWet (1,1) double {mustBePositive} = 1
-        massDry (1,1) double {mustBePositive} = 1
-        moiWet (3,3) double = eye(3)
-        moiDry (3,3) double = eye(3)
-        cgWet (1,1) double {mustBePositive} = 1
-        cgDry (1,1) double {mustBePositive} = 1
+        massWet 
+        massDry 
+        moiWet  
+        moiDry  
+        cgWet 
+        cgDry 
 
         useThrust = true
 		useGravity = true
-        allocationMatrix
+        actuatorModel
+
+        aerodynamicsCFD = []
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, controller, parachuteObjects, aerodynamics)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, aerodynamicsCFD)
             arguments
-                body
-                rocketFins
+                body                % DATCOM
+                rocketFins          % DATCOM
                 rocketParams
                 motorParams
-                controller
-                parachuteObjects
-                aerodynamics = []
+                actuatorModel
+                aerodynamicsCFD = []   % defaults to empty
             end
 
             obj.body = body;
@@ -55,18 +56,9 @@ classdef RocketDynamics < handle
             obj.cgWet = rocketParams.cgXWet;
             obj.cgDry = rocketParams.cgXDry;
 
-            obj.controller = controller;
-            obj.aerodynamics = aerodynamics;
-            
-            % This is a mapping from pitch, yaw and roll to the four fin
-            % deflections
-            obj.allocationMatrix = [-1, 0, 1, 0;
-                                    0, 1, 0, -1;
-                                    0, -1, 0, -1].';
-            %u = [0; -1; 0; -1];  % positive roll (correct)
-		      	%u = [0; 1; 0; -1];  % positive yaw (correct)
-            %u = [-1; 0; 1; 0];  % positive pitch (correct)
+            obj.actuatorModel = actuatorModel;
 
+            obj.aerodynamicsCFD = aerodynamicsCFD;
         end
 
         function currentThrust = getThrust(obj, t)
@@ -113,75 +105,105 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, deflections, disturbances, time, log, useThrust)
-			arguments
-                obj
-                state 
-                deflections  % array of 3 elements
-				disturbances  % current time in seconds
-				time
-                log = []  % Optional, defaults to empty
-				useThrust = true;
-            end
-            % computes aero forces and moments
-			[currentCg, ~] = getCgMoi(obj, state(1));
+        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
 
-            % % Get Parachute Forces
-            % rocketVel = state(2:4);
-            % rocketAngularVel = state(12:14);
-            % rocketQuat = state(8:11);
-            % if atApogee(state, time)
-            %     [F_rocket_com, M_rocket_com] = obj.firstChute.getForcesAndMoments(rocketVel, rocketAngularVel, rocketQuat, timeStep);
-            % 
-            % end
-
-            if isempty(obj.aerodynamics)
-                 [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, deflections, currentCg, disturbances);
-                 [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
-                 fBAero = fBFins + fBBody;
-                 mBAero = mBFins + mBBody;
-            else
-                 [fBAero, mBAero] = obj.aerodynamics.getForcesMoments(state, disturbances);
-            end
-			fTB = zeros(3,1);
-			if useThrust && obj.useThrust
-				fTB = [obj.getThrust(time); 0; 0];
-			end
-            
-            if ~isempty(log)
-                log.add(time, 'aeroforces', fBAero);
-                log.add(time, 'aeromoments', mBAero);
-                
-                log.add(time, 'thrust', obj.getThrust(time));
-                %log.add(time, 'controlmoments', mBController);
-            end
-
-            fB = fTB + fBAero;
-            mB = mBAero;
-		end
-
-		function xDot = rocketModel(obj, state, control, time, log, useGravity, useThrust)
             arguments
                 obj
                 state 
-                control  % array of 3 elements
-				time = 0  % current time in seconds
+                controlInput
+                disturbances % wind
+				time  % current time in seconds
                 log = []  % Optional, defaults to empty
 				useGravity = true;
 				useThrust = true;
             end
-
-            altitude = state(4);
-            %disturbances.wind = obj.environment.getWindspeed(altitude);
-            disturbances.wind = zeros(3);
             
-            % Mapping from control deflections (pitch, yaw, roll) to fin
-            % deflections (fin 1, 2, 3, 4)
-            deflections = obj.allocationMatrix * control;
+            [Nx, Nt] = size(state);
+            xDot = zeros(Nx, Nt);
 
-            [fB, mB] = obj.getForcesMoments(state, deflections, disturbances, time, log, useThrust);
-            xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity, useThrust);
-		end
+            for i = 1:Nt
+                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), log, useGravity, useThrust);
+            end
+               
+
+        end
+
+        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
+            arguments
+                obj
+                state 
+                controlInput
+                disturbances % wind
+				time  % current time in seconds
+                log = []  % Optional, defaults to empty
+				useGravity = true;
+				useThrust = true;
+            end
+            actuatorState = obj.actuatorModel.allocationMatrix * controlInput;
+            xDot = obj.rocketModel(state, actuatorState, disturbances, time, log, useGravity, useThrust);
+        end
+
+		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, log, useGravity, useThrust)
+            arguments
+                obj
+                state 
+                actuatorState
+                disturbances % wind
+				time  % current time in seconds
+                log = []  % Optional, defaults to empty
+				useGravity = true;
+				useThrust = true;
+            end
+            
+            [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, log, useThrust);
+            xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity);
+        end
+
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, log, useThrust)
+			arguments
+                obj
+                state 
+                actuatorState  
+				disturbances  
+				time % current time in seconds
+                log = []  % Optional, defaults to empty
+				useThrust = true;
+            end
+
+			[currentCg, ~] = obj.getCgMoi(state(obj.idx.mass));
+
+            % compute passive aero forces and moments
+            if isempty(obj.aerodynamicsCFD)
+                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, disturbances); % arg = [] because static fins
+                [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
+                fBAero = fBFins + fBBody;
+                mBAero = mBFins + mBBody;
+            else
+                 [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, disturbances);
+                 fprintf("I'm being a none.")
+            end
+
+            % compute thrust
+			fTB = zeros(3,1);
+			if useThrust && obj.useThrust
+				fTB = [obj.getThrust(time); 0; 0];
+            end
+
+            % compute actuator forces
+            [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, disturbances);
+           
+            if ~isempty(log)
+                log.add(time, 'aeroforces', fBAero);
+                log.add(time, 'aeromoments', mBAero);
+                log.add(time, 'thrust', obj.getThrust(time));
+                log.add(time, 'controlForces', fBActuator);
+                log.add(time, 'controlmoments', mBActuator);
+            end
+            
+            % get net force on body
+            fB = fTB + fBAero + fBActuator;
+            mB = mBAero + mBActuator;
+        end
 
 		function stateDot = flatEarth_EOM(obj, state, time, fB, mB, useGravity, useThrust)
 			arguments
@@ -193,10 +215,10 @@ classdef RocketDynamics < handle
 				useGravity = true;
                 useThrust = true;
             end
-            mass = state(1);
-            vel = state(5:7);
-            quat = state(8:11);
-            omega = state(12:14);
+            mass = state(obj.idx.mass);
+            vel = state(obj.idx.vel);
+            quat = state(obj.idx.quat);
+            omega = state(obj.idx.omega);
 
             % preventing mass to go below massDry
             mass = max(mass, obj.massDry);
@@ -315,55 +337,28 @@ classdef RocketDynamics < handle
             view(30,20);
         end
 
-        function [reachedApogee] = atApogee(state, time)
-            persistent timeCheck
-            
-            velBody = state(5:7);
-            body2InertialQuat = state(8:11);
-            body2InertialDCM = utils.dirCosine(body2InertialQuat);
-            velInertial = body2InertialDCM * velBody;
-            velNorth = velInertial(3);
-            
-            if velNorth < 0
-                if isempty(timeCheck)
-                    timeCheck = time + 1;
-                elseif time >= timeCheck
-                    reachedApogee = true;
-                else
-                    reachedApogee = false;
-                end
-            else
-                reachedApogee = false;
-            end
-        end
+        % function [reachedApogee] = atApogee(state, time)
+        %     persistent timeCheck
+        % 
+        %     velBody = state(5:7);
+        %     body2InertialQuat = state(8:11);
+        %     body2InertialDCM = utils.dirCosine(body2InertialQuat);
+        %     velInertial = body2InertialDCM * velBody;
+        %     velNorth = velInertial(3);
+        % 
+        %     if velNorth < 0
+        %         if isempty(timeCheck)
+        %             timeCheck = time + 1;
+        %         elseif time >= timeCheck
+        %             reachedApogee = true;
+        %         else
+        %             reachedApogee = false;
+        %         end
+        %     else
+        %         reachedApogee = false;
+        %     end
+        % end
     end
 end
 
 
-
-% DEPRECATED (sorry Kandarp)
-% function [m, cg, moi] = interpMassCgMoi(t)
-%     % Need to pass in thrust curve somehow
-%     tc = obj.motorParams.tc;
-%     totalThrust = trapz(tc(1:2:end-1),tc(2:2:end));
-%     if t < burnTime
-%         % Proportionality constants
-%         kMass = (obj.massWet-obj.massDry)/totalThrust;
-%         kCg = (obj.cgWet-obj.cgDry)/totalThrust;
-%         kMoi = (obj.moiWet-obj.moiDry)/totalThrust;
-%         % Time + cumulative thrust calculations
-%         currT = tc(tc(1:2:end-1) < t);
-%         tStop = currT(end); % Last tc point included in calculation
-%         tLast = tc(find(tc == tStop));
-%         tSlope = (tc(tLast+3)-tc(tLast+1))/(tc(tLast+2)-tc(tLast));
-%         cumT = trapz(tc(1:2:tLast),tc(2:2:tLast+1)) + tSlope*(tc(tLast+2)-tLast);
-%         % Thrust-based interpolation
-%         m = obj.massWet - kMass * cumT;
-%         cg = obj.cgWet - kCg * cumT;
-%         moi = obj.moiWet - kMoi * cumT;
-%     else
-%         m = obj.massDry;
-%         cg = obj.cgDry;
-%         moi = obj.moiDry;
-%     end
-% end

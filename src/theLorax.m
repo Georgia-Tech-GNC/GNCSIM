@@ -158,12 +158,12 @@ function nav = setupNavigation(dt)
     navParams.dt = dt;
     navParams.P = 0.1 * eye(6);
 
-    navParams.dfdx = @(dt, q)[1, 0, 0, dt*(2*q(1)^2 + 2*q(2)^2 - 1), dt*(2*q(1)*q(4) + 2*q(2)*q(3)), -dt*(2*q(1)*q(3) - 2*q(2)*q(4));
-                              0, 1, 0, -dt*(2*q(1)*q(4) - 2*q(2)*q(3)), dt*(2*q(1)^2 + 2*q(3)^2 - 1), dt*(2*q(1)*q(2) + 2*q(3)*q(4)); 
-                              0, 0, 1, dt*(2*q(1)*q(3) + 2*q(2)*q(4)), -dt*(2*q(1)*q(2) - 2*q(3)*q(4)), dt*(2*q(1)^2 + 2*q(4)^2 - 1);
-                              0, 0, 0, 1, 0, 0;
-                              0, 0, 0, 0, 1, 0;
-                              0, 0, 0, 0, 0, 1];
+    navParams.dfdx = @(dt) [1, 0, 0, dt, 0,  0;  
+                            0, 1, 0, 0,  dt, 0;  
+                            0, 0, 1, 0,  0,  dt; 
+                            0, 0, 0, 1,  0,  0;  
+                            0, 0, 0, 0,  1,  0;  
+                            0, 0, 0, 0,  0,  1]; 
     sigmaA = 5;
 
     navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
@@ -195,7 +195,8 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
 	% LOG
     maxSteps = round(flightParams.totalTime / flightParams.dt);
     stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
-    controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary  
-	log = analysisPkg.Log(stateNames, controlInputNames, maxSteps);  
+    controlInputNames = {'Mx', 'My', 'Mz'}; % control names are temporary
+    actuatorStateNames = {'delta1', 'delta2', 'delta3', 'delta4'}; % fin deflections
+	log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 

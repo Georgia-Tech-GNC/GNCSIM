@@ -1,5 +1,3 @@
-% Main Authors: Conor Foley (mfoley40@gatech.edu)
-
 classdef Accelerometer < navigationPkg.Sensor&handle
     
     properties 
@@ -13,6 +11,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
 
     properties (Constant)
         SENSOR_TYPE = navigationPkg.SensorType.ACCELEROMETER
+        idx = StateIndices
     end
     
     properties
@@ -49,12 +48,12 @@ classdef Accelerometer < navigationPkg.Sensor&handle
         end
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
-            
-            %if obj.isOutputReady(currentTime)
-                obj.q = state(8:11);
-                obj.angVelB = state(12:14);
 
-                obj.accelB = stateDot(5:7); % 
+            %if obj.isOutputReady(currentTime)
+                obj.q = state(obj.idx.quat);
+                obj.angVelB = state(obj.idx.omega);
+
+                obj.accelB = stateDot(obj.idx.vel); % 
     
                 measurement = obj.accLeverArm();
                  %obj.addNoise(accelIMU);
@@ -79,8 +78,8 @@ classdef Accelerometer < navigationPkg.Sensor&handle
 
         function noisyAccel = addNoise(obj, accelIMU)
             % Add noise, bias, and scale factor
-            noise = obj.VRW .* sqrt(obj.outputRate) .* randn(3,1);
-            noisyAccel = (1 + obj.SF) .* accelIMU + obj.bias + noise;
+            % Recheck this why was randn multiplied times 
+            noisyAccel = (1 + obj.SF) .* accelIMU .* obj.outputRate + obj.bias .* obj.outputRate + obj.VRW .* sqrt(obj.outputRate) + randn(3,1);
 
         end
 

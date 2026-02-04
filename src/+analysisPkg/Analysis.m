@@ -159,11 +159,11 @@ classdef Analysis < handle
                 end
             end
 
-            %averageMaxMachNumber = mean(machMax);
-            %disp(['Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
+            averageMaxMachNumber = mean(machMax);
+            disp(['Average Maximum Mach Number from all flights: ', num2str(averageMaxMachNumber)]);
 
-            %averageMaxAltitude = mean(altMax);
-            %disp(['Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
+            averageMaxAltitude = mean(altMax);
+            disp(['Average maximum altitude from all flights: ', num2str(averageMaxAltitude),'m']);
 
             legend('v_x','v_y','v_z')
             ylabel('\textbf{Velocity in Body Frame (m/s)}', 'Interpreter', 'latex')
@@ -416,6 +416,40 @@ classdef Analysis < handle
             end
         end
 
+        function generateActuatorStatePlot(obj)
+            fig = figure('Visible', 'off');
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                time = log.time(1:log.currentIdx);
+                time = time(obj.timeMask{i});
+
+                % Plot all actuator states
+                for j = 1:length(log.actuatorStateNames)
+                    actuatorData = log.getActuatorState(log.actuatorStateNames{j});
+                    actuatorData = actuatorData(obj.timeMask{i});
+                    plot(time, actuatorData, 'LineWidth', 2)
+                end
+            end
+
+            if ~isempty(obj.logs{1}.actuatorStateNames)
+                legend(obj.logs{1}.actuatorStateNames)
+            end
+            ylabel('\textbf{Actuator States}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Actuator States}', 'Interpreter', 'latex')
+            grid on;
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'actuator_states.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
         function generateAccelerationPlot(obj)
             fig = figure('Visible', 'off');
             hold on;
@@ -639,10 +673,19 @@ classdef Analysis < handle
 			averageMaxVel = mean(velMax);
             disp(['[Estimate] Average Maximum Velocity from all flights: ', num2str(averageMaxVel)]);
 
-			[~, locs] = findpeaks(z_pos);
-			appoIndex = max(locs);
-			timeAtAppo = time(appoIndex);
-			disp(['[Estimate] Average Time to Apogee: ', num2str(timeAtAppo)]);
+			try
+                % Attempt to use Signal Processing Toolbox
+                [~, locs] = findpeaks(z_pos);
+                appoIndex = max(locs);
+                timeAtAppo = time(appoIndex);
+                disp(['[Estimate] Average Time to Apogee (Signal Toolbox): ', num2str(timeAtAppo)]);
+            catch
+                % Fallback for when the toolbox isn't installed/licensed
+                [~, appoIndex] = max(z_pos); 
+                timeAtAppo = time(appoIndex);
+                warning('Signal Processing Toolbox not found. Falling back to simple maximum for apogee detection.');
+                disp(['[Estimate] Time to Max Altitude (Fallback): ', num2str(timeAtAppo)]);
+            end
 
             averageMaxAltitude = mean(altMax);
             disp(['[Estimate] Average maximum altitude from all flights: ', num2str(averageMaxAltitude),' m']);
@@ -659,6 +702,7 @@ classdef Analysis < handle
             obj.generateAeroMomentPlot();
             obj.generateAeroForcePlot();
             obj.generateControlMomentPlot();
+            obj.generateActuatorStatePlot();
             obj.generateEkfCovariancePlot();
             obj.generateAltitudeAndXYPlot();
 			obj.printReliventInfo();

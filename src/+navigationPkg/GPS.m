@@ -1,5 +1,3 @@
-% Main Authors: Conor Foley (mfoley40@gatech.edu)
-
 classdef GPS < navigationPkg.Sensor&handle
     % Model of in-flight GPS
 
@@ -14,6 +12,7 @@ classdef GPS < navigationPkg.Sensor&handle
 
     properties (Constant)
         SENSOR_TYPE = navigationPkg.SensorType.GPS
+        idx = StateIndices
     end
 
     properties
@@ -48,11 +47,11 @@ classdef GPS < navigationPkg.Sensor&handle
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
             if obj.isOutputReady(currentTime)
-                obj.posI = state(2:4);
+                obj.posI = state(obj.idx.pos);
 
-                cIB = Utils.dirCosine(state(8:11))';
+                cIB = Utils.dirCosine(state(obj.idx.quat))';
 
-                velI = cIB * state(5:7);
+                velI = cIB * state(obj.idx.vel);
 
                 [lat, lon, alt] = obj.ENU2LLA();
                 llaPos = [lat, lon, alt];
@@ -67,7 +66,7 @@ classdef GPS < navigationPkg.Sensor&handle
 
         function [lat, lon, alt] = ENU2LLA(obj)
 
-            % Converts from NED coordinates back to LLA (WGS84)
+
 
             % Reference ECEF
             [xECEFref, yECEFref, zECEFref] = obj.LLA2ECEF(obj.refLLA(1), obj.refLLA(2), obj.refLLA(3));

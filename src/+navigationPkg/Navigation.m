@@ -1,8 +1,10 @@
-% Main Authors: Conor Foley (mfoley40@gatech.edu)
-
 classdef Navigation < handle
     % Sensor Modeling & State Estimation
     % Frame transform for gps data
+
+    properties (Constant)
+        idx = StateIndices
+    end
 
     properties (SetAccess = private)
         
@@ -60,12 +62,14 @@ classdef Navigation < handle
 
 
         function ekfState = getStateEstimate(obj, state, stateDot, currentTime, log)
+% Clean up use of cIB prior, posterior, initial state estimate
             obj.currentTime = currentTime;
             
-            % Initial state estimate 
+            % Initial state estimate
             if currentTime == 0
                 obj.q = Utils.eulerToQuat([0, -90, 0]);
-                obj.x = state(2:7);
+                obj.x = [state(2:7)];
+
                 ekfState = state;
                 return
             end
@@ -82,8 +86,8 @@ classdef Navigation < handle
 
             
             obj.ekf(log);
-      
-            ekfState = [state(1); obj.x(:); obj.q(:); obj.gyroRawData];
+
+            ekfState = [state(obj.idx.mass); obj.x(:); obj.q(:); obj.gyroRawData];
 
             % disp('State')
             % disp(state)
@@ -93,37 +97,12 @@ classdef Navigation < handle
             % disp(ekfState)
             % disp("Time")
             % disp(currentTime)
+           
 
-            % disp('--- Rotation Matrix Check ---');
-            % 
-            % % Body axes unit vectors
-            % x_body = [1; 0; 0];
-            % y_body = [0; 1; 0];
-            % z_body = [0; 0; 1];
-            % 
-            % % Rotate body axes into inertial (ENU) using cIB
-            % x_inertial = obj.cIB * x_body;
-            % y_inertial = obj.cIB * y_body;
-            % z_inertial = obj.cIB * z_body;
-            % 
-            % disp('Body x-axis in inertial frame:');
-            % disp(x_inertial);
-            % 
-            % disp('Body y-axis in inertial frame:');
-            % disp(y_inertial);
-            % 
-            % disp('Body z-axis in inertial frame:');
-            % disp(z_inertial);
-            % 
-            % % Optional: Check that cIB is orthonormal
-            % orthonormality = obj.cIB * obj.cBI; % should be close to identity
-            % disp('cIB * cBI (should be identity):');
-            % disp(orthonormality);
-
-
-            obj.posHistory.trueX(end+1) = state(2);
+obj.posHistory.trueX(end+1) = state(2);
 obj.posHistory.trueY(end+1) = state(3);
 obj.posHistory.trueZ(end+1) = state(4);
+
 
 % ---- GPS Position (ENU) ----
 if isempty(obj.gpsRawData)
@@ -139,13 +118,13 @@ end
 % ---- Time ----
 obj.posHistory.time(end+1) = obj.currentTime;
             
-
-
-
-
         end
 
+
+        %% Attitude Estimation
+
         function obj = runAttitudeEstimation(obj)
+            
             wx = obj.gyroRawData(1);
             wy = obj.gyroRawData(2);
             wz = obj.gyroRawData(3);
@@ -164,7 +143,6 @@ obj.posHistory.time(end+1) = obj.currentTime;
             obj.P = obj.predictCovariance();
 
             % Update Step
-            % don't auto set z use observation matrix
             if ~(isempty(obj.gpsRawData))
                 [K, H] = obj.kalmanGain();
                 obj.updateState(K);
@@ -178,16 +156,14 @@ obj.posHistory.time(end+1) = obj.currentTime;
         function obj = predictState(obj)
 
             accI = obj.accBodytoInertial();
-            accB = obj.cBI * accI;
-            velI = obj.cIB * obj.x(4:6); % cIB Prior?
 
-            obj.x(1) = obj.x(1) + velI(1) * obj.dt + accI(1) * ((obj.dt^2)/2);
-            obj.x(2) = obj.x(2) + velI(2) * obj.dt + accI(2) * ((obj.dt^2)/2);
-            obj.x(3) = obj.x(3) + velI(3) * obj.dt + accI(3) * ((obj.dt^2)/2);
+            obj.x(1) = obj.x(1) + obj.x(4) * obj.dt + accI(1) * ((obj.dt^2)/2);
+            obj.x(2) = obj.x(2) + obj.x(5) * obj.dt + accI(2) * ((obj.dt^2)/2);
+            obj.x(3) = obj.x(3) + obj.x(6) * obj.dt + accI(3) * ((obj.dt^2)/2);
 
-            obj.x(4) = obj.x(4) + accB(1) * obj.dt;
-            obj.x(5) = obj.x(5) + accB(2) * obj.dt;
-            obj.x(6) = obj.x(6) + accB(3) * obj.dt;
+            obj.x(4) = obj.x(4) + accI(1) * obj.dt;
+            obj.x(5) = obj.x(5) + accI(2) * obj.dt;
+            obj.x(6) = obj.x(6) + accI(3) * obj.dt;
 
         end
 
@@ -195,7 +171,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
             H = obj.dhdx(obj.x);
             S = H * obj.P * H' + obj.R;
-            K =  obj.P * H' / S;         %obj.P * H' / (H * obj.P * H' + obj.R);
+            K =  obj.P * H' / S;         % obj.P * H' / (H * obj.P * H' + obj.R); Check
 
         end
 
@@ -216,12 +192,13 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
         function P_prior = predictCovariance(obj)
 
-            F = obj.dfdx(obj.dt, obj.qPrior);
+            F = obj.dfdx(obj.dt);
             P_prior = F * obj.P * F' + obj.Q;
 
         end
 
         %% Sensor Data
+
         function obj = getRawData(obj, state, stateDot)
 
             gpsRawDataLLA = obj.gps.getMeasurement(state,stateDot,obj.currentTime);
@@ -245,10 +222,13 @@ obj.posHistory.time(end+1) = obj.currentTime;
             obj.dhdx = gpsH;
             obj.R = gpsR;
             obj.h = @(x)[x(1);x(2);x(3)];
+
         end
+
         %% Frame Transformation Functions
 
         % GPS
+
         function [xECEF, yECEF, zECEF] = LLA2ECEF(obj, lat, lon, alt)
             % Converts from WGS84 to ECEF
 
@@ -286,12 +266,16 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
         end
 
+        % Acc
+
         function [accI] = accBodytoInertial(obj)
 
             accI = obj.cIB * obj.accRawData + [0; 0; -9.81];
 
         end
-    
+
+        % Attitude/Quaternion
+
         function [qDelt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) 
 
             omegaVec = [wx wy wz];
@@ -323,43 +307,45 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
         end
 
+        %% Plotting
+        
         function plotPositionHistory(obj)
-    % Check if any data exists
-    if isempty(obj.posHistory.time)
-        warning('No position history to plot.');
-        return
-    end
+            % Check if any data exists
+            if isempty(obj.posHistory.time)
+                warning('No position history to plot.');
+            return
+            end
 
-    t = obj.posHistory.time;
-
-    figure;
-    
-    % ---- X ----
-    subplot(3,1,1)
-    plot(t, obj.posHistory.trueX, 'LineWidth', 1.5); hold on;
-    plot(t, obj.posHistory.gpsX, '.', 'MarkerSize', 10);
-    ylabel('X (m)');
-    title('True Position vs GPS Position');
-    legend('True','GPS');
-    grid on;
-
-    % ---- Y ----
-    subplot(3,1,2)
-    plot(t, obj.posHistory.trueY, 'LineWidth', 1.5); hold on;
-    plot(t, obj.posHistory.gpsY, '.', 'MarkerSize', 10);
-    ylabel('Y (m)');
-    legend('True','GPS');
-    grid on;
-
-    % ---- Z ----
-    subplot(3,1,3)
-    plot(t, obj.posHistory.trueZ, 'LineWidth', 1.5); hold on;
-    plot(t, obj.posHistory.gpsZ, '.', 'MarkerSize', 10);
-    ylabel('Z (m)');
-    xlabel('Time (s)');
-    legend('True','GPS');
-    grid on;
-end
+            t = obj.posHistory.time;
+        
+            figure;
+            
+            % ---- X ----
+            subplot(3,1,1)
+            plot(t, obj.posHistory.trueX, 'LineWidth', 1.5); hold on;
+            plot(t, obj.posHistory.gpsX, '.', 'MarkerSize', 10);
+            ylabel('X (m)');
+            title('True Position vs GPS Position');
+            legend('True','GPS');
+            grid on;
+        
+            % ---- Y ----
+            subplot(3,1,2)
+            plot(t, obj.posHistory.trueY, 'LineWidth', 1.5); hold on;
+            plot(t, obj.posHistory.gpsY, '.', 'MarkerSize', 10);
+            ylabel('Y (m)');
+            legend('True','GPS');
+            grid on;
+        
+            % ---- Z ----
+            subplot(3,1,3)
+            plot(t, obj.posHistory.trueZ, 'LineWidth', 1.5); hold on;
+            plot(t, obj.posHistory.gpsZ, '.', 'MarkerSize', 10);
+            ylabel('Z (m)');
+            xlabel('Time (s)');
+            legend('True','GPS');
+            grid on;
+        end
 
     end
 end
