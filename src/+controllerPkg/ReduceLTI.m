@@ -222,12 +222,12 @@ classdef ReduceLTI < handle
 		
 		function x2 = rollReduce(x14)
     		% Maps full 14-state vector to Roll states: [p; Phi]
-    		p = -x14(StateIndices.omega_x);
+    		p = x14(StateIndices.omega_x);
     		
     		q0 = Utils.eulerToQuat([0, -90, 0]);
     		[~, ~, phi_err] = controllerPkg.ReduceLTI.getEulerErrors(x14, q0);
     		
-    		x2 = [p; -phi_err];
+    		x2 = [p; phi_err];
 		end
 		
 		%% Helper to calculate clean errors relative to any target (e.g., vertical)
