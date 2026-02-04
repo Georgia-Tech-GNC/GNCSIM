@@ -46,11 +46,7 @@ classdef Flight < handle
             rocketState = obj.rocketInitialState(:);
             actuatorState = obj.actuatorInitialState(:);
 
-<<<<<<< HEAD
             controlInput = [0.0, 0.0, 0].';
-=======
-            controlInput = [0, 0, 0].';
->>>>>>> edd125e23d7902533aea3ea16a1cab74af6e271b
             disturbances.wind = [0, 0, 0].';
             
             % Initialize logger time step

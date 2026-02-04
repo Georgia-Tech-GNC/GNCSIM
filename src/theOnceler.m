@@ -253,18 +253,10 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	
 	% Apply the step at 6 seconds
 	% Logical mask for time >= 6 seconds
-<<<<<<< HEAD
 	mask_step = (time >= 4.0);
 	
 	% Set pitch to 12 degrees for all points where time >= 6
 	yaw_deg(mask_step) = 10.0;
-=======
-	mask_step = (time >= 6.0);
-	
-	% Set pitch to 12 degrees for all points where time >= 6
-	roll_deg(mask_step) = 10.0;
-	pitch_deg(mask_step) = 10.0;
->>>>>>> edd125e23d7902533aea3ea16a1cab74af6e271b
 
 	roll_rad  = deg2rad(roll_deg);
 	pitch_rad = deg2rad(pitch_deg);
