@@ -5,8 +5,8 @@ classdef RocketBody < rocketPkg.DatcomManager
     
 	properties
 		bodyParams			% Structure containing body geometry parameters
-		bodyOutline		% [2 x n] array: row 1 = x stations, row 2 = body radii
-						% DATCOM aerodynamic data
+		bodyOutline		    % [2 x n] array: row 1 = x stations, row 2 = body radii
+						    % DATCOM aerodynamic data
 	end
 
 	methods

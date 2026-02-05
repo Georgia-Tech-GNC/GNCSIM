@@ -29,7 +29,6 @@ classdef Fin < rocketPkg.DatcomManager
            vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
 
            % Add componet velocity and wind velocity
-
            vB = vB + vW;
 
            % Rotation from body frame to component (fin) frame

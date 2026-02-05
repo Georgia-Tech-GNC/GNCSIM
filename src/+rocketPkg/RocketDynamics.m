@@ -182,7 +182,7 @@ classdef RocketDynamics < handle
                  [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, disturbances);
                  fprintf("I'm being a none.")
             end
-            
+
             % compute thrust
 			fTB = zeros(3,1);
 			if useThrust && obj.useThrust

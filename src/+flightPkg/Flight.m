@@ -46,7 +46,7 @@ classdef Flight < handle
             rocketState = obj.rocketInitialState(:);
             actuatorState = obj.actuatorInitialState(:);
 
-            controlInput = [0, 0, 0].';
+            controlInput = [0.0, 0.0, 0.0].';
             disturbances.wind = [0, 0, 0].';
             
             % Initialize logger time step
@@ -79,7 +79,7 @@ classdef Flight < handle
                         vy = rocketState(obj.idx.vy);
                         vz = rocketState(obj.idx.vz);
                         vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-                        obj.cumVelocity = obj.cumVelocity + vel;
+                        obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
                     end
                 end
                 

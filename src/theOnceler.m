@@ -16,7 +16,7 @@ if generateNominalTrajectory
 else
     nominalTrajectory.useThisTraj = false;
 end
-%%
+%% Set up simulation
 % Setup Controller
 useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
@@ -29,7 +29,6 @@ environment = setupEnvironment();
 flight.runClosedLoop = true;
 
 %% Run Flight
-
 tic;
 log = flight.runSim(log);
 elapsed_time = toc;
@@ -37,19 +36,10 @@ fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 log.trim();
 
-% lti = controllerPkg.ReduceLTI(rocketDynamics);
-% xStar = flight.rocketInitialState;
-% xStar(5:7) = [20, 0, 0].';
-% xStar(12:14) = [0, 0, 0].';
-% lti.generateROM(xStar);
-% lti.performComparison(log)
-
-% log.saveToFile("theOncelerNominalFlightLog")
-
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
-analysis.generateAllEstimatePlots();
+%analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %datcomAnalysis.drawForcesAndMoments([0, 12])
@@ -136,7 +126,7 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-    timeConstant = 0.5; % [s]
+    timeConstant = 0.1; % [s]
     limits.maxDeflection = 15;        % deg
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
@@ -256,47 +246,43 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     time = linspace(dt, controlTime, controlTime/dt);
     n = length(time);
     
-    % Preallocate yaw angles
-    yaw_deg = zeros(1, n);
-    
-    % Compute yaw for all time steps (vectorized)
-    mask1 = time < 5;
-    mask2 = (time >= 5) & (time < 10);
-    mask3 = time >= 10;
-    
-    yaw_deg(mask1) = 5 * time(mask1);
-    yaw_deg(mask2) = 25 - (time(mask2) - 5) * 5;
-    yaw_deg(mask3) = 0;
-    
-    % Convert to radians
-    yaw_rad = deg2rad(yaw_deg);
-    pitch_rad = yaw_rad;
-    
-    % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
-    referenceAttitudes = [
-        time;
-        zeros(1, n);  % roll = 0
-        pitch_rad;  % pitch traj (same as yaw)
-        yaw_rad       % yaw trajectory
-    ];
-    
+	% --- Define Trajectories in Degrees ---
+	roll_deg  = zeros(1, n);
+	pitch_deg = zeros(1, n);
+	yaw_deg   = zeros(1, n);
+	
+	% Apply the step at 6 seconds
+	% Logical mask for time >= 6 seconds
+	mask_step = (time >= 4.0);
+	
+	% Set pitch to 12 degrees for all points where time >= 6
+	yaw_deg(mask_step) = 10.0;
+
+	roll_rad  = deg2rad(roll_deg);
+	pitch_rad = deg2rad(pitch_deg);
+	yaw_rad   = deg2rad(yaw_deg);
+	
+	% --- Build Reference Attitudes [4 x n] ---
+	% Format: [Time; Roll; Pitch; Yaw]
+	referenceAttitudes = [
+    	time;
+    	roll_rad;
+    	pitch_rad;
+    	yaw_rad
+	];
+
     % Generate Breakpoints
-    if nominalTrajectory.useThisTraj
-        nominalTrajLog = nominalTrajectory;
-    else
-        %tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
-        tmp = load("+theOncelerFiles/testTraj.mat");
-        nominalTrajLog = tmp.nominalTrajectory;
-    end
+    tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
+    nominalTrajLog = tmp.log;
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
 
     % Get controller
 	Q2 = diag([1 1]);       
-	R2 = 1;   	
+	R2 = 20;   	
 	Q3 = diag([1 1 1]);
-	R3 = 1; 
+	R3 = 2; 
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
@@ -375,8 +361,10 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [0, 0, 0];
-    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    vel0 = [1, 0, 0];
+	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
+	quatRot = Utils.eulerToQuat([0, -90, 0]).';
+    quat0 = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
