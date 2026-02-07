@@ -32,7 +32,7 @@ end
 
 % Advance the *true* state with your nonlinear RK4 (uses thrust_fun inside)
 u_star = u;
-x_next = RK4_propagate(x, u_star, t_now, dt, eom_fun, thrust_fun);
+x_next = RK4_propagate(x, u_star, t_now, dt, eom_fun, thrust_fun, aero);
 
 if any(~isfinite(x_next))
     error('Nonlinear RK4 produced non-finite state.');

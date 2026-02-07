@@ -164,14 +164,14 @@ end
 
 function FlightObj = setupFlight()
     FlightObj = Flight();
-    FlightObj.set_tStep(0.001); % s
+    FlightObj.set_tStep(0.01); % s
     FlightObj.set_runClosedLoop(false);
     FlightObj.set_calcXDots(true);
     FlightObj.set_runLinearModel(false);
     FlightObj.set_applyWind(false);
     FlightObj.set_numStates(13);
     FlightObj.set_numInputs(3);
-    FlightObj.set_simTime(12); % seconds
+    FlightObj.set_simTime(13); % seconds
     FlightObj.set_localSimTime(12); % linear model propagation time, jet vanes linear model only goes up to 12 seconds
     FlightObj.set_tSpan()
     FlightObj.set_odeSolverMaxTime(300) % 300s before killing the simulation

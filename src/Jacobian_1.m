@@ -1,4 +1,4 @@
-function [A, B] = Jacobian_1()
+function [A, B] = Jacobian_1(aero)
 
 
     % need thrust to already be constant in dynamics
@@ -94,7 +94,7 @@ function [A, B] = Jacobian_1()
     
     
 
-    aero_forces_moments = [50*FAx_b_sym, FAy_b_sym, FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
+    aero_forces_moments = [100*FAx_b_sym, 100*FAy_b_sym, 100*FAz_b_sym, MAx_b_sym, MAy_b_sym, MAz_b_sym];
 
 
     EOM_no_aero = [u*inv_R(1,1) + v*inv_R(1,2) + w*inv_R(1,3) - xdot, % inv_R 
@@ -136,7 +136,10 @@ function [A, B] = Jacobian_1()
 
    
 
-    nonlinear_EOM = EOM_no_aero + EOM_only_aero; % remove second term to test w/o aero
+    nonlinear_EOM = EOM_no_aero;
+    if aero
+        nonlinear_EOM = nonlinear_EOM + EOM_only_aero;
+    end
     
     F = nonlinear_EOM;
 

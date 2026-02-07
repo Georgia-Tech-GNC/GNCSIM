@@ -1,16 +1,16 @@
-function x_next = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun)
+function x_next = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun, aero)
 % One RK4 step for x' = eom_fun(x,u,t,T(t))
 % x_next = x + dt * RK4(...)
     T1 = thrust_fun(t);
-    k1 = eom_fun(x,              u, t,           T1);
+    k1 = eom_fun(x,              u, t,           T1, aero);
 
     T2 = thrust_fun(t + 0.5*dt);
-    k2 = eom_fun(x + 0.5*dt*k1,  u, t + 0.5*dt, T2);
+    k2 = eom_fun(x + 0.5*dt*k1,  u, t + 0.5*dt, T2, aero);
 
-    k3 = eom_fun(x + 0.5*dt*k2,  u, t + 0.5*dt, T2);
+    k3 = eom_fun(x + 0.5*dt*k2,  u, t + 0.5*dt, T2, aero);
 
     T4 = thrust_fun(t + dt);
-    k4 = eom_fun(x + dt*k3,      u, t + dt,     T4);
+    k4 = eom_fun(x + dt*k3,      u, t + dt,     T4, aero);
 
     if any(~isfinite([k1; k2; k3; k4]))
         error('RK4 produced non-finite stage at t=%.6f.', t);

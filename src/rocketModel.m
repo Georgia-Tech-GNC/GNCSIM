@@ -263,8 +263,8 @@ function [xDot, log, AeroData_sim_out] = rocketModel(t, x, RocketObj, Environmen
         beta = atan2(vz, vx);
     end
 
-    %FA_b = [0;0;0]; 
-    %MA_b = [0;0;0];
+    FA_b = [0;0;0]; 
+    MA_b = [0;0;0];
 
     %% Parachute Forces
     if v_f(1) < 0

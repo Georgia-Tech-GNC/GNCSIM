@@ -1,4 +1,4 @@
-function xdot = eom_nonlin(x, u_mom, t, T)
+function xdot = eom_nonlin(x, u_mom, t, T, aero)
 % xdot = f(x,u_mom,t,T)
 % x = [x y z u v w p q r q0 q1 q2 q3]'
 % u_mom = [u1 u2 u3]' (body moments)
@@ -38,7 +38,7 @@ function xdot = eom_nonlin(x, u_mom, t, T)
 
     
 
-    % --- quaternion DCM exactly as in your Jacobian_1 (the 1st version you kept) ---
+    % --- quaternion DCM ---
     R = [ ...
     q0^2 + q1^2 - q2^2 - q3^2,   2*(q1*q2 + q0*q3),     2*(q1*q3 - q0*q2);
     2*(q1*q2 - q0*q3),           q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 + q0*q1);
@@ -84,20 +84,21 @@ function xdot = eom_nonlin(x, u_mom, t, T)
     
     
     % shorthand
-    FAx = 50*FAx_b_sym;
-    FAy = FAy_b_sym; 
-    FAz = FAz_b_sym;
+    FAx = 100*FAx_b_sym;
+    FAy = 100*FAy_b_sym; 
+    FAz = 100*FAz_b_sym;
     MAx = MAx_b_sym; 
     MAy = MAy_b_sym; 
     MAz = MAz_b_sym;
     
-    % no aero
-    % FAx = 0;
-    % FAy = 0;
-    % FAz = 0;
-    % MAx = 0;
-    % MAy = 0;
-    % MAz = 0;
+    if ~aero
+        FAx = 0;
+        FAy = 0;
+        FAz = 0;
+        MAx = 0;
+        MAy = 0;
+        MAz = 0;
+    end
     
     % --------------------
     % Kinematics (match your use of inv_R)

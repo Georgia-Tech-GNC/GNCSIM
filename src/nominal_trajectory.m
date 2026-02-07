@@ -5,6 +5,7 @@ delta_t = 0.1; % for uniform time interval break points
 dt = .01;
 steps = round(run_time / dt, 0);
 
+aero = false; % aero on/off
 
 x = [0; % initial state
      0;
@@ -28,30 +29,30 @@ u = zeros(3,1); % initial control
 Q = ones(13, 1);
 R = ones(3, 1);
 
-% need to tune: what was .01 is now 1, what was massive is now 100
-Q(1) = 1000; % x
-Q(2) = 1000; % y
-Q(3) = .01; % z
-Q(4) = .01; % u
-Q(5) = .01; % v
-Q(6) = .01; % w
-Q(7) = .01; % p
-Q(8) = .01; % q
-Q(9) = .01; % r
-Q(10) = .01; % q0
-Q(11) = 1000; % q1
-Q(12) = .01; % q2
-Q(13) = .01; % q3
+% tune for each x_ref
+Q(1) = .001; % x 
+Q(2) = .001; % y
+Q(3) = .001; % z
+Q(4) = .001; % u
+Q(5) = .001; % v
+Q(6) = .001; % w
+Q(7) = 1000; % p
+Q(8) = 1000; % q
+Q(9) = 1000; % r
+Q(10) = 100; % q0
+Q(11) = 100; % q1
+Q(12) = 100; % q2
+Q(13) = 100; % q3
 
-R(1) = 1; % M_roll
-R(2) = 1000; % M_pitch
-R(3) = 1; % M_yaw
-%R(4) = 1000; % Thrust
+R(1) = 10; % M_roll
+R(2) = 10; % M_pitch
+R(3) = 10; % M_yaw
+
 
 Q = diag(1*Q);
-R = diag(10*R);
+R = diag(1*R);
 
-[A,B] = Jacobian_1(); % Symbolic Jacobian matrices in x_dot = Ax + Bu
+[A,B] = Jacobian_1(aero); % Symbolic Jacobian matrices in x_dot = Ax + Bu
 
 u_max = 80; % maximum magnitude of u
 
@@ -89,8 +90,8 @@ arr = [0.0, 0.457288;
 14.6754, 12.60914;
 16.1354, 0.0;];
 
-eom_fun     = @eom_nonlin;                          % your nonlinear RHS
-thrust_fun  = @(tt) getThrust(tt, arr, burn_time);  % table-based thrust
+eom_fun     = @eom_nonlin;                          
+thrust_fun  = @(tt) getThrust(tt, arr, burn_time); 
 
 %% Generate Trajectory
 
@@ -110,22 +111,18 @@ for i = 1:steps
     t = dt * (i-1);
    
     currentThrust = getThrust(t, arr, burn_time);
+
+    % if t == 0 || t == dt || t == 1.0
+    %     quat_m = [ ...
+    % x(10)^2 + x(11)^2 - x(12)^2 - x(13)^2,   2*(x(11)*x(12) + x(10)*x(13)),     2*(x(11)*x(13) - x(10)*x(12));
+    % 2*(x(11)*x(12) - x(10)*x(13)),           x(10)^2 - x(11)^2 + x(12)^2 - x(13)^2, 2*(x(12)*x(13) + x(10)*x(11));
+    % 2*(x(11)*x(13) + x(10)*x(12)),           2*(x(12)*x(13) - x(10)*x(11)),     x(10)^2 - x(11)^2 - x(12)^2 + x(13)^2 ...
+    % ];
+    %     disp(quat_m(:,1))
+    %     disp(x(10:13))
+    % end
     
     
-    % syms px p_y pz vx vy vz wx wy wz q0 q1 q2 q3 MT_bx MT_by MT_bz T time_elapsed
-    % 
-    % % Evaluate A,B at current state and control (thx ChatGPT)
-    % % Collect them into one vector
-    % vars = [px; p_y; pz; vx; vy; vz; wx; wy; wz; q0; q1; q2; q3; ...
-    %     MT_bx; MT_by; MT_bz; T; ...
-    %     time_elapsed];
-    % 
-    % % Concatenate state and control into a single vector
-    % XU = [x; u; t];
-    
-    
-    
-    %syms x y z u v w p q r q0 q1 q2 q3 u1 u2 u3 T time_elapsed
     
     % if at break point
     if mod(i-1, round(delta_t/dt)) == 0 %&& t ~= 0 % is t = 0 a breakpoint?
@@ -189,12 +186,32 @@ for i = 1:steps
         if any(~isfinite(A_num(:))), error('A_num has non-finite entries'); end
         if any(~isfinite(B_num(:))), error('B_num has non-finite entries'); end
     
-        % Optimize & propagate (thrust is a parameter, not a decision)
-        [x, u] = analytic_optimize_propagate(x, Q, R, A_num, B_num, dt, u_max, eom_fun, thrust_fun, t);
+
+        % Matrix exponential (also need to change optimizer when changing
+        % this part)
+        %[A_d,B_d] = matrix_exp(A_num,B_num,dt);
+
+        % Optimize
+        
+        [x, u] = analytic_optimize_propagate(x, Q, R, A_num, B_num, dt, u_max, eom_fun, thrust_fun, t, burn_time, aero);
+        
+        % w/matrix exp
+        %[x, u] = analytic_optimize_propagate(x, Q, R, A_d, B_d, dt, u_max, eom_fun, thrust_fun, t, burn_time, aero);
+        
+        %[x, u] = aop2(x, Q, R, A_num, B_num, dt, u_max, eom_fun, thrust_fun, t, burn_time, aero);
+        
+        %disp(norm(x(10:13)))
     
     else
-        x = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun);
+        x = RK4_propagate(x, u, t, dt, eom_fun, thrust_fun, aero);
+        
+        x(10:13) = x(10:13) / norm(x(10:13));
+        
+        
+    
     end
+
+    
 
     % --- INLINE aero recompute for logging (must match eom_nonlin) ---
     xi = x(1); yi = x(2); zi = x(3); 
@@ -202,6 +219,10 @@ for i = 1:steps
     pB = x(7); qB = x(8); rB = x(9);
     q0 = x(10); q1 = x(11); q2 = x(12); q3 = x(13); 
     
+
+    
+
+
     % CG(t) like your model
     burn_time   = 13.1;
     initial_CG  = 2.419762;
@@ -297,19 +318,16 @@ function []= display_results(data)
     xlabel('X')
     ylabel('Y')
     zlabel('Altitude (m)')
+    xlim([-.1 .1])
+    ylim([-.1 .1])
     title('3D Trajectory')
 
     figure(2); clf
     plot(data.t, atan2(data.v,data.u))
     xlabel('t (s)')
     ylabel('alpha')
-    title('3D Trajectory')
+    title('Angle of Attack')
 
-    figure(2); clf
-    plot(data.t, atan2(data.v,data.u))
-    xlabel('t (s)')
-    ylabel('alpha')
-    title('Angle of Attack ')
 
     figure(3); clf
     plot(data.t, data.u, data.t, data.v, data.t, data.w)
@@ -340,6 +358,12 @@ function []= display_results(data)
     xlabel('t (s)')
     ylabel('Aero Moments')
     title('Aero Moment Components')
+
+    figure(8); clf
+    plot(data.t, data.roll, data.t, data.pitch, data.t, data.yaw)
+    xlabel('t (s)')
+    ylabel('Control Moment')
+    title('Optimal Controls')
 
 
 
