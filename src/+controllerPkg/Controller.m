@@ -12,7 +12,7 @@ classdef (Abstract) Controller < handle
     methods (Abstract)
         u = getControl(obj, state);
         % Get control input based on state and breakpoints
-
+        u = getControlS(obj, state, currentCumVelocity, currentTime); 
         populateBreakPoints(obj);
         % Populate breakPoints with A, B, and gain(s)
     end

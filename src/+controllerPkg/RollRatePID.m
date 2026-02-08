@@ -19,6 +19,8 @@ classdef RollRatePID < controllerPkg.Controller
         % State
         intErr = 0
         prevErr = 0
+        prevTime = 0
+        wDes = 0
 
         % Optional filter object (external filtering is cleaner)
         lp = []
@@ -36,9 +38,11 @@ classdef RollRatePID < controllerPkg.Controller
             end
 
             % Never switch schedules
-            obj.breakPoints = struct('cumVelocityInterval', inf);
+            obj.breakPoints = struct('cumVelocityInterval', obj.dt);
         end
 
+        % Seems to be defined, I think I might just need to fill in the
+        % blanks
         function u = getControl(obj, state, ~, ~)
             wx = state(obj.idx.omega_x); % roll rate (rad/s)
 
@@ -60,6 +64,39 @@ classdef RollRatePID < controllerPkg.Controller
 
             % Output as "control input" vector consumed by actuator model
             u = [tau; 0; 0];
+        end
+
+        function u = getControlS(obj, state, currentCumVelocity, currentTime)
+            wx = state(obj.idx.omega_x); % roll rate (rad/s)
+
+            if ~isempty(obj.lp)
+                wx = obj.lp.update(wx);
+            end
+            
+            error = wx - obj.wDes;
+            newIntTerm = obj.intErr + error * obj.dt;
+            
+
+            p = obj.Kp * error;
+            i = obj.Ki * newIntTerm * obj.dt;
+            d = (error - obj.prevErr) / obj.dt; % May also be current time - previous time
+            tau_unsat = p + i + d;
+      
+            obj.breakPoints = struct('cumVelocityInterval', obj.dt);
+            
+
+            obj.intErr = min(max(obj.intErr, obj.intMin), obj.intMax);
+            obj.prevErr = error;
+            obj.previousTime = currentTime;
+            
+            satHigh = (tau_unsat > obj.tauMax) && (error > 0);
+            satLow = (tau_unsat < -obj.tauMax) && (error < 0);
+
+            if(~satHigh && ~satLow) 
+                obj.intErr = newIntTerm;
+            end
+            
+            u = tau_command;
         end
 
         function populateBreakPoints(~)
