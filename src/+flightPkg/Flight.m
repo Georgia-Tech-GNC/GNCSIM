@@ -19,6 +19,7 @@ classdef Flight < handle
 
         rocketInitialState
         actuatorInitialState
+        controlInputInitialState
 
         runClosedLoop = true
         useActuatorModel
@@ -40,6 +41,7 @@ classdef Flight < handle
             obj.dt = obj.flightParams.dt;
             obj.rocketInitialState = obj.flightParams.x0;
             obj.actuatorInitialState = obj.flightParams.del0;
+            obj.controlInputInitialState = obj.flightParams.u0;
             obj.totalTime = obj.flightParams.totalTime;
 
             obj.endState = obj.flightParams.endState;
@@ -49,12 +51,13 @@ classdef Flight < handle
         end
 
         function log = runSim(obj, log)
+            import flightPkg.FlightState
+            
             obj.currentTime = 0.0;
             obj.cumVelocity = 0.0;
             rocketState = obj.rocketInitialState(:);
             actuatorState = obj.actuatorInitialState(:);
-
-            controlInput = [0.0, 0.0, 0.0].';
+            controlInput = obj.controlInputInitialState(:);
             disturbances.wind = [0, 0, 0].';
             
             % Initialize logger time step
@@ -81,52 +84,123 @@ classdef Flight < handle
                 obj.currentTime = ii * obj.dt;
                 log.initializeTimestep(obj.currentTime);
 
-                if obj.runClosedLoop
-                    % Calculate cumulated velocity every interval
-                    if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2
-                        vx = rocketState(obj.idx.vx);
-                        vy = rocketState(obj.idx.vy);
-                        vz = rocketState(obj.idx.vz);
-                        vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-                        obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
-                    end
+                switch obj.flightState
+                    case FlightState.PRELAUNCH
+                        % Just step time, keep state constant
+                        rocketState = obj.rocketInitialState(:);
+                        rocketStateDot = zeros(size(rocketState));
+                        
+                        % Log
+                        log.add(obj.currentTime, 'states', rocketState);
+                        log.add(obj.currentTime, 'statedots', rocketStateDot);
+                        
+                        % Only update flight state (check for ignition)
+                        obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
+                        
+                    case FlightState.LAUNCH_RAIL
+                        % Run open loop on launch rail
+                        disturbances.wind = [0, 0, 0].';
+                        
+                        % Start accumulating velocity if closed loop
+                        if obj.runClosedLoop
+                            % Calculate cumulated velocity every interval
+                            if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2
+                                vx = rocketState(obj.idx.vx);
+                                vy = rocketState(obj.idx.vy);
+                                vz = rocketState(obj.idx.vz);
+                                vel = sqrt(vx.^2 + vy.^2 + vz.^2);
+                                obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
+                            end
+                        end
+                        
+                        rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState);
+                        rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
+                        
+                        % Clamp Orientation to Initial Launch Orientation
+                        rocketState(obj.idx.quat) = obj.rocketInitialState(obj.idx.quat);
+                        
+                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, log);                       
+                        rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
+                        
+                        log.add(obj.currentTime, 'states', rocketState);
+                        log.add(obj.currentTime, 'statedots', rocketStateDot);
+                        log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+
+                        obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
+
+                    case {FlightState.POWERED_ASCENT, FlightState.COASTING_ASCENT}
+                        % Full Simulation Logic
+                        disturbances.wind = [0, 0, 0].';
+                        
+                        if obj.runClosedLoop
+                            % Calculate cumulated velocity every interval
+                            if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2
+                                vx = rocketState(obj.idx.vx);
+                                vy = rocketState(obj.idx.vy);
+                                vz = rocketState(obj.idx.vz);
+                                vel = sqrt(vx.^2 + vy.^2 + vz.^2);
+                                obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
+                            end
+
+                            if obj.useActuatorModel
+                                actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
+                                actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
+                                rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime, obj.flightState);
+                                log.add(obj.currentTime, 'actuatorStates', actuatorState);
+                            else
+                                rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime, obj.flightState);
+                            end
+                        else
+                            rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState);
+                        end
+
+                        rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
+                        quat = rocketState(obj.idx.quat);
+                        quatNorm = Utils.normalizeQuat(quat);
+                        rocketState(obj.idx.quat) = quatNorm;
+
+                        if obj.runClosedLoop
+                            controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
+                            log.add(obj.currentTime, 'controlInputs', controlInput);
+                            if obj.useActuatorModel
+                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, log);
+                            else
+                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, log);
+                            end
+                        else
+                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, log);
+                        end
+
+                        rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
+
+                        log.add(obj.currentTime, 'states', rocketState);
+                        log.add(obj.currentTime, 'statedots', rocketStateDot);
+                        log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+
+                        % Update flight state
+                        obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
+                        
+                    case FlightState.DESCENT
+                        % Simplified Descent Logic
+                         disturbances.wind = [0, 0, 0].';
+                         
+                         rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState);
+                         rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
+
+                         % Clamp Upright (-90 deg pitch wrt ENU)
+                         rocketState(obj.idx.quat) = Utils.eulerToQuat([0, -90, 0]).';
+                         rocketState(obj.idx.omega) = [0;0;0];
+                         
+                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, log);
+
+                         obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
+                         
+                         log.add(obj.currentTime, 'states', rocketState);
+                         log.add(obj.currentTime, 'statedots', rocketStateDot);
+                         
+                    otherwise
+                         error('Unknown flight state in runSim loop');
                 end
-
-                if obj.useActuatorModel
-                    actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
-                    actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
-                    rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime, obj.flightState);
-                else
-                    rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime, obj.flightState);
-                end
-
-                rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
-                quat = rocketState(obj.idx.quat);
-                quatNorm = Utils.normalizeQuat(quat);
-                rocketState(obj.idx.quat) = quatNorm;
-
-                disturbances.wind = [0, 0, 0].';
-
-                if obj.runClosedLoop
-                    controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
-                end
-
-                if obj.useActuatorModel
-                    rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, log);
-                else
-                    rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, log);
-                end
-
-                % Update flight state
-                obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
-
-                rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
-
-                log.add(obj.currentTime, 'states', rocketState);
-                log.add(obj.currentTime, 'statedots', rocketStateDot);
-                log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
-                log.add(obj.currentTime, 'actuatorStates', actuatorState);
-                log.add(obj.currentTime, 'controlInputs', controlInput);
             end
         end
 

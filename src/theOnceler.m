@@ -24,7 +24,7 @@ environment = setupEnvironment();
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
-flight.runClosedLoop = false;
+flight.runClosedLoop = true;
 
 %% Run Flight
 tic;
@@ -255,10 +255,12 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	
 	% Apply the step at 6 seconds
 	% Logical mask for time >= 6 seconds
-	mask_step = (time >= 4.0);
+	mask_step1 = (time >= 4.0);
+    mask_step2 = (time >= 10.0);
 	
 	% Set pitch to 12 degrees for all points where time >= 6
-	yaw_deg(mask_step) = 10.0;
+	yaw_deg(mask_step1) = 10.0;
+    yaw_deg(mask_step2) = 2.0;
 
 	roll_rad  = deg2rad(roll_deg);
 	pitch_rad = deg2rad(pitch_deg);
@@ -371,14 +373,18 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
 	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
-	quatRot = Utils.eulerToQuat([0, -90, 0]).';
-    quat0 = Utils.quatMult(initAngle, quatRot).';
+	quatRot = Utils.eulerToQuat([0, -80, 0]).';
+    orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
-    state0 = [mass0, pos0, vel0, quat0, omega0].';
+    state0 = [mass0, pos0, vel0, orientationLaunchRail, omega0].';
     flightParams.x0 = state0;
 
+    % Open Loop Default
     actuatorState0 = [0, 0, 0, 0];
     flightParams.del0 = actuatorState0;
+
+    controlInput0 = [0, 0, 0];
+    flightParams.u0 = controlInput0;
     
     navigation = setupNavigation(flightParams.dt);
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);

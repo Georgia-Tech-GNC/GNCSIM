@@ -209,7 +209,7 @@ classdef RocketDynamics < handle
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
                     [fBAero, ~] = obj.computeAero(state, currentCg, disturbances);
-                    [fBActuator, ~] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
 
                     fTotal = fGBody + fTB + fBAero + fBActuator;
                     fB = [fTotal(1); 0; 0];
@@ -218,6 +218,8 @@ classdef RocketDynamics < handle
                     if ~isempty(log)
                         log.add(time, 'aeroforces', [fBAero(1); 0; 0]);
                         log.add(time, 'thrust', obj.getThrust(time));
+                        log.add(time, 'actuatorforces', fBActuator);
+                        log.add(time, 'actuatormoments', mBActuator);
                     end
 
                 case FlightState.POWERED_ASCENT
@@ -233,6 +235,8 @@ classdef RocketDynamics < handle
                         log.add(time, 'aeroforces', fBAero);
                         log.add(time, 'aeromoments', mBAero);
                         log.add(time, 'thrust', obj.getThrust(time));
+                        log.add(time, 'actuatorforces', fBActuator);
+                        log.add(time, 'actuatormoments', mBActuator);
                     end
 
                 case FlightState.COASTING_ASCENT
@@ -246,6 +250,8 @@ classdef RocketDynamics < handle
                     if ~isempty(log)
                         log.add(time, 'aeroforces', fBAero);
                         log.add(time, 'aeromoments', mBAero);
+                        log.add(time, 'actuatorforces', fBActuator);
+                        log.add(time, 'actuatormoments', mBActuator);
                     end
 
                 case FlightState.DESCENT

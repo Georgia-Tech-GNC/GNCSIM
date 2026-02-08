@@ -200,6 +200,12 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
+    
+    actuatorState0 = [0, 0, 0, 0];
+    flightParams.del0 = actuatorState0;
+
+    controlInput0 = [0, 0, 0];
+    flightParams.u0 = controlInput0;
 
     navigation = setupNavigation(flightParams.dt);
     flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, navigation, flightParams);
