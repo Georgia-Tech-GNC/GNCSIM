@@ -82,8 +82,19 @@ function rocketDynamics = setupRocket(controller)
     fins = rocketPkg.RocketFins(finParams, flightConParams);
 
 	aerodynamics = []; % No CFD model
+    
+    % Set up parachutes
+    parachuteObjects = [];
 
-    rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, aerodynamics);
+    % Main Parachute
+    canopyDiameter1 = 0.914;           % m
+    canopyMass1 = 0.0357027521 * pi* (canopyDiameter1/2)^2;              % kg
+    dragCoefficient1 = 2.2;            % dimensionless
+    deployAltitude1 = 1000;        % Deploys at apogee
+    parachuteObjects(1) = rocketPkg.ParachuteDynamics(canopyDiameter1, canopyMass1, dragCoefficient1,deployAltitude1);
+    
+    % Create rocketDynamics object
+    rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, parachuteObjects, aerodynamics);
 end
 
 function runDATCOM(rocketDynamics)

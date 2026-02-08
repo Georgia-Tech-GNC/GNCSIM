@@ -2,12 +2,10 @@
 clear; clc; close all;
 
 %% Instantiate Classes
+
 % Rocket Dynamics
 rocketDynamics = setupRocket();
 rocketDynamics.computeBuildup()
-
-% Parachute Dynamics
-parachuteDynamics = setupParachute();
 
 % Nominal Trajectory
 generateNominalTrajectory = false;
@@ -106,7 +104,7 @@ function rocketDyn = setupRocket()
 
     % Motor
     motorParams.burnTime = 12.0;
-    tmp = load("+theOncelerFiles\thrust_curve_fin_tabs.mat");
+    tmp = load("+theOncelerFiles/thrust_curve_fin_tabs.mat");
     motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
     motorParams.mass = 0.4;  % [kg]
     motorParams.xRef = -1;  % [m]
@@ -130,8 +128,12 @@ function rocketDyn = setupRocket()
     limits.maxDeflection = 15;        % deg
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
+    
+    % Set Up Parachutes
+    parachuteObjects = setupParachute();
 
-    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, aerodynamics);
+
+    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, parachuteObjects, aerodynamics);
 end
 
 function environment = setupEnvironment()
@@ -356,7 +358,7 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     % Flight
-    flightParams.totalTime = 21;  % length of simulation [s]
+    flightParams.totalTime = 60;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
     
     mass0 = rocketDynamics.massWet;
@@ -384,18 +386,20 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
 end
 
 function parachuteObjects =  setupParachute()
-    parachuteObjects = -1;
-    % drogueDiameter = .508; % m
-    % drogueMass = 0.016811267; % kg
-    % drogueCordLength = 1.52; %m
-    % drogueDynamics = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCordLength);
-    % 
-    % mainParachuteDiameter = 2.54; %m
-    % mainParachuteMass = 0.3430292; %kg
-    % mainParachuteCordLength = 1.78; %m
-    % mainParachuteDynamics = rocketPkg.ParachuteDynamics(mainParachuteDiameter, mainParachuteMass, mainParachuteCordLength);
-    % 
-    % parachuteObjects = [mainParachuteDynamics, drogueDynamics];
+    drogueDiameter = .508; % m
+    drogueMass = 0.016811267; % kg
+    drogueCD = 1.52; %m
+    drogueDeployAlt = 0; % m
+    drogueDynamics = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCD, drogueDeployAlt);
+
+    mainParachuteDiameter = 2.54; %m
+    mainParachuteMass = 0.3430292; %kg
+    mainParachuteCD = .8; %m
+    MainDeployAlt = 305; % m
+
+    mainParachuteDynamics = rocketPkg.ParachuteDynamics(mainParachuteDiameter, mainParachuteMass, mainParachuteCD, MainDeployAlt);
+
+    parachuteObjects = [drogueDynamics, mainParachuteDynamics];
 end
 
 
