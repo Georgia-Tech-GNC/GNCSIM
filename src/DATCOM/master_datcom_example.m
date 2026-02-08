@@ -164,9 +164,8 @@ format_array = @(arr) strjoin(arrayfun(@(x) sprintf('%.4f', x), arr, 'UniformOut
 
 if ~isempty(mach_numbers)
     fprintf(fileID, ' $FLTCON NMACH=%.1f, MACH(1)=%.4f,\n', length(mach_numbers), mach_numbers(1));
-    % Loop through the rest of the Mach numbers, printing each on a new line
     for i = 2:length(mach_numbers)
-        fprintf(fileID, ' %.4f,\n', mach_numbers(i));
+        fprintf(fileID, ' %.4f,\n', mach_numbers(i)); % Indent values for clarity
     end
 end
 
@@ -215,8 +214,11 @@ else
 end
 
 % --- Write Case Control ---
-fprintf(fileID, 'CASEID GENERATED WING-ONLY ANALYSIS\n');
-fprintf(fileID, 'NEXT CASE\n');
+%fprintf(fileID, 'NACA W %s %s\n', naca_series, naca_profile);
+
+% --- Write Case Control (NO LEADING SPACE) ---
+%fprintf(fileID, 'CASEID GENERATED WING-ONLY ANALYSIS\n');
+fprintf(fileID, 'NEXT CASE\n'); % Column 1
 
 % --- Close the file ---
 fclose(fileID);
@@ -237,23 +239,31 @@ if ispc
         error('"%s" not found in the current directory.', executable_name);
     end
     command = sprintf('echo %s | %s', datcom_filename, executable_name);
-
-elseif isunix
-    % --- macOS & Linux ---
-    if exist('./datcom', 'file')
-        executable_name = './datcom'; % Standard for Mac/Linux
-    elseif exist('./datcom.exe', 'file')
-        executable_name = './datcom.exe'; % In case it was compiled with .exe
-    else
-        error('No "datcom" or "datcom.exe" executable found in the current directory.');
-    end
-    %command = sprintf('echo for005.dat | %s', executable_name);
-    command = sprintf('echo %s | %s', input_filename, executable_name);
-
+elseif isunix || ismac
+    % --- Linux / macOS ---
+    executable_name = './datcom_unix';
+    
+    % 1. Force the input file to be 'FOR005'
+    % Many Linux builds are hardcoded to unit 5 -> FOR005
+    copyfile(datcom_filename, 'FOR005');
+    
+    % 2. Pipe the filename string INTO the program
+    % We use \n to simulate hitting 'Enter'
+    command = sprintf('echo "FOR005\n" | %s', executable_name);
+    
+    [status, cmdout] = system(command);
+    
+    % 3. Cleanup: DATCOM loves to leave mess
+    if exist('FOR006', 'file'), movefile('FOR006', 'datcom.out'); end
 else
     error('Unsupported operating system.');
 end
 status = system(command);
+
+if status ~= 0
+    fprintf('DATCOM Error Output:\n%s\n', cmdout);
+    error('DATCOM failed to execute correctly.');
+end
 
 
 disp('DATCOM execution finished.');

@@ -39,7 +39,7 @@ classdef ParachuteDynamics < handle
             obj.referenceArea = pi * (canopyDiameter/2)^2;
         end
         
-        function [forceAeroBody, momentAeroBody] = getForcesAndMoments(obj, ...
+        function forceAeroBody = getForcesAndMoments(obj, ...
                 velocityRocketBody, quaternionRocket, disturbances)
             % Compute aerodynamic forces and moments from parachute
             %
@@ -50,7 +50,6 @@ classdef ParachuteDynamics < handle
             %
             % Outputs:
             %   forceAeroBody  - Total aerodynamic + weight force in body frame (N)
-            %   momentAeroBody - Total moment about rocket COM in body frame (N⋅m)
             
             % Direction cosine matrices for frame transformations
             dcmInertialToBody = Utils.dirCosine(quaternionRocket);
@@ -80,9 +79,6 @@ classdef ParachuteDynamics < handle
             
             % Transform total force to body frame
             forceAeroBody = dcmInertialToBody * forceTotalInertial;
-            
-            % No moments for simplified model (assumes parachute drag acts at COM)
-            momentAeroBody = [0; 0; 0];
         end
     end
 end

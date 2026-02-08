@@ -673,10 +673,19 @@ classdef Analysis < handle
 			averageMaxVel = mean(velMax);
             disp(['[Estimate] Average Maximum Velocity from all flights: ', num2str(averageMaxVel)]);
 
-			[~, locs] = findpeaks(z_pos);
-			appoIndex = max(locs);
-			timeAtAppo = time(appoIndex);
-			disp(['[Estimate] Average Time to Apogee: ', num2str(timeAtAppo)]);
+			try
+                % Attempt to use Signal Processing Toolbox
+                [~, locs] = findpeaks(z_pos);
+                appoIndex = max(locs);
+                timeAtAppo = time(appoIndex);
+                disp(['[Estimate] Average Time to Apogee (Signal Toolbox): ', num2str(timeAtAppo)]);
+            catch
+                % Fallback for when the toolbox isn't installed/licensed
+                [~, appoIndex] = max(z_pos); 
+                timeAtAppo = time(appoIndex);
+                warning('Signal Processing Toolbox not found. Falling back to simple maximum for apogee detection.');
+                disp(['[Estimate] Time to Max Altitude (Fallback): ', num2str(timeAtAppo)]);
+            end
 
             averageMaxAltitude = mean(altMax);
             disp(['[Estimate] Average maximum altitude from all flights: ', num2str(averageMaxAltitude),' m']);
