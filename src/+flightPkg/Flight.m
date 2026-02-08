@@ -26,7 +26,6 @@ classdef Flight < handle
         flightState = flightPkg.FlightState.PRELAUNCH
         endState = flightPkg.FlightState.LANDED
         timeStateChange
-        tIgnition
         launchRailLength
 	end
 	
@@ -43,20 +42,8 @@ classdef Flight < handle
             obj.actuatorInitialState = obj.flightParams.del0;
             obj.totalTime = obj.flightParams.totalTime;
 
-            % Flight state parameters
-            if isfield(obj.flightParams, 'endState')
-                obj.endState = obj.flightParams.endState;
-            end
-            if isfield(obj.flightParams, 'tIgnition')
-                obj.tIgnition = obj.flightParams.tIgnition;
-            else
-                obj.tIgnition = 0.0;
-            end
-            if isfield(obj.flightParams, 'launchRailLength')
-                obj.launchRailLength = obj.flightParams.launchRailLength;
-            else
-                obj.launchRailLength = 5.0; % default 5m
-            end
+            obj.endState = obj.flightParams.endState;
+            obj.launchRailLength = obj.flightParams.launchRailLength;
 
             obj.useActuatorModel = controller.useActuatorModel;
         end
@@ -146,53 +133,52 @@ classdef Flight < handle
         function updateFlightState(obj, time, rocketState, rocketStateDot)
             import flightPkg.FlightState
 
-            % Extract ENU position, velocity, and acceleration
-            posENU = rocketState(obj.idx.pos);
-            velENU = rocketState(obj.idx.vel);
-            accENU = rocketStateDot(obj.idx.vel);
-
-            % Get quaternion and compute DCM (ENU to body)
-            quat = rocketState(obj.idx.quat);
-            dcm = Utils.dirCosine(quat);
-
-            % Transform to body frame
-            posBody = dcm * posENU;
-            accBody = dcm * accENU;
-
-            % Gravity constant
-            gBody = dcm * [0; 0; -9.81];
-
             switch obj.flightState
                 case FlightState.PRELAUNCH
                     % Transition to LAUNCH_RAIL once ignition time is reached
-                    if time >= obj.tIgnition
+                    if time >= obj.rocketDynamics.tIgnition
                         obj.transitionTo(FlightState.LAUNCH_RAIL, time);
                     end
 
                 case FlightState.LAUNCH_RAIL
                     % Transition to POWERED_ASCENT once x position in body frame
                     % exceeds launch rail length
+                    quat = rocketState(obj.idx.quat);
+                    cBI = Utils.dirCosine(quat);
+
+                    posENU = rocketState(obj.idx.pos);
+                    posBody = cBI * posENU;
+
                     if posBody(1) > obj.launchRailLength
                         obj.transitionTo(FlightState.POWERED_ASCENT, time);
                     end
 
                 case FlightState.POWERED_ASCENT
-                    % Transition to COASTING_ASCENT once x acceleration in body
-                    % frame minus gravity is non positive AND burnout time has passed
-                    accBodyNoGravity = accBody - gBody;
-                    if accBodyNoGravity(1) <= 0 && time > obj.rocketDynamics.burnTime
+                    % Transition to COASTING_ASCENT once burnout time has passed
+                    if time > (obj.rocketDynamics.burnTime + obj.rocketDynamics.tIgnition)
                         obj.transitionTo(FlightState.COASTING_ASCENT, time);
                     end
 
                 case FlightState.COASTING_ASCENT
                     % Transition to DESCENT once z velocity in ENU is negative
                     % AND z acceleration in ENU is negative
+                    velBody = rocketState(obj.idx.vel);
+                    accBody = rocketStateDot(obj.idx.vel);
+
+                    quat = rocketState(obj.idx.quat);
+                    cBI = Utils.dirCosine(quat);
+                    cIB = cBI.';
+
+                    velENU = cIB * velBody;
+                    accENU = cIB * accBody;
+
                     if velENU(3) < 0 && accENU(3) < 0
                         obj.transitionTo(FlightState.DESCENT, time);
                     end
 
                 case FlightState.DESCENT
                     % Transition to LANDED once z position in ENU is below 1.0m
+                    posENU = rocketState(obj.idx.pos);
                     if posENU(3) < 1.0
                         obj.transitionTo(FlightState.LANDED, time);
                     end

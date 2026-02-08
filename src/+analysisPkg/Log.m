@@ -13,6 +13,7 @@ classdef Log < handle
         aeroForces              % 3 x N
         aeroMoments             % 3 x N
         thrust                  % 1 x N
+        parachuteForces         % 3 x N
         actuatorStates           % nActuatorStates x N
 
         stateNames              % Cell array of state names
@@ -23,6 +24,7 @@ classdef Log < handle
         controlForcesNames      % Cell array of control force names
         aeroForcesNames
         aeroMomentNames
+        parachuteForcesNames
         actuatorStateNames      % Cell array of actuator state names
 
         maxSteps                % Preallocated size
@@ -40,6 +42,7 @@ classdef Log < handle
             obj.controlForcesNames = {'Fx', 'Fy', 'Fz'};
             obj.aeroForcesNames = {'Fx', 'Fy', 'Fz'};
             obj.aeroMomentNames = {'Mx', 'My', 'Mz'};
+            obj.parachuteForcesNames = {'Fx', 'Fy', 'Fz'};
             obj.actuatorStateNames = actuatorStateNames;
             obj.maxSteps = maxSteps;
             obj.currentIdx = 0;
@@ -56,6 +59,7 @@ classdef Log < handle
             obj.aeroForces = zeros(3, obj.maxSteps);
             obj.aeroMoments = zeros(3, obj.maxSteps);
             obj.thrust = zeros(1, obj.maxSteps);
+            obj.parachuteForces = zeros(3, obj.maxSteps);
             obj.actuatorStates = zeros(length(obj.actuatorStateNames), obj.maxSteps);
         end
 
@@ -157,6 +161,13 @@ classdef Log < handle
                     end
                     obj.thrust(obj.currentIdx) = value;
 
+                case 'parachuteforces'
+                    if length(value) ~= 3
+                        error('Parachute forces vector size mismatch: expected 3, got %d', ...
+                              length(value));
+                    end
+                    obj.parachuteForces(:, obj.currentIdx) = value;
+
                 case 'actuatorstates'
                     if length(value) ~= length(obj.actuatorStateNames)
                         error('Actuator state vector size mismatch: expected %d, got %d', ...
@@ -183,6 +194,7 @@ classdef Log < handle
             obj.aeroForces = obj.aeroForces(:, 1:obj.currentIdx);
             obj.aeroMoments = obj.aeroMoments(:, 1:obj.currentIdx);
             obj.thrust = obj.thrust(1:obj.currentIdx);
+            obj.parachuteForces = obj.parachuteForces(:, 1:obj.currentIdx);
             obj.actuatorStates = obj.actuatorStates(:, 1:obj.currentIdx);
         end
         
@@ -202,6 +214,7 @@ classdef Log < handle
             obj.aeroForces = [obj.aeroForces, zeros(3, extraCols)];
             obj.aeroMoments = [obj.aeroMoments, zeros(3, extraCols)];
             obj.thrust = [obj.thrust, zeros(1, extraCols)];
+            obj.parachuteForces = [obj.parachuteForces, zeros(3, extraCols)];
             obj.actuatorStates = [obj.actuatorStates, zeros(size(obj.actuatorStates, 1), extraCols)];
 
             obj.maxSteps = newSize;
@@ -315,6 +328,7 @@ classdef Log < handle
             data.aeroForces = obj.aeroForces(:, 1:obj.currentIdx);
             data.aeroMoments = obj.aeroMoments(:, 1:obj.currentIdx);
             data.thrust = obj.thrust(1:obj.currentIdx);
+            data.parachuteForces = obj.parachuteForces(:, 1:obj.currentIdx);
             data.actuatorState = obj.actuatorStates(:, 1:obj.currentIdx);
             data.stateNames = obj.stateNames;
             data.stateDotNames = obj.stateDotNames;

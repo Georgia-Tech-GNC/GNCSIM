@@ -14,7 +14,7 @@ if generateNominalTrajectory
 else
     nominalTrajectory.useThisTraj = false;
 end
-%% Set up simulation
+
 % Setup Controller
 useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
@@ -24,7 +24,7 @@ environment = setupEnvironment();
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
-flight.runClosedLoop = true;
+flight.runClosedLoop = false;
 
 %% Run Flight
 tic;
@@ -108,6 +108,7 @@ function rocketDyn = setupRocket()
     motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
     motorParams.mass = 0.4;  % [kg]
     motorParams.xRef = -1;  % [m]
+    motorParams.tIgnition = 1.0;
     motorParams.totalImpulse = 7561.0; % N-sec
 
     % CFD Aerodynamics not needed
@@ -357,11 +358,10 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     % End conditions (whichever comes first)
-    flightParams.totalTime = 60;  % max simulation length [s]
+    flightParams.totalTime = 150;  % max simulation length [s]
     flightParams.endState = flightPkg.FlightState.LANDED; % State to stop simulation
 
     % Flight state parameters
-    flightParams.tIgnition = 0.0;  % ignition time [s]
     flightParams.launchRailLength = 5.0;  % launch rail length [m]
 
     flightParams.dt = 0.01;  % time step [s]
@@ -397,14 +397,14 @@ function firstParachute = setupParachute()
     drogueMass = 0.016811267; % kg
     drogueCD = 1.52;
     drogueDeployAlt = 0; % m (not used for first chute)
-    drogue = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCD, drogueDeployAlt);
+    drogue = rocketPkg.ParachuteDynamics("Drogue Parachute", drogueDiameter, drogueMass, drogueCD, drogueDeployAlt);
 
     % Main chute (deploys at altitude)
     mainDiameter = 2.54; % m
     mainMass = 0.3430292; % kg
     mainCD = .8;
     mainDeployAlt = 305; % m
-    main = rocketPkg.ParachuteDynamics(mainDiameter, mainMass, mainCD, mainDeployAlt);
+    main = rocketPkg.ParachuteDynamics("Main Parachute", mainDiameter, mainMass, mainCD, mainDeployAlt);
 
     % Link parachutes: drogue -> main
     drogue.setNext(main);

@@ -3,6 +3,8 @@
 
 classdef ParachuteDynamics < handle
     properties
+        name                    % Name of the parachute
+        isDeployed = false      % Track if parachute has been deployed
         % Parachute physical properties
         canopyMass              % Canopy mass (kg)
         canopyDiameter          % Canopy diameter (m)
@@ -19,16 +21,18 @@ classdef ParachuteDynamics < handle
     end
     
     methods
-        function obj = ParachuteDynamics(canopyDiameter, canopyMass, dragCoeff, deployAlt)
+        function obj = ParachuteDynamics(name, canopyDiameter, canopyMass, dragCoeff, deployAlt)
             % Constructor for simplified parachute dynamics model
             %
             % Inputs:
+            %   name           - Name of the parachute
             %   canopyDiameter - Canopy diameter (m)
             %   canopyMass     - Canopy mass (kg)
             %   dragCoeff      - Drag coefficient (dimensionless)
             %   deployAlt      - Deployment altitude (m AGL)
             
             % Set parachute properties
+            obj.name = name;
             obj.canopyDiameter = canopyDiameter;
             obj.canopyMass = canopyMass;
             obj.dragCoefficient = dragCoeff;
@@ -55,11 +59,11 @@ classdef ParachuteDynamics < handle
             %   forceAeroBody  - Total aerodynamic + weight force in body frame (N)
             
             % Direction cosine matrices for frame transformations
-            dcmInertialToBody = Utils.dirCosine(quaternionRocket);
-            dcmBodyToInertial = dcmInertialToBody';
+            cBI = Utils.dirCosine(quaternionRocket);
+            cIB = cBI';
             
             % Transform rocket velocity to inertial frame
-            velocityRocketInertial = dcmBodyToInertial * velocityRocketBody;
+            velocityRocketInertial = cIB * velocityRocketBody;
             
             % Compute airspeed (velocity relative to air mass)
             airspeedInertial = velocityRocketInertial - disturbances.wind;
@@ -81,7 +85,7 @@ classdef ParachuteDynamics < handle
             forceTotalInertial = forceAeroInertial + forceGravityInertial;
             
             % Transform total force to body frame
-            forceAeroBody = dcmInertialToBody * forceTotalInertial;
+            forceAeroBody = cBI * forceTotalInertial;
         end
 
         function shouldTransition = shouldDeployNext(obj, altitude)

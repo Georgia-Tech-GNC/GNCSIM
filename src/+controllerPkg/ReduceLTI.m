@@ -37,7 +37,7 @@ classdef ReduceLTI < handle
             
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, [], true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], true, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
@@ -51,7 +51,7 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, [], false, false);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], false, false);
                 fx = @(x) f(x, [0, pitchControlInput, 0].');
                 fu = @(u_in) f(xStar, [0, u_in, 0].');
     
@@ -83,7 +83,7 @@ classdef ReduceLTI < handle
             disturbances.wind = [0, 0, 0].';
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, [], true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], true, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
@@ -97,7 +97,7 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, [], true, true);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], true, true);
                 fx = @(x) f(x, [rollControlInput, 0, 0].');
                 fu = @(u_in) f(xStar, [u_in, 0, 0].');
     
