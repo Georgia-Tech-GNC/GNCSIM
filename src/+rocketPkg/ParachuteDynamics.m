@@ -13,6 +13,9 @@ classdef ParachuteDynamics < handle
         % Environment constants
         airDensity              % Air density at sea level (kg/m^3)
         gravity                 % Gravitational acceleration (m/s^2)
+
+        % Linked list structure
+        nextParachute = []      % Reference to next parachute in sequence
     end
     
     methods
@@ -79,6 +82,25 @@ classdef ParachuteDynamics < handle
             
             % Transform total force to body frame
             forceAeroBody = dcmInertialToBody * forceTotalInertial;
+        end
+
+        function shouldTransition = shouldDeployNext(obj, altitude)
+            % Check if conditions are met to transition to next parachute
+            if isempty(obj.nextParachute)
+                shouldTransition = false;
+            else
+                shouldTransition = altitude <= obj.nextParachute.deployAltitude;
+            end
+        end
+
+        function next = getNext(obj)
+            % Get the next parachute in sequence
+            next = obj.nextParachute;
+        end
+
+        function setNext(obj, nextChute)
+            % Set the next parachute in sequence
+            obj.nextParachute = nextChute;
         end
     end
 end

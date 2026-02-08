@@ -129,11 +129,10 @@ function rocketDyn = setupRocket()
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
     
-    % Set Up Parachutes
-    parachuteObjects = setupParachute();
+    % Set Up Parachutes (linked list)
+    firstParachute = setupParachute();
 
-
-    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, parachuteObjects, aerodynamics);
+    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamics);
 end
 
 function environment = setupEnvironment()
@@ -190,8 +189,8 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
 
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
-    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, log, useGravity, useThrust)
-    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, [], true, true) ); 
+    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
+    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, flightPkg.FlightState.POWERED_ASCENT, [], true, true) ); 
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
     problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
     problem.func.pathCst = @(t,x,u) ( trajectoryOptimization.pathConstraintFunction(t,x,u) ); 
@@ -357,10 +356,17 @@ function nav = setupNavigation(dt)
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
-    % Flight
-    flightParams.totalTime = 60;  % length of simulation [s]
+    % End conditions (whichever comes first)
+    flightParams.totalTime = 60;  % max simulation length [s]
+    flightParams.endState = flightPkg.FlightState.LANDED; % State to stop simulation
+
+    % Flight state parameters
+    flightParams.tIgnition = 0.0;  % ignition time [s]
+    flightParams.launchRailLength = 5.0;  % launch rail length [m]
+
     flightParams.dt = 0.01;  % time step [s]
-    
+
+    % Initial conditions
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
@@ -385,21 +391,25 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 
-function parachuteObjects =  setupParachute()
+function firstParachute = setupParachute()
+    % Drogue chute (deploys at apogee)
     drogueDiameter = .508; % m
     drogueMass = 0.016811267; % kg
-    drogueCD = 1.52; %m
-    drogueDeployAlt = 0; % m
-    drogueDynamics = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCD, drogueDeployAlt);
+    drogueCD = 1.52;
+    drogueDeployAlt = 0; % m (not used for first chute)
+    drogue = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCD, drogueDeployAlt);
 
-    mainParachuteDiameter = 2.54; %m
-    mainParachuteMass = 0.3430292; %kg
-    mainParachuteCD = .8; %m
-    MainDeployAlt = 305; % m
+    % Main chute (deploys at altitude)
+    mainDiameter = 2.54; % m
+    mainMass = 0.3430292; % kg
+    mainCD = .8;
+    mainDeployAlt = 305; % m
+    main = rocketPkg.ParachuteDynamics(mainDiameter, mainMass, mainCD, mainDeployAlt);
 
-    mainParachuteDynamics = rocketPkg.ParachuteDynamics(mainParachuteDiameter, mainParachuteMass, mainParachuteCD, MainDeployAlt);
+    % Link parachutes: drogue -> main
+    drogue.setNext(main);
 
-    parachuteObjects = [drogueDynamics, mainParachuteDynamics];
+    firstParachute = drogue;
 end
 
 

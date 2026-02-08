@@ -22,6 +22,12 @@ classdef Flight < handle
 
         runClosedLoop = true
         useActuatorModel
+
+        flightState = flightPkg.FlightState.PRELAUNCH
+        endState = flightPkg.FlightState.LANDED
+        timeStateChange
+        tIgnition
+        launchRailLength
 	end
 	
     methods
@@ -37,7 +43,22 @@ classdef Flight < handle
             obj.actuatorInitialState = obj.flightParams.del0;
             obj.totalTime = obj.flightParams.totalTime;
 
-            obj.useActuatorModel = controller.useActuatorModel;      
+            % Flight state parameters
+            if isfield(obj.flightParams, 'endState')
+                obj.endState = obj.flightParams.endState;
+            end
+            if isfield(obj.flightParams, 'tIgnition')
+                obj.tIgnition = obj.flightParams.tIgnition;
+            else
+                obj.tIgnition = 0.0;
+            end
+            if isfield(obj.flightParams, 'launchRailLength')
+                obj.launchRailLength = obj.flightParams.launchRailLength;
+            else
+                obj.launchRailLength = 5.0; % default 5m
+            end
+
+            obj.useActuatorModel = controller.useActuatorModel;
         end
 
         function log = runSim(obj, log)
@@ -55,10 +76,10 @@ classdef Flight < handle
             % Get state estimate
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
 
-            if obj.useActuatorModel 
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); % thrust starts at t=0s
+            if obj.useActuatorModel
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, log);
             else
-                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, log);
+                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, log);
             end
 
             log.add(obj.currentTime, 'states', rocketState);
@@ -67,14 +88,15 @@ classdef Flight < handle
             log.add(obj.currentTime, 'actuatorStates', actuatorState);
             log.add(obj.currentTime, 'controlInputs', controlInput);
 
-            for ii = 1:log.maxSteps - 1
-
+            ii = 0;
+            while obj.flightState ~= obj.endState && ii < log.maxSteps - 1
+                ii = ii + 1;
                 obj.currentTime = ii * obj.dt;
                 log.initializeTimestep(obj.currentTime);
 
                 if obj.runClosedLoop
                     % Calculate cumulated velocity every interval
-                    if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2 
+                    if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2
                         vx = rocketState(obj.idx.vx);
                         vy = rocketState(obj.idx.vy);
                         vz = rocketState(obj.idx.vz);
@@ -82,13 +104,13 @@ classdef Flight < handle
                         obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
                     end
                 end
-                
+
                 if obj.useActuatorModel
                     actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
                     actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
-                    rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime);
+                    rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime, obj.flightState);
                 else
-                    rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime);
+                    rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime, obj.flightState);
                 end
 
                 rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
@@ -97,16 +119,19 @@ classdef Flight < handle
                 rocketState(obj.idx.quat) = quatNorm;
 
                 disturbances.wind = [0, 0, 0].';
-                
+
                 if obj.runClosedLoop
                     controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
                 end
 
-                if obj.useActuatorModel 
-                    rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); 
+                if obj.useActuatorModel
+                    rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, log);
                 else
-                    rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, log);
+                    rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, log);
                 end
+
+                % Update flight state
+                obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
 
                 rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
@@ -116,6 +141,72 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'actuatorStates', actuatorState);
                 log.add(obj.currentTime, 'controlInputs', controlInput);
             end
+        end
+
+        function updateFlightState(obj, time, rocketState, rocketStateDot)
+            import flightPkg.FlightState
+
+            % Extract ENU position, velocity, and acceleration
+            posENU = rocketState(obj.idx.pos);
+            velENU = rocketState(obj.idx.vel);
+            accENU = rocketStateDot(obj.idx.vel);
+
+            % Get quaternion and compute DCM (ENU to body)
+            quat = rocketState(obj.idx.quat);
+            dcm = Utils.dirCosine(quat);
+
+            % Transform to body frame
+            posBody = dcm * posENU;
+            accBody = dcm * accENU;
+
+            % Gravity constant
+            gBody = dcm * [0; 0; -9.81];
+
+            switch obj.flightState
+                case FlightState.PRELAUNCH
+                    % Transition to LAUNCH_RAIL once ignition time is reached
+                    if time >= obj.tIgnition
+                        obj.transitionTo(FlightState.LAUNCH_RAIL, time);
+                    end
+
+                case FlightState.LAUNCH_RAIL
+                    % Transition to POWERED_ASCENT once x position in body frame
+                    % exceeds launch rail length
+                    if posBody(1) > obj.launchRailLength
+                        obj.transitionTo(FlightState.POWERED_ASCENT, time);
+                    end
+
+                case FlightState.POWERED_ASCENT
+                    % Transition to COASTING_ASCENT once x acceleration in body
+                    % frame minus gravity is non positive AND burnout time has passed
+                    accBodyNoGravity = accBody - gBody;
+                    if accBodyNoGravity(1) <= 0 && time > obj.rocketDynamics.burnTime
+                        obj.transitionTo(FlightState.COASTING_ASCENT, time);
+                    end
+
+                case FlightState.COASTING_ASCENT
+                    % Transition to DESCENT once z velocity in ENU is negative
+                    % AND z acceleration in ENU is negative
+                    if velENU(3) < 0 && accENU(3) < 0
+                        obj.transitionTo(FlightState.DESCENT, time);
+                    end
+
+                case FlightState.DESCENT
+                    % Transition to LANDED once z position in ENU is below 1.0m
+                    if posENU(3) < 1.0
+                        obj.transitionTo(FlightState.LANDED, time);
+                    end
+
+                otherwise
+                    error('Unknown flight state: %s', string(obj.flightState));
+            end
+        end
+        
+        function transitionTo(obj, newState, t)
+            fprintf('State transition: %s -> %s at t=%.2f\n', ...
+                    string(obj.flightState), string(newState), t);
+            obj.flightState = newState;
+            obj.timeStateChange = t;
         end
     end
 end
