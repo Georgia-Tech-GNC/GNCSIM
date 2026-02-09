@@ -24,14 +24,6 @@ classdef RocketDynamics < handle
         cgDry 
 
         useThrust = true
-        allocationMatrix
-        
-        uncertainMassWet = []
-        uncertainMassDry = []
-        uncertainMoiWet = []
-        uncertainMoiDry = []
-        uncertainCgWet = []
-        uncertainCgDry = []
 		useGravity = true
         actuatorModel
 
@@ -72,24 +64,6 @@ classdef RocketDynamics < handle
 
             obj.parachutes = parachutes;
         end
-        
-        function setUncertainParameters(obj, massWet, massDry, moiWet, moiDry, cgWet, cgDry)
-            obj.uncertainMassWet = massWet;
-            obj.uncertainMassDry = massDry;
-            obj.uncertainMoiWet = moiWet;
-            obj.uncertainMoiDry = moiDry;
-            obj.uncertainCgWet = cgWet;
-            obj.uncertainCgDry = cgDry;
-        end
-        
-        function clearUncertainParameters(obj)
-            obj.uncertainMassWet = [];
-            obj.uncertainMassDry = [];
-            obj.uncertainMoiWet = [];
-            obj.uncertainMoiDry = [];
-            obj.uncertainCgWet = [];
-            obj.uncertainCgDry = [];
-        end
 
         function currentThrust = getThrust(obj, t)
             % Error check
@@ -113,50 +87,30 @@ classdef RocketDynamics < handle
         end
 
         function [currentCg, currentMoi] = getCgMoi(obj, mass)
-            if ~isnumeric(mass) && ~isa(mass, 'ureal')
-                error('Error: Mass must be numeric or ureal.')
+            % Error check
+            if ~isnumeric(mass)
+                error('Error: Mass must be numeric.')
             end
 
-            masswet = obj.uncertainMassWet;
-            massdry = obj.uncertainMassDry;
-            moiwet = obj.uncertainMoiWet;
-            moidry = obj.uncertainMoiDry;
-            cgwet = obj.uncertainCgWet;
-            cgdry = obj.uncertainCgDry;
+            % Extract nominal values for comparison (in case they are ureal)
+            massDry_val = double(obj.massDry);
+            massWet_val = double(obj.massWet);
             
-            % In case we are not computing gains, which is most of the time
-            if isempty(masswet)
-                masswet = obj.massWet;
-                massdry = obj.massDry;
-                moiwet = obj.moiWet;
-                moidry = obj.moiDry;
-                cgwet = obj.cgWet;
-                cgdry = obj.cgDry;
-            end
-
-            if mass <= massdry
-                currentCg = cgdry;
-                currentMoi = moidry;
+            % If beyond burn time, thrust is zero
+            if mass <= massDry_val
+                currentCg = obj.cgDry;
+                currentMoi = obj.moiDry;
                 return
             end
 
-            currentCg = cgdry + (mass - massdry)/(masswet - massdry) .* (cgwet - cgdry);
-            currentMoi = moidry + (mass - massdry)/(masswet - massdry) .* (moiwet - moidry);
+            % Linear interpolation wrt mass
+            currentCg = obj.cgDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) * (obj.cgWet - obj.cgDry);
+            currentMoi = obj.moiDry + (mass - obj.massDry)/(obj.massWet - obj.massDry) * (obj.moiWet - obj.moiDry);
         end
 
         function mDot = getMDot(obj, time)
-            
-            masswet = obj.uncertainMassWet;
-            massdry = obj.uncertainMassDry;
-            
-            % In case we are not computing gains, which is most of the time
-            if isempty(masswet)
-                masswet = obj.massWet;
-                massdry = obj.massDry;
-            end
-
             T = obj.getThrust(time);
-            mDot = - T * (masswet - massdry) / obj.totalImpulse;
+            mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
         function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
@@ -298,7 +252,7 @@ classdef RocketDynamics < handle
             omega = state(obj.idx.omega);
 
             % preventing mass to go below massDry
-            mass = max(mass, obj.massDry);
+            mass = Utils.safeMax(mass, obj.massDry);
 
             [~, Ib] = obj.getCgMoi(mass);
 
@@ -316,9 +270,9 @@ classdef RocketDynamics < handle
 
             massDot = obj.getMDot(time);
             posDot = cIB * vel;
-            velDot = fB / mass - cross(omega, vel);
+            velDot = fB / mass - Utils.crossRobust(omega, vel);
             quatDot = Utils.quatDerivative(quat, omega);
-            omegaDot = Ib\(mB - cross(omega, Ib*omega));
+            omegaDot = Ib\(mB - Utils.crossRobust(omega, Ib*omega));
             stateDot = [massDot; posDot; velDot; quatDot; omegaDot];
         end
 

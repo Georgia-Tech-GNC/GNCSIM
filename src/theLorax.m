@@ -118,7 +118,6 @@ end
 
 function breakPoints = setupBreakPoints()
     % TODO
-    % Here the PID gains should be computed I guess
 end 
 
 function controller = setupController() % Where should I implement trimpoints?

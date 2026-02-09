@@ -7,11 +7,6 @@ clear; clc; close all;
 rocketDynamics = setupRocket();
 rocketDynamics.computeBuildup()
 
-<<<<<<< HEAD
-% Parachute Dynamics
-%parachuteDynamics = setupParachute();
-
-=======
 % Nominal Trajectory
 generateNominalTrajectory = false;
 if generateNominalTrajectory
@@ -20,7 +15,6 @@ else
     nominalTrajectory.useThisTraj = false;
 end
 %% Set up simulation
->>>>>>> origin/main
 % Setup Controller
 useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
@@ -290,14 +284,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	Q2 = diag([1 1]);       
 	R2 = 20;   	
 	Q3 = diag([1 1 1]);
-<<<<<<< HEAD
-	R3 = 1; 
-=======
 	R3 = 2; 
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
->>>>>>> origin/main
-
-    
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
     
     controller = controllerPkg.PID(breakPoints, referenceAttitudes, reduceLTI, useActuatorModel);
@@ -372,13 +359,13 @@ end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     % Flight
-    flightParams.totalTime = 60;  % length of simulation [s]
+    flightParams.totalTime = 22;  % length of simulation [s]
     flightParams.dt = 0.01;  % time step [s]
     
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
-	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
+	initAngle = Utils.eulerToQuat([0, 5, 0]).'; % yaw, pitch, roll
 	quatRot = Utils.eulerToQuat([0, -90, 0]).';
     quat0 = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];

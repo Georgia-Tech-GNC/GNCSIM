@@ -41,13 +41,13 @@ classdef RocketBody < rocketPkg.DatcomManager
 			wB = state(obj.idx.omega);
 			
 			% Componet velocity with angular rotation
-			vC = (vB + cross(wB, rCb));
+			vC = (vB + Utils.crossRobust(wB, rCb));
 
 			% Compute aerodynamic forces and moments using DATCOM data
 			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC);
 
-			mBRoss = cross(rCb, fB);
-            mB = mC + mBRoss(:);
+            mBRoss = Utils.crossRobust(rCb, fB);
+            mB = mC + mBRoss;
 		end
 
 		function rNose = getNoseRadii(obj, xNose)

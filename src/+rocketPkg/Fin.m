@@ -37,7 +37,7 @@ classdef Fin < rocketPkg.DatcomManager
            % Component frame velocity and ang vel
            wB = state(obj.idx.omega);
            rCb = -obj.finParams.translation(:) + [currentCg; 0; 0];
-           vC = cCB*(vB + cross(wB, rCb));
+           vC = cCB*(vB + Utils.crossRobust(wB, rCb));
 
 		   % Get component forces and moments based on
 		   [fC, mC] = obj.getForcesMomentsDatcom(state, vC);
@@ -45,8 +45,8 @@ classdef Fin < rocketPkg.DatcomManager
            % Converting back to body frame
            cBC = cCB';
            fB = cBC*fC;
-           mBCross = cross(rCb, fB);
-           mB = cBC*mC + mBCross(:);
+           mBCross = Utils.crossRobust(rCb, fB);
+            mB = cBC*mC + mBCross;
 		end
 	end
 end

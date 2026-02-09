@@ -246,4 +246,3 @@ classdef DatcomManager < handle
 		end
     end
 end
-

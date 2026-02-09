@@ -4,6 +4,48 @@
 classdef Utils
     methods (Static)
 
+        function value = safeNominal(value)
+            % safeNominal Convert uncertain values to their nominal value when needed.
+            if ~isa(value, 'double') && ~isa(value, 'single')
+                if isobject(value) && isprop(value, 'NominalValue')
+                    value = value.NominalValue;
+                else
+                    value = double(value);
+                end
+            end
+        end
+
+        function y = safeSqrt(x)
+            % safeSqrt Evaluate sqrt with nominal fallback for uncertain inputs.
+            x = Utils.safeNominal(x);
+            y = sqrt(x);
+        end
+
+        function y = safeAtan2(yIn, xIn)
+            % safeAtan2 Evaluate atan2 with nominal fallback for uncertain inputs.
+            yIn = Utils.safeNominal(yIn);
+            xIn = Utils.safeNominal(xIn);
+            y = atan2(yIn, xIn);
+        end
+
+        function y = safeAtan2d(yIn, xIn)
+            % safeAtan2d Evaluate atan2d with nominal fallback for uncertain inputs.
+            yIn = Utils.safeNominal(yIn);
+            xIn = Utils.safeNominal(xIn);
+            y = atan2d(yIn, xIn);
+        end
+
+        function out = safeMax(a, b)
+            % safeMax Choose max using nominal values, preserving original types.
+            aNom = Utils.safeNominal(a);
+            bNom = Utils.safeNominal(b);
+            if aNom >= bNom
+                out = a;
+            else
+                out = b;
+            end
+        end
+
         function nextState = RK4(f, state, dt)
             % Fourth-order Runge-Kutta integration step
             %
@@ -274,5 +316,21 @@ classdef Utils
                 qout = qout';
             end
 		end
+
+        function c = crossRobust(a, b)
+            % Cross product that works with both double and ureal/umat (uncertain matrices)
+            % Uses scalar multiplication (*) instead of element-wise (.*) to support uncertain types
+            %
+            % Inputs:
+            %   a, b: 3-element vectors (can be double or ureal/umat)
+            %
+            % Output:
+            %   c: 3-element cross product vector
+            
+            c1 = a(2)*b(3) - a(3)*b(2);
+            c2 = a(3)*b(1) - a(1)*b(3);
+            c3 = a(1)*b(2) - a(2)*b(1);
+            c = [c1; c2; c3];
+        end
     end
 end

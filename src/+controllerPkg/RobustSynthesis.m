@@ -1,8 +1,7 @@
-
+% Main Authors: Andrés Chiva (achiva3@gatech.edu)
 
 classdef RobustSynthesis < handle
     properties
-        rocketParams
         Wu
         Ws
         Wtp
@@ -14,24 +13,23 @@ classdef RobustSynthesis < handle
     end
 
     methods
-        function obj = RobustSynthesis(rocketParams)
+        function obj = RobustSynthesis()
 
-            obj.rocketParams = rocketParams;
-
-            obj.Ws = makeweight(1.5,1,0.01);
+            % makeweight(dcGain, bandwidth, highFreqGain)
+            obj.Ws = makeweight(3.0, 1, 0.01);
             obj.Ws.InputName = 'e';
             obj.Ws.OutputName = 'z1';
 
-            obj.Wu = tf(0.1);
+            obj.Wu = tf(0.01);  
             obj.Wu.InputName = 'u';
             obj.Wu.OutputName = 'z2';
              
-            obj.Wtp = makeweight(0.1,25,5);
-            obj.Wtp.InputName = 'theta';
+            obj.Wtp = makeweight(0.1, 25, 5);
+            obj.Wtp.InputName = 'angle';
             obj.Wtp.OutputName = 'z3';
 
             obj.Wtpr = tf(0.02);
-            obj.Wtpr.InputName = 'thetaDot';
+            obj.Wtpr.InputName = 'rate';
             obj.Wtpr.OutputName = 'z4';
 
             % 
@@ -47,43 +45,29 @@ classdef RobustSynthesis < handle
             obj.Wr.InputName = 'rTilde';
             obj.Wr.OutputName = 'r';
 
-
         end
 
         function gains = musynthesis(obj, A, B)
-
-            moiDryVal = obj.rocketParams.longitudinalMoiDry;
-            moiWetVal = obj.rocketParams.longitudinalMoiWet;
-            massDryVal = obj.rocketParams.massDry;
-            massWetVal = obj.rocketParams.massWet;
-            cgDryVal = obj.rocketParams.cgXDry;
-            cgWetVal = obj.rocketParams.cgXWet;
             
-            moiDry = ureal('moiDry', moiDryVal, 'Percentage', 5);
-            moiWet = ureal('moiWet', moiWetVal, 'Percentage', 5);
-            massDry = ureal('massDry', massDryVal, 'Percentage', 5);
-            massWet = ureal('massWet', massWetVal, 'Percentage', 5);
-            cgDry = ureal('cgDry', cgDryVal, 'Percentage', 5);
-            cgWet = ureal('cgWet', cgWetVal, 'Percentage', 5);
+            % Determine system size (2 for roll, 3 for pitch/yaw)
+            nStates = size(A, 1);
             
-            % Maybe we could change the values in a better place.
-            % Perhaps inside the compute_gains.m loop
-            flight.rocketDynamics.setUncertainParameters(massWet, massDry, ...
-                diag([flight.rocketDynamics.moiWet(1,1), moiWet, moiWet]), ...
-                diag([flight.rocketDynamics.moiDry(1,1), moiDry, moiDry]), ...
-                cgWet, cgDry);
-            
-            flight.rocketDynamics.clearUncertainParameters();
-            
-            C = [0 0 1];
+            % C matrix selects the last state (position/angle)
+            C = zeros(1, nStates);
+            C(nStates) = 1;
             D = 0;
             
             sysPlant = ss(A, B, C, D);
-            sysPlant.StateName = {'angle', 'angleDot', 'alpha'};
+            if nStates == 2
+                sysPlant.StateName = {'rate', 'angle'};
+            else
+                sysPlant.StateName = {'angle', 'rate', 'position'};
+            end
             sysPlant.OutputName = {'angle'};
             sysPlant.InputName = 'u';
 
             % Define PID structure
+            s = tf('s');
             Kp = realp('Kp', 1);
             Ki = realp('Ki', 1);
             Kd = realp('Kd', 1);
@@ -110,13 +94,13 @@ classdef RobustSynthesis < handle
             Kd_val = getBlockValue(CL_mu, 'Kd');
             Td_val = getBlockValue(CL_mu, 'Td');
 
-            gains = struct();
-            gains.Kp = Kp_val;
-            gains.Ki = Ki_val;
-            gains.Kd = Kd_val;
-            gains.Td = Td_val;
-            gains.mu = muInfo.MussvBnds(end, 1);
-            gains.K_musyn = CL_mu;
+            gains = zeros(1,4);
+            gains(1) = Kp_val;
+            gains(2) = Ki_val;
+            gains(3) = Kd_val;
+            gains(4) = Td_val;
+            % gains.mu = muInfo.MussvBnds(end, 1);
+            % gains.K_musyn = CL_mu;
             obj.synthesizedGains = gains;
         end
     end

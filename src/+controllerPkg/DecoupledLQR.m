@@ -84,7 +84,7 @@ classdef DecoupledLQR < controllerPkg.Controller
             % Loop over all breakpoints
             for ii = 1:obj.breakPoints.numBreakPoints
 
-                % get parameters needed to get reduced oder model
+                % get parameters needed to get reduced order model
                 time = obj.breakPoints.time(ii);
                 state = obj.breakPoints.state{ii};
                 controlInput = obj.breakPoints.controlInput{ii};
