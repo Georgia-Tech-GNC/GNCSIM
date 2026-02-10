@@ -34,6 +34,9 @@ fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 log.trim();
 
+%% MonteCarlo
+uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
+
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
@@ -418,7 +421,39 @@ function firstParachute = setupParachute()
     firstParachute = drogue;
 end
 
+function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
 
+    numRuns = 100;
+    uncertaintyObj = analysisPkg.Uncertainty(numRuns);
+
+    uncertaintyObj.addVariable('caScaleFactor', rocketDynamics.body.scaleFactor, 1, 'normal');
+    uncertaintyObj.addVariable('cmScaleFactor', rocketDynamics.body.momentScaleFactor, 1, 'normal');
+    uncertaintyObj.addVariable('cnScaleFactor', rocketDynamics.body.scaleFactor, 1, 'normal');
+    % Missing Parachute Cd
+    uncertaintyObj.addVariable('wetMass', rocketDynamics.massWet, 1, 'normal');
+    uncertaintyObj.addVariable('dryMass', rocketDynamics.massDry, 1, 'normal');
+    uncertaintyObj.addVariable('cgXWet', rocketDynamics.cgWet, 1, 'normal');
+    uncertaintyObj.addVariable('cgXDry', rocketDynamics.cgDry, 1, 'normal');
+    uncertaintyObj.addVariable('longitudinalMoiWet', rocketDynamics.moiWet(2,2), 1, 'normal');
+    uncertaintyObj.addVariable('rotationalMoiWet', rocketDynamics.moiWet(1,1), 1, 'normal');
+    uncertaintyObj.addVariable('longitudinalMoiDry', rocketDynamics.moiDry(2,2), 1, 'normal');
+    uncertaintyObj.addVariable('rotationalMoiDry', rocketDynamics.moiDry(1,1), 1, 'normal');
+    uncertaintyObj.addVariable('totalImpulse', rocketDynamics.totalImpulse, 1, 'normal');
+    uncertaintyObj.addVariable('burnTime', rocketDynamics.burnTime, 1, 'normal');
+    uncertaintyObj.addVariable('tIgnition', rocketDynamics.tIgnition, 1, 'normal');
+    uncertaintyObj.addVariable('noseLength', rocketDynamics.body.bodyParams.noseLength, 1, 'normal');
+    uncertaintyObj.addVariable('bodyLength', rocketDynamics.body.bodyParams.bodyLength, 1, 'normal');
+    uncertaintyObj.addVariable('rocketDiameter', rocketDynamics.body.bodyParams.rocketDiameter, 1, 'normal');
+    uncertaintyObj.addVariable('maxDeflection', rocketDynamics.actuatorModel.limits.maxDeflection, 1, 'normal');
+    uncertaintyObj.addVariable('maxRate', rocketDynamics.actuatorModel.limits.maxRate, 1, 'normal');
+    uncertaintyObj.addVariable('timeConstant', rocketDynamics.actuatorModel.timeConstant, 1, 'normal');
+    uncertaintyObj.addVariable('railLength', flight.flightParams.launchRailLength, 1, 'normal');
+    uncertaintyObj.addVariable('railOrientation', 1, 1, 'normal');           
+
+    % Generate samples 
+    uncertaintyObj.generateLhsSamples();
+
+end
 
 
 
