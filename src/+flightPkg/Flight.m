@@ -3,32 +3,32 @@
 
 classdef Flight < handle
     properties (Constant)
-        idx = StateIndices
+        idx StateIndices = StateIndices
     end
     properties
-        rocketDynamics
-        controller
-        environment
-        navigation
-        flightParams
+        rocketDynamics rocketPkg.RocketDynamics
+        controller controllerPkg.Controller
+        environment flightPkg.Environment
+        navigation navigationPkg.Navigation
+        flightParams struct
 
-        totalTime
-        currentTime
-        cumVelocity
-        dt
+        totalTime (1,1) double {mustBeNonnegative}
+        currentTime (1,1) double {mustBeNonnegative}
+        cumVelocity (1,1) double {mustBeNonnegative}
+        dt (1,1) double {mustBeNonnegative}
 
-        rocketInitialState
-        actuatorInitialState
-        controlInputInitialState
+        rocketInitialState (:,1) double
+        actuatorInitialState (:,1) double
+        controlInputInitialState (:,1) double
 
-        runClosedLoop = true
-        useActuatorModel
+        runClosedLoop (1,1) logical = true
+        useActuatorModel (1,1) logical
 
-        flightState = flightPkg.FlightState.PRELAUNCH
-        endState = flightPkg.FlightState.LANDED
-        timeStateChange
-        launchRailLength
-	end
+        flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.PRELAUNCH
+        endState (1,1) flightPkg.FlightState = flightPkg.FlightState.LANDED
+        timeStateChange (1,1) double
+        launchRailLength (1,1) double
+    end
 	
     methods
         function obj = Flight(rocketDynamics, environment, controller, navigation, flightParams)
@@ -51,6 +51,10 @@ classdef Flight < handle
         end
 
         function log = runSim(obj, log)
+            arguments
+                obj
+                log analysisPkg.Log
+            end
             import flightPkg.FlightState
             
             obj.currentTime = 0.0;
@@ -67,9 +71,9 @@ classdef Flight < handle
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
 
             if obj.useActuatorModel
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, log);
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, true, true, log);
             else
-                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, log);
+                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, true, true, log);
             end
 
             log.add(obj.currentTime, 'states', rocketState);
@@ -119,7 +123,7 @@ classdef Flight < handle
                         % Clamp Orientation to Initial Launch Orientation
                         rocketState(obj.idx.quat) = obj.rocketInitialState(obj.idx.quat);
                         
-                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, log);                       
+                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);                       
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
                         
                         log.add(obj.currentTime, 'states', rocketState);
@@ -163,12 +167,12 @@ classdef Flight < handle
                             controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
                             log.add(obj.currentTime, 'controlInputs', controlInput);
                             if obj.useActuatorModel
-                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, log);
+                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, true, true, log);
                             else
-                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, log);
+                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, true, true, log);
                             end
                         else
-                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, log);
+                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);
                         end
 
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
@@ -191,7 +195,7 @@ classdef Flight < handle
                          rocketState(obj.idx.quat) = Utils.eulerToQuat([0, -90, 0]).';
                          rocketState(obj.idx.omega) = [0;0;0];
                          
-                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, log);
+                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);
 
                          obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
                          
@@ -205,6 +209,12 @@ classdef Flight < handle
         end
 
         function updateFlightState(obj, time, rocketState, rocketStateDot)
+            arguments
+                obj
+                time (1,1) double {mustBeNonnegative}
+                rocketState (:,1) double
+                rocketStateDot (:,1) double
+            end
             import flightPkg.FlightState
 
             switch obj.flightState
@@ -263,6 +273,11 @@ classdef Flight < handle
         end
         
         function transitionTo(obj, newState, t)
+            arguments
+                obj
+                newState flightPkg.FlightState
+                t (1,1) double
+            end
             fprintf('State transition: %s -> %s at t=%.2f\n', ...
                     string(obj.flightState), string(newState), t);
             obj.flightState = newState;

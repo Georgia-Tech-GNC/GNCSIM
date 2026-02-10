@@ -1,5 +1,5 @@
 classdef MonteCarlo < handle
-    properties (Access = private)
+    properties 
 
     end
 

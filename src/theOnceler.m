@@ -111,9 +111,6 @@ function rocketDyn = setupRocket()
     motorParams.tIgnition = 1.0;
     motorParams.totalImpulse = 7561.0; % N-sec
 
-    % CFD Aerodynamics not needed
-	aerodynamics = [];
-
     % Actuator Model - uses rocketFinTabs
 
     % This is a mapping from roll, pitch and yaw to the four fin
@@ -133,11 +130,11 @@ function rocketDyn = setupRocket()
     % Set Up Parachutes (linked list)
     firstParachute = setupParachute();
 
-    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamics);
+    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute);
 end
 
 function environment = setupEnvironment()
-    environment = -1;
+    environment = flightPkg.Environment.empty;
 end
 
 
@@ -191,7 +188,7 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
     % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
-    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, flightPkg.FlightState.POWERED_ASCENT, [], true, true) ); 
+    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true, true) ); 
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
     problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
     problem.func.pathCst = @(t,x,u) ( trajectoryOptimization.pathConstraintFunction(t,x,u) ); 
@@ -244,7 +241,7 @@ end
 function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory)
     % Compute Reference Attitudes
     dt = 0.01;  % or whatever your timestep is
-    controlTime = 15;  % or whatever your total time is
+    controlTime = 23;  % or whatever your total time is
     time = linspace(dt, controlTime, controlTime/dt);
     n = length(time);
     
@@ -255,12 +252,12 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	
 	% Apply the step at 6 seconds
 	% Logical mask for time >= 6 seconds
-	mask_step1 = (time >= 4.0);
-    mask_step2 = (time >= 10.0);
+	mask_step1 = (time >= 2.0);
+    mask_step2 = (time >= 9.0);
 	
 	% Set pitch to 12 degrees for all points where time >= 6
-	yaw_deg(mask_step1) = 10.0;
-    yaw_deg(mask_step2) = 2.0;
+	yaw_deg(mask_step1) = 20.0;
+    yaw_deg(mask_step2) = 0.0;
 
 	roll_rad  = deg2rad(roll_deg);
 	pitch_rad = deg2rad(pitch_deg);
@@ -373,7 +370,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
 	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
-	quatRot = Utils.eulerToQuat([0, -80, 0]).';
+	quatRot = Utils.eulerToQuat([0, -90, 0]).';
     orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, orientationLaunchRail, omega0].';

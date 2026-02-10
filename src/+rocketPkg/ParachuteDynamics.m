@@ -3,21 +3,21 @@
 
 classdef ParachuteDynamics < handle
     properties
-        name                    % Name of the parachute
-        isDeployed = false      % Track if parachute has been deployed
+        name (1,1) string                    % Name of the parachute
+        isDeployed (1,1) logical = false      % Track if parachute has been deployed
         % Parachute physical properties
-        canopyMass              % Canopy mass (kg)
-        canopyDiameter          % Canopy diameter (m)
-        referenceArea           % Parachute reference area (m^2)
-        dragCoefficient = 0.75  % Parachute drag coefficient (dimensionless)
-        deployAltitude          % Altitude the chute is deployed at (m)
+        canopyMass (1,1) double              % Canopy mass (kg)
+        canopyDiameter (1,1) double          % Canopy diameter (m)
+        referenceArea (1,1) double           % Parachute reference area (m^2)
+        dragCoefficient (1,1) double         % Parachute drag coefficient (dimensionless)
+        deployAltitude (1,1) double          % Altitude the chute is deployed at (m)
         
         % Environment constants
-        airDensity              % Air density at sea level (kg/m^3)
-        gravity                 % Gravitational acceleration (m/s^2)
+        airDensity (1,1) double              % Air density at sea level (kg/m^3)
+        gravity (1,1) double                 % Gravitational acceleration (m/s^2)
 
         % Linked list structure
-        nextParachute = []      % Reference to next parachute in sequence
+        nextParachute rocketPkg.ParachuteDynamics {mustBeScalarOrEmpty} = rocketPkg.ParachuteDynamics.empty % Reference to next parachute in sequence
     end
     
     methods
@@ -48,6 +48,12 @@ classdef ParachuteDynamics < handle
         
         function forceAeroBody = getForcesAndMoments(obj, ...
                 velocityRocketBody, quaternionRocket, disturbances)
+            arguments
+                obj
+                velocityRocketBody (3,1) double
+                quaternionRocket (4,1) double
+                disturbances struct
+            end
             % Compute aerodynamic forces and moments from parachute
             %
             % Inputs:
@@ -89,6 +95,10 @@ classdef ParachuteDynamics < handle
         end
 
         function shouldTransition = shouldDeployNext(obj, altitude)
+            arguments
+                obj
+                altitude (1,1) double
+            end
             % Check if conditions are met to transition to next parachute
             if isempty(obj.nextParachute)
                 shouldTransition = false;
@@ -103,6 +113,10 @@ classdef ParachuteDynamics < handle
         end
 
         function setNext(obj, nextChute)
+            arguments
+                obj
+                nextChute rocketPkg.ParachuteDynamics
+            end
             % Set the next parachute in sequence
             obj.nextParachute = nextChute;
         end

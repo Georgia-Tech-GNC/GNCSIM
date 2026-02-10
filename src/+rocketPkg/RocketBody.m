@@ -4,8 +4,8 @@ classdef RocketBody < rocketPkg.DatcomManager
 	% ROCKETBODY Represents the aerodynamic body of a rocket
     
 	properties
-		bodyParams			% Structure containing body geometry parameters
-		bodyOutline		    % [2 x n] array: row 1 = x stations, row 2 = body radii
+		bodyParams struct			% Structure containing body geometry parameters
+		bodyOutline (2,:) double    % [2 x n] array: row 1 = x stations, row 2 = body radii
 						    % DATCOM aerodynamic data
 	end
 
@@ -19,6 +19,11 @@ classdef RocketBody < rocketPkg.DatcomManager
 		end
 
         function [fB, mB] = getForcesMoments(obj, state, disturbances)
+            arguments
+                obj
+                state (:,1) double
+                disturbances struct
+            end
            	% Computes aerodynamic forces and moments on the body
 
            	% Rotation from inertial frame to body frame using quaternion
@@ -51,6 +56,10 @@ classdef RocketBody < rocketPkg.DatcomManager
 		end
 
 		function rNose = getNoseRadii(obj, xNose)
+            arguments
+                obj
+                xNose (:,:) double
+            end
 			% Computes nose cone radius distribution
 
 			L = obj.bodyParams.noseLength;

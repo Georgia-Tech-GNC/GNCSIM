@@ -10,25 +10,24 @@ classdef RocketDynamics < handle
     end
 
     properties
-		body
-		rocketFins
-		motorParams
-        activeParachute         % Currently active parachute (linked list)
-        thrustCurve
-        totalImpulse
-        burnTime            % total burn time of the motor
-        tIgnition           % time of motor ignition in the simulation
-        massWet 
-        massDry 
-        moiWet  
-        moiDry  
-        cgWet 
-        cgDry 
+		body rocketPkg.RocketBody
+		rocketFins rocketPkg.RocketFins
+		motorParams struct
+        activeParachute rocketPkg.ParachuteDynamics
+        thrustCurve (:,2) double
+        totalImpulse (1,1) double {mustBeNonnegative}
+        burnTime (1,1) double {mustBeNonnegative}           % total burn time of the motor
+        tIgnition (1,1) double {mustBeNonnegative}          % time of motor ignition in the simulation
+        massWet (1,1) double {mustBeNonnegative}
+        massDry (1,1) double {mustBeNonnegative}
+        moiWet (3,3) double {mustBeNonnegative}
+        moiDry (3,3) double {mustBeNonnegative}
+        cgWet (1,1) double 
+        cgDry (1,1) double
 
-        actuatorModel
-
-        aerodynamicsCFD = []
-	end
+        actuatorModel controllerPkg.ActuatorModel = controllerPkg.ActuatorModel.empty
+        aerodynamicsCFD rocketPkg.AerodynamicsCFD = rocketPkg.AerodynamicsCFD.empty
+    end
 
 	methods
         function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamicsCFD)
@@ -37,9 +36,9 @@ classdef RocketDynamics < handle
                 rocketFins          % DATCOM
                 rocketParams
                 motorParams
-                actuatorModel
-                firstParachute      % Head of parachute linked list
-                aerodynamicsCFD = []   % defaults to empty
+                actuatorModel = controllerPkg.ActuatorModel.empty 
+                firstParachute = rocketPkg.ParachuteDynamics.empty     % Head of parachute linked list
+                aerodynamicsCFD = rocketPkg.AerodynamicsCFD.empty   % defaults to empty
             end
 
             obj.body = body;
@@ -67,6 +66,10 @@ classdef RocketDynamics < handle
         end
 
         function currentThrust = getThrust(obj, t)
+            arguments
+                obj
+                t (1,1) double {mustBeNonnegative}
+            end
             % Error check
             if ~isnumeric(t)
                 error('Error: Time must be numeric.')
@@ -96,6 +99,10 @@ classdef RocketDynamics < handle
         end
 
         function [currentCg, currentMoi] = getCgMoi(obj, mass)
+            arguments
+                obj
+                mass (1,1) double {mustBeNonnegative}
+            end
             % Error check
             if ~isnumeric(mass)
                 error('Error: Mass must be numeric.')
@@ -114,75 +121,79 @@ classdef RocketDynamics < handle
         end
 
         function mDot = getMDot(obj, time)
+            arguments
+                obj
+                time (1,1) double {mustBeNonnegative}
+            end
             T = obj.getThrust(time);
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, flightState, log, useGravity, useThrust)
+        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
-                state
-                controlInput
-                disturbances % wind
-                time  % current time in seconds
+                state (:,1) double
+                controlInput (:,1) double
+                disturbances struct % wind
+                time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
-                log = []  % Optional, defaults to empty
-                useGravity = true
-                useThrust = true
+                useGravity (1,1) logical = true
+                useThrust (1,1) logical = true
+                log analysisPkg.Log {mustBeScalarOrEmpty} = analysisPkg.Log.empty
             end
 
             [Nx, Nt] = size(state);
             xDot = zeros(Nx, Nt);
 
             for i = 1:Nt
-                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), flightState, log, useGravity, useThrust);
+                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), flightState, useGravity, useThrust, log);
             end
         end
 
-        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, flightState, log, useGravity, useThrust)
+        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
-                state
-                controlInput
-                disturbances % wind
-                time  % current time in seconds
+                state (:,1) double
+                controlInput (:,1) double
+                disturbances struct% wind
+                time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
-                log = []  % Optional, defaults to empty
-                useGravity = true
-                useThrust = true
+                useGravity (1,1) logical = true
+                useThrust (1,1) logical = true
+                log analysisPkg.Log {mustBeScalarOrEmpty} = analysisPkg.Log.empty
             end
             actuatorState = obj.actuatorModel.allocationMatrix * controlInput;
-            xDot = obj.rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust);
+            xDot = obj.rocketModel(state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log);
         end
 
-		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
+		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
-                state
-                actuatorState
-                disturbances % wind
-                time  % current time in seconds
+                state (:,1) double
+                actuatorState (:,1) double
+                disturbances struct% wind
+                time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
-                log = []  % Optional, defaults to empty
-                useGravity = true
-                useThrust = true
+                useGravity (1,1) logical = true
+                useThrust (1,1) logical = true
+                log analysisPkg.Log {mustBeScalarOrEmpty} = analysisPkg.Log.empty
             end
 
-            [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust);
+            [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log);
             xDot = obj.flatEarthEOM(state, time, fB, mB);
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
-                state
-                actuatorState
-                disturbances
-                time % current time in seconds
+                state (:,1) double
+                actuatorState (:,1) double
+                disturbances struct % wind
+                time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState 
-                log = []  % Optional, defaults to empty
-                useGravity = true
-                useThrust = true
+                useGravity (1,1) logical = true
+                useThrust (1,1) logical = true
+                log analysisPkg.Log {mustBeScalarOrEmpty} = analysisPkg.Log.empty
             end
             
             import flightPkg.FlightState
@@ -277,10 +288,10 @@ classdef RocketDynamics < handle
         function stateDot = flatEarthEOM(obj, state, time, fB, mB)
 			arguments
                 obj
-                state 
-                time
-				fB
-				mB
+                state (:,1) double
+                time (1,1) double {mustBeNonnegative}
+				fB (3,1) double
+				mB (3,1) double
             end
             mass = state(obj.idx.mass);
             vel = state(obj.idx.vel);
@@ -305,6 +316,9 @@ classdef RocketDynamics < handle
 
 
         function computeBuildup(obj)
+            arguments
+                obj
+            end
             % Main Author: David Reynolds
             obj.body.computeBuildup()
             obj.rocketFins.computeBuildup()
@@ -319,6 +333,9 @@ classdef RocketDynamics < handle
         end
 
 		function draw(obj)
+            arguments
+                obj
+            end
             % Main Author: Kandarp Vadia
             % ========== ROCKET ==========
             rBody = obj.body.bodyParams;

@@ -5,8 +5,8 @@ classdef DatcomAnalysis
     %   Detailed explanation goes here
     
     properties
-        rocketDyn
-		N = 100
+        rocketDyn rocketPkg.RocketDynamics
+		N (1,1) double = 100
     end
     
     methods
@@ -26,6 +26,11 @@ classdef DatcomAnalysis
         end
         
         function drawDatcomData(obj, alphaRange, aeroElement)
+            arguments
+                obj
+                alphaRange (1,2) double
+                aeroElement rocketPkg.DatcomManager
+            end
             alphas = linspace(alphaRange(1), alphaRange(2), obj.N);
             alt = 0;
             altArr = repmat(alt, 1, obj.N);
@@ -65,6 +70,10 @@ classdef DatcomAnalysis
         end
 
         function drawForcesAndMoments(obj, alphaRange)
+            arguments
+                obj
+                alphaRange (1,2) double
+            end
 			nominalMass = 20;
 			nominalPos = [0; 0; 0];
 			nominalquat = Utils.eulerToQuat([0, 0, 0]);

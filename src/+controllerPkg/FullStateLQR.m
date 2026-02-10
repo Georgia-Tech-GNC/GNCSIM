@@ -2,11 +2,12 @@
 
 classdef FullStateLQR < controllerPkg.Controller
     properties
-        breakPoints
-        referenceAttitudes
-        Q
-        R
-        % reduceLTI
+        breakPoints 
+        referenceAttitudes 
+        Q (:,:) double
+        R (:,:) double
+        useActuatorModel = false
+        % reduceLTI controllerPkg.ReduceLTI
     end
 
     methods
@@ -19,11 +20,22 @@ classdef FullStateLQR < controllerPkg.Controller
         end
 
         function rocketControl = getControl(obj, state, currentCumVelocity, currentTime)
+            arguments
+                obj
+                state (:,1) double
+                currentCumVelocity (1,1) double {mustBeNonnegative}
+                currentTime (1,1) double {mustBeNonnegative}
+            end
             [interpolatedGains, interpolatedControlReference] = obj.breakPoints.interpolateGain(currentCumVelocity);
 
         end
            
         function [rollErr, pitchErr, yawErr] = getError(obj, rocketState, currentTime)
+            arguments
+                obj
+                rocketState (:,1) double
+                currentTime (1,1) double {mustBeNonnegative}
+            end
 
         end
         

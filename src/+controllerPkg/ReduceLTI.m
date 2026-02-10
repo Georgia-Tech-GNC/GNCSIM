@@ -4,7 +4,7 @@ classdef ReduceLTI < handle
 	% ReduceLTI  Class for generating and analyzing Reduced Order Models (ROM) 
     % for Linear Time-Invariant (LTI) flight dynamics.
     properties
-        rocketDynamics		% Handle to the main flight/rocket physics model
+        rocketDynamics rocketPkg.RocketDynamics		% Handle to the main flight/rocket physics model
     end
 
     methods
@@ -14,6 +14,10 @@ classdef ReduceLTI < handle
 		end
 		
         function [sysPitch, sysRoll] = generateROM(obj, xStar)
+            arguments
+                obj
+                xStar (:,1) double
+            end
 			% Generates LTI State-Space (ss) objects for Pitch and Roll channels
 
 			% Pitch Dynamics
@@ -30,6 +34,14 @@ classdef ReduceLTI < handle
 		end
 
         function [A3, B3] = calculateROMpitch(obj, xStar, pitchControlInput, actuatorState, time, useActuatorModel)
+            arguments
+                obj
+                xStar (:,1) double
+                pitchControlInput (1,1) double
+                actuatorState (:,1) double
+                time (1,1) double {mustBeNonnegative}
+                useActuatorModel (1,1) logical
+            end
 			% Linearizes full dynamics and projects them onto 3-state Pitch space
 			% Now uses actual actuatorState from the operating point
 
@@ -37,7 +49,7 @@ classdef ReduceLTI < handle
             
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
@@ -51,7 +63,7 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], false, false);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, false, false);
                 fx = @(x) f(x, [0, pitchControlInput, 0].');
                 fu = @(u_in) f(xStar, [0, u_in, 0].');
     
@@ -77,13 +89,21 @@ classdef ReduceLTI < handle
         end
 
         function [A2, B2] = calculateROMroll(obj, xStar, rollControlInput, actuatorState, time, useActuatorModel)
+            arguments
+                obj
+                xStar (:,1) double
+                rollControlInput (1,1) double
+                actuatorState (:,1) double
+                time (1,1) double {mustBeNonnegative}
+                useActuatorModel (1,1) logical
+            end
 			% Linearizes full dynamics and projects them onto 2-state Roll space
 			% Now uses actual actuatorState from the operating point
 
             disturbances.wind = [0, 0, 0].';
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
@@ -97,7 +117,7 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, [], true, true);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
                 fx = @(x) f(x, [rollControlInput, 0, 0].');
                 fu = @(u_in) f(xStar, [u_in, 0, 0].');
     
@@ -123,6 +143,10 @@ classdef ReduceLTI < handle
         end
 
         function performComparison(obj, log)
+            arguments
+                obj
+                log analysisPkg.Log
+            end
             % Compares the Linearized ROM against the full Nonlinear Simulation Log
             % NOTE: Make sure thrust and gravity is off for fair comparison
 
@@ -181,8 +205,8 @@ classdef ReduceLTI < handle
     		% Reference: https://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
 		
     		arguments
-        		x14
-        		yaw = false;
+        		x14 (14,1) double
+        		yaw (1,1) logical = false;
     		end
 		
     		% Get velocities
@@ -221,6 +245,9 @@ classdef ReduceLTI < handle
 		end
 		
 		function x2 = rollReduce(x14)
+            arguments
+                x14 (14,1) double
+            end
     		% Maps full 14-state vector to Roll states: [p; Phi]
     		p = x14(StateIndices.omega_x);
     		
@@ -232,6 +259,10 @@ classdef ReduceLTI < handle
 		
 		%% Helper to calculate clean errors relative to any target (e.g., vertical)
 		function [psi, theta, phi] = getEulerErrors(x14, q_target)
+            arguments
+                x14 (14,1) double
+                q_target (4,1) double
+            end
     		q_actual = x14(StateIndices.quat); 
     		
     		% Error Quaternion: q_err = q_target^-1 * q_actual
@@ -253,6 +284,9 @@ classdef ReduceLTI < handle
 		end
 
 		function drawROM(sys)
+            arguments
+                sys (1,1)
+            end
             % Simulates the LTI system response to an initial condition and plots
             x0 = [0; 0.1; 0]; % Initial perturbation
             tspan = 0:0.01:10; 

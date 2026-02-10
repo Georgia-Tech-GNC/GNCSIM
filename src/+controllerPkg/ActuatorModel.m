@@ -1,13 +1,23 @@
 % Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
 
-classdef (Abstract) ActuatorModel < handle
+% "Abstract" ActuatorModel Class"
+% (MATLAB doesn't handle type hinting with real abtract classes)
 
-    properties (Abstract)
-        allocationMatrix % maps controls to deflections
-    end
+classdef ActuatorModel < handle
 
-    methods (Abstract)
-        [fB, mB] = getForcesMoments(obj, controlInput, rocket, CG)
-        [actuatorStateDot] = actuatorDynamics(obj, actuatorState)
+    % properties (Abstract)
+    %     allocationMatrix (:,:) double % maps controls to deflections
+    % end
+
+    methods
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, disturbances) %#ok<INUSD>
+            error('ActuatorModel:getForcesMoments', ...
+                  'getForcesMoments must be implemented in a subclass.');
+        end
+        
+        function actuatorStateDot = actuatorDynamics(obj, controlInput, actuatorState) %#ok<INUSD>
+            error('ActuatorModel:actuatorDynamics', ...
+                  'actuatorDynamics must be implemented in a subclass.');
+        end
     end
 end
