@@ -4,12 +4,10 @@ classdef TrajectoryOptimization
     % Kelly's OptimTraj library
     
     properties
-        
-        idx = StateIndices;
-        turnQuaternion
-        turnTime
-        maxAoA % radians
-        
+        idx StateIndices = StateIndices;
+        turnQuaternion (4,1) double
+        turnTime (1,1) double
+        maxAoA (1,1) double % radians
     end
     
     methods
@@ -21,7 +19,13 @@ classdef TrajectoryOptimization
 
         end
 
-        function Jp = pathObjectiveFunction(obj,t,x,u)
+        function Jp = pathObjectiveFunction(obj, t, x, u)
+            arguments
+                obj
+                t (1,:) double
+                x (:,:) double
+                u (:,:) double
+            end
 
             [~,Nt] = size(x);
             Jp = zeros(1, Nt);
@@ -32,13 +36,26 @@ classdef TrajectoryOptimization
         end
 
         function Jb = boundaryObjectiveFunction(obj, t0, x0, tF, xF)
+            arguments
+                obj
+                t0 (1,1) double
+                x0 (:,1) double
+                tF (1,1) double
+                xF (:,1) double
+            end
             
             [~, Nt] = size(x0);
             Jb = zeros(1,Nt);
 
         end
 
-        function [Cineq, Ceq] = pathConstraintFunction(obj, t,x,u)
+        function [Cineq, Ceq] = pathConstraintFunction(obj, t, x, u)
+            arguments
+                obj
+                t (1,:) double
+                x (:,:) double
+                u (:,:) double
+            end
         
             [~, Nt] = size(x);
         
@@ -74,7 +91,14 @@ classdef TrajectoryOptimization
 
         end
 
-        function [Cineq, Ceq]= boundaryConstraintFunction(obj, t0,x0,tF,xF)
+        function [Cineq, Ceq]= boundaryConstraintFunction(obj, t0, x0, tF, xF)
+            arguments
+                obj
+                t0 (1,1) double
+                x0 (:,1) double
+                tF (1,1) double
+                xF (:,1) double
+            end
             Cineq = [];
 
             Ceq = [xF(obj.idx.vel(2:3)); % zero AoA
@@ -83,6 +107,10 @@ classdef TrajectoryOptimization
         end
 
         function []= plotNominalTrajectory(obj, nominalTrajectory)
+            arguments
+                obj
+                nominalTrajectory struct
+            end
 
             t = nominalTrajectory.time;
 
@@ -171,10 +199,6 @@ classdef TrajectoryOptimization
             ylabel('Actuator Deflections', 'FontSize', 15)
             legend('A1', 'A2', 'A3', 'A4', 'FontSize', 18, 'Location', 'best')
             title('Actuator Deflections', 'FontSize', 20)
-
-
-
         end
-
     end
 end

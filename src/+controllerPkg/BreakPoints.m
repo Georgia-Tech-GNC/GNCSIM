@@ -6,19 +6,19 @@ classdef BreakPoints < handle
     end
 
     properties
-        nominalTrajLog
-        numBreakPoints
-        cumVelocityInterval % time interval to add up velocity [s]
+        nominalTrajLog analysisPkg.Log
+        numBreakPoints (1,1) double {mustBeNonnegative}
+        cumVelocityInterval (1,1) double {mustBeNonnegative} % time interval to add up velocity [s]
 
         % Breakpoint data arrays
-        cumVelocity      % 1 x numBreakPoints array
-        time             % 1 x numBreakPoints array
-        state            % cell array of state vectors {nStates x 1}
-        controlInput     % cell array of control input vectors {nInputs x 1}
-        actuatorState    % cell array of actuator state vectors {nActuators x 1}
-        stateMatrix      % cell array of cell arrays {{A1}, {A2}, ...}
-        controlMatrix    % cell array of cell arrays {{B1}, {B2}, ...}
-        gain             % cell array of cell arrays {{K1}, {K2}, ...}
+        cumVelocity (1,:) double {mustBeNonnegative}     % 1 x numBreakPoints array
+        time (1,:) double {mustBeNonnegative}             % 1 x numBreakPoints array
+        state cell                    % cell array of state vectors {nStates x 1}
+        controlInput cell             % cell array of control input vectors {nInputs x 1}
+        actuatorState cell            % cell array of actuator state vectors {nActuators x 1}
+        stateMatrix cell              % cell array of cell arrays {{A1}, {A2}, ...}
+        controlMatrix cell            % cell array of cell arrays {{B1}, {B2}, ...}
+        gain cell                     % cell array of cell arrays {{K1}, {K2}, ...}
     end
 
     methods
@@ -95,6 +95,10 @@ classdef BreakPoints < handle
         end
 
         function [interpolatedGains, interpolatedControlReference] = interpolateGain(obj, currentCumVelocity)
+            arguments
+                obj
+                currentCumVelocity (1,1) double {mustBeNonnegative}
+            end
             % Interpolate gain(s) and reference control based on current cumulative velocity
             %
             % Inputs:
@@ -158,6 +162,13 @@ classdef BreakPoints < handle
         end
 
         function [time, states, controlInputs, actuatorStates] = reduceToInterval(obj, time, states, controlInputs, actuatorStates)
+            arguments
+                obj
+                time (1,:) double
+                states (:,:) double
+                controlInputs (:,:) double
+                actuatorStates (:,:) double
+            end
             % Downsample to exact cumVelocityInterval using interp1
             if obj.cumVelocityInterval <= 0
                 return;

@@ -3,13 +3,13 @@
 classdef Analysis < handle
 
     properties
-        numSamples;
-        logs;  % Cell array of Log objects
-        tStart;  % Start time for plotting
-        tEnd;    % End time for plotting
-        timeMask;  % Logical mask for time bounds (applied to first log)
-        plotDir;  % Directory to save plots for PDF generation
-        saveAsPDF = false;  % If true, save figures without displaying; if false, display normally
+        numSamples (1,1) double {mustBeNonnegative}
+        logs cell;  % Cell array of Log objects
+        tStart (1,1) double {mustBeNonnegative}  % Start time for plotting
+        tEnd (1,1) double {mustBeNonnegative}    % End time for plotting
+        timeMask cell;  % Logical mask for time bounds (applied to first log)
+        plotDir (1,1) string;  % Directory to save plots for PDF generation
+        saveAsPDF (1,1) logical = false;  % If true, save figures without displaying; if false, display normally
     end
 
     methods
@@ -1095,6 +1095,10 @@ classdef Analysis < handle
         end
 
         function stats = computeStatistics(obj, stateName)
+            arguments
+                obj
+                stateName (1,1) string
+            end
             % Compute mean and std dev across all samples for a given state
             nPoints = sum(obj.timeMask{1});
             data = zeros(nPoints, obj.numSamples);
@@ -1111,6 +1115,10 @@ classdef Analysis < handle
         end
 
         function plotStateStatistics(obj, stateName)
+            arguments
+                obj
+                stateName (1,1) string
+            end
             % Plot mean ± std for a given state
             stats = obj.computeStatistics(stateName);
             time = obj.getCommonTime();
@@ -1138,6 +1146,10 @@ classdef Analysis < handle
         end
 
         function generatePdfFile(obj, filename)
+            arguments
+                obj
+                filename (1,1) string = 'Flight_Analysis_Report'
+            end
             % Generate PDF report using report generator toolbox
             % filename: (optional) Output filename without extension, defaults to 'Flight_Analysis_Report'
 

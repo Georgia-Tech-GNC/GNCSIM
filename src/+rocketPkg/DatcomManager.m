@@ -11,14 +11,14 @@ classdef DatcomManager < handle
 	end
 
 	properties
-		fileID				% File identifier for the currently open DATCOM input file
-		flightConParams		% Structure containing flight condition parameters (Mach, altitude, alpha)
-		caInterp
-		cmInterp
-		cnInterp
-		aero
-		scaleFactor = 1;
-		momentScaleFactor = 1;
+		fileID (1,1) double					% File identifier for the currently open DATCOM input file
+		flightConParams	struct	            % Structure containing flight condition parameters (Mach, altitude, alpha)
+		caInterp 						    % griddedInterpolant
+		cmInterp 						    % griddedInterpolant
+		cnInterp 						    % griddedInterpolant
+		aero struct
+		scaleFactor (1,1) double = 1;
+		momentScaleFactor (1,1) double = 1;
 	end
 
 	methods
@@ -29,6 +29,10 @@ classdef DatcomManager < handle
 		end
 
 		function openDatcom(obj, datcomFilename)
+            arguments
+                obj
+                datcomFilename (1,1) string
+            end
 			% Opens a new DATCOM input file for writing.
 			% Throws an error if the file cannot be opened.
 			obj.fileID = fopen(datcomFilename, 'w');
@@ -83,6 +87,10 @@ classdef DatcomManager < handle
 		end
 
 		function buildInterps(obj, aero)
+            arguments
+                obj
+                aero struct
+            end
             alpha = unique(aero.alpha(:));
             mach = unique(aero.mach(:));
             alt = unique(aero.alt(:));
@@ -93,6 +101,12 @@ classdef DatcomManager < handle
         end
 
 		function [ca, cm, cn] = aeroInterp(obj, mach, aoaDeg, alt)
+            arguments
+                obj
+                mach (1,1) double
+                aoaDeg (1,1) double
+                alt (1,1) double
+            end
 			% TODO change this function to generate functions
 
             ca = obj.scaleFactor * obj.caInterp(aoaDeg, mach, alt);
@@ -118,6 +132,11 @@ classdef DatcomManager < handle
 		end
 
 		function [fC, mC] = getForcesMomentsDatcomBody(obj, state, vC)
+            arguments
+                obj
+                state (:,1) double
+                vC (3,1) double
+            end
 			% Aerodynamic coefficients
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
            	alpha = 343; % Speed of sound approximation (TODO: Replace with better approximation)
@@ -160,6 +179,11 @@ classdef DatcomManager < handle
 		end
 
 		function [fC, mC] = getForcesMomentsDatcom(obj, state, vC)
+            arguments
+                obj
+                state (:,1) double
+                vC (3,1) double
+            end
 
 			% Aerodynamic coefficients
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
@@ -188,6 +212,9 @@ classdef DatcomManager < handle
 
 	methods (Static)
 		function runDatcom(datcomFilename)
+            arguments
+                datcomFilename (1,1) string
+            end
 			% Executes the DATCOM program with the specified input file
 
 			if ispc

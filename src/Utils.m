@@ -5,6 +5,11 @@ classdef Utils
     methods (Static)
 
         function nextState = RK4(f, state, dt)
+            arguments
+                f (1,1) function_handle
+                state (:,1) double
+                dt (1,1) double {mustBeNonnegative}
+            end
             % Fourth-order Runge-Kutta integration step
             %
             % Inputs:
@@ -24,6 +29,9 @@ classdef Utils
         end
 
         function q = eulerToQuat(a)
+            arguments
+                a (:,:) double {mustBeVector}
+            end
             % Convert Euler angles to a quaternion.
             %
             % Input:
@@ -54,6 +62,9 @@ classdef Utils
         end
 
         function a = quatToEuler(q)
+            arguments
+                q (:,:) double {mustBeVector}
+            end
             % Convert a quaternion to Euler angles.
             %
             % Input:
@@ -99,6 +110,9 @@ classdef Utils
         end
 
         function qNorm = normalizeQuat(q)
+            arguments
+                q (:,:) double
+            end
             % normalize_quat: Normalizes a quaternion to unit length.
             %
             % Input:
@@ -132,6 +146,9 @@ classdef Utils
         end
 
         function dcm = dirCosine(q)
+            arguments
+                q (:,:) double {mustBeVector}
+            end
             % dirCosine: Converts a quaternion to a direction cosine matrix.
             %
             % This function returns a 3x3 matrix that represents a rotation
@@ -166,6 +183,10 @@ classdef Utils
 
 
 		function dcm = finDcm(deltaDeg, thetaDeg)
+			arguments
+				deltaDeg (1,1) double
+				thetaDeg (1,1) double
+			end
 			% finDcm: Generates a rotation matrix based on fin location
 			% angle (theta) and fin deflection(delta)
 			%
@@ -199,6 +220,10 @@ classdef Utils
         end
 
         function J = numericalJacobian(fun, x0)
+            arguments
+                fun (1,1) function_handle
+                x0 (:,:) double {mustBeVector}
+            end
             %numericalJacobian Compute the Jacobian matrix of a function at a given point.
             %
             %   J = numericalJacobian(fun, x0)
@@ -235,6 +260,10 @@ classdef Utils
         end
 
         function quatDot = quatDerivative(quat, omega)
+            arguments
+                quat (4,1) double
+                omega (3,1) double
+            end
             mat_omega = [
                 0, -omega(1), -omega(2), -omega(3);
                 omega(1), 0, omega(3), -omega(2);
@@ -246,6 +275,10 @@ classdef Utils
 		end
 
 		function qout = quatMult(q, p)
+            arguments
+                q (:,:) double {mustBeVector}
+                p (:,:) double {mustBeVector}
+            end
             % quatMult: Performs quaternion multiplication (Hamilton product).
             % Represents the combined rotation of q followed by p (q * p).
             %
