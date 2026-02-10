@@ -426,9 +426,9 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
     numRuns = 100;
     uncertaintyObj = analysisPkg.Uncertainty(numRuns);
 
-    uncertaintyObj.addVariable('caScaleFactor', rocketDynamics.body.scaleFactor, 1, 'normal');
-    uncertaintyObj.addVariable('cmScaleFactor', rocketDynamics.body.momentScaleFactor, 1, 'normal');
-    uncertaintyObj.addVariable('cnScaleFactor', rocketDynamics.body.scaleFactor, 1, 'normal');
+    uncertaintyObj.addVariable('caScaleFactor', rocketDynamics.body.scaleFactor, 1, 'uniform');
+    uncertaintyObj.addVariable('cmScaleFactor', rocketDynamics.body.momentScaleFactor, 1, 'uniform');
+    uncertaintyObj.addVariable('cnScaleFactor', rocketDynamics.body.scaleFactor, 1, 'uniform');
     % Missing Parachute Cd
     uncertaintyObj.addVariable('wetMass', rocketDynamics.massWet, 1, 'normal');
     uncertaintyObj.addVariable('dryMass', rocketDynamics.massDry, 1, 'normal');
