@@ -740,6 +740,89 @@ classdef Analysis < handle
             end
         end
 
+        function generateLandingDispersionPlot(obj)
+            % Plot landing dispersion - shows final x,y position for each run that landed
+            % Each point represents where a rocket landed
+
+            fig = figure('Visible', 'off');
+            hold on;
+
+            % Arrays to collect landing positions
+            landingX = [];
+            landingY = [];
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Check if flight states are recorded
+                if isempty(log.flightStates)
+                    warning('Log %d does not have flight state data. Skipping.', i);
+                    continue;
+                end
+
+                % Get the last recorded flight state
+                lastFlightState = log.flightStates(log.currentIdx);
+
+                % Check if the final state was LANDED (FlightState.LANDED = 6)
+                if lastFlightState == uint8(flightPkg.FlightState.LANDED)
+                    % Get the final x,y position
+                    x_pos = log.getState('x');
+                    y_pos = log.getState('y');
+
+                    landingX(end+1) = x_pos(end);
+                    landingY(end+1) = y_pos(end);
+                end
+            end
+
+            % Plot landing positions
+            if ~isempty(landingX)
+                plot(landingX, landingY, 'o', 'MarkerSize', 8, 'MarkerFaceColor', 'b', 'MarkerEdgeColor', 'k');
+
+                % Plot launch point
+                plot(0, 0, 'rx', 'MarkerSize', 15, 'LineWidth', 3);
+
+                % Calculate and display statistics
+                meanX = mean(landingX);
+                meanY = mean(landingY);
+                stdX = std(landingX);
+                stdY = std(landingY);
+
+                % Plot mean landing position
+                plot(meanX, meanY, 'r+', 'MarkerSize', 15, 'LineWidth', 3);
+
+                % Add text with statistics
+                legendEntries = {'Landing Points', 'Launch Point', 'Mean Landing'};
+                legend(legendEntries, 'Location', 'best');
+
+                % Add statistics text box
+                statsText = sprintf('Landed: %d/%d\nMean X: %.2f m\nMean Y: %.2f m\nStd X: %.2f m\nStd Y: %.2f m', ...
+                    length(landingX), obj.numSamples, meanX, meanY, stdX, stdY);
+                annotation('textbox', [0.15, 0.75, 0.3, 0.15], 'String', statsText, ...
+                    'FitBoxToText', 'on', 'BackgroundColor', 'white', 'EdgeColor', 'black');
+
+                disp(['Landing dispersion statistics:']);
+                disp(['  Successful landings: ', num2str(length(landingX)), '/', num2str(obj.numSamples)]);
+                disp(['  Mean landing position: (', num2str(meanX), ', ', num2str(meanY), ') m']);
+                disp(['  Landing std dev: (', num2str(stdX), ', ', num2str(stdY), ') m']);
+            else
+                text(0.5, 0.5, 'No landed flights found', 'HorizontalAlignment', 'center');
+                disp('Warning: No flights reached LANDED state');
+            end
+
+            grid on;
+            axis equal;
+            xlabel('\textbf{X Position (m)}', 'Interpreter', 'latex');
+            ylabel('\textbf{Y Position (m)}', 'Interpreter', 'latex');
+            title('\textbf{Landing Dispersion}', 'Interpreter', 'latex');
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'landing_dispersion.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
 		function printReliventInfo(obj)
 			a = 340; % m/s (Speed of sound PLACEHOLDER)
             for i = 1:obj.numSamples
@@ -811,6 +894,7 @@ classdef Analysis < handle
             obj.generateEkfCovariancePlot();
             obj.generateAltitudeAndXYPlot();
             obj.generateParachuteForcePlot();
+            obj.generateLandingDispersionPlot();
 			obj.printReliventInfo();
         end
 

@@ -27,18 +27,29 @@ environment = setupEnvironment();
 flight.runClosedLoop = true;
 
 %% Run Flight
-tic;
-log = flight.runSim(log);
-elapsed_time = toc;
-fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
-
-log.trim();
+runFlight = false;
+if runFlight
+    tic;
+    log = flight.runSim(log);
+    elapsed_time = toc;
+    fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
+    log.trim();
+end
 
 %% MonteCarlo
-uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
+runMonteCarlo = true;
+if runMonteCarlo
+    uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
+    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 4);
+
+    tic;
+    mcLogs = monteCarlo.runMonteCarlo();
+    mc_elapsed_time = toc;
+    fprintf('Monte Carlo elapsed time: %.4f seconds\n', mc_elapsed_time);
+end
 
 %% Analysis
-analysis = analysisPkg.Analysis(log);
+analysis = analysisPkg.Analysis(mcLogs);
 analysis.generateAllPlots();
 %analysis.generateAllEstimatePlots();
 
@@ -419,37 +430,116 @@ function firstParachute = setupParachute()
 end
 
 function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
+    import analysisPkg.DistributionType
+    
+    uncertaintyObj = analysisPkg.Uncertainty();
 
-    numRuns = 100;
-    uncertaintyObj = analysisPkg.Uncertainty(numRuns);
+    % Default uncertainty percentage (3-sigma as percentage of nominal)
+    percentUncertainty = 0.10; % 10%
 
-    uncertaintyObj.addVariable('caScaleFactor', rocketDynamics.body.scaleFactor, 1, 'uniform');
-    uncertaintyObj.addVariable('cmScaleFactor', rocketDynamics.body.momentScaleFactor, 1, 'uniform');
-    uncertaintyObj.addVariable('cnScaleFactor', rocketDynamics.body.scaleFactor, 1, 'uniform');
-    % Missing Parachute Cd
-    uncertaintyObj.addVariable('wetMass', rocketDynamics.massWet, 1, 'normal');
-    uncertaintyObj.addVariable('dryMass', rocketDynamics.massDry, 1, 'normal');
-    uncertaintyObj.addVariable('cgXWet', rocketDynamics.cgWet, 1, 'normal');
-    uncertaintyObj.addVariable('cgXDry', rocketDynamics.cgDry, 1, 'normal');
-    uncertaintyObj.addVariable('longitudinalMoiWet', rocketDynamics.moiWet(2,2), 1, 'normal');
-    uncertaintyObj.addVariable('rotationalMoiWet', rocketDynamics.moiWet(1,1), 1, 'normal');
-    uncertaintyObj.addVariable('longitudinalMoiDry', rocketDynamics.moiDry(2,2), 1, 'normal');
-    uncertaintyObj.addVariable('rotationalMoiDry', rocketDynamics.moiDry(1,1), 1, 'normal');
-    uncertaintyObj.addVariable('totalImpulse', rocketDynamics.totalImpulse, 1, 'normal');
-    uncertaintyObj.addVariable('burnTime', rocketDynamics.burnTime, 1, 'normal');
-    uncertaintyObj.addVariable('tIgnition', rocketDynamics.tIgnition, 1, 'normal');
-    uncertaintyObj.addVariable('noseLength', rocketDynamics.body.bodyParams.noseLength, 1, 'normal');
-    uncertaintyObj.addVariable('bodyLength', rocketDynamics.body.bodyParams.bodyLength, 1, 'normal');
-    uncertaintyObj.addVariable('rocketDiameter', rocketDynamics.body.bodyParams.rocketDiameter, 1, 'normal');
-    uncertaintyObj.addVariable('maxDeflection', rocketDynamics.actuatorModel.limits.maxDeflection, 1, 'normal');
-    uncertaintyObj.addVariable('maxRate', rocketDynamics.actuatorModel.limits.maxRate, 1, 'normal');
-    uncertaintyObj.addVariable('timeConstant', rocketDynamics.actuatorModel.timeConstant, 1, 'normal');
-    uncertaintyObj.addVariable('railLength', flight.flightParams.launchRailLength, 1, 'normal');
-    uncertaintyObj.addVariable('railOrientation', 1, 1, 'normal');           
+    % Aerodynamic scale factors
+    caScaleFactor3Sigma = getThreeSigmaDeviation(rocketDynamics.body.scaleFactor, percentUncertainty);
+    uncertaintyObj.addVariable('caScaleFactor', rocketDynamics.body.scaleFactor, caScaleFactor3Sigma, DistributionType.UNIFORM);
 
-    % Generate samples 
-    uncertaintyObj.generateLhsSamples();
+    cmScaleFactor3Sigma = getThreeSigmaDeviation(rocketDynamics.body.momentScaleFactor, percentUncertainty);
+    uncertaintyObj.addVariable('cmScaleFactor', rocketDynamics.body.momentScaleFactor, cmScaleFactor3Sigma, DistributionType.UNIFORM);
 
+    cnScaleFactor3Sigma = getThreeSigmaDeviation(rocketDynamics.body.scaleFactor, percentUncertainty);
+    uncertaintyObj.addVariable('cnScaleFactor', rocketDynamics.body.scaleFactor, cnScaleFactor3Sigma, DistributionType.UNIFORM);
+
+    % Parachute Cd
+    drogueCd3Sigma = getThreeSigmaDeviation(rocketDynamics.activeParachute.dragCoefficient, percentUncertainty);
+    uncertaintyObj.addVariable('drogueCd', rocketDynamics.activeParachute.dragCoefficient, drogueCd3Sigma, DistributionType.GAUSSIAN);
+
+    if ~isempty(rocketDynamics.activeParachute.nextParachute)
+        mainCd3Sigma = getThreeSigmaDeviation(rocketDynamics.activeParachute.nextParachute.dragCoefficient, percentUncertainty);
+        uncertaintyObj.addVariable('mainCd', rocketDynamics.activeParachute.nextParachute.dragCoefficient, mainCd3Sigma, DistributionType.GAUSSIAN);
+    end
+
+    % Mass distribution
+    wetMass3Sigma = getThreeSigmaDeviation(rocketDynamics.massWet, percentUncertainty);
+    uncertaintyObj.addVariable('wetMass', rocketDynamics.massWet, wetMass3Sigma, DistributionType.GAUSSIAN);
+
+    dryMass3Sigma = getThreeSigmaDeviation(rocketDynamics.massDry, percentUncertainty);
+    uncertaintyObj.addVariable('dryMass', rocketDynamics.massDry, dryMass3Sigma, DistributionType.GAUSSIAN);
+
+    cgXWet3Sigma = getThreeSigmaDeviation(rocketDynamics.cgWet, percentUncertainty);
+    uncertaintyObj.addVariable('cgXWet', rocketDynamics.cgWet, cgXWet3Sigma, DistributionType.GAUSSIAN);
+
+    cgXDry3Sigma = getThreeSigmaDeviation(rocketDynamics.cgDry, percentUncertainty);
+    uncertaintyObj.addVariable('cgXDry', rocketDynamics.cgDry, cgXDry3Sigma, DistributionType.GAUSSIAN);
+
+    longitudinalMoiWet3Sigma = getThreeSigmaDeviation(rocketDynamics.moiWet(2,2), percentUncertainty);
+    uncertaintyObj.addVariable('longitudinalMoiWet', rocketDynamics.moiWet(2,2), longitudinalMoiWet3Sigma, DistributionType.GAUSSIAN);
+
+    rotationalMoiWet3Sigma = getThreeSigmaDeviation(rocketDynamics.moiWet(1,1), percentUncertainty);
+    uncertaintyObj.addVariable('rotationalMoiWet', rocketDynamics.moiWet(1,1), rotationalMoiWet3Sigma, DistributionType.GAUSSIAN);
+
+    longitudinalMoiDry3Sigma = getThreeSigmaDeviation(rocketDynamics.moiDry(2,2), percentUncertainty);
+    uncertaintyObj.addVariable('longitudinalMoiDry', rocketDynamics.moiDry(2,2), longitudinalMoiDry3Sigma, DistributionType.GAUSSIAN);
+
+    rotationalMoiDry3Sigma = getThreeSigmaDeviation(rocketDynamics.moiDry(1,1), percentUncertainty);
+    uncertaintyObj.addVariable('rotationalMoiDry', rocketDynamics.moiDry(1,1), rotationalMoiDry3Sigma, DistributionType.GAUSSIAN);
+
+    % Motor parameters
+    totalImpulse3Sigma = getThreeSigmaDeviation(rocketDynamics.totalImpulse, percentUncertainty);
+    uncertaintyObj.addVariable('totalImpulse', rocketDynamics.totalImpulse, totalImpulse3Sigma, DistributionType.GAUSSIAN);
+
+    burnTime3Sigma = getThreeSigmaDeviation(rocketDynamics.burnTime, percentUncertainty);
+    uncertaintyObj.addVariable('burnTime', rocketDynamics.burnTime, burnTime3Sigma, DistributionType.GAUSSIAN);
+
+    tIgnition3Sigma = getThreeSigmaDeviation(rocketDynamics.tIgnition, percentUncertainty);
+    uncertaintyObj.addVariable('tIgnition', rocketDynamics.tIgnition, tIgnition3Sigma, DistributionType.GAUSSIAN);
+
+    % Body geometry
+    noseLength3Sigma = getThreeSigmaDeviation(rocketDynamics.body.bodyParams.noseLength, percentUncertainty);
+    uncertaintyObj.addVariable('noseLength', rocketDynamics.body.bodyParams.noseLength, noseLength3Sigma, DistributionType.GAUSSIAN);
+
+    bodyLength3Sigma = getThreeSigmaDeviation(rocketDynamics.body.bodyParams.bodyLength, percentUncertainty);
+    uncertaintyObj.addVariable('bodyLength', rocketDynamics.body.bodyParams.bodyLength, bodyLength3Sigma, DistributionType.GAUSSIAN);
+
+    rocketDiameter3Sigma = getThreeSigmaDeviation(rocketDynamics.body.bodyParams.rocketDiameter, percentUncertainty);
+    uncertaintyObj.addVariable('rocketDiameter', rocketDynamics.body.bodyParams.rocketDiameter, rocketDiameter3Sigma, DistributionType.GAUSSIAN);
+
+    % Actuator parameters
+    maxDeflection3Sigma = getThreeSigmaDeviation(rocketDynamics.actuatorModel.limits.maxDeflection, percentUncertainty);
+    uncertaintyObj.addVariable('maxDeflection', rocketDynamics.actuatorModel.limits.maxDeflection, maxDeflection3Sigma, DistributionType.GAUSSIAN);
+
+    maxRate3Sigma = getThreeSigmaDeviation(rocketDynamics.actuatorModel.limits.maxRate, percentUncertainty);
+    uncertaintyObj.addVariable('maxRate', rocketDynamics.actuatorModel.limits.maxRate, maxRate3Sigma, DistributionType.GAUSSIAN);
+
+    timeConstant3Sigma = getThreeSigmaDeviation(rocketDynamics.actuatorModel.timeConstant, percentUncertainty);
+    uncertaintyObj.addVariable('timeConstant', rocketDynamics.actuatorModel.timeConstant, timeConstant3Sigma, DistributionType.GAUSSIAN);
+
+    % Rail parameters
+    railLength3Sigma = getThreeSigmaDeviation(flight.flightParams.launchRailLength, percentUncertainty);
+    uncertaintyObj.addVariable('railLength', flight.flightParams.launchRailLength, railLength3Sigma, DistributionType.GAUSSIAN);
+
+    railOrientation3Sigma = deg2rad(5);  % 5 degree uncertainty
+    uncertaintyObj.addVariable('railOrientation', 0, railOrientation3Sigma, DistributionType.GAUSSIAN);
+end
+
+function monteCarlo = setupMonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns)
+    % Setup Monte Carlo simulation
+    arguments
+        uncertainty analysisPkg.Uncertainty
+        flight flightPkg.Flight
+        rocketDynamics rocketPkg.RocketDynamics
+        logTemplate analysisPkg.Log
+        numRuns (1,1) double {mustBePositive, mustBeInteger}
+    end
+
+    monteCarlo = analysisPkg.MonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns);
+end
+
+function deviation = getThreeSigmaDeviation(nominalValue, percentUncertainty)
+    % Helper function to calculate 3-sigma deviation from percentage
+    arguments
+        nominalValue (1,1) double
+        percentUncertainty (1,1) double {mustBePositive}
+    end
+
+    deviation = abs(nominalValue) * percentUncertainty;
 end
 
 
