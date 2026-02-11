@@ -1,7 +1,7 @@
 % Main Authors: David Reynolds (dreynolds45@gatech.edu)
 %               Karsten Caillet (kcaillet3@gatech.edu)
 
-classdef Flight < handle
+classdef Flight < handle & matlab.mixin.Copyable
     properties (Constant)
         idx StateIndices = StateIndices
     end
@@ -81,6 +81,7 @@ classdef Flight < handle
 			log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
             log.add(obj.currentTime, 'actuatorStates', actuatorState);
             log.add(obj.currentTime, 'controlInputs', controlInput);
+            log.add(obj.currentTime, 'flightState', obj.flightState);
 
             ii = 0;
             while obj.flightState ~= obj.endState && ii < log.maxSteps - 1
@@ -97,7 +98,8 @@ classdef Flight < handle
                         % Log
                         log.add(obj.currentTime, 'states', rocketState);
                         log.add(obj.currentTime, 'statedots', rocketStateDot);
-                        
+                        log.add(obj.currentTime, 'flightState', obj.flightState);
+
                         % Only update flight state (check for ignition)
                         obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
                         
@@ -129,6 +131,7 @@ classdef Flight < handle
                         log.add(obj.currentTime, 'states', rocketState);
                         log.add(obj.currentTime, 'statedots', rocketStateDot);
                         log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+                        log.add(obj.currentTime, 'flightState', obj.flightState);
 
                         obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
 
@@ -180,6 +183,7 @@ classdef Flight < handle
                         log.add(obj.currentTime, 'states', rocketState);
                         log.add(obj.currentTime, 'statedots', rocketStateDot);
                         log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+                        log.add(obj.currentTime, 'flightState', obj.flightState);
 
                         % Update flight state
                         obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
@@ -198,9 +202,10 @@ classdef Flight < handle
                          rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);
 
                          obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
-                         
+
                          log.add(obj.currentTime, 'states', rocketState);
                          log.add(obj.currentTime, 'statedots', rocketStateDot);
+                         log.add(obj.currentTime, 'flightState', obj.flightState);
                          
                     otherwise
                          error('Unknown flight state in runSim loop');
@@ -282,6 +287,45 @@ classdef Flight < handle
                     string(obj.flightState), string(newState), t);
             obj.flightState = newState;
             obj.timeStateChange = t;
+        end
+    end
+
+    methods (Access = protected)
+        function cp = copyElement(obj)
+            cp = copyElement@matlab.mixin.Copyable(obj);
+
+            cp.rocketDynamics = flightPkg.Flight.copyHandleProperty(obj.rocketDynamics, "rocketDynamics");
+            cp.controller = flightPkg.Flight.copyHandleProperty(obj.controller, "controller");
+            cp.environment = flightPkg.Flight.copyHandleProperty(obj.environment, "environment");
+            cp.navigation = flightPkg.Flight.copyHandleProperty(obj.navigation, "navigation");
+        end
+    end
+
+    methods (Static, Access = private)
+        function out = copyHandleProperty(in, propertyName)
+            if isempty(in)
+                out = in;
+                return;
+            end
+
+            if isa(in, "matlab.mixin.Copyable")
+                out = copy(in);
+                return;
+            end
+
+            if ~isa(in, "handle")
+                out = in;
+                return;
+            end
+
+            try
+                out = getArrayFromByteStream(getByteStreamFromArray(in));
+            catch ME
+                warning("Flight:ShallowCopyFallback", ...
+                    "Could not deep copy property %s (%s). Reusing original handle. Error: %s", ...
+                    propertyName, class(in), ME.message);
+                out = in;
+            end
         end
     end
 end

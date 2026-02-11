@@ -1,13 +1,10 @@
 classdef Uncertainty < handle
     properties
-        variables 
-        lhsSamples
-        numRuns
+        variables % need to figure out type hinting here
     end
     
     methods
-        function obj = Uncertainty(numRuns)
-            obj.numRuns = numRuns;
+        function obj = Uncertainty()
             obj.variables = [];
         end
         
@@ -20,19 +17,19 @@ classdef Uncertainty < handle
             end
         end
         
-        function generateLhsSamples(obj)
+        function lhsSamples = generateLhsSamples(obj, numRuns)
+            arguments
+                obj
+                numRuns (1,1) double {mustBeNonnegative}
+            end
             numVars = length(obj.variables);
             % Generate base LHS samples in [0, 1]
-            baseSamples = lhsdesign(obj.numRuns, numVars);
-            obj.lhsSamples = zeros(obj.numRuns, numVars);
+            baseSamples = lhsdesign(numRuns, numVars);
+            lhsSamples = zeros(numRuns, numVars);
             
             for i = 1:numVars
-                obj.lhsSamples(:, i) = obj.variables(i).ppf(baseSamples(:, i));
+                lhsSamples(:, i) = obj.variables(i).percentPointFunction(baseSamples(:, i));
             end
-        end
-        
-        function samples = getLhsSamples(obj)
-             samples = obj.lhsSamples;
         end
     end
 end

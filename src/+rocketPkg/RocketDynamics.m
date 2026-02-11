@@ -3,7 +3,7 @@
 %               Kandarp Vadia (kvadia3@gatech.edu)
 %               Aditya Swami (aswami8@gatech.edu)
 
-classdef RocketDynamics < handle
+classdef RocketDynamics < handle & matlab.mixin.Copyable
 
     properties (Constant)
         idx = StateIndices
@@ -29,7 +29,7 @@ classdef RocketDynamics < handle
         aerodynamicsCFD rocketPkg.AerodynamicsCFD = rocketPkg.AerodynamicsCFD.empty
     end
 
-	methods
+    methods
         function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamicsCFD)
             arguments
                 body                % DATCOM
@@ -322,14 +322,14 @@ classdef RocketDynamics < handle
             % Main Author: David Reynolds
             obj.body.computeBuildup()
             obj.rocketFins.computeBuildup()
-			
+
 			% Added scale factors in order to line up with open rocket
-			obj.body.scaleFactor = 1.51;
-			obj.body.momentScaleFactor = 0.21;
-			[~, numFins] = size(obj.rocketFins.fins);
-			for ii=1:numFins
-				obj.rocketFins.fins(ii).scaleFactor = 1.97;
-			end
+            obj.body.scaleFactor = 1.51;
+            obj.body.momentScaleFactor = 0.21;
+            [~, numFins] = size(obj.rocketFins.fins);
+            for ii = 1:numFins
+                obj.rocketFins.fins(ii).scaleFactor = 1.97;
+            end
         end
 
 		function draw(obj)
@@ -410,6 +410,18 @@ classdef RocketDynamics < handle
         end
     end
 
+    methods (Access = protected)
+        function cp = copyElement(obj)
+            cp = copyElement@matlab.mixin.Copyable(obj);
+
+            cp.body = rocketPkg.RocketDynamics.copyHandleProperty(obj.body, "body");
+            cp.rocketFins = rocketPkg.RocketDynamics.copyHandleProperty(obj.rocketFins, "rocketFins");
+            cp.activeParachute = rocketPkg.RocketDynamics.copyHandleProperty(obj.activeParachute, "activeParachute");
+            cp.actuatorModel = rocketPkg.RocketDynamics.copyHandleProperty(obj.actuatorModel, "actuatorModel");
+            cp.aerodynamicsCFD = rocketPkg.RocketDynamics.copyHandleProperty(obj.aerodynamicsCFD, "aerodynamicsCFD");
+        end
+    end
+
     methods (Access = private)
         function fGBody = computeGravity(obj, cBI, useGravity, mass)
             fGBody = cBI * [0; 0; -9.81 * useGravity * mass];
@@ -454,6 +466,34 @@ classdef RocketDynamics < handle
             end
 
             fBParachute = obj.activeParachute.getForcesAndMoments(rocketVel, rocketQuat, disturbances);
+        end
+    end
+
+    methods (Static, Access = private)
+        function out = copyHandleProperty(in, propertyName)
+            if isempty(in)
+                out = in;
+                return;
+            end
+
+            if isa(in, "matlab.mixin.Copyable")
+                out = copy(in);
+                return;
+            end
+
+            if ~isa(in, "handle")
+                out = in;
+                return;
+            end
+
+            try
+                out = getArrayFromByteStream(getByteStreamFromArray(in));
+            catch ME
+                warning("RocketDynamics:ShallowCopyFallback", ...
+                    "Could not deep copy property %s (%s). Reusing original handle. Error: %s", ...
+                    propertyName, class(in), ME.message);
+                out = in;
+            end
         end
     end
 end

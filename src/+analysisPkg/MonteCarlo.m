@@ -1,9 +1,167 @@
 classdef MonteCarlo < handle
-    properties 
+    properties
+        numRuns (1,1) double 
+        lhsSamples (:,:) double
+        uncertainty analysisPkg.Uncertainty
 
+        flight flightPkg.Flight
+        rocketDynamics rocketPkg.RocketDynamics
+        logTemplate analysisPkg.Log
     end
 
     methods
+        function obj = MonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns)
+            arguments
+                uncertainty 
+                flight 
+                rocketDynamics 
+                logTemplate 
+                numRuns 
+            end
+            obj.uncertainty = uncertainty;
+            obj.flight = flight;
+            obj.rocketDynamics = rocketDynamics;
+            obj.logTemplate = logTemplate;
+            obj.numRuns = numRuns;
 
+            % Generate LHS samples
+            obj.lhsSamples = uncertainty.generateLhsSamples(numRuns);
+        end
+
+        function logs = runMonteCarlo(obj)
+            % Pre-allocate cell array for logs
+            logs = cell(obj.numRuns, 1);
+
+            % Get variable names for indexing
+            numVars = length(obj.uncertainty.variables);
+            varNames = cell(numVars, 1);
+            for i = 1:numVars
+                varNames{i} = obj.uncertainty.variables(i).name;
+            end
+
+            % Extract samples for parallel loop
+            samples = obj.lhsSamples;
+
+            % Run Monte Carlo simulations in parallel
+            parfor runIdx = 1:obj.numRuns
+                fprintf('Running Monte Carlo iteration %d of %d\n', runIdx, obj.numRuns);
+
+                % Create copies for this iteration (needed for parfor)
+                flightCopy = copy(obj.flight);
+                rocketCopy = copy(obj.rocketDynamics);
+
+                % Apply uncertainty parameters for this run
+                analysisPkg.MonteCarlo.applyUncertaintyParameters(rocketCopy, flightCopy, samples(runIdx, :), varNames);
+
+                % Update flight with modified rocket
+                flightCopy.rocketDynamics = rocketCopy;
+
+                % Copy log template
+                log = copy(obj.logTemplate);
+
+                % Run simulation
+                log = flightCopy.runSim(log);
+                log.trim();
+
+                % Store log
+                logs{runIdx} = log;
+            end
+        end
+    end
+
+    methods (Static, Access = private)
+        function applyUncertaintyParameters(rocketDynamics, flight, sampleValues, varNames)
+            arguments
+                rocketDynamics rocketPkg.RocketDynamics
+                flight flightPkg.Flight
+                sampleValues (1,:) double
+                varNames cell
+            end
+
+            % Apply each uncertainty parameter
+            for i = 1:length(varNames)
+                value = sampleValues(i);
+
+                switch varNames{i}
+                    % Aerodynamic scale factors
+                    case 'caScaleFactor'
+                        rocketDynamics.body.scaleFactor = value;
+                    case 'cmScaleFactor'
+                        rocketDynamics.body.momentScaleFactor = value;
+                    case 'cnScaleFactor'
+                        % Apply to fins
+                        [~, numFins] = size(rocketDynamics.rocketFins.fins);
+                        for j = 1:numFins
+                            rocketDynamics.rocketFins.fins(j).scaleFactor = value;
+                        end
+
+                    % Parachute parameters - need more flexible solution
+                    case 'drogueCd'
+                        rocketDynamics.activeParachute.dragCoefficient = value;
+                    case 'mainCd'
+                        if ~isempty(rocketDynamics.activeParachute.nextParachute)
+                            rocketDynamics.activeParachute.nextParachute.dragCoefficient = value;
+                        end
+
+                    % Mass distribution
+                    case 'wetMass'
+                        rocketDynamics.massWet = value;
+                    case 'dryMass'
+                        rocketDynamics.massDry = value;
+                    case 'cgXWet'
+                        rocketDynamics.cgWet = value;
+                    case 'cgXDry'
+                        rocketDynamics.cgDry = value;
+                    case 'longitudinalMoiWet'
+                        rocketDynamics.moiWet(2,2) = value;
+                        rocketDynamics.moiWet(3,3) = value;
+                    case 'rotationalMoiWet'
+                        rocketDynamics.moiWet(1,1) = value;
+                    case 'longitudinalMoiDry'
+                        rocketDynamics.moiDry(2,2) = value;
+                        rocketDynamics.moiDry(3,3) = value;
+                    case 'rotationalMoiDry'
+                        rocketDynamics.moiDry(1,1) = value;
+
+                    % Motor parameters
+                    case 'totalImpulse'
+                        rocketDynamics.totalImpulse = value;
+                    case 'burnTime'
+                        rocketDynamics.burnTime = value;
+                    case 'tIgnition'
+                        rocketDynamics.tIgnition = value;
+                    case 'thrustCurve'
+                        % Thrust curve would need special handling
+                        % Could scale the entire curve
+                        rocketDynamics.thrustCurve = rocketDynamics.thrustCurve * value;
+
+                    % Rail parameters
+                    case 'railLength'
+                        flight.flightParams.launchRailLength = value;
+                    case 'railOrientation'
+                        % Apply orientation perturbation to initial quaternion
+                        % This would modify the initial state
+
+                    % Body geometry
+                    case 'noseLength'
+                        rocketDynamics.body.bodyParams.noseLength = value;
+                    case 'bodyLength'
+                        rocketDynamics.body.bodyParams.bodyLength = value;
+                    case 'rocketDiameter'
+                        rocketDynamics.body.bodyParams.rocketDiameter = value;
+
+                    % Actuator parameters
+                    case 'maxDeflection'
+                        rocketDynamics.actuatorModel.limits.maxDeflection = value;
+                    case 'maxRate'
+                        rocketDynamics.actuatorModel.limits.maxRate = value;
+                    case 'timeConstant'
+                        rocketDynamics.actuatorModel.timeConstant = value;
+
+                    otherwise
+                        warning('Unknown uncertainty parameter: %s', varNames{i});
+                end
+            end
+        end
     end
 end
