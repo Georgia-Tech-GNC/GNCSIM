@@ -40,7 +40,7 @@ end
 runMonteCarlo = true;
 if runMonteCarlo
     uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
-    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 4);
+    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 5º);
 
     tic;
     mcLogs = monteCarlo.runMonteCarlo();
@@ -460,9 +460,6 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
     wetMass3Sigma = getThreeSigmaDeviation(rocketDynamics.massWet, percentUncertainty);
     uncertaintyObj.addVariable('wetMass', rocketDynamics.massWet, wetMass3Sigma, DistributionType.GAUSSIAN);
 
-    dryMass3Sigma = getThreeSigmaDeviation(rocketDynamics.massDry, percentUncertainty);
-    uncertaintyObj.addVariable('dryMass', rocketDynamics.massDry, dryMass3Sigma, DistributionType.GAUSSIAN);
-
     cgXWet3Sigma = getThreeSigmaDeviation(rocketDynamics.cgWet, percentUncertainty);
     uncertaintyObj.addVariable('cgXWet', rocketDynamics.cgWet, cgXWet3Sigma, DistributionType.GAUSSIAN);
 
@@ -517,6 +514,7 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
 
     railOrientation3Sigma = deg2rad(5);  % 5 degree uncertainty
     uncertaintyObj.addVariable('railOrientation', 0, railOrientation3Sigma, DistributionType.GAUSSIAN);
+
 end
 
 function monteCarlo = setupMonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns)

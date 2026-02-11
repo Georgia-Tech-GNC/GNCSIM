@@ -78,6 +78,18 @@ classdef MonteCarlo < handle
                 varNames cell
             end
 
+            % Store original motor parameters
+            originalTotalImpulse = rocketDynamics.totalImpulse;
+            originalBurnTime = rocketDynamics.burnTime;
+            originalTIgnition = rocketDynamics.tIgnition;
+            originalmassWet = rocketDynamics.massWet;
+            originalmassDry = rocketDynamics.massDry;
+            
+            % Calculate nominal Isp 
+            g0 = 9.81; 
+            nominalMassPropellant = originalmassWet - originalmassDry;
+            nominalIsp = originalTotalImpulse / (nominalMassPropellant * g0); 
+
             % Apply each uncertainty parameter
             for i = 1:length(varNames)
                 value = sampleValues(i);
@@ -106,8 +118,6 @@ classdef MonteCarlo < handle
                     % Mass distribution
                     case 'wetMass'
                         rocketDynamics.massWet = value;
-                    case 'dryMass'
-                        rocketDynamics.massDry = value;
                     case 'cgXWet'
                         rocketDynamics.cgWet = value;
                     case 'cgXDry'
@@ -130,10 +140,6 @@ classdef MonteCarlo < handle
                         rocketDynamics.burnTime = value;
                     case 'tIgnition'
                         rocketDynamics.tIgnition = value;
-                    case 'thrustCurve'
-                        % Thrust curve would need special handling
-                        % Could scale the entire curve
-                        rocketDynamics.thrustCurve = rocketDynamics.thrustCurve * value;
 
                     % Rail parameters
                     case 'railLength'
@@ -162,6 +168,20 @@ classdef MonteCarlo < handle
                         warning('Unknown uncertainty parameter: %s', varNames{i});
                 end
             end
+            
+
+            % Dependent parameters values 
+
+            % thrustCurve
+            timeScaleFactor = rocketDynamics.burnTime / originalBurnTime;
+            thrustScaleFactor = (rocketDynamics.totalImpulse / originalTotalImpulse) / timeScaleFactor;
+            rocketDynamics.thrustCurve(:,1) = (rocketDynamics.thrustCurve(:,1) - originalTIgnition) * timeScaleFactor + rocketDynamics.tIgnition;
+            rocketDynamics.thrustCurve(:,2) = rocketDynamics.thrustCurve(:,2) * thrustScaleFactor;
+            
+            % Dry mass calculation 
+            massPropellant = rocketDynamics.totalImpulse / (nominalIsp * g0);
+            rocketDynamics.massDry = rocketDynamics.massWet - massPropellant;
+
+            end
         end
-    end
 end
