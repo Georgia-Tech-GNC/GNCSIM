@@ -38,9 +38,15 @@ end
 
 %% MonteCarlo
 runMonteCarlo = true;
+
+numWorkers = 12;
+% Close existing pool
+delete(gcp('nocreate'));  
+parpool(numWorkers);     
+
 if runMonteCarlo
     uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
-    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 4);
+    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 12);
 
     tic;
     mcLogs = monteCarlo.runMonteCarlo();
