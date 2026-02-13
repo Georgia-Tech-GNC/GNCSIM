@@ -303,8 +303,8 @@ function nav = setupNavigation(dt)
     % Acc
     accParams.VRW = [0.033; 0.039; 0.039] * 1/60; % Which way will z-axis be mounted, assumed up, aligned with x in body
     accParams.leverArm = -1;
-    accParams.SF = 0.01;
-    accParams.bias = 0.05;
+    accParams.SF = [0.01; 0.01; 0.01];
+    accParams.bias = [0.05; 0.05; 0.05];
     
     accParams.noiseCovariance = -1;
     accParams.outputRate = 100;
@@ -315,7 +315,7 @@ function nav = setupNavigation(dt)
 
      % Gyro
     gyroParams.ARW = [0.32; 0.29; 0.29] * pi/(180*60);
-    gyroParams.bias = 4.85e-5;
+    gyroParams.bias = [4.85e-5; 4.85e-5; 4.85e-5];
     
     gyroParams.noiseCovariance = -1;
     gyroParams.outputRate = 100;
@@ -334,7 +334,7 @@ function nav = setupNavigation(dt)
         0 4.2 0;
         0 0 4.2];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = .8;
+    gpsParams.outputProbability = 0.75;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                        0 1 0 0 0 0;
                                        0 0 1 0 0 0];
@@ -357,6 +357,12 @@ function nav = setupNavigation(dt)
         dt/2, 0, 0, dt^2, 0, 0;
         0, (dt^3)/2, 0, 0, dt^2, 0;
         0, 0, (dt^3)/2, 0, 0, dt^2];
+    
+    navParams.accBias = accParams.bias;
+    navParams.accSF = accParams.SF;
+    navParams.leverArm = accParams.leverArm;
+
+    navParams.gyroBias = gyroParams.bias;
     
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
 end

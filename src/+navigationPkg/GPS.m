@@ -6,7 +6,7 @@ classdef GPS < navigationPkg.Sensor&handle
         outputDimension = 3;
         noiseCovariance
         outputRate           % Hz
-        outputProbability         % 
+        outputProbability    
         observationMatrix 
     end
 

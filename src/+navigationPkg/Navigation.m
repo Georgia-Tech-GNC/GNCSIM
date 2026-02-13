@@ -33,6 +33,12 @@ classdef Navigation < handle
         gyroscope
         gps
 
+        leverArm
+        accBias
+        accSF
+
+        gyroBias
+
         covHistory = struct('Px', [], 'Py', [], 'Pz', [], ...
                         'Vx', [], 'Vy', [], 'Vz', [], ...
                         'time', []);
@@ -57,6 +63,12 @@ classdef Navigation < handle
                 obj.gyroscope = gyroscope;
                 obj.accelerometer = accelerometer;
                 obj.generateObservationMatrices;
+
+                obj.leverArm = navParams.leverArm;
+                obj.accBias = navParams.accBias;
+                obj.accSF = navParams.accSF;
+
+                obj.gyroBias = navParams.gyroBias;
 
         end
 
@@ -211,9 +223,9 @@ obj.posHistory.time(end+1) = obj.currentTime;
                 obj.gpsRawData = [];
             end
 
-            obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
+            obj.accRawData = (obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime) - obj.accBias) ./ (1+obj.accSF);
 
-            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
+            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime) - obj.gyroBias;
 
         end
 
