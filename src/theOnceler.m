@@ -9,9 +9,17 @@ rocketDynamics.computeBuildup()
 % Parachute Dynamics
 parachuteDynamics = setupParachute();
 
+% Nominal Trajectory
+generateNominalTrajectory = false;
+if generateNominalTrajectory
+    nominalTrajectory = setupNominalTrajectory(rocketDynamics);
+else
+    nominalTrajectory.useThisTraj = false;
+end
+%%
 % Setup Controller
 useActuatorModel = true;
-controller = setupDecoupledLQR(rocketDynamics, useActuatorModel);
+controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
 
 % Setup Environment
 environment = setupEnvironment();
@@ -108,7 +116,7 @@ function rocketDyn = setupRocket()
 
     % Motor
     motorParams.burnTime = 12.0;
-    tmp = load("+theOncelerFiles\thrust_curve_fin_tabs.mat");
+    tmp = load("+theOncelerFiles/thrust_curve_fin_tabs.mat");
     motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
     motorParams.mass = 0.4;  % [kg]
     motorParams.xRef = -1;  % [m]
@@ -140,7 +148,108 @@ function environment = setupEnvironment()
     environment = -1;
 end
 
-function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
+
+function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
+
+    problem = struct();
+
+    % Set up bounds on states
+    mass0 = rocketDynamics.massWet;
+    pos0 = [0, 0, 0];
+    vel0 = [0.01, 0, 0];
+    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    omega0 = [0, 0, 0];
+    state0 = [mass0, pos0, vel0, quat0, omega0].';
+
+    problem.bounds.initialState.low = state0;
+    problem.bounds.initialState.upp = state0;
+
+    problem.bounds.state.low = [rocketDynamics.massDry, -inf*ones(1,2), 0, -inf*ones(1,2), 0, -1*ones(1,4), -inf*ones(1,3)]';
+    problem.bounds.state.upp = [rocketDynamics.massWet, inf*ones(1,3), inf*ones(1,3), ones(1,4), inf*ones(1,3)]';
+
+    massF = rocketDynamics.massDry;
+    quatF = Utils.eulerToQuat([0, -90, 0]).';
+    omegaF = [0,0,0];
+    problem.bounds.finalState.low = [massF, -inf*ones(1,3), -inf*ones(1,3), quatF, omegaF]';
+    problem.bounds.finalState.upp = [massF, inf*ones(1,3), inf*ones(1,3), quatF, omegaF]';
+
+    % Set time bounds
+    problem.bounds.initialTime.low = 0;
+    problem.bounds.initialTime.upp = 0;
+    problem.bounds.finalTime.low = 15; % TODO Is there a place where this variable is not hardcoded?
+    problem.bounds.finalTime.upp = 15;
+
+    % Set control bounds
+    % TODO: Because of the linearization scheme for regulator control after
+    % this, should the control bounds for the traj optimization be set to
+    % less than the actual limits?
+    problem.bounds.control.low = (-rocketDynamics.actuatorModel.limits.maxDeflection/2)*ones(3,1);
+    problem.bounds.control.upp = (rocketDynamics.actuatorModel.limits.maxDeflection/2)*ones(3,1);
+
+    % Make a guess at the initial trajectory
+    problem.guess.time = [0, problem.bounds.finalTime.upp];  % (s)
+    problem.guess.state = [ state0,  [massF; 0;0;2000; 200;0;0; quat0'; omega0'] ];
+    problem.guess.control = [[0;0;0], [0;0;0]];
+   
+    % Desired Maneuver Details
+    turnQuat = Utils.eulerToQuat([0, -100, 0]); % 10 degree turn
+    turnTime = 8; % seconds
+    maxAoA = 10; % max angle of attack is 10 degrees
+
+    trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
+
+    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, log, useGravity, useThrust)
+    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, [], true, true) ); 
+    problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
+    problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
+    problem.func.pathCst = @(t,x,u) ( trajectoryOptimization.pathConstraintFunction(t,x,u) ); 
+    problem.func.bndCst = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryConstraintFunction(t0,x0,tF,xF) ); 
+
+    problem.options(1).method = 'hermiteSimpson';
+    problem.options(1).defaultAccuracy = 'low';
+    problem.options(1).nlpOpt.MaxFunEvals = 1e6;
+    problem.options(1).nlpOpt.MaxIter = 250;
+    problem.options(1).hermiteSimpson.nSegment = 8;
+
+    %problem.options(2).method = 'hermiteSimpson';
+    %problem.options(2).defaultAccuracy = 'high';
+    %problem.options(2).nlpOpt.MaxFunEvals = 1e6;
+    %problem.options(2).nlpOpt.MaxIter = 1e3;
+    %problem.options(2).hermiteSimpson.nSegment = 60;
+        % With nSegment = 60, it takes 128 seconds per iteration.
+
+    % Call to OptimTraj
+    addpath("+trajOptimizationPkg\OptimTraj\")
+    soln = optimTraj(problem);
+
+    trajectoryResolution = 250; % number of interpolated points in nominal traj
+
+    nominalTrajectory.time = linspace(soln(end).grid.time(1),soln(end).grid.time(end),trajectoryResolution);
+    nominalTrajectory.states = soln(end).interp.state(nominalTrajectory.data.time);
+    nominalTrajectory.controlInputs = soln(end).interp.control(nominalTrajectory.data.time);
+    nominalTrajectory.actuatorState = rocketDynamics.actuatorModel.allocationMatrix*nominalTrajectory.data.controlInputs;
+
+    trajectoryOptimization.plotNominalTrajectory(nominalTrajectory)
+
+    userChoice = input("Would you like to save this trajectory? [Y/N] ", "s");
+
+    if (userChoice == "Y")
+        userFilename = input("What would you like to call the file? Enter filename, as in filename.mat: ", "s");
+        filename = ['+theOncelerFiles/' userFilename, '.mat'];
+
+        userChoice = input("Would you like to use this nominal trajectory for the rest of the script? [Y/N] ", "s");
+        if (userChoice == "Y")
+            nominalTrajectory.useThisTraj = true;
+        else
+            nominalTrajectory.useThisTraj = false;
+        end
+        save(filename, 'nominalTrajectory');
+    end
+     
+
+end
+
+function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory)
     % Compute Reference Attitudes
     dt = 0.01;  % or whatever your timestep is
     controlTime = 15;  % or whatever your total time is
@@ -172,8 +281,13 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel)
     ];
     
     % Generate Breakpoints
-    tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
-    nominalTrajLog = tmp.data;
+    if nominalTrajectory.useThisTraj
+        nominalTrajLog = nominalTrajectory;
+    else
+        %tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
+        tmp = load("+theOncelerFiles/testTraj.mat");
+        nominalTrajLog = tmp.nominalTrajectory;
+    end
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
@@ -236,6 +350,13 @@ function nav = setupNavigation(dt)
                                        0 0 1 0 0 0];
     gps = navigationPkg.GPS(gpsParams);
     
+    % Magnetometer Params
+    magParams.outputRate = 10;
+    magParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    magParams.date = '00-01-2026';
+    magnetometer = navigationPkg.Magnetometer(magParams);
+
+    % Nav Params
     navParams.dt = dt;
     navParams.P = 0.1 * eye(6);
     
@@ -254,7 +375,7 @@ function nav = setupNavigation(dt)
         0, (dt^3)/2, 0, 0, dt^2, 0;
         0, 0, (dt^3)/2, 0, 0, dt^2];
     
-    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
+    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
@@ -274,6 +395,13 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     flightParams.del0 = actuatorState0;
     
     navigation = setupNavigation(flightParams.dt);
+
+    % Run Preflight Attitude Estimation
+    quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    state0 = [mass0, pos0, vel0, quat0, omega0].';
+    flightParams.x0 = state0;
+
+
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
     
     % LOG
