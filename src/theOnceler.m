@@ -15,6 +15,14 @@ else
     nominalTrajectory.useThisTraj = false;
 end
 
+% Nominal Trajectory
+generateNominalTrajectory = false;
+if generateNominalTrajectory
+    nominalTrajectory = setupNominalTrajectory(rocketDynamics);
+else
+    nominalTrajectory.useThisTraj = false;
+end
+%%
 % Setup Controller
 useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
@@ -190,6 +198,7 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
 
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
+
     % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
     problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, flightPkg.FlightState.POWERED_ASCENT, [], true, true) ); 
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
@@ -276,8 +285,18 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	];
 
     % Generate Breakpoints
+<<<<<<< HEAD
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
     nominalTrajLog = tmp.log;
+=======
+    if nominalTrajectory.useThisTraj
+        nominalTrajLog = nominalTrajectory;
+    else
+        %tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
+        tmp = load("+theOncelerFiles/testTraj.mat");
+        nominalTrajLog = tmp.nominalTrajectory;
+    end
+>>>>>>> cab9636 (Re added Mag)
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
@@ -340,6 +359,13 @@ function nav = setupNavigation(dt)
                                        0 0 1 0 0 0];
     gps = navigationPkg.GPS(gpsParams);
     
+    % Magnetometer Params
+    magParams.outputRate = 10;
+    magParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    magParams.date = '00-01-2026';
+    magnetometer = navigationPkg.Magnetometer(magParams);
+
+    % Nav Params
     navParams.dt = dt;
     navParams.P = 0.1 * eye(6);
     
@@ -358,6 +384,7 @@ function nav = setupNavigation(dt)
         0, (dt^3)/2, 0, 0, dt^2, 0;
         0, 0, (dt^3)/2, 0, 0, dt^2];
     
+<<<<<<< HEAD
     navParams.accBias = accParams.bias;
     navParams.accSF = accParams.SF;
     navParams.leverArm = accParams.leverArm;
@@ -365,6 +392,9 @@ function nav = setupNavigation(dt)
     navParams.gyroBias = gyroParams.bias;
     
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
+=======
+    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
+>>>>>>> cab9636 (Re added Mag)
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
@@ -396,6 +426,13 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     flightParams.u0 = controlInput0;
     
     navigation = setupNavigation(flightParams.dt);
+
+    % Run Preflight Attitude Estimation
+    quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    state0 = [mass0, pos0, vel0, quat0, omega0].';
+    flightParams.x0 = state0;
+
+
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
     
     % LOG

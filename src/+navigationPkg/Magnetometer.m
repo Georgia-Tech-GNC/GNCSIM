@@ -24,10 +24,7 @@ classdef Magnetometer < navigationPkg.Sensor&handle
     methods
         function obj = Magnetometer(magParams)
             obj@navigationPkg.Sensor();
-            obj.noiseCovariance = magParams.noiseCovariance;
             obj.outputRate = magParams.outputRate;
-            obj.outputProbability = magParams.outputProbability;
-            obj.observationMatrix = magParams.observationMatrix;
             obj.outputPeriod = 1 / obj.outputRate;
             obj.lastOutputTime = 0;
             obj.nextOutputTime = obj.outputPeriod;
@@ -57,20 +54,20 @@ classdef Magnetometer < navigationPkg.Sensor&handle
             [lat, lon, alt] = obj.ENU2LLA();
             
             % Get Magnetic Field in NED
-            [magN, magE, magD] = wrldmagm(alt, lat, lon, decyear(obj.date, 'dd-mmm-yyyy'));
+            magRead = wrldmagm(alt, lat, lon, decyear(obj.date, 'dd-mmm-yyyy'));
             
             % Convert from NED to ENU
-            magFieldENU = [magE; magN; -magD];
+            magFieldENU = [magRead(2); magRead(1); -magRead(3)];
 
             % Return True Reading
             trueMagReadingInertial = magFieldENU;
             
             % Get body to ENU DCM
-            body2EnuQuat = state(obj.idx.quat);
-            body2EnuDCM = Utils.dirCosine(body2EnuQuat);
-            
+            Enu2BodyQuat = state(obj.idx.quat);
+            Enu2BodyDCM = Utils.dirCosine(Enu2BodyQuat);
+
             % Rotate ENU magnetic field vector to body frame
-            magVecBody = body2EnuDCM' * magFieldENU;
+            magVecBody = Enu2BodyDCM * magFieldENU;
             
             % Get the magnetometer reading
             magReadingsBody = obj.softIronMatrix \ magVecBody + obj.hardIronBias;
