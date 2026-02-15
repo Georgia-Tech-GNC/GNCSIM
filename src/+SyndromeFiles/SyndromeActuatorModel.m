@@ -1,4 +1,4 @@
-classdef ReactionWheelActuatorModel < controllerPkg.ActuatorModel
+classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
     properties
         % Wheel params
         Iw
@@ -14,7 +14,7 @@ classdef ReactionWheelActuatorModel < controllerPkg.ActuatorModel
     end
 
     methods
-        function obj = ReactionWheelActuatorModel(Iw, tauMax, wMax, b)
+        function obj = SyndromeActuatorModel(Iw, tauMax, wMax, b)
             obj.Iw = Iw;
             obj.tauMax = tauMax;
             obj.wMax = wMax;
