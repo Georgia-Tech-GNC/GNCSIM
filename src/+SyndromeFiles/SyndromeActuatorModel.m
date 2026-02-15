@@ -31,10 +31,14 @@ classdef ReactionWheelActuatorModel < controllerPkg.ActuatorModel
             % Enforce wheel speed limit: prevent further acceleration past limit
             % Wheel torque is opposite of body torque
             tauWheel = -tau;
-            wdot = (tauWheel - obj.b*w) / obj.Iw;
+            wdot_val = (tauWheel - obj.b*w) / obj.Iw;
 
-            if (w >= obj.wMax && wdot > 0), wdot = 0; end
-            if (w <= -obj.wMax && wdot < 0), wdot = 0; end
+            if (w >= obj.wMax && wdot_val > 0), wdot_val = 0; end
+            if (w <= -obj.wMax && wdot_val < 0), wdot_val = 0; end
+
+            wdot = zeros(size(actuatorState));
+            wdot(1) = wdot_val;
+
 
             % Store what we actually applied to the body this step
             obj.tauApplied = -tauWheel; % equals tau
