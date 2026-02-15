@@ -46,7 +46,7 @@ classdef LowPassFilter < handle
       
         %Reset Function for member variables
         function reset(obj)
-            obj.buffer = zeroes(1, obj.windowSize);
+            obj.buffer = zeros(1, obj.windowSize);
             obj.bufferIndex = 1;
             obj.sumValue = 0;
             obj.iteration = 0;
