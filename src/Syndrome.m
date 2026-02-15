@@ -154,8 +154,8 @@ function controller = setupController(params, useActuatorModel)
         params.controller.dt, ...
         params.controller.tau_max, ...
         params.controller.int_min, ...
-        params.controller.int_max, ...
-        lp);
+        params.controller.int_max);
+
 
     controller.useActuatorModel = useActuatorModel;
 end
@@ -165,33 +165,23 @@ function environment = setupEnvironment(~)
     environment = -1;
 end
 
-function nav = setupNavigation(dt)
-    % Minimal sensor instantiation consistent with repo patterns.
-    % If your SimpleNavigation does not require these, you can simplify later.
+function nav = setupNavigation(dt, navParams)
+    % Pull from JSON
+    accParams  = navParams.accel;
+    gyroParams = navParams.gyro;
 
-    accParams.VRW = -1;
-    accParams.leverArm = -1;
-    accParams.SF = -1;
-    accParams.bias = -1;
-    accParams.noiseCovariance = -1;
-    accParams.outputRate = 100;
-    accParams.outputProbability = 1;
-    accParams.observationMatrix = zeros(3);
     accelerometer = navigationPkg.Accelerometer(accParams);
-
-    gyroParams.ARW = -1;
-    gyroParams.bias = -1;
-    gyroParams.noiseCovariance = -1;
-    gyroParams.outputRate = 100;
-    gyroParams.outputProbability = 1;
-    gyroParams.observationMatrix = zeros(3);
-    gyroscope = navigationPkg.Gyroscope(gyroParams);
+    gyroscope     = navigationPkg.Gyroscope(gyroParams);
 
     nav = navigationPkg.SimpleNavigation(dt, gyroscope, accelerometer);
 end
 
 function [flight, log] = setupFlight(params, rocketDynamics, controller, environment)
     mustHave(params, "controller");
+    mustHave(params, "navigation");
+    mustHave(params.navigation, "gyro");
+    mustHave(params.navigation, "accel");
+
     dt = params.controller.dt;
 
     totalTime = 20;
@@ -212,7 +202,7 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
     mustHave(params.reaction_wheel, "w0");
     flightParams.del0 = params.reaction_wheel.w0; % 1x1
 
-    navigation = setupNavigation(flightParams.dt);
+    navigation = setupNavigation(flightParams.dt, params.navigation);
 
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
 

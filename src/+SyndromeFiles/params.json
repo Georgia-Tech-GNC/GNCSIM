@@ -3,8 +3,8 @@
     "longitudinal_moi": 0.615,
     "rotational_moi": 0.0010015,
     "cg_x": 1.32,
-    "mass_wet": 1.823,
-    "mass_dry": 2.573,
+    "mass_wet": 2.573,
+    "mass_dry": 1.823,
     "moi_wet" : [
         [1, 0, 0],
         [0, 1, 0],
@@ -64,7 +64,7 @@
  "reaction_wheel": {
   "Iw": 0.00012,
   "tau_max": 0.08,
-  "w_max": 6000,
+  "w_max": 600,
   "b": 0.0,
   "w0": 0.0
 },
@@ -76,9 +76,36 @@
   "dt": 0.005,
   "tau_max": 0.08,
   "int_min": -5,
-  "int_max": 5,
-  "lp_window": 5
-}
+  "int_max": 5
+},
 
+"navigation": {
+  "gyro": {
+    "ARW": [0.0, 0.0, 0.0],
+    "bias": [0.0, 0.0, 0.0],
+    "noiseCovariance": [[0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0]],
+    "outputRate": 100,
+    "outputProbability": 1,
+    "observationMatrix": [[1.0, 0.0, 0.0],
+                          [0.0, 1.0, 0.0],
+                          [0.0, 0.0, 1.0]]
+  },
+  "accel": {
+    "VRW": [0.0, 0.0, 0.0],
+    "leverArm": [0.0, 0.0, 0.0],
+    "SF": [1.0, 1.0, 1.0],
+    "bias": [0.0, 0.0, 0.0],
+    "noiseCovariance": [[0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0]],
+    "outputRate": 100,
+    "outputProbability": 1,
+    "observationMatrix": [[1.0, 0.0, 0.0],
+                          [0.0, 1.0, 0.0],
+                          [0.0, 0.0, 1.0]]
+  }
+  }
 
 }
