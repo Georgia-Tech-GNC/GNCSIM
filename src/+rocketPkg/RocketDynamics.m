@@ -4,6 +4,7 @@
 %               Aditya Swami (aswami8@gatech.edu)
 
 classdef RocketDynamics < handle
+
     properties (Constant)
         idx = StateIndices
     end
@@ -11,11 +12,12 @@ classdef RocketDynamics < handle
     properties
 		body
 		rocketFins
-		motorParams 
-        parachutes
+		motorParams
+        activeParachute         % Currently active parachute (linked list)
         thrustCurve
         totalImpulse
-        burnTime
+        burnTime            % total burn time of the motor
+        tIgnition           % time of motor ignition in the simulation
         massWet 
         massDry 
         moiWet  
@@ -23,22 +25,20 @@ classdef RocketDynamics < handle
         cgWet 
         cgDry 
 
-        useThrust = true
-		useGravity = true
         actuatorModel
 
         aerodynamicsCFD = []
 	end
 
 	methods
-        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, parachutes, aerodynamicsCFD)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamicsCFD)
             arguments
                 body                % DATCOM
                 rocketFins          % DATCOM
                 rocketParams
                 motorParams
                 actuatorModel
-                parachutes
+                firstParachute      % Head of parachute linked list
                 aerodynamicsCFD = []   % defaults to empty
             end
 
@@ -48,6 +48,7 @@ classdef RocketDynamics < handle
             obj.thrustCurve = motorParams.thrustCurve;
             obj.totalImpulse = motorParams.totalImpulse;
             obj.burnTime = motorParams.burnTime;
+            obj.tIgnition = motorParams.tIgnition;
 
             obj.massWet = rocketParams.massWet;
             obj.massDry = rocketParams.massDry;
@@ -62,7 +63,7 @@ classdef RocketDynamics < handle
 
             obj.aerodynamicsCFD = aerodynamicsCFD;
 
-            obj.parachutes = parachutes;
+            obj.activeParachute = firstParachute;
         end
 
         function currentThrust = getThrust(obj, t)
@@ -70,9 +71,17 @@ classdef RocketDynamics < handle
             if ~isnumeric(t)
                 error('Error: Time must be numeric.')
             end
-        
+            
+            % If before ignition, thrust is zero
+            if t < obj.tIgnition
+                currentThrust = 0;
+                return
+            end
+
+            timeProp = t - obj.tIgnition;
+
             % If beyond burn time, thrust is zero
-            if t > obj.burnTime
+            if timeProp > obj.burnTime
                 currentThrust = 0;
                 return
             end
@@ -83,7 +92,7 @@ classdef RocketDynamics < handle
             thrust = tc(:, 2);
         
             % Linear interpolation
-            currentThrust = interp1(time, thrust, t, 'linear', 0);
+            currentThrust = interp1(time, thrust, timeProp, 'linear', 0);
         end
 
         function [currentCg, currentMoi] = getCgMoi(obj, mass)
@@ -109,138 +118,169 @@ classdef RocketDynamics < handle
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
-
+        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, flightState, log, useGravity, useThrust)
             arguments
                 obj
-                state 
+                state
                 controlInput
                 disturbances % wind
-				time  % current time in seconds
+                time  % current time in seconds
+                flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 log = []  % Optional, defaults to empty
-				useGravity = true;
-				useThrust = true;
+                useGravity = true
+                useThrust = true
             end
-            
+
             [Nx, Nt] = size(state);
             xDot = zeros(Nx, Nt);
 
             for i = 1:Nt
-                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), log, useGravity, useThrust);
+                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), flightState, log, useGravity, useThrust);
             end
-               
-
         end
 
-        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, log, useGravity, useThrust)
+        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, flightState, log, useGravity, useThrust)
             arguments
                 obj
-                state 
+                state
                 controlInput
                 disturbances % wind
-				time  % current time in seconds
+                time  % current time in seconds
+                flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 log = []  % Optional, defaults to empty
-				useGravity = true;
-				useThrust = true;
+                useGravity = true
+                useThrust = true
             end
             actuatorState = obj.actuatorModel.allocationMatrix * controlInput;
-            xDot = obj.rocketModel(state, actuatorState, disturbances, time, log, useGravity, useThrust);
+            xDot = obj.rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust);
         end
 
-		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, log, useGravity, useThrust)
+		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
             arguments
                 obj
-                state 
+                state
                 actuatorState
                 disturbances % wind
-				time  % current time in seconds
+                time  % current time in seconds
+                flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 log = []  % Optional, defaults to empty
-				useGravity = true;
-				useThrust = true;
+                useGravity = true
+                useThrust = true
             end
-            
-            [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, log, useThrust);
-            xDot = obj.flatEarth_EOM(state, time, fB, mB, useGravity);
+
+            [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust);
+            xDot = obj.flatEarthEOM(state, time, fB, mB);
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, log, useThrust)
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
             arguments
                 obj
-                state 
-                actuatorState  
-                disturbances  
+                state
+                actuatorState
+                disturbances
                 time % current time in seconds
+                flightState (1,1) flightPkg.FlightState 
                 log = []  % Optional, defaults to empty
-                useThrust = true;
+                useGravity = true
+                useThrust = true
             end
-        
-            [currentCg, ~] = obj.getCgMoi(state(obj.idx.mass));
-        
-             % Extract state variables
-            rocketAlt = state(obj.idx.z);
-            rocketVel = state(obj.idx.vel);
-            rocketQuat = state(obj.idx.quat);
             
-            % Initialize parachute forces/moments
-            fBParachute = [0; 0; 0];            
-            % Loop through all parachutes
-            for i = 1:length(obj.parachutes)
-                if ~isempty(obj.parachutes(i))
-                    % Determine deployment condition
-                    if i == 1
-                        % First parachute deploys at apogee
-                        shouldDeploy = obj.atApogee(state, time);
-                    else
-                        % Deploy other parachutes if at deploy altitude
-                        shouldDeploy = obj.atApogee(state, time) && rocketAlt <= obj.parachutes(i).deployAltitude;
+            import flightPkg.FlightState
+
+            % Extract common state variables
+            mass = state(obj.idx.mass);
+            rocketQuat = state(obj.idx.quat);
+            cBI = Utils.dirCosine(rocketQuat);
+            [currentCg, ~] = obj.getCgMoi(mass);
+
+            % Assemble forces and moments based on flight state
+
+            % TODO: This is somewhat hardcoded for fin tabs, actuator model for
+            % lorax will wrap thrust, but that means actuator model should
+            % only be called during powered ascent - need to find a
+            % solution
+
+            switch(flightState)
+                case FlightState.PRELAUNCH
+                    fB = [0; 0; 0];
+                    mB = [0; 0; 0];
+
+                case FlightState.LAUNCH_RAIL
+                    fGBody = obj.computeGravity(cBI, useGravity, mass);
+                    fTB = obj.computeThrust(time, useThrust);
+                    [fBAero, ~] = obj.computeAero(state, currentCg, disturbances);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+
+                    fTotal = fGBody + fTB + fBAero + fBActuator;
+                    fB = [fTotal(1); 0; 0];
+                    mB = [0; 0; 0];
+
+                    if ~isempty(log)
+                        log.add(time, 'aeroforces', [fBAero(1); 0; 0]);
+                        log.add(time, 'thrust', obj.getThrust(time));
+                        log.add(time, 'actuatorforces', fBActuator);
+                        log.add(time, 'actuatormoments', mBActuator);
                     end
-                    
-                    if shouldDeploy
-                        fBChute = obj.parachutes(i).getForcesAndMoments(rocketVel, rocketQuat, disturbances);
-                        fBParachute = fBParachute + fBChute;
+
+                case FlightState.POWERED_ASCENT
+                    fGBody = obj.computeGravity(cBI, useGravity, mass);
+                    fTB = obj.computeThrust(time, useThrust);
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, disturbances);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+
+                    fB = fGBody + fTB + fBAero + fBActuator;
+                    mB = mBAero + mBActuator;
+
+                    if ~isempty(log)
+                        log.add(time, 'aeroforces', fBAero);
+                        log.add(time, 'aeromoments', mBAero);
+                        log.add(time, 'thrust', obj.getThrust(time));
+                        log.add(time, 'actuatorforces', fBActuator);
+                        log.add(time, 'actuatormoments', mBActuator);
                     end
-                end
+
+                case FlightState.COASTING_ASCENT
+                    fGBody = obj.computeGravity(cBI, useGravity, mass);
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, disturbances);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+
+                    fB = fGBody + fBAero + fBActuator;
+                    mB = mBAero + mBActuator;
+
+                    if ~isempty(log)
+                        log.add(time, 'aeroforces', fBAero);
+                        log.add(time, 'aeromoments', mBAero);
+                        log.add(time, 'actuatorforces', fBActuator);
+                        log.add(time, 'actuatormoments', mBActuator);
+                    end
+
+                case FlightState.DESCENT
+                    fGBody = obj.computeGravity(cBI, useGravity, mass);
+                    fBParachute = obj.computeParachute(state, rocketQuat, disturbances, time);
+
+                    fB = fGBody + fBParachute;
+                    mB = [0; 0; 0];
+
+                    if ~isempty(log)
+                        log.add(time, 'parachuteforces', fBParachute);
+                    end
+
+                case FlightState.LANDED
+                    fB = [0; 0; 0];
+                    mB = [0; 0; 0];
+
+                otherwise
+                    error('Unknown flight state: %s', string(flightState));
             end
-        
-            % compute passive aero forces and moments
-            if isempty(obj.aerodynamicsCFD)
-                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, disturbances); % arg = [] because static fins
-                [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
-                fBAero = fBFins + fBBody;
-                mBAero = mBFins + mBBody;
-            else
-                 [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, disturbances);
-                 fprintf("I'm being a none.")
-            end
-        
-            % compute thrust
-            fTB = zeros(3,1);
-            if useThrust && obj.useThrust
-                fTB = [obj.getThrust(time); 0; 0];
-            end
-        
-            % compute actuator forces
-            [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, disturbances);
-           
-            if ~isempty(log)
-                log.add(time, 'aeroforces', fBAero);
-                log.add(time, 'aeromoments', mBAero);
-                log.add(time, 'thrust', obj.getThrust(time));
-                %log.add(time, 'controlmoments', mBController);
-            end
-        
-            fB = fTB + fBAero + fBParachute + fBActuator;
-            mB = mBAero + mBActuator;
         end
         
-        function stateDot = flatEarth_EOM(obj, state, time, fB, mB, useGravity)
+        function stateDot = flatEarthEOM(obj, state, time, fB, mB)
 			arguments
                 obj
                 state 
                 time
 				fB
 				mB
-				useGravity = true;
             end
             mass = state(obj.idx.mass);
             vel = state(obj.idx.vel);
@@ -254,15 +294,6 @@ classdef RocketDynamics < handle
 
             cBI = Utils.dirCosine(quat);
             cIB = cBI.';
-            
-			g = [0;0;0];
-            if useGravity && obj.useGravity
-                g = [0;0;-9.81];
-            end
-
-            fG = mass * g;
-
-            fB = fB + cBI * fG;
 
             massDot = obj.getMDot(time);
             posDot = cIB * vel;
@@ -360,44 +391,52 @@ classdef RocketDynamics < handle
 
             view(30,20);
         end
+    end
 
-        function [reachedApogee] = atApogee(obj, state, time)
-            persistent timeCheck ascentPrinted descentPrinted apogeeTime
+    methods (Access = private)
+        function fGBody = computeGravity(obj, cBI, useGravity, mass)
+            fGBody = cBI * [0; 0; -9.81 * useGravity * mass];
+        end
+
+        function fTB = computeThrust(obj, time, useThrust)
+            fTB = [obj.getThrust(time) * useThrust; 0; 0];
+        end
+
+        function [fBAero, mBAero] = computeAero(obj, state, currentCg, disturbances)
+            if isempty(obj.aerodynamicsCFD)
+                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, disturbances);
+                [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
+                fBAero = fBFins + fBBody;
+                mBAero = mBFins + mBBody;
+            else
+                [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, disturbances);
+            end
+        end
+
+        function [fBActuator, mBActuator] = computeActuator(obj, state, actuatorState, currentCg, disturbances)
+            [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, disturbances);
+        end
+
+        function fBParachute = computeParachute(obj, state, rocketQuat, disturbances, time)
+            rocketAlt = state(obj.idx.z);
+            rocketVel = state(obj.idx.vel);
             
-            velBody = state(5:7);
-            Inertial2BodyQuat = state(8:11);
-            Inertial2BodyDCM = Utils.dirCosine(Inertial2BodyQuat);
-            velInertial = Inertial2BodyDCM' * velBody;
-            velVertical = velInertial(3);
-            
-            % If velocity is positive clear the timer
-            if velVertical >= 0
-                timeCheck = [];
-                reachedApogee = false;
-                if isempty(ascentPrinted)
-                    fprintf('Ascent phase (t = %.2f s)\n', time);
-                    ascentPrinted = true;
-                end
+            % Check if we should transition to next parachute if current one exists
+            if ~isempty(obj.activeParachute) && obj.activeParachute.shouldDeployNext(rocketAlt)
+                obj.activeParachute = obj.activeParachute.getNext();
+            end
+
+            if isempty(obj.activeParachute)
+                fBParachute = [0; 0; 0];
                 return;
             end
-            
-            % Velocity is negative
-            if isempty(timeCheck)
-                % First time there is downward velocity
-                timeCheck = time + 1;
-                apogeeTime = time;
-                reachedApogee = false;
-                if isempty(descentPrinted)
-                    fprintf('Descent phase (t = %.2f s, apogee reached)\n', time);
-                    descentPrinted = true;
-                end
-            elseif time >= timeCheck
-                % Negative velocity for at least 1 second
-                reachedApogee = true;
-            else
-                reachedApogee = false;
+
+            if ~obj.activeParachute.isDeployed
+                 fprintf("'%s' deployed at t = %.2fs altitude %.2f m\n", obj.activeParachute.name, time, rocketAlt);
+                 obj.activeParachute.isDeployed = true;
             end
-        
+
+            fBParachute = obj.activeParachute.getForcesAndMoments(rocketVel, rocketQuat, disturbances);
         end
     end
 end

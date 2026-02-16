@@ -381,35 +381,33 @@ classdef Analysis < handle
             end
         end
 
-        function generateControlMomentPlot(obj)
+        function generateControlInputPlot(obj)
             fig = figure('Visible', 'off');
             hold on;
 
             for i = 1:obj.numSamples
                 log = obj.logs{i};
 
-                Mx = log.getControlMoment('Mx');
-                My = log.getControlMoment('My');
-                Mz = log.getControlMoment('Mz');
-                time = log.time(1:log.currentIdx);
-                Mx = Mx(obj.timeMask{i});
-                My = My(obj.timeMask{i});
-                Mz = Mz(obj.timeMask{i});
-                time = time(obj.timeMask{i});
-
-                plot(time, Mx, 'LineWidth', 2)
-                plot(time, My, 'LineWidth', 2)
-                plot(time, Mz, 'LineWidth', 2)
+                for j = 1:length(log.controlInputNames)
+                    u = log.getControlInput(log.controlInputNames{j});
+                    time = log.time(1:log.currentIdx);
+                    u = u(obj.timeMask{i});
+                    time = time(obj.timeMask{i});
+                    plot(time, u, 'LineWidth', 2)
+                end
+            end
+            
+            if ~isempty(obj.logs{1}.controlInputNames)
+                legend(obj.logs{1}.controlInputNames)
             end
 
-            legend('Mx','My','Mz')
-            ylabel('\textbf{Control Moments (Nm)}', 'Interpreter', 'latex')
+            ylabel('\textbf{Control Inputs}', 'Interpreter', 'latex')
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
-            title('\textbf{Control Moments}', 'Interpreter', 'latex')
+            title('\textbf{Control Inputs}', 'Interpreter', 'latex')
             grid on;
 
             if obj.saveAsPDF
-                saveas(fig, fullfile(obj.plotDir, 'control_moments.png'));
+                saveas(fig, fullfile(obj.plotDir, 'control_inputs.png'));
                 close(fig);
             else
                 set(fig, 'Visible', 'on');
@@ -444,6 +442,76 @@ classdef Analysis < handle
 
             if obj.saveAsPDF
                 saveas(fig, fullfile(obj.plotDir, 'actuator_states.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
+        function generateActuatorForcePlot(obj)
+            fig = figure('Visible', 'off');
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                Fx = log.getActuatorForce('Fx');
+                Fy = log.getActuatorForce('Fy');
+                Fz = log.getActuatorForce('Fz');
+                time = log.time(1:log.currentIdx);
+                Fx = Fx(obj.timeMask{i});
+                Fy = Fy(obj.timeMask{i});
+                Fz = Fz(obj.timeMask{i});
+                time = time(obj.timeMask{i});
+
+                plot(time, Fx, 'LineWidth', 2)
+                plot(time, Fy, 'LineWidth', 2)
+                plot(time, Fz, 'LineWidth', 2)
+            end
+
+            legend('Fx','Fy','Fz')
+            ylabel('\textbf{Actuator Forces (N)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Actuator Forces}', 'Interpreter', 'latex')
+            grid on;
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'actuator_forces.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
+        function generateActuatorMomentPlot(obj)
+            fig = figure('Visible', 'off');
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                Mx = log.getActuatorMoment('Mx');
+                My = log.getActuatorMoment('My');
+                Mz = log.getActuatorMoment('Mz');
+                time = log.time(1:log.currentIdx);
+                Mx = Mx(obj.timeMask{i});
+                My = My(obj.timeMask{i});
+                Mz = Mz(obj.timeMask{i});
+                time = time(obj.timeMask{i});
+
+                plot(time, Mx, 'LineWidth', 2)
+                plot(time, My, 'LineWidth', 2)
+                plot(time, Mz, 'LineWidth', 2)
+            end
+
+            legend('Mx','My','Mz')
+            ylabel('\textbf{Actuator Moments (Nm)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Actuator Moments}', 'Interpreter', 'latex')
+            grid on;
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'actuator_moments.png'));
                 close(fig);
             else
                 set(fig, 'Visible', 'on');
@@ -637,6 +705,41 @@ classdef Analysis < handle
             end
 		end
 
+        function generateParachuteForcePlot(obj)
+            fig = figure('Visible', 'off');
+            hold on;
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                Fx = log.parachuteForces(1, 1:log.currentIdx);
+                Fy = log.parachuteForces(2, 1:log.currentIdx);
+                Fz = log.parachuteForces(3, 1:log.currentIdx);
+                time = log.time(1:log.currentIdx);
+                Fx = Fx(obj.timeMask{i});
+                Fy = Fy(obj.timeMask{i});
+                Fz = Fz(obj.timeMask{i});
+                time = time(obj.timeMask{i});
+
+                plot(time, Fx, 'LineWidth', 2)
+                plot(time, Fy, 'LineWidth', 2)
+                plot(time, Fz, 'LineWidth', 2)
+            end
+
+            legend('Fx','Fy','Fz')
+            ylabel('\textbf{Parachute Forces (N)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            title('\textbf{Parachute Forces}', 'Interpreter', 'latex')
+            grid on;
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'parachute_forces.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
 		function printReliventInfo(obj)
 			a = 340; % m/s (Speed of sound PLACEHOLDER)
             for i = 1:obj.numSamples
@@ -701,10 +804,13 @@ classdef Analysis < handle
             obj.generateThrustPlot();
             obj.generateAeroMomentPlot();
             obj.generateAeroForcePlot();
-            obj.generateControlMomentPlot();
+            obj.generateControlInputPlot();
             obj.generateActuatorStatePlot();
+            obj.generateActuatorForcePlot();
+            obj.generateActuatorMomentPlot();
             obj.generateEkfCovariancePlot();
             obj.generateAltitudeAndXYPlot();
+            obj.generateParachuteForcePlot();
 			obj.printReliventInfo();
         end
 

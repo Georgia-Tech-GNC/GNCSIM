@@ -76,6 +76,7 @@ function rocketDynamics = setupRocket(controller)
     tmp = load("+theLoraxFiles\thrust_curve_hpr_tvc.mat");
     motorParams.thrustCurve = tmp.thrust_curve_hpr_tvc;
     motorParams.totalImpulse = 403; % N-sec
+    motorParams.tIgnition = 1.0;
 
     % Create rocket dynamics object
     body = rocketPkg.RocketBody(bodyParams, flightConParams);
@@ -91,7 +92,7 @@ function rocketDynamics = setupRocket(controller)
     canopyMass1 = 0.0357027521 * pi* (canopyDiameter1/2)^2;              % kg
     dragCoefficient1 = 2.2;            % dimensionless
     deployAltitude1 = 1000;        % Deploys at apogee
-    parachuteObjects(1) = rocketPkg.ParachuteDynamics(canopyDiameter1, canopyMass1, dragCoefficient1,deployAltitude1);
+    parachuteObjects(1) = rocketPkg.ParachuteDynamics("Main Parachute", canopyDiameter1, canopyMass1, dragCoefficient1,deployAltitude1);
     
     % Create rocketDynamics object
     rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, parachuteObjects, aerodynamics);
@@ -199,6 +200,12 @@ function [flight, log] = setupFlight(rocketDynamics, breakPoints, environment)
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
+    
+    actuatorState0 = [0, 0, 0, 0];
+    flightParams.del0 = actuatorState0;
+
+    controlInput0 = [0, 0, 0];
+    flightParams.u0 = controlInput0;
 
     navigation = setupNavigation(flightParams.dt);
     flight = flightPkg.Flight(rocketDynamics, environment, breakPoints, navigation, flightParams);
