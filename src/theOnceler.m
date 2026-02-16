@@ -38,9 +38,15 @@ end
 
 %% MonteCarlo
 runMonteCarlo = true;
+
+numWorkers = 12;
+% Close existing pool
+delete(gcp('nocreate'));  
+parpool(numWorkers);     
+
 if runMonteCarlo
     uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
-    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 4);
+    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 12);
 
     tic;
     mcLogs = monteCarlo.runMonteCarlo();
@@ -423,8 +429,17 @@ function firstParachute = setupParachute()
     mainDeployAlt = 305; % m
     main = rocketPkg.ParachuteDynamics("Main Parachute", mainDiameter, mainMass, mainCD, mainDeployAlt);
 
+    % Extra chute (deploys at altitude)
+    extraDiameter = 1.54; % m
+    extraMass = 0.34; % kg
+    extraCD = 0.5;
+    extraDeployAlt = 100; % m
+    extra = rocketPkg.ParachuteDynamics("Extra Parachute", extraDiameter, extraMass, extraCD, extraDeployAlt);
+
     % Link parachutes: drogue -> main
     drogue.setNext(main);
+    % Link parachutes: main -> extra
+    main.setNext(extra)
 
     firstParachute = drogue;
 end
@@ -447,21 +462,22 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
     cnScaleFactor3Sigma = getThreeSigmaDeviation(rocketDynamics.body.scaleFactor, percentUncertainty);
     uncertaintyObj.addVariable('cnScaleFactor', rocketDynamics.body.scaleFactor, cnScaleFactor3Sigma, DistributionType.UNIFORM);
 
-    % Parachute Cd
-    drogueCd3Sigma = getThreeSigmaDeviation(rocketDynamics.activeParachute.dragCoefficient, percentUncertainty);
-    uncertaintyObj.addVariable('drogueCd', rocketDynamics.activeParachute.dragCoefficient, drogueCd3Sigma, DistributionType.GAUSSIAN);
+    currentParachute = rocketDynamics.activeParachute;
 
-    if ~isempty(rocketDynamics.activeParachute.nextParachute)
-        mainCd3Sigma = getThreeSigmaDeviation(rocketDynamics.activeParachute.nextParachute.dragCoefficient, percentUncertainty);
-        uncertaintyObj.addVariable('mainCd', rocketDynamics.activeParachute.nextParachute.dragCoefficient, mainCd3Sigma, DistributionType.GAUSSIAN);
+    while ~isempty(currentParachute)
+        % Variable based on parachute name: parachuteCd_name 
+        variableName = ['parachuteCd_' char(currentParachute.name)];
+        
+        parachuteCd3Sigma = getThreeSigmaDeviation(currentParachute.dragCoefficient, percentUncertainty);
+        uncertaintyObj.addVariable(variableName, currentParachute.dragCoefficient, parachuteCd3Sigma, DistributionType.GAUSSIAN);
+            
+        % Move to next parachute
+        currentParachute = currentParachute.nextParachute;
     end
 
     % Mass distribution
     wetMass3Sigma = getThreeSigmaDeviation(rocketDynamics.massWet, percentUncertainty);
     uncertaintyObj.addVariable('wetMass', rocketDynamics.massWet, wetMass3Sigma, DistributionType.GAUSSIAN);
-
-    dryMass3Sigma = getThreeSigmaDeviation(rocketDynamics.massDry, percentUncertainty);
-    uncertaintyObj.addVariable('dryMass', rocketDynamics.massDry, dryMass3Sigma, DistributionType.GAUSSIAN);
 
     cgXWet3Sigma = getThreeSigmaDeviation(rocketDynamics.cgWet, percentUncertainty);
     uncertaintyObj.addVariable('cgXWet', rocketDynamics.cgWet, cgXWet3Sigma, DistributionType.GAUSSIAN);
@@ -517,6 +533,7 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
 
     railOrientation3Sigma = deg2rad(5);  % 5 degree uncertainty
     uncertaintyObj.addVariable('railOrientation', 0, railOrientation3Sigma, DistributionType.GAUSSIAN);
+
 end
 
 function monteCarlo = setupMonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns)

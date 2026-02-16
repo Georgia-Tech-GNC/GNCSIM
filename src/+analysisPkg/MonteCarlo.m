@@ -49,6 +49,9 @@ classdef MonteCarlo < handle
                 % Create copies for this iteration (needed for parfor)
                 flightCopy = copy(obj.flight);
                 rocketCopy = copy(obj.rocketDynamics);
+                
+                % Manually deep copy parachute linked list
+                rocketCopy.activeParachute = analysisPkg.MonteCarlo.copyParachuteList(obj.rocketDynamics.activeParachute);
 
                 % Apply uncertainty parameters for this run
                 analysisPkg.MonteCarlo.applyUncertaintyParameters(rocketCopy, flightCopy, samples(runIdx, :), varNames);
@@ -78,6 +81,18 @@ classdef MonteCarlo < handle
                 varNames cell
             end
 
+            % Store original motor parameters
+            originalTotalImpulse = rocketDynamics.totalImpulse;
+            originalBurnTime = rocketDynamics.burnTime;
+            originalTIgnition = rocketDynamics.tIgnition;
+            originalmassWet = rocketDynamics.massWet;
+            originalmassDry = rocketDynamics.massDry;
+            
+            % Calculate nominal Isp 
+            g0 = 9.81; 
+            nominalMassPropellant = originalmassWet - originalmassDry;
+            nominalIsp = originalTotalImpulse / (nominalMassPropellant * g0); 
+
             % Apply each uncertainty parameter
             for i = 1:length(varNames)
                 value = sampleValues(i);
@@ -95,19 +110,9 @@ classdef MonteCarlo < handle
                             rocketDynamics.rocketFins.fins(j).scaleFactor = value;
                         end
 
-                    % Parachute parameters - need more flexible solution
-                    case 'drogueCd'
-                        rocketDynamics.activeParachute.dragCoefficient = value;
-                    case 'mainCd'
-                        if ~isempty(rocketDynamics.activeParachute.nextParachute)
-                            rocketDynamics.activeParachute.nextParachute.dragCoefficient = value;
-                        end
-
                     % Mass distribution
                     case 'wetMass'
                         rocketDynamics.massWet = value;
-                    case 'dryMass'
-                        rocketDynamics.massDry = value;
                     case 'cgXWet'
                         rocketDynamics.cgWet = value;
                     case 'cgXDry'
@@ -130,10 +135,6 @@ classdef MonteCarlo < handle
                         rocketDynamics.burnTime = value;
                     case 'tIgnition'
                         rocketDynamics.tIgnition = value;
-                    case 'thrustCurve'
-                        % Thrust curve would need special handling
-                        % Could scale the entire curve
-                        rocketDynamics.thrustCurve = rocketDynamics.thrustCurve * value;
 
                     % Rail parameters
                     case 'railLength'
@@ -157,10 +158,63 @@ classdef MonteCarlo < handle
                         rocketDynamics.actuatorModel.limits.maxRate = value;
                     case 'timeConstant'
                         rocketDynamics.actuatorModel.timeConstant = value;
-
+                    
+                    % Parachute    
                     otherwise
-                        warning('Unknown uncertainty parameter: %s', varNames{i});
+                        if startsWith(varNames{i}, 'parachuteCd_')
+                            
+                            parachuteName = varNames{i}(13:end);  
+                            currentParachute = rocketDynamics.activeParachute;
+                            found = false;
+
+                            while ~isempty(currentParachute) && ~found % not most efficient but not large number of Parachutes
+                                if strcmp(currentParachute.name, parachuteName)
+                                    currentParachute.dragCoefficient = value;
+                                    found = true;
+                                else
+                                    currentParachute = currentParachute.nextParachute;
+                                end
+                            end
+                        end
                 end
+            end
+            
+
+            % Dependent parameters values 
+
+            % thrustCurve
+            timeScaleFactor = rocketDynamics.burnTime / originalBurnTime;
+            thrustScaleFactor = (rocketDynamics.totalImpulse / originalTotalImpulse) / timeScaleFactor;
+            rocketDynamics.thrustCurve(:,1) = (rocketDynamics.thrustCurve(:,1) - originalTIgnition) * timeScaleFactor + rocketDynamics.tIgnition;
+            rocketDynamics.thrustCurve(:,2) = rocketDynamics.thrustCurve(:,2) * thrustScaleFactor;
+            
+            % Dry mass calculation 
+            massPropellant = rocketDynamics.totalImpulse / (nominalIsp * g0);
+            rocketDynamics.massDry = rocketDynamics.massWet - massPropellant;
+
+        end
+        
+        function parachuteCopy = copyParachuteList(parachute)
+            % Recursively copy parachute linked list
+            if isempty(parachute)
+                parachuteCopy = rocketPkg.ParachuteDynamics.empty;
+                return;
+            end
+            
+            % Create new parachute with same properties
+            parachuteCopy = rocketPkg.ParachuteDynamics(...
+                parachute.name, ...
+                parachute.canopyDiameter, ...
+                parachute.canopyMass, ...
+                parachute.dragCoefficient, ...
+                parachute.deployAltitude);
+            
+            % Copy deployment state
+            parachuteCopy.isDeployed = parachute.isDeployed;
+            
+            % Recursively copy next parachute
+            if ~isempty(parachute.nextParachute)
+                parachuteCopy.nextParachute = analysisPkg.MonteCarlo.copyParachuteList(parachute.nextParachute);
             end
         end
     end
