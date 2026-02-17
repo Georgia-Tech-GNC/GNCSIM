@@ -1,6 +1,5 @@
-paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
-
 function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
+    paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
     params = jsondecode(fileread(paramsPath));
 
     params.controller.kp = kp;
