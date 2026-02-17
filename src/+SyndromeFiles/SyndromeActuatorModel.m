@@ -4,6 +4,7 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
         Iw
         tauMax
         wMax
+        wSoft
         b = 0
 
         % Bookkeeping for applied moment
@@ -14,11 +15,12 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
     end
 
     methods
-        function obj = SyndromeActuatorModel(Iw, tauMax, wMax, b)
+        function obj = SyndromeActuatorModel(Iw, tauMax, wMax, wSoft, b)
             obj.Iw = Iw;
             obj.tauMax = tauMax;
             obj.wMax = wMax;
-            if nargin >= 4, obj.b = b; end
+            obj.wSoft = wSoft;
+            if nargin >= 5, obj.b = b; end
         end
 
         function wdot = actuatorDynamics(obj, controlInput, actuatorState)
@@ -47,6 +49,18 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
         function [fB, mB] = getForcesMoments(obj, ~, ~, ~, ~)
             fB = zeros(3,1);
             mB = [obj.tauApplied; 0; 0];
+        end
+
+        function alpha = computeAlpha(obj, w)
+            absw = abs(w);
+            if absw <= obj.wSoft
+                alpha = 1.0;
+            elseif absw >= obj.wMax
+                alpha = 0.0;
+            else
+                alpha = (obj.wMax - absw) / (obj.wMax - obj.wSoft);
+            end
+            alpha = min(max(alpha, 0.0), 1.0);
         end
     end
 end

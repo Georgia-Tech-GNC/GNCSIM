@@ -1,6 +1,7 @@
+% GNCSIM/src/+controllerPkg/RollRatePID.m
 classdef RollRatePID < controllerPkg.Controller
     properties
-        % breakPoints required by Flight scheduling logic even if unused
+        % Required by repo scheduling logic even if unused
         breakPoints
         useActuatorModel = true
         referenceAttitudes = []
@@ -11,68 +12,91 @@ classdef RollRatePID < controllerPkg.Controller
         Kd
         dt
 
-        % Limits / anti-windup
-        tauMax
-        intMin
-        intMax
+        % Full-authority actuator limit (symmetric)
+        tauMax   % >0, full-scale clamp is ±tauMax
 
-        % State
-        intErr = 0
-        prevErr = 0
+        % Integral budget fraction (0..1), typically 0.3–0.7
+        gamma
 
-        % Indices (constants)
+        % State (matches C++ semantics)
+        I_stored = 0    % stored I contribution in TORQUE units
+        prevErr  = 0
+
+        % Indices
         idx = StateIndices
     end
 
     methods
-        function obj = RollRatePID(Kp, Ki, Kd, dt, tauMax, intMin, intMax)
+        function obj = RollRatePID(Kp, Ki, Kd, dt, tauMax, gamma)
             obj.Kp = Kp; obj.Ki = Ki; obj.Kd = Kd;
             obj.dt = dt;
-            obj.tauMax = tauMax;
-            obj.intMin = intMin;
-            obj.intMax = intMax;
 
-            % Never switch schedules (repo expects this field to exist)
+            obj.tauMax = tauMax;
+            obj.gamma  = gamma;
+
             obj.breakPoints = struct('cumVelocityInterval', obj.dt);
         end
 
-        function u = getControl(obj, state, ~, ~)
-            % Roll rate (rad/s)
+        function u = getControl(obj, state, ~, ~, alpha)
+            % Default alpha=1 (no derating) if caller doesnt pass it
+            if nargin < 5 || isempty(alpha)
+                alpha = 1.0;
+            end
+            alpha = min(max(alpha, 0.0), 1.0);
+
+            % Measured roll rate (rad/s)
             wx = state(obj.idx.omega_x);
 
-            % Reference roll rate (rad/s)
+            % Reference roll rate (rad/s) — adjust if you have a schedule/reference input
             wxRef = 0;
 
-            % Error (reference - measurement)
+            % Error convention: e = w_desired - w_measured
             err = wxRef - wx;
 
             % Derivative on error
             derr = (err - obj.prevErr) / obj.dt;
 
-            % Candidate integrator update (clamped)
-            newIntErr = obj.intErr + err * obj.dt;
-            newIntErr = min(max(newIntErr, obj.intMin), obj.intMax);
+            % Effective actuator torque limits after derating
+            u_max =  alpha * obj.tauMax;
+            u_min = -alpha * obj.tauMax;
 
-            % Unsaturated torque command
-            tauUnsat = obj.Kp * err + obj.Ki * newIntErr + obj.Kd * derr;
+            % I-term torque budget (fraction of available torque authority)
+            I_max = obj.gamma * u_max;
+            I_min = obj.gamma * u_min;
 
-            % Saturate to actuator capability
-            tau = min(max(tauUnsat, -obj.tauMax), obj.tauMax);
+            % Pre-clamp stored I in case alpha shrank since last call
+            obj.I_stored = min(max(obj.I_stored, I_min), I_max);
 
-            % Conditional integration anti-windup:
-            % If saturated and error would drive further into saturation, do not integrate.
-            satHigh = (tau >= obj.tauMax) && (err > 0);
-            satLow  = (tau <= -obj.tauMax) && (err < 0);
+            % Candidate I update (I_stored is TORQUE units): I += Ki * e * dt
+            I = min(max(obj.I_stored + (obj.Ki * err * obj.dt), I_min), I_max);
 
-            if ~(satHigh || satLow)
-                obj.intErr = newIntErr;
+            % PID terms
+            P = obj.Kp * err;
+            D = obj.Kd * derr;
+
+            % Unclamped command (matches C++ "unclamped")
+            tauUnsat = P + I + D;
+
+            % Clamp to actuator limits (matches C++ "clamped")
+            tau = min(max(tauUnsat, u_min), u_max);
+
+            % Anti-windup freeze conditions (matches C++)
+            windup_high = (tauUnsat > u_max) && (err > 0.0);
+            windup_low  = (tauUnsat < u_min) && (err < 0.0);
+
+            if ~(windup_high || windup_low)
+                obj.I_stored = I;
             end
 
-            % Update error memory
             obj.prevErr = err;
 
             % Repo convention: 3x1 [roll; pitch; yaw]
             u = [tau; 0; 0];
+        end
+
+        function reset(obj)
+            obj.I_stored = 0;
+            obj.prevErr  = 0;
         end
 
         function populateBreakPoints(~)

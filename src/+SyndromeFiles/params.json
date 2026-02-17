@@ -64,7 +64,8 @@
  "reaction_wheel": {
   "Iw": 0.00012,
   "tau_max": 0.08,
-  "w_max": 600,
+  "w_max": 600.0,
+  "w_soft": 450.0,
   "b": 0.0,
   "w0": 0.0
 },
@@ -75,8 +76,7 @@
   "kd": 0.001,
   "dt": 0.005,
   "tau_max": 0.08,
-  "int_min": -5,
-  "int_max": 5
+  "gamma": 0.5
 },
 
 "navigation": {

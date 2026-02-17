@@ -99,7 +99,14 @@ classdef Flight < handle
                 disturbances.wind = [0, 0, 0].';
                 
                 if obj.runClosedLoop
-                    controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
+                    % HACKY SOLUTION FOR NOW: code specific to RollRatePID
+                    if isa(obj.controller, 'controllerPkg.RollRatePID') && obj.useActuatorModel
+                        w = actuatorState(1);  % wheel speed state
+                        alpha = obj.rocketDynamics.actuatorModel.computeAlpha(w);
+                        controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime, alpha);
+                    else
+                        controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
+                    end
                 end
 
                 if obj.useActuatorModel 
