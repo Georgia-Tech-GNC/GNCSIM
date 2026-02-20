@@ -16,13 +16,13 @@ classdef Fin < rocketPkg.DatcomManager
             obj.finParams = finParams;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, deflection, currentCg, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, deflection, currentCg, envConditions)
             arguments
                 obj
                 state (:,1) double
                 deflection (1,1) double
                 currentCg (1,1) double
-                disturbances struct
+                envConditions (1,1) flightPkg.AtmosphericConditions
             end
 
            % Rotation from inertial to body using quaternion
@@ -47,7 +47,7 @@ classdef Fin < rocketPkg.DatcomManager
            vC = cCB*(vB + cross(wB, rCb));
 
 		   % Get component forces and moments based on
-		   [fC, mC] = obj.getForcesMomentsDatcom(state, vC);
+		   [fC, mC] = obj.getForcesMomentsDatcom(state, vC, envConditions);
 
            % Converting back to body frame
            cBC = cCB';

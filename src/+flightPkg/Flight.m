@@ -28,6 +28,9 @@ classdef Flight < handle & matlab.mixin.Copyable
         endState (1,1) flightPkg.FlightState = flightPkg.FlightState.LANDED
         timeStateChange (1,1) double
         launchRailLength (1,1) double
+        groundAltitude (1,1) double
+        launchLat (1,1) double
+        launchLon (1,1) double
     end
 	
     methods
@@ -48,6 +51,22 @@ classdef Flight < handle & matlab.mixin.Copyable
             obj.launchRailLength = obj.flightParams.launchRailLength;
 
             obj.useActuatorModel = controller.useActuatorModel;
+            
+            % Setup Ground Altitude & Launch Coordinates
+            if isfield(flightParams, 'launchLat') && isfield(flightParams, 'launchLon')
+                obj.groundAltitude = 0; 
+                try
+                     % Offset starting altitude by the altitude of terrain relative to MSL
+                     obj.groundAltitude = elevation(flightParams.launchLat, flightParams.launchLon);
+                catch
+                     obj.groundAltitude = 0;
+                end
+            else
+                obj.groundAltitude = 0;
+            end
+            
+            % Offset Initial Z Position by Ground Altitude (converting AGL to MSL roughly)
+            obj.rocketInitialState(obj.idx.pos(3)) = obj.rocketInitialState(obj.idx.pos(3)) + obj.groundAltitude;
         end
 
         function log = runSim(obj, log)
@@ -62,8 +81,12 @@ classdef Flight < handle & matlab.mixin.Copyable
             rocketState = obj.rocketInitialState(:);
             actuatorState = obj.actuatorInitialState(:);
             controlInput = obj.controlInputInitialState(:);
-            disturbances.wind = [0, 0, 0].';
             
+            % Initialize Environment Conditions
+            [T, a, P, rho] = obj.environment.getAtmosphere(obj.groundAltitude);
+            wind = obj.environment.getWindVector(obj.groundAltitude);
+            envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+
             % Initialize logger time step
             log.initializeTimestep(obj.currentTime);
             
@@ -71,9 +94,9 @@ classdef Flight < handle & matlab.mixin.Copyable
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
 
             if obj.useActuatorModel
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, true, true, log);
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, true, log);
             else
-                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, true, true, log);
+                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, envConditions, obj.currentTime, obj.flightState, true, true, log);
             end
 
             log.add(obj.currentTime, 'states', rocketState);
@@ -88,6 +111,12 @@ classdef Flight < handle & matlab.mixin.Copyable
                 ii = ii + 1;
                 obj.currentTime = ii * obj.dt;
                 log.initializeTimestep(obj.currentTime);
+
+                % Update Environment Conditions
+                alt = rocketState(obj.idx.z);
+                [T, a, P, rho] = obj.environment.getAtmosphere(alt);
+                wind = obj.environment.getWindVector(alt);
+                envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
 
                 switch obj.flightState
                     case FlightState.PRELAUNCH
@@ -105,7 +134,9 @@ classdef Flight < handle & matlab.mixin.Copyable
                         
                     case FlightState.LAUNCH_RAIL
                         % Run open loop on launch rail
-                        disturbances.wind = [0, 0, 0].';
+                        
+                        % No wind on launch rail
+                        envConditions.WindVector = [0;0;0];
                         
                         % Start accumulating velocity if closed loop
                         if obj.runClosedLoop
@@ -119,13 +150,13 @@ classdef Flight < handle & matlab.mixin.Copyable
                             end
                         end
                         
-                        rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState);
+                        rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState);
                         rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
                         
                         % Clamp Orientation to Initial Launch Orientation
                         rocketState(obj.idx.quat) = obj.rocketInitialState(obj.idx.quat);
                         
-                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);                       
+                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);                       
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
                         
                         log.add(obj.currentTime, 'states', rocketState);
@@ -137,7 +168,6 @@ classdef Flight < handle & matlab.mixin.Copyable
 
                     case {FlightState.POWERED_ASCENT, FlightState.COASTING_ASCENT}
                         % Full Simulation Logic
-                        disturbances.wind = [0, 0, 0].';
                         
                         if obj.runClosedLoop
                             % Calculate cumulated velocity every interval
@@ -152,13 +182,13 @@ classdef Flight < handle & matlab.mixin.Copyable
                             if obj.useActuatorModel
                                 actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
                                 actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
-                                rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime, obj.flightState);
+                                rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, envConditions, obj.currentTime, obj.flightState);
                                 log.add(obj.currentTime, 'actuatorStates', actuatorState);
                             else
-                                rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime, obj.flightState);
+                                rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, envConditions, obj.currentTime, obj.flightState);
                             end
                         else
-                            rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState);
+                            rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState);
                         end
 
                         rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
@@ -170,12 +200,12 @@ classdef Flight < handle & matlab.mixin.Copyable
                             controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
                             log.add(obj.currentTime, 'controlInputs', controlInput);
                             if obj.useActuatorModel
-                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, obj.flightState, true, true, log);
+                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, true, log);
                             else
-                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, obj.flightState, true, true, log);
+                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, envConditions, obj.currentTime, obj.flightState, true, true, log);
                             end
                         else
-                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);
+                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);
                         end
 
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
@@ -190,16 +220,15 @@ classdef Flight < handle & matlab.mixin.Copyable
                         
                     case FlightState.DESCENT
                         % Simplified Descent Logic
-                         disturbances.wind = [0, 0, 0].';
                          
-                         rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState);
+                         rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState);
                          rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
 
                          % Clamp Upright (-90 deg pitch wrt ENU)
                          rocketState(obj.idx.quat) = Utils.eulerToQuat([0, -90, 0]).';
                          rocketState(obj.idx.omega) = [0;0;0];
                          
-                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, disturbances, obj.currentTime, obj.flightState, true, true, log);
+                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);
 
                          obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
 
@@ -266,9 +295,9 @@ classdef Flight < handle & matlab.mixin.Copyable
                     end
 
                 case FlightState.DESCENT
-                    % Transition to LANDED once z position in ENU is below 1.0m
+                    % Transition to LANDED once z position in ENU is below ground altitude + 1.0m
                     posENU = rocketState(obj.idx.pos);
-                    if posENU(3) < 1.0
+                    if posENU(3) < obj.groundAltitude
                         obj.transitionTo(FlightState.LANDED, time);
                     end
 

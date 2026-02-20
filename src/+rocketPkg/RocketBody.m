@@ -18,11 +18,11 @@ classdef RocketBody < rocketPkg.DatcomManager
 			obj.bodyParams = bodyParams;
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, envConditions)
             arguments
                 obj
                 state (:,1) double
-                disturbances struct
+                envConditions (1,1) flightPkg.AtmosphericConditions
             end
            	% Computes aerodynamic forces and moments on the body
 
@@ -33,7 +33,7 @@ classdef RocketBody < rocketPkg.DatcomManager
             % Body frame velocity
             vB = state(obj.idx.vel);
 
-            % vW = cBI * disturbances.wind
+            % vW = cBI * envConditions.WindVector
             vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
 
 			% add wind velocity to body velocity
@@ -49,7 +49,7 @@ classdef RocketBody < rocketPkg.DatcomManager
 			vC = (vB + cross(wB, rCb));
 
 			% Compute aerodynamic forces and moments using DATCOM data
-			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC);
+			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC, envConditions);
 
 			mBRoss = cross(rCb, fB);
             mB = mC + mBRoss(:);

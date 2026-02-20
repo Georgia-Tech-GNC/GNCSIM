@@ -154,7 +154,7 @@ function rocketDyn = setupRocket()
 end
 
 function environment = setupEnvironment()
-    environment = flightPkg.Environment.empty;
+    environment = flightPkg.Environment();
 end
 
 
@@ -385,9 +385,13 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
 
     flightParams.dt = 0.01;  % time step [s]
 
+    % Launch Location (Atlanta, GA)
+    flightParams.launchLat = 33.7490; 
+    flightParams.launchLon = -84.3880;
+
     % Initial conditions
     mass0 = rocketDynamics.massWet;
-    pos0 = [0, 0, 0];
+    pos0 = [0, 0, 0]; % pos0 is added to the default altitude given coordinates
     vel0 = [1, 0, 0];
 	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
 	quatRot = Utils.eulerToQuat([0, -90, 0]).';

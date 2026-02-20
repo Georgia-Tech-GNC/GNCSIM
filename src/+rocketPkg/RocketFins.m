@@ -58,13 +58,13 @@ classdef RocketFins < rocketPkg.DatcomManager
             obj.numMovableFins = numMovableFins;
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, envConditions)
             arguments
                 obj
                 state (:,1) double
                 deflections (:,1) double
                 currentCg (1,1) double
-                disturbances struct
+                envConditions (1,1) flightPkg.AtmosphericConditions
             end
             % Calculates the total aerodynamic forces and moments in the body frame
 			fB = [0, 0, 0].';
@@ -84,7 +84,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 % Compute the current fin forces and moments based on
                 % state, current deflection, cg location and any
                 % disterbances
-				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, disturbances);
+				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, envConditions);
 				fB = fB + fBFin;
 				mB = mB + mBFin;
 			end

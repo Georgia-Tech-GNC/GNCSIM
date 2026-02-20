@@ -17,15 +17,15 @@ classdef TheOncelerActuatorModel < controllerPkg.ActuatorModel
             obj.computeBuildup();
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions)
             arguments
                 obj
                 state (:,1) double
                 actuatorState (:,1) double
                 currentCg (1,1) double
-                disturbances struct
+                envConditions (1,1) flightPkg.AtmosphericConditions
             end
-            [fB, mB] = obj.rocketFins.getForcesMoments(state, actuatorState, currentCg, disturbances);
+            [fB, mB] = obj.rocketFins.getForcesMoments(state, actuatorState, currentCg, envConditions);
         end
 
         function actuatorStateDot = actuatorDynamics(obj, controlInput, actuatorState)

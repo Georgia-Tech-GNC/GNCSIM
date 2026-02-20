@@ -78,15 +78,14 @@ classdef AerodynamicsCFD < handle
             mAzFunction = obj.mAzFunc;
         end
         
-        function [fAb, mAb] = getAeroForcesMoments(obj, state, disturbances, rho, CG)
+        function [fAb, mAb] = getForcesMoments(obj, state, envConditions, CG)
             % Inputs [u v w] in (m/s). Inputs [p r] in (rad/s). Input rho
             % in kg/m^3. Input CG in m from tip of nosecone.
 
-            % placeholder - need to improve
-            rho = 1.225; %kg/m^3
+            rho = envConditions.Density; %kg/m^3
 
             cBI = Utils.dirCosine(state(obj.idx.quat));
-            wind = cBI* disturbances.wind;
+            wind = cBI * envConditions.WindVector;
 
             u = state(obj.idx.vx) - wind(1);
             v = state(obj.idx.vy) - wind(2);

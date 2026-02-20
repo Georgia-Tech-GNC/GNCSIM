@@ -130,6 +130,26 @@ classdef Environment < handle
 
 
         %--------------------------------------------------------------
+        % getAtmosphere
+        % Returns the standard atmosphere properties at a given altitude.
+        % Wraps MATLAB's atmosisa.
+        %
+        % INPUT:
+        %   alt  - altitude (m)
+        %
+        % OUTPUT:
+        %   [T, a, P, rho]
+        %--------------------------------------------------------------
+        function [T, a, P, rho] = getAtmosphere(obj, alt)
+            arguments
+                obj
+                alt (1,1) double
+            end
+            [T, a, P, rho] = atmosisa(alt);
+        end
+
+
+        %--------------------------------------------------------------
         % buildAltitudeGrid
         % Creates the altitude vector from a small epsilon to maxAltitude
         % using stepSize.

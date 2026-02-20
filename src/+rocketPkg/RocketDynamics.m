@@ -129,12 +129,12 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             mDot = - T * (obj.massWet - obj.massDry) / obj.totalImpulse;
         end
 
-        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, disturbances, time, flightState, useGravity, useThrust, log)
+        function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, envConditions, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
                 state (:,1) double
                 controlInput (:,1) double
-                disturbances struct % wind
+                envConditions (1,1) flightPkg.AtmosphericConditions
                 time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 useGravity (1,1) logical = true
@@ -146,16 +146,16 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             xDot = zeros(Nx, Nt);
 
             for i = 1:Nt
-                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), disturbances, time(i), flightState, useGravity, useThrust, log);
+                xDot(:,i) = obj.rocketModelControlWrapper(state(:,i), controlInput(:,i), envConditions, time(i), flightState, useGravity, useThrust, log);
             end
         end
 
-        function xDot = rocketModelControlWrapper(obj, state, controlInput, disturbances, time, flightState, useGravity, useThrust, log)
+        function xDot = rocketModelControlWrapper(obj, state, controlInput, envConditions, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
                 state (:,1) double
                 controlInput (:,1) double
-                disturbances struct% wind
+                envConditions (1,1) flightPkg.AtmosphericConditions
                 time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 useGravity (1,1) logical = true
@@ -163,15 +163,15 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 log analysisPkg.Log {mustBeScalarOrEmpty} = analysisPkg.Log.empty
             end
             actuatorState = obj.actuatorModel.allocationMatrix * controlInput;
-            xDot = obj.rocketModel(state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log);
+            xDot = obj.rocketModel(state, actuatorState, envConditions, time, flightState, useGravity, useThrust, log);
         end
 
-		function xDot = rocketModel(obj, state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log)
+		function xDot = rocketModel(obj, state, actuatorState, envConditions, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
                 state (:,1) double
                 actuatorState (:,1) double
-                disturbances struct% wind
+                envConditions (1,1) flightPkg.AtmosphericConditions
                 time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 useGravity (1,1) logical = true
@@ -179,16 +179,16 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 log analysisPkg.Log {mustBeScalarOrEmpty} = analysisPkg.Log.empty
             end
 
-            [fB, mB] = obj.getForcesMoments(state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log);
+            [fB, mB] = obj.getForcesMoments(state, actuatorState, envConditions, time, flightState, useGravity, useThrust, log);
             xDot = obj.flatEarthEOM(state, time, fB, mB);
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, disturbances, time, flightState, useGravity, useThrust, log)
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, envConditions, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
                 state (:,1) double
                 actuatorState (:,1) double
-                disturbances struct % wind
+                envConditions (1,1) flightPkg.AtmosphericConditions
                 time (1,1) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState 
                 useGravity (1,1) logical = true
@@ -219,8 +219,8 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.LAUNCH_RAIL
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
-                    [fBAero, ~] = obj.computeAero(state, currentCg, disturbances);
-                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+                    [fBAero, ~] = obj.computeAero(state, currentCg, envConditions);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions);
 
                     fTotal = fGBody + fTB + fBAero + fBActuator;
                     fB = [fTotal(1); 0; 0];
@@ -236,8 +236,8 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.POWERED_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
-                    [fBAero, mBAero] = obj.computeAero(state, currentCg, disturbances);
-                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions);
 
                     fB = fGBody + fTB + fBAero + fBActuator;
                     mB = mBAero + mBActuator;
@@ -252,8 +252,8 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
 
                 case FlightState.COASTING_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
-                    [fBAero, mBAero] = obj.computeAero(state, currentCg, disturbances);
-                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, disturbances);
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions);
 
                     fB = fGBody + fBAero + fBActuator;
                     mB = mBAero + mBActuator;
@@ -267,7 +267,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
 
                 case FlightState.DESCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
-                    fBParachute = obj.computeParachute(state, rocketQuat, disturbances, time);
+                    fBParachute = obj.computeParachute(state, rocketQuat, envConditions, time);
 
                     fB = fGBody + fBParachute;
                     mB = [0; 0; 0];
@@ -431,22 +431,22 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             fTB = [obj.getThrust(time) * useThrust; 0; 0];
         end
 
-        function [fBAero, mBAero] = computeAero(obj, state, currentCg, disturbances)
+        function [fBAero, mBAero] = computeAero(obj, state, currentCg, envConditions)
             if isempty(obj.aerodynamicsCFD)
-                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, disturbances);
-                [fBBody, mBBody] = obj.body.getForcesMoments(state, disturbances);
+                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, envConditions);
+                [fBBody, mBBody] = obj.body.getForcesMoments(state, envConditions);
                 fBAero = fBFins + fBBody;
                 mBAero = mBFins + mBBody;
             else
-                [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, disturbances);
+                [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, envConditions, currentCg);
             end
         end
 
-        function [fBActuator, mBActuator] = computeActuator(obj, state, actuatorState, currentCg, disturbances)
-            [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, disturbances);
+        function [fBActuator, mBActuator] = computeActuator(obj, state, actuatorState, currentCg, envConditions)
+            [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, envConditions);
         end
 
-        function fBParachute = computeParachute(obj, state, rocketQuat, disturbances, time)
+        function fBParachute = computeParachute(obj, state, rocketQuat, envConditions, time)
             rocketAlt = state(obj.idx.z);
             rocketVel = state(obj.idx.vel);
             
@@ -465,7 +465,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                  obj.activeParachute.isDeployed = true;
             end
 
-            fBParachute = obj.activeParachute.getForcesAndMoments(rocketVel, rocketQuat, disturbances);
+            fBParachute = obj.activeParachute.getForcesAndMoments(rocketVel, rocketQuat, envConditions);
         end
     end
 
