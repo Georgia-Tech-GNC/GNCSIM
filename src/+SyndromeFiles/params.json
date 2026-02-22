@@ -81,16 +81,25 @@
 
 "navigation": {
   "gyro": {
-    "ARW": [0.0, 0.0, 0.0],
     "bias": [0.0, 0.0, 0.0],
-    "noiseCovariance": [[0.0, 0.0, 0.0],
-                        [0.0, 0.0, 0.0],
-                        [0.0, 0.0, 0.0]],
+
+    "biasRW_sigma": [5e-4, 5e-4, 5e-4],
+    "lpf_cutoff_hz": 30.0,
+    "latency_s": 0.010,
+
+    "noiseCovariance": [
+      [1e-4, 0.0, 0.0],
+      [0.0, 1e-4, 0.0],
+      [0.0, 0.0, 1e-4]
+    ],
+
     "outputRate": 100,
     "outputProbability": 1,
-    "observationMatrix": [[1.0, 0.0, 0.0],
-                          [0.0, 1.0, 0.0],
-                          [0.0, 0.0, 1.0]]
+    "observationMatrix": [
+      [1.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0]
+    ]
   },
   "accel": {
     "VRW": [0.0, 0.0, 0.0],
