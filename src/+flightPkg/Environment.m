@@ -4,7 +4,7 @@
 % (ported from GNCSIM 1.0, modified to implement 3D wind,
 %  updated with smoother turbulence, veer limiting, and RNG control)
 
-classdef Environment < handle
+classdef Environment < handle & matlab.mixin.Copyable
     %ENVIRONMENT Atmospheric wind model with shear, veer, and turbulence.
     %   Builds a 3D wind field as a function of altitude using:
     %     - Power-law vertical shear
@@ -24,7 +24,7 @@ classdef Environment < handle
         % Shear law parameters (Power Law)
         % U(z) = U0 * (z / zRef)^alpha
         %--------------------------------------------------------------
-        U0 (1,1) double = 5                 % reference wind speed at zRef (m/s)
+        U0 (1,1) double = 1                 % reference wind speed at zRef (m/s)
         zRef (1,1) double = 10              % reference height (m)
         alpha (1,1) double = 0.14           % terrain exponent (0.1–0.3)
 

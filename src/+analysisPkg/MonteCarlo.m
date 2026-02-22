@@ -6,21 +6,24 @@ classdef MonteCarlo < handle
 
         flight flightPkg.Flight
         rocketDynamics rocketPkg.RocketDynamics
+        environment flightPkg.Environment
         logTemplate analysisPkg.Log
     end
 
     methods
-        function obj = MonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns)
+        function obj = MonteCarlo(uncertainty, flight, rocketDynamics, environment, logTemplate, numRuns)
             arguments
                 uncertainty 
                 flight 
                 rocketDynamics 
+                environment
                 logTemplate 
                 numRuns 
             end
             obj.uncertainty = uncertainty;
             obj.flight = flight;
             obj.rocketDynamics = rocketDynamics;
+            obj.environment = environment;
             obj.logTemplate = logTemplate;
             obj.numRuns = numRuns;
 
@@ -29,6 +32,11 @@ classdef MonteCarlo < handle
         end
 
         function logs = runMonteCarlo(obj)
+            pool = gcp('nocreate');
+            if isempty(pool)
+                error('A parallel pool is required before calling runMonteCarlo. Start one with parpool(...).');
+            end
+
             % Pre-allocate cell array for logs
             logs = cell(obj.numRuns, 1);
 
@@ -47,20 +55,21 @@ classdef MonteCarlo < handle
                 fprintf('Running Monte Carlo iteration %d of %d\n', runIdx, obj.numRuns);
 
                 % Create copies for this iteration (needed for parfor)
-                flightCopy = copy(obj.flight);
-                rocketCopy = copy(obj.rocketDynamics);
+                flightCopy = obj.flight.copy();
+                rocketCopy = obj.rocketDynamics.copy();
+                environmentCopy = obj.environment.copy();
                 
                 % Manually deep copy parachute linked list
                 rocketCopy.activeParachute = analysisPkg.MonteCarlo.copyParachuteList(obj.rocketDynamics.activeParachute);
 
                 % Apply uncertainty parameters for this run
-                analysisPkg.MonteCarlo.applyUncertaintyParameters(rocketCopy, flightCopy, samples(runIdx, :), varNames);
+                analysisPkg.MonteCarlo.applyUncertaintyParameters(rocketCopy, environmentCopy, flightCopy, samples(runIdx, :), varNames);
 
                 % Update flight with modified rocket
                 flightCopy.rocketDynamics = rocketCopy;
 
                 % Copy log template
-                log = copy(obj.logTemplate);
+                log = obj.logTemplate.copy();
 
                 % Run simulation
                 log = flightCopy.runSim(log);
@@ -73,9 +82,10 @@ classdef MonteCarlo < handle
     end
 
     methods (Static, Access = private)
-        function applyUncertaintyParameters(rocketDynamics, flight, sampleValues, varNames)
+        function applyUncertaintyParameters(rocketDynamics, environment, flight, sampleValues, varNames)
             arguments
                 rocketDynamics rocketPkg.RocketDynamics
+                environment flightPkg.Environment
                 flight flightPkg.Flight
                 sampleValues (1,:) double
                 varNames cell
@@ -158,6 +168,14 @@ classdef MonteCarlo < handle
                         rocketDynamics.actuatorModel.limits.maxRate = value;
                     case 'timeConstant'
                         rocketDynamics.actuatorModel.timeConstant = value;
+
+                     % Wind
+                    case 'U0'
+                        environment.U0 = value;
+                    case 'theta0'
+                        environment.theta0 = value;
+                    case 'I0'
+                        environment.I0 = value;
                     
                     % Parachute    
                     otherwise

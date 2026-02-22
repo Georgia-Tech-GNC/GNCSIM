@@ -34,7 +34,7 @@ classdef RocketBody < rocketPkg.DatcomManager
             vB = state(obj.idx.vel);
 
             % vW = cBI * envConditions.WindVector
-            vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
+            vW = cBI * envConditions.WindVector; % Wind velocity (ignored for now)
 
 			% add wind velocity to body velocity
             vB = vB + vW;

@@ -15,38 +15,42 @@ else
     nominalTrajectory.useThisTraj = false;
 end
 
-% Setup Controller
-useActuatorModel = true;
-controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
-
 % Setup Environment
 environment = setupEnvironment();
+
+% Setup Controller
+useActuatorModel = true;
+controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory, environment);
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
 flight.runClosedLoop = true;
 
 %% Run Flight
-runFlight = false;
+runFlight = true;
 if runFlight
     tic;
     log = flight.runSim(log);
     elapsed_time = toc;
     fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
     log.trim();
+    nominalLog = log;  % Save nominal log
 end
 
 %% MonteCarlo
 runMonteCarlo = true;
-
 numWorkers = 12;
-% Close existing pool
-delete(gcp('nocreate'));  
-parpool(numWorkers);     
 
 if runMonteCarlo
-    uncertaintyParams = setupUncertaintyParams(rocketDynamics, flight);
-    monteCarlo = setupMonteCarlo(uncertaintyParams, flight, rocketDynamics, log, 12);
+    % Close existing pool    
+    delete(gcp('nocreate'));  
+    parpool(numWorkers); 
+
+    [mcFlight, mcLogTemplate] = setupFlight(rocketDynamics, controller, environment);
+    mcFlight.runClosedLoop = true;
+    
+    uncertaintyParams = setupUncertaintyParams(rocketDynamics, environment, mcFlight);
+    monteCarlo = setupMonteCarlo(uncertaintyParams, mcFlight, rocketDynamics, environment, mcLogTemplate, 12);
 
     tic;
     mcLogs = monteCarlo.runMonteCarlo();
@@ -55,8 +59,24 @@ if runMonteCarlo
 end
 
 %% Analysis
-analysis = analysisPkg.Analysis(mcLogs);
-analysis.generateAllPlots();
+if runFlight && ~isempty(nominalLog)
+    if runMonteCarlo
+        % If (Montecarlo + Nominal) generate just yaw angles plots for all runs
+        mcLogs{end+1} = nominalLog;
+        analysis = analysisPkg.Analysis(mcLogs);
+        analysis.generateYawAnglePlots();
+    else
+        % If only Nominal generate all plots
+        analysis = analysisPkg.Analysis(nominalLog);
+        analysis.generateAllPlots();
+    end
+else
+        % If only Montecarlo is true generate all plots
+        analysis = analysisPkg.Analysis(mcLogs);
+        analysis.generateAllPlots();
+end
+
+
 %analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
@@ -258,7 +278,7 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
 
 end
 
-function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory)
+function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory, environment)
     % Compute Reference Attitudes
     dt = 0.01;  % or whatever your timestep is
     controlTime = 23;  % or whatever your total time is
@@ -304,7 +324,15 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	R2 = 20;   	
 	Q3 = diag([1 1 1]);
 	R3 = 2; 
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
+    
+    %groundAltitude = elevation(33.7490, -84.3880);
+    groundAltitude = 0;
+
+    [T, a, P, rho] = environment.getAtmosphere(groundAltitude);
+    wind = environment.getWindVector(groundAltitude);
+    envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
@@ -448,7 +476,7 @@ function firstParachute = setupParachute()
     firstParachute = drogue;
 end
 
-function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
+function uncertaintyObj = setupUncertaintyParams(rocketDynamics, environment, flight)
     import analysisPkg.DistributionType
     
     uncertaintyObj = analysisPkg.Uncertainty();
@@ -538,19 +566,30 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, flight)
     railOrientation3Sigma = deg2rad(5);  % 5 degree uncertainty
     uncertaintyObj.addVariable('railOrientation', 0, railOrientation3Sigma, DistributionType.GAUSSIAN);
 
+    % Wind
+    U03sigma = getThreeSigmaDeviation(environment.U0, percentUncertainty);
+    uncertaintyObj.addVariable('U0', environment.U0, U03sigma, DistributionType.GAUSSIAN)
+
+    I03sigma = getThreeSigmaDeviation(environment.I0, percentUncertainty);
+    uncertaintyObj.addVariable('I0', environment.I0, I03sigma, DistributionType.GAUSSIAN)
+    
+    theta03sigma = getThreeSigmaDeviation(environment.theta0, percentUncertainty);
+    uncertaintyObj.addVariable('theta0', environment.theta0, theta03sigma, DistributionType.GAUSSIAN)
+
 end
 
-function monteCarlo = setupMonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns)
+function monteCarlo = setupMonteCarlo(uncertainty, flight, rocketDynamics, environment, logTemplate, numRuns)
     % Setup Monte Carlo simulation
     arguments
         uncertainty analysisPkg.Uncertainty
         flight flightPkg.Flight
         rocketDynamics rocketPkg.RocketDynamics
+        environment flightPkg.Environment
         logTemplate analysisPkg.Log
         numRuns (1,1) double {mustBePositive, mustBeInteger}
     end
 
-    monteCarlo = analysisPkg.MonteCarlo(uncertainty, flight, rocketDynamics, logTemplate, numRuns);
+    monteCarlo = analysisPkg.MonteCarlo(uncertainty, flight, rocketDynamics, environment, logTemplate, numRuns);
 end
 
 function deviation = getThreeSigmaDeviation(nominalValue, percentUncertainty)
@@ -562,7 +601,6 @@ function deviation = getThreeSigmaDeviation(nominalValue, percentUncertainty)
 
     deviation = abs(nominalValue) * percentUncertainty;
 end
-
 
 
 

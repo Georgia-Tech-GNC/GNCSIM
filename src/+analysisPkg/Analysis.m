@@ -221,6 +221,114 @@ classdef Analysis < handle
             end
         end
 
+        function generateYawAnglePlots(obj)
+            fig1 = figure('Visible', 'off');
+            hold on;
+            nominalLog = obj.logs{obj.numSamples};
+            timeNominal0 = nominalLog.time(1:nominalLog.currentIdx);
+            timeNominal0 = timeNominal0(obj.timeMask{obj.numSamples});
+            allEul = zeros(obj.numSamples-1, length(timeNominal0));
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Get quaternion states
+                q0 = log.getState('q0');
+                q1 = log.getState('q1');
+                q2 = log.getState('q2');
+                q3 = log.getState('q3');
+                time = log.time(1:log.currentIdx);
+                q0 = q0(obj.timeMask{i});
+                q1 = q1(obj.timeMask{i});
+                q2 = q2(obj.timeMask{i});
+                q3 = q3(obj.timeMask{i});
+                time = time(obj.timeMask{i});
+
+                quat = quaternion([q0', q1', q2', q3']);  % N x 4 matrix
+                quat_y90 = quaternion(Utils.eulerToQuat([0, 90, 0])');
+                quat_rotated = quat * quat_y90;
+
+                eul = rad2deg(quat2eul(quat_rotated, 'XYZ'));
+                
+                % Plot last log (nominal) in red, others (MC) in blue
+                if i == obj.numSamples
+                    % Last log is nominal flight
+                    timeNominal = time;
+                    eulNominal   = eul(:,1);
+                else
+                    % MC runs in light blue
+                    if i == 1
+                        plot(time, eul(:,1), 'Color', [0.3 0.6 0.9 0.4], 'LineWidth', 0.8, 'DisplayName', 'MC runs')
+                    else
+                        plot(time, eul(:,1), 'Color', [0.3 0.6 0.9 0.4], 'LineWidth', 0.8, 'HandleVisibility', 'off')
+                    end
+                    allEul(i, :) = interp1(time, eul(:,1)', timeNominal0, 'linear','extrap')';
+                end
+            end
+
+            %mu    = mean(allEul, 1, 'omitnan');
+            sigma = std(allEul, 0, 1, 'omitnan');
+            %eulNominalInterp = interp1(timeNominal, eulNominal, timeNominal0, 'linear');
+            
+            upper3sigma = eulNominal' + 3*sigma;
+            lower3sigma = eulNominal' - 3*sigma;
+            
+            % Define mission requirements 
+            t1 = 2.5;
+            t2 = 2.5;
+            t3 = 5.7;
+            t4 = 5.7;
+            y1 = 6.5;
+            y2 = 14;
+            y3 = 23; 
+            y4 = 17.5;
+            
+            % Draw rectangle
+            fill([t1, t2, t3, t4], ...
+                 [y1, y2, y3, y4], ...
+                 'g', 'FaceAlpha', 0.15, 'EdgeColor', 'g', ...
+                 'LineStyle', '--', 'DisplayName', ' Mission Requirement')
+
+            plot(timeNominal0, eulNominal, 'r-', 'LineWidth', 1.5, 'DisplayName', 'Nominal')
+            ylabel('\textbf{Yaw Angle (deg)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            xlim([0 25])
+            legend('show', 'Location', 'best', 'Interpreter', 'latex')
+            grid on
+
+            fig2 = figure('Visible', 'off');
+            hold on
+            %fill([t; flipud(t)],[u;flipud(l)],'b', 'FaceAlpha', 0.15, 'EdgeColor', 'none', 'DisplayName', '±3\sigma')
+
+            for i = 1:obj.numSamples-1
+                if i == 1
+                    plot(timeNominal0, allEul(i,:), 'Color', [0.3 0.6 0.9 0.4], 'LineWidth', 1, 'DisplayName', 'MC runs')
+                else
+                    plot(timeNominal0, allEul(i,:), 'Color', [0.3 0.6 0.9 0.4], 'LineWidth', 1, 'HandleVisibility', 'off')
+                end
+            end
+
+            plot(timeNominal0, upper3sigma, 'b--', 'LineWidth', 0.5, 'DisplayName', '±3$\sigma$' )
+            plot(timeNominal0, lower3sigma, 'b--', 'LineWidth', 0.5, 'HandleVisibility', 'off' )
+
+            plot(timeNominal, eulNominal, 'r-', 'LineWidth', 1.5, 'DisplayName', 'Nominal')
+
+            ylabel('\textbf{Yaw Angle (deg)}', 'Interpreter', 'latex')
+            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            xlim([0 25])
+            legend('show', 'Location', 'best', 'Interpreter', 'latex')
+            grid on
+
+            if obj.saveAsPDF
+                saveas(fig1, fullfile(obj.plotDir, 'euler_angles_mc.png'));
+                saveas(fig2, fullfile(obj.plotDir, 'euler_angles_sigma.png'));
+                close(fig1);
+                close(fig2);
+            else
+                set(fig1, 'Visible', 'on');
+                set(fig2, 'Visible', 'on');
+            end
+        end
+
         function generateAngularVelocityPlot(obj)
             fig = figure('Visible', 'off');
             hold on;
@@ -1025,14 +1133,14 @@ classdef Analysis < handle
                 quat_rotated = quat * quat_y90;
 
                 eul = rad2deg(quat2eul(quat_rotated, 'ZYX'));
-                plot(time, eul, 'LineWidth', 2)
+                plot(time, eul(:,1), 'LineWidth', 2)
             end
 
 
-            legend('Yaw','Pitch','Roll')
-            ylabel('\textbf{Euler Angles (deg)}', 'Interpreter', 'latex')
+            ylabel('\textbf{Yaw Angle (deg)}', 'Interpreter', 'latex')
             xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
-            title('\textbf{Euler Angles (State Estimate)}', 'Interpreter', 'latex')
+            xlim([0,24])
+            %title('\textbf{Euler Angles (State Estimate)}', 'Interpreter', 'latex')
             grid on
 
             if obj.saveAsPDF

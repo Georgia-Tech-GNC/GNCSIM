@@ -13,6 +13,7 @@ classdef ActuatorModel < handle
         function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions) %#ok<INUSD>
             error('ActuatorModel:getForcesMoments', ...
                   'getForcesMoments must be implemented in a subclass.');
+           
         end
         
         function actuatorStateDot = actuatorDynamics(obj, controlInput, actuatorState) %#ok<INUSD>

@@ -33,7 +33,7 @@ classdef Fin < rocketPkg.DatcomManager
            vB = state(obj.idx.vel);
 
            % Convert wind from inertial to body
-           vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
+           vW = cBI * envConditions.WindVector; % Wind velocity (ignored for now)
 
            % Add componet velocity and wind velocity
            vB = vB + vW;

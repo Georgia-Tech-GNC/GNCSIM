@@ -5,12 +5,14 @@ classdef ReduceLTI < handle
     % for Linear Time-Invariant (LTI) flight dynamics.
     properties
         rocketDynamics rocketPkg.RocketDynamics		% Handle to the main flight/rocket physics model
+        envConditions (1,1) flightPkg.AtmosphericConditions
     end
 
     methods
         % Constructor
-        function obj = ReduceLTI(rocketDynamics)
+        function obj = ReduceLTI(rocketDynamics, envConditions)
             obj.rocketDynamics = rocketDynamics;
+            obj.envConditions = envConditions;
 		end
 		
         function [sysPitch, sysRoll] = generateROM(obj, xStar)
@@ -44,12 +46,12 @@ classdef ReduceLTI < handle
             end
 			% Linearizes full dynamics and projects them onto 3-state Pitch space
 			% Now uses actual actuatorState from the operating point
-
-            disturbances.wind = [0, 0, 0].';
+            
+            %disturbances= [0, 0, 0].';
             
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
@@ -63,7 +65,7 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, false, false);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, false, false);
                 fx = @(x) f(x, [0, pitchControlInput, 0].');
                 fu = @(u_in) f(xStar, [0, u_in, 0].');
     
@@ -100,10 +102,10 @@ classdef ReduceLTI < handle
 			% Linearizes full dynamics and projects them onto 2-state Roll space
 			% Now uses actual actuatorState from the operating point
 
-            disturbances.wind = [0, 0, 0].';
+            %disturbances.wind = [0, 0, 0].';
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
@@ -117,7 +119,7 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, disturbances, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
                 fx = @(x) f(x, [rollControlInput, 0, 0].');
                 fu = @(u_in) f(xStar, [u_in, 0, 0].');
     
