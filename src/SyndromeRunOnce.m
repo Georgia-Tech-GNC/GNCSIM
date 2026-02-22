@@ -6,6 +6,11 @@ function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
     params.controller.ki = ki;
     params.controller.kd = kd;
 
+    % --- Scenario overrides (Monte Carlo) ---
+    if exist('opts','var') && isstruct(opts) && isfield(opts,'scenario') && ~isempty(opts.scenario)
+        params = applyScenarioOverrides(params, opts.scenario);
+    end
+
     %% Instantiate Classes
     % Rocket Dynamics (includes actuator model)
     rocketDynamics = setupRocket(params);
@@ -210,6 +215,12 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
     vel0  = [0, 0, 0];
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
+
+    % MC stuff
+    if isfield(params,'flight') && isfield(params.flight,'wx0')
+        omega0(1) = params.flight.wx0;
+    end
+
     flightParams.x0 = [mass0, pos0, vel0, quat0, omega0].';
 
     % Actuator initial state (1x1): wheel speed
@@ -232,5 +243,52 @@ end
 function mustHave(s, fieldName)
     if ~isfield(s, fieldName)
         error("Syndrome:MissingParam", "Missing required field '%s'.", fieldName);
+    end
+end
+
+% MC scenario overrides
+function params = applyScenarioOverrides(params, s)
+
+    % --- Plant ---
+    if isfield(s,'Ix_scale')
+        params.rocket.rotational_moi = params.rocket.rotational_moi * s.Ix_scale;
+    end
+    if isfield(s,'rollDampLin_scale')
+        params.rocket.rollDampLin = params.rocket.rollDampLin * s.rollDampLin_scale;
+    end
+
+    % --- Actuator ---
+    if isfield(s,'tauMax_scale')
+        params.reaction_wheel.tau_max = params.reaction_wheel.tau_max * s.tauMax_scale;
+        % keep controller.tau_max consistent with actuator authority
+        params.controller.tau_max = params.reaction_wheel.tau_max;
+    end
+    if isfield(s,'Iw_scale')
+        params.reaction_wheel.Iw = params.reaction_wheel.Iw * s.Iw_scale;
+    end
+    if isfield(s,'b_scale')
+        params.reaction_wheel.b = params.reaction_wheel.b * s.b_scale;
+    end
+
+    % --- Initial condition for roll rate (handled in setupFlight via opts) ---
+    % We'll store it in params so setupFlight can read it without changing signature.
+    if isfield(s,'wx0')
+        params.flight.wx0 = s.wx0;
+    end
+
+    % --- Gyro (x-axis) ---
+    if isfield(s,'gyro_bias_x')
+        params.navigation.gyro.bias(1) = params.navigation.gyro.bias(1) + s.gyro_bias_x;
+    end
+    if isfield(s,'gyro_biasRW_scale')
+        params.navigation.gyro.biasRW_sigma(1) = params.navigation.gyro.biasRW_sigma(1) * s.gyro_biasRW_scale;
+    end
+    if isfield(s,'gyro_noise_scale')
+        % scale variance (not stddev): R <- (scale^2) R
+        scale2 = s.gyro_noise_scale.^2;
+        params.navigation.gyro.noiseCovariance(1,1) = params.navigation.gyro.noiseCovariance(1,1) * scale2;
+    end
+    if isfield(s,'gyro_latency_s')
+        params.navigation.gyro.latency_s = s.gyro_latency_s;
     end
 end
