@@ -16,7 +16,9 @@
         [0, 0, 1]
     ],
     "CG_wet": 1,
-    "CG_dry": 1
+    "CG_dry": 1,
+    "rollDampLin": 0.0020,
+    "rollDampQuad": 0.0
  },
 
  "body": {

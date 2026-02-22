@@ -20,7 +20,9 @@ classdef RocketDynamics < handle
         moiWet  
         moiDry  
         cgWet 
-        cgDry 
+        cgDry
+        rollDampLin  % N*m*s/rad
+        rollDampQuad % N*m*s^2/rad^2 
 
         useThrust = true
 		useGravity = true
@@ -55,6 +57,9 @@ classdef RocketDynamics < handle
 
             obj.cgWet = rocketParams.cgXWet;
             obj.cgDry = rocketParams.cgXDry;
+
+            obj.rollDampLin  = rocketParams.rollDampLin;
+            obj.rollDampQuad = rocketParams.rollDampQuad;
 
             obj.actuatorModel = actuatorModel;
 
@@ -179,6 +184,18 @@ classdef RocketDynamics < handle
             
             % get net force on body
             fB = fTB + fBAero + fBActuator;
+
+            % --- Roll-rate aerodynamic damping about body X axis ---
+            omega = state(obj.idx.omega); % [wx; wy; wz] rad/s
+            wx = omega(1);
+
+            % Linear + optional quadratic damping (opposes roll rate)
+            mBRollDamp = [-obj.rollDampLin * wx - obj.rollDampQuad * wx * abs(wx);
+                           0;
+                           0];
+
+            mBAero = mBAero + mBRollDamp;
+            
             mB = mBAero + mBActuator;
         end
 

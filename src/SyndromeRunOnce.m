@@ -6,9 +6,6 @@ function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
     params.controller.ki = ki;
     params.controller.kd = kd;
 
-    rocketDynamics = setupRocket(params); 
-    rocketDynamics.computeBuildup();
-
     %% Instantiate Classes
     % Rocket Dynamics (includes actuator model)
     rocketDynamics = setupRocket(params);
@@ -46,6 +43,8 @@ function rocketDyn = setupRocket(params)
     mustHave(params.rocket, "cg_x");
     mustHave(params.rocket, "mass_wet");
     mustHave(params.rocket, "mass_dry");
+    mustHave(params.rocket, "rollDampLin");
+    mustHave(params.rocket, "rollDampQuad");
 
     rocketParams.longitudinalMoiWet = params.rocket.longitudinal_moi;
     rocketParams.rotationalMoiWet   = params.rocket.rotational_moi;
@@ -56,6 +55,9 @@ function rocketDyn = setupRocket(params)
     rocketParams.rotationalMoiDry   = params.rocket.rotational_moi;
     rocketParams.cgXDry             = params.rocket.cg_x;
     rocketParams.massDry            = params.rocket.mass_dry;
+
+    rocketParams.rollDampLin  = params.rocket.rollDampLin;
+    rocketParams.rollDampQuad = params.rocket.rollDampQuad;
 
     % ---- Flight conditions (DATCOM grid) ----
     mustHave(params.flight, "mach_numbers");
@@ -120,7 +122,7 @@ function rocketDyn = setupRocket(params)
     mustHave(params.reaction_wheel, "tau_max");
     mustHave(params.reaction_wheel, "w_max");
     mustHave(params.reaction_wheel, "w_soft");
-    if ~isfield(params.reaction_wheel, "b"), params.reaction_wheel.b = 0.0; end
+    mustHave(params.reaction_wheel, "b");
 
     actuatorModel = SyndromeFiles.SyndromeActuatorModel( ...
         params.reaction_wheel.Iw, ...
@@ -174,8 +176,26 @@ end
 function [flight, log] = setupFlight(params, rocketDynamics, controller, environment)
     mustHave(params, "controller");
     mustHave(params, "navigation");
+
     mustHave(params.navigation, "gyro");
+    mustHave(params.navigation.gyro, "bias");
+    mustHave(params.navigation.gyro, "biasRW_sigma");
+    mustHave(params.navigation.gyro, "lpf_cutoff_hz");
+    mustHave(params.navigation.gyro, "latency_s");
+    mustHave(params.navigation.gyro, "noiseCovariance");
+    mustHave(params.navigation.gyro, "outputRate");
+    mustHave(params.navigation.gyro, "outputProbability");
+    mustHave(params.navigation.gyro, "observationMatrix");
+
     mustHave(params.navigation, "accel");
+    mustHave(params.navigation.accel, "VRW");
+    mustHave(params.navigation.accel, "leverArm");
+    mustHave(params.navigation.accel, "SF");
+    mustHave(params.navigation.accel, "bias");
+    mustHave(params.navigation.accel, "noiseCovariance");
+    mustHave(params.navigation.accel, "outputRate");
+    mustHave(params.navigation.accel, "outputProbability");
+    mustHave(params.navigation.accel, "observationMatrix");
 
     dt = params.controller.dt;
 
