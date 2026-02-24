@@ -16,6 +16,7 @@ classdef Navigation < handle
         dhdx        
         Q
         R
+        sigmaA
         q 
         z
         h
@@ -51,6 +52,8 @@ classdef Navigation < handle
                 obj.P = navParams.P;
                 obj.dfdx = navParams.dfdx;
                 obj.Q = navParams.Q;
+                obj.sigmaA = navParams.sigmaA;
+
                
 
                 obj.gps = gps;
@@ -62,7 +65,7 @@ classdef Navigation < handle
 
 
         function ekfState = getStateEstimate(obj, state, stateDot, currentTime, log)
-% Clean up use of cIB prior, posterior, initial state estimate
+            % Clean up use of cIB prior, posterior, initial state estimate
             obj.currentTime = currentTime;
             
             % Initial state estimate
@@ -223,6 +226,22 @@ obj.posHistory.time(end+1) = obj.currentTime;
             obj.R = gpsR;
             obj.h = @(x)[x(1);x(2);x(3)];
 
+        end
+
+        function obj = setSigmaA(obj, sigmaA)
+            if sigmaA <= 0
+                sigmaA = eps;
+            end
+
+            dt = obj.dt;
+            obj.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+                                0, (dt^4)/4, 0, 0, dt/2, 0;
+                                0, 0, (dt^4)/4, 0, 0, dt/2;
+                                dt/2, 0, 0, dt^2, 0, 0;
+                                0, (dt^3)/2, 0, 0, dt^2, 0;
+                                0, 0, (dt^3)/2, 0, 0, dt^2];
+
+            obj.sigmaA = sigmaA;
         end
 
         %% Frame Transformation Functions

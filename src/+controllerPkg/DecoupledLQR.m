@@ -62,17 +62,19 @@ classdef DecoupledLQR < controllerPkg.Controller
             rocketControl = rad2deg(rocketControlRad);
         end
            
-        function [rollErr, pitchErr, yawErr] = getError(obj, rocketState, currentTime)
+        function [rollErr, pitchErr, yawErr] = getError(obj, rocketStateEstimate, currentTime)
             arguments
                 obj
-                rocketState (:,1) double
+                rocketStateEstimate (:,1) double
                 currentTime (1,1) double {mustBeNonnegative}
             end
+            %Estimate and State
+            rocketStateEstimate(:,1);
 
             % Get reduced state from full state
-            x3Pitch = obj.reduceLTI.pitchReduce(rocketState);
-            x3Yaw = obj.reduceLTI.pitchReduce(rocketState, true);
-            x2Roll = obj.reduceLTI.rollReduce(rocketState);
+            x3Pitch = obj.reduceLTI.pitchReduce(rocketStateEstimate);
+            x3Yaw = obj.reduceLTI.pitchReduce(rocketStateEstimate, true);
+            x2Roll = obj.reduceLTI.rollReduce(rocketStateEstimate);
 
             % Find the index in reference that corresponds to current time
             time_vec = obj.referenceAttitudes(1, :);

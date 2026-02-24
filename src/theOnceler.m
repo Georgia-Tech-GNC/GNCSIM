@@ -27,7 +27,7 @@ controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajecto
 flight.runClosedLoop = true;
 
 %% Run Flight
-runFlight = true;
+runFlight = false;
 if runFlight
     tic;
     log = flight.runSim(log);
@@ -361,11 +361,11 @@ function nav = setupNavigation(dt)
     gpsParams.horizontalAccuracy = 4.2;
     gpsParams.velocityAccuracy = .05;
     
-    gpsParams.noiseCovariance = [8.4 0 0;
-        0 4.2 0;
-        0 0 4.2];
+    gpsParams.noiseCovariance = [gpsParams.verticalAccuracy 0 0;
+        0 gpsParams.horizontalAccuracy 0;
+        0 0 gpsParams.horizontalAccuracy];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = rand();
+    gpsParams.outputProbability = 1;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                        0 1 0 0 0 0;
                                        0 0 1 0 0 0];
@@ -392,6 +392,7 @@ function nav = setupNavigation(dt)
                             0, 0, 0, 0,  1,  0;  
                             0, 0, 0, 0,  0,  1]; 
     sigmaA = 5;
+    navParams.sigmaA = sigmaA;
     
     navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
                                   0, (dt^4)/4, 0, 0, dt/2, 0;
@@ -575,6 +576,34 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, environment, fl
     
     theta03sigma = getThreeSigmaDeviation(environment.theta0, percentUncertainty);
     uncertaintyObj.addVariable('theta0', environment.theta0, theta03sigma, DistributionType.GAUSSIAN)
+
+    % Navigation / Sensor parameters
+    sigmaA3Sigma = getThreeSigmaDeviation(flight.navigation.sigmaA, percentUncertainty);
+    uncertaintyObj.addVariable('sigmaA', flight.navigation.sigmaA, sigmaA3Sigma, DistributionType.GAUSSIAN);
+
+    gpsVerticalAcc3Sigma = getThreeSigmaDeviation(flight.navigation.gps.verticalAccuracy, percentUncertainty);
+    uncertaintyObj.addVariable('gpsVerticalAccuracy', flight.navigation.gps.verticalAccuracy, gpsVerticalAcc3Sigma, DistributionType.GAUSSIAN);
+
+    gpsHorizontalAcc3Sigma = getThreeSigmaDeviation(flight.navigation.gps.horizontalAccuracy, percentUncertainty);
+    uncertaintyObj.addVariable('gpsHorizontalAccuracy',flight.navigation.gps.horizontalAccuracy, gpsHorizontalAcc3Sigma, DistributionType.GAUSSIAN);
+
+    gpsOutputProb3Sigma = getThreeSigmaDeviation(flight.navigation.gps.outputProbability, percentUncertainty);
+    uncertaintyObj.addVariable('gpsOutputProbability', flight.navigation.gps.outputProbability, gpsOutputProb3Sigma, DistributionType.GAUSSIAN);
+
+    accVRW3Sigma = getThreeSigmaDeviation(flight.navigation.accelerometer.VRW, percentUncertainty);
+    uncertaintyObj.addVariable('accVRW', flight.navigation.accelerometer.VRW, accVRW3Sigma, DistributionType.GAUSSIAN);
+
+    accBias3Sigma = getThreeSigmaDeviation(flight.navigation.accelerometer.bias, percentUncertainty);
+    uncertaintyObj.addVariable('accBias', flight.navigation.accelerometer.bias, accBias3Sigma, DistributionType.GAUSSIAN);
+
+    accSF3Sigma = getThreeSigmaDeviation(flight.navigation.accelerometer.SF, percentUncertainty);
+    uncertaintyObj.addVariable('accSF', flight.navigation.accelerometer.SF, accSF3Sigma, DistributionType.GAUSSIAN);
+
+    gyroARW3Sigma = getThreeSigmaDeviation(flight.navigation.gyroscope.ARW, percentUncertainty);
+    uncertaintyObj.addVariable('gyroARW', flight.navigation.gyroscope.ARW, gyroARW3Sigma, DistributionType.GAUSSIAN);
+
+    gyroBias3Sigma = getThreeSigmaDeviation(flight.navigation.gyroscope.bias, percentUncertainty);
+    uncertaintyObj.addVariable('gyroBias', flight.navigation.gyroscope.bias, gyroBias3Sigma, DistributionType.GAUSSIAN);
 
 end
 

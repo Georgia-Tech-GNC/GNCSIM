@@ -127,6 +127,7 @@ classdef Flight < handle & matlab.mixin.Copyable
                         % Log
                         log.add(obj.currentTime, 'states', rocketState);
                         log.add(obj.currentTime, 'statedots', rocketStateDot);
+                        log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
                         log.add(obj.currentTime, 'flightState', obj.flightState);
 
                         % Only update flight state (check for ignition)
@@ -197,8 +198,6 @@ classdef Flight < handle & matlab.mixin.Copyable
                         rocketState(obj.idx.quat) = quatNorm;
 
                         if obj.runClosedLoop
-                            controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
-                            log.add(obj.currentTime, 'controlInputs', controlInput);
                             if obj.useActuatorModel
                                 rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, true, log);
                             else
@@ -209,6 +208,11 @@ classdef Flight < handle & matlab.mixin.Copyable
                         end
 
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
+
+                        if obj.runClosedLoop
+                            controlInput = obj.controller.getControl(rocketStateEstimate, obj.cumVelocity, obj.currentTime);
+                            log.add(obj.currentTime, 'controlInputs', controlInput);
+                        end
 
                         log.add(obj.currentTime, 'states', rocketState);
                         log.add(obj.currentTime, 'statedots', rocketStateDot);
@@ -229,11 +233,13 @@ classdef Flight < handle & matlab.mixin.Copyable
                          rocketState(obj.idx.omega) = [0;0;0];
                          
                          rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
                          obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);
 
                          log.add(obj.currentTime, 'states', rocketState);
                          log.add(obj.currentTime, 'statedots', rocketStateDot);
+                         log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
                          log.add(obj.currentTime, 'flightState', obj.flightState);
                          
                     otherwise

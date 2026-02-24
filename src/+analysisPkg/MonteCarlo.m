@@ -103,6 +103,9 @@ classdef MonteCarlo < handle
             nominalMassPropellant = originalmassWet - originalmassDry;
             nominalIsp = originalTotalImpulse / (nominalMassPropellant * g0); 
 
+            gpsVerticalAccuracy = flight.navigation.gps.verticalAccuracy;
+            gpsHorizontalAccuracy = flight.navigation.gps.horizontalAccuracy;
+
             % Apply each uncertainty parameter
             for i = 1:length(varNames)
                 value = sampleValues(i);
@@ -176,6 +179,29 @@ classdef MonteCarlo < handle
                         environment.theta0 = value;
                     case 'I0'
                         environment.I0 = value;
+
+                    % Navigation / Sensor parameters
+                    case 'sigmaA'
+                        flight.navigation.setSigmaA(value);
+
+                    case 'gpsVerticalAccuracy'
+                        gpsVerticalAccuracy = value;
+                    case 'gpsHorizontalAccuracy'
+                        gpsHorizontalAccuracy = value;
+                    case 'gpsOutputProbability'
+                        flight.navigation.gps.outputProbability = value;
+
+                    case 'accVRW'
+                        flight.navigation.accelerometer.VRW = value;
+                    case 'accBias'
+                        flight.navigation.accelerometer.bias = value;
+                    case 'accSF'
+                        flight.navigation.accelerometer.SF = value;
+
+                    case 'gyroARW'
+                        flight.navigation.gyroscope.ARW = value;
+                    case 'gyroBias'
+                        flight.navigation.gyroscope.bias = value;
                     
                     % Parachute    
                     otherwise
@@ -196,9 +222,15 @@ classdef MonteCarlo < handle
                         end
                 end
             end
-            
 
-            % Dependent parameters values 
+            % Dependent parameters values
+
+            flight.navigation.gps.verticalAccuracy = gpsVerticalAccuracy;
+            flight.navigation.gps.horizontalAccuracy = gpsHorizontalAccuracy;
+            flight.navigation.gps.noiseCovariance = [gpsVerticalAccuracy 0 0;
+                                                     0 gpsHorizontalAccuracy 0;
+                                                     0 0 gpsHorizontalAccuracy];
+            flight.navigation.generateObservationMatrices();            
 
             % thrustCurve
             timeScaleFactor = rocketDynamics.burnTime / originalBurnTime;
