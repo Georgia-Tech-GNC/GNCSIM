@@ -285,18 +285,9 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	];
 
     % Generate Breakpoints
-<<<<<<< HEAD
+
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
     nominalTrajLog = tmp.log;
-=======
-    if nominalTrajectory.useThisTraj
-        nominalTrajLog = nominalTrajectory;
-    else
-        %tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
-        tmp = load("+theOncelerFiles/testTraj.mat");
-        nominalTrajLog = tmp.nominalTrajectory;
-    end
->>>>>>> cab9636 (Re added Mag)
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
@@ -383,18 +374,15 @@ function nav = setupNavigation(dt)
         dt/2, 0, 0, dt^2, 0, 0;
         0, (dt^3)/2, 0, 0, dt^2, 0;
         0, 0, (dt^3)/2, 0, 0, dt^2];
-    
-<<<<<<< HEAD
+
     navParams.accBias = accParams.bias;
     navParams.accSF = accParams.SF;
     navParams.leverArm = accParams.leverArm;
 
     navParams.gyroBias = gyroParams.bias;
     
-    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
-=======
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
->>>>>>> cab9636 (Re added Mag)
+
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
