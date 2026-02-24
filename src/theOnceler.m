@@ -416,7 +416,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     navigation = setupNavigation(flightParams.dt);
 
     % Run Preflight Attitude Estimation
-    quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    % quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
     state0 = [mass0, pos0, vel0, quat0, omega0].';
     flightParams.x0 = state0;
 
