@@ -32,6 +32,13 @@ classdef Navigation < handle
         accelerometer
         gyroscope
         gps
+        magnetometer
+
+        leverArm
+        accBias
+        accSF
+
+        gyroBias
 
         covHistory = struct('Px', [], 'Py', [], 'Pz', [], ...
                         'Vx', [], 'Vy', [], 'Vz', [], ...
@@ -45,7 +52,7 @@ classdef Navigation < handle
 
     methods
 
-        function obj = Navigation(navParams, gps, gyroscope, accelerometer)
+        function obj = Navigation(navParams, gps, gyroscope, accelerometer, magnetometer)
 
                 obj.dt = navParams.dt;
                 obj.P = navParams.P;
@@ -56,7 +63,14 @@ classdef Navigation < handle
                 obj.gps = gps;
                 obj.gyroscope = gyroscope;
                 obj.accelerometer = accelerometer;
+                obj.magnetometer = magnetometer;
                 obj.generateObservationMatrices;
+
+                obj.leverArm = navParams.leverArm;
+                obj.accBias = navParams.accBias;
+                obj.accSF = navParams.accSF;
+
+                obj.gyroBias = navParams.gyroBias;
 
         end
 
@@ -86,8 +100,9 @@ classdef Navigation < handle
 
             
             obj.ekf(log);
-
-            ekfState = [state(obj.idx.mass); obj.x(:); obj.q(:); obj.gyroRawData];
+            
+            
+            ekfState = [state(obj.idx.mass); obj.x(1:3); obj.cBI * obj.x(4:6); obj.q(:); obj.gyroRawData];
 
             % disp('State')
             % disp(state)
@@ -131,6 +146,48 @@ obj.posHistory.time(end+1) = obj.currentTime;
             qDelt = obj.gyroToInstantaneousRotationQuat(wx, wy, wz);
             qNew = obj.quatMulitply(obj.q, qDelt);
             obj.q = qNew;
+
+        end
+
+        %% Preflight Attitude Estimation
+        function initialAttitudeQuatToBody = preFlightAttitudeEstimation(obj, state, stateDot, wMag, wAccel, Si, bhi)
+            % Si is soft iron matrix found from calibration
+            % bhi is hard iron vector found from calibration
+            
+            obj.currentTime = 0;
+            [magReadingBody, trueMagInertial] = obj.magnetometer.getMeasurement(state, stateDot, obj.currentTime);
+            
+            % Remove Hard and Soft Iron Bias
+            magReadingBody = Si * (magReadingBody - bhi);
+
+            magReadingBodyUnit = magReadingBody/norm(magReadingBody);
+
+            gravReadingBody = obj.accelerometer.getMeasurement(state, stateDot, obj.currentTime);
+            gravReadingBodyUnit = -gravReadingBody/norm(gravReadingBody);
+            trueMagInertialUnit = trueMagInertial/norm(trueMagInertial);
+            
+            trueGravInertial = [0;0;-9.8];
+            trueGravInertialUnit = trueGravInertial/norm(trueGravInertial);
+
+            % Construct B Matrix
+            B = wMag * magReadingBodyUnit * trueMagInertialUnit' + wAccel * gravReadingBodyUnit * trueGravInertialUnit';
+
+            % Construct K Matrix
+            S = B + B';
+            mu = trace(B);
+            zVec = [B(2,3) - B(3,2); B(3,1) - B(1,3); B(1,2) - B(2,1)];
+
+            K = [mu, zVec'; zVec, (S - mu*(eye(3)))];
+
+            % Get Eigenvalues of K
+            [V, D] = eig(K);
+            [~, ind] = max(diag(D));
+            maxEigVec = V(:, ind);
+
+            % Convert maxEigVec to unit quaternion
+            initialAttitudeQuatToBody = (maxEigVec/norm(maxEigVec))';
+           
+            obj.q = initialAttitudeQuatToBody;
 
         end
 
@@ -210,9 +267,9 @@ obj.posHistory.time(end+1) = obj.currentTime;
                 obj.gpsRawData = [];
             end
 
-            obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
+            obj.accRawData = (obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime) - obj.accBias) ./ (1+obj.accSF);
 
-            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
+            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime) - obj.gyroBias;
 
         end
 

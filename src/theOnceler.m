@@ -15,6 +15,14 @@ else
     nominalTrajectory.useThisTraj = false;
 end
 
+% Nominal Trajectory
+generateNominalTrajectory = false;
+if generateNominalTrajectory
+    nominalTrajectory = setupNominalTrajectory(rocketDynamics);
+else
+    nominalTrajectory.useThisTraj = false;
+end
+%%
 % Setup Controller
 useActuatorModel = true;
 controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory);
@@ -190,6 +198,7 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
 
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
+
     % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
     problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, flightPkg.FlightState.POWERED_ASCENT, [], true, true) ); 
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
@@ -276,6 +285,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	];
 
     % Generate Breakpoints
+
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
     nominalTrajLog = tmp.log;
     numBreakPoints = 50;
@@ -295,20 +305,34 @@ end
 
 function nav = setupNavigation(dt)
     % Navigation
+    % https://www.analog.com/media/en/technical-documentation/data-sheets/adis16500.pdf
+    % Page 3 Sensor Specifications for IMU
+    % https://content.u-blox.com/sites/default/files/ZED-F9P-04B_DataSheet_UBX-21044850.pdf
+    % Pagr 4-5 Sensor Specifications for GPS
     
     % Acc
-    accParams.VRW = -1;
+    accParams.VRW = [0.033; 0.039; 0.039] * 1/60; % Which way will z-axis be mounted, assumed up, aligned with x in body
     accParams.leverArm = -1;
-    accParams.SF = -1;
-    accParams.bias = -1;
+    accParams.SF = [0.01; 0.01; 0.01];
+    accParams.bias = [0.05; 0.05; 0.05];
     
     accParams.noiseCovariance = -1;
     accParams.outputRate = 100;
     accParams.outputProbability = 1;
     accParams.observationMatrix = zeros(3);
     
-    
     accelerometer = navigationPkg.Accelerometer(accParams);
+
+     % Gyro
+    gyroParams.ARW = [0.32; 0.29; 0.29] * pi/(180*60);
+    gyroParams.bias = [4.85e-5; 4.85e-5; 4.85e-5];
+    
+    gyroParams.noiseCovariance = -1;
+    gyroParams.outputRate = 100;
+    gyroParams.outputProbability = 1;
+    gyroParams.observationMatrix = zeros(3);
+    
+    gyroscope = navigationPkg.Gyroscope(gyroParams);
     
     % GPS
     gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
@@ -320,23 +344,19 @@ function nav = setupNavigation(dt)
         0 4.2 0;
         0 0 4.2];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = rand();
+    gpsParams.outputProbability = 0.75;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                        0 1 0 0 0 0;
                                        0 0 1 0 0 0];
     gps = navigationPkg.GPS(gpsParams);
     
-    % Gyro
-    gyroParams.ARW = -1;
-    gyroParams.bias = -1;
-    
-    gyroParams.noiseCovariance = -1;
-    gyroParams.outputRate = 100;
-    gyroParams.outputProbability = 1;
-    gyroParams.observationMatrix = zeros(3);
-    
-    gyroscope = navigationPkg.Gyroscope(gyroParams);
-    
+    % Magnetometer Params
+    magParams.outputRate = 10;
+    magParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    magParams.date = '00-01-2026';
+    magnetometer = navigationPkg.Magnetometer(magParams);
+
+    % Nav Params
     navParams.dt = dt;
     navParams.P = 0.1 * eye(6);
     
@@ -354,8 +374,15 @@ function nav = setupNavigation(dt)
         dt/2, 0, 0, dt^2, 0, 0;
         0, (dt^3)/2, 0, 0, dt^2, 0;
         0, 0, (dt^3)/2, 0, 0, dt^2];
+
+    navParams.accBias = accParams.bias;
+    navParams.accSF = accParams.SF;
+    navParams.leverArm = accParams.leverArm;
+
+    navParams.gyroBias = gyroParams.bias;
     
-    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
+    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
+
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
@@ -387,6 +414,13 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     flightParams.u0 = controlInput0;
     
     navigation = setupNavigation(flightParams.dt);
+
+    % Run Preflight Attitude Estimation
+    % quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    % state0 = [mass0, pos0, vel0, quat0, omega0].';
+    % flightParams.x0 = state0;
+
+
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
     
     % LOG
