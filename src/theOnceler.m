@@ -45,7 +45,7 @@ log.trim();
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
-%analysis.generateAllEstimatePlots();
+analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %datcomAnalysis.drawForcesAndMoments([0, 12])
@@ -341,10 +341,10 @@ function nav = setupNavigation(dt)
     gpsParams.velocityAccuracy = .05;
     
     gpsParams.noiseCovariance = [8.4 0 0;
-        0 4.2 0;
-        0 0 4.2];
+                                 0 4.2 0;
+                                0 0 4.2];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = 0.75;
+    gpsParams.outputProbability = .9;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                        0 1 0 0 0 0;
                                        0 0 1 0 0 0];
@@ -368,12 +368,18 @@ function nav = setupNavigation(dt)
                             0, 0, 0, 0,  0,  1]; 
     sigmaA = 5;
     
-    navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
-                                  0, (dt^4)/4, 0, 0, dt/2, 0;
-        0, 0, (dt^4)/4, 0, 0, dt/2;
-        dt/2, 0, 0, dt^2, 0, 0;
-        0, (dt^3)/2, 0, 0, dt^2, 0;
-        0, 0, (dt^3)/2, 0, 0, dt^2];
+    % navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+    %                               0, (dt^4)/4, 0, 0, dt/2, 0;
+    %     0, 0, (dt^4)/4, 0, 0, dt/2;
+    %     dt/2, 0, 0, dt^2, 0, 0;
+    %     0, (dt^3)/2, 0, 0, dt^2, 0;
+    %     0, 0, (dt^3)/2, 0, 0, dt^2];
+    navParams.Q = sigmaA^2 .* [(dt^4)/4,  0,        0,        (dt^3)/2, 0,        0;
+                            0,        (dt^4)/4,  0,        0,        (dt^3)/2, 0;
+                            0,        0,        (dt^4)/4,  0,        0,        (dt^3)/2;
+                            (dt^3)/2, 0,        0,         dt^2,     0,        0;
+                            0,        (dt^3)/2, 0,         0,        dt^2,     0;
+                            0,        0,        (dt^3)/2,  0,        0,        dt^2];
 
     navParams.accBias = accParams.bias;
     navParams.accSF = accParams.SF;
@@ -400,7 +406,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
 	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
-	quatRot = Utils.eulerToQuat([0, -80, 0]).';
+	quatRot = Utils.eulerToQuat([0, -90, 0]).';
     orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, orientationLaunchRail, omega0].';

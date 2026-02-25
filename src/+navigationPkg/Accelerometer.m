@@ -52,7 +52,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
                 obj.q = state(obj.idx.quat);
                 obj.angVelB = state(obj.idx.omega);
 
-                obj.accelB = stateDot(obj.idx.vel); % 
+                obj.accelB = stateDot(obj.idx.vel);
     
                 accelIMU = obj.accLeverArm();
                 measurement = obj.addNoise(accelIMU);

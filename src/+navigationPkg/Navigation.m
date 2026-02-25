@@ -81,9 +81,12 @@ classdef Navigation < handle
             
             % Initial state estimate
             if currentTime == 0
-                obj.q = Utils.eulerToQuat([0, -90, 0]);
-                obj.x = [state(2:7)];
-
+                obj.q = state(obj.idx.quat);          % Use actual sim quaternion, not hardcoded
+                cBI0 = Utils.dirCosine(obj.q);
+                cIB0 = cBI0';
+                velInertial = cIB0 * state(obj.idx.vel);  % Convert body vel → inertial
+                obj.x = [state(obj.idx.pos); velInertial];
+            
                 ekfState = state;
                 return
             end
@@ -268,7 +271,6 @@ obj.posHistory.time(end+1) = obj.currentTime;
             end
 
             obj.accRawData = (obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime) - obj.accBias) ./ (1+obj.accSF);
-
             obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime) - obj.gyroBias;
 
         end
