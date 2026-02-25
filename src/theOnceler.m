@@ -45,7 +45,7 @@ log.trim();
 %% Analysis
 analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
-%analysis.generateAllEstimatePlots();
+analysis.generateAllEstimatePlots();
 
 %datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %datcomAnalysis.drawForcesAndMoments([0, 12])
@@ -400,7 +400,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     pos0 = [0, 0, 0];
     vel0 = [1, 0, 0];
 	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
-	quatRot = Utils.eulerToQuat([0, -80, 0]).';
+	quatRot = Utils.eulerToQuat([0, -90, 0]).';
     orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
     state0 = [mass0, pos0, vel0, orientationLaunchRail, omega0].';

@@ -237,7 +237,8 @@ classdef Flight < handle
                     % Transition to DESCENT once z velocity in ENU is negative
                     % AND z acceleration in ENU is negative
                     velBody = rocketState(obj.idx.vel);
-                    accBody = rocketStateDot(obj.idx.vel);
+                    omega = rocketState(obj.idx.omega);
+                    accBody = rocketStateDot(obj.idx.vel) + cross(omega, velBody);
 
                     quat = rocketState(obj.idx.quat);
                     cBI = Utils.dirCosine(quat);
