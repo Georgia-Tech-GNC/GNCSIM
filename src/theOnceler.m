@@ -227,6 +227,7 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
 
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
+
     % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
     problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true, true) ); 
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
@@ -313,6 +314,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 	];
 
     % Generate Breakpoints
+
     tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
     nominalTrajLog = tmp.log;
     numBreakPoints = 50;
@@ -340,20 +342,34 @@ end
 
 function nav = setupNavigation(dt)
     % Navigation
+    % https://www.analog.com/media/en/technical-documentation/data-sheets/adis16500.pdf
+    % Page 3 Sensor Specifications for IMU
+    % https://content.u-blox.com/sites/default/files/ZED-F9P-04B_DataSheet_UBX-21044850.pdf
+    % Pagr 4-5 Sensor Specifications for GPS
     
     % Acc
-    accParams.VRW = -1;
+    accParams.VRW = [0.033; 0.039; 0.039] * 1/60; % Which way will z-axis be mounted, assumed up, aligned with x in body
     accParams.leverArm = -1;
-    accParams.SF = -1;
-    accParams.bias = -1;
+    accParams.SF = [0.01; 0.01; 0.01];
+    accParams.bias = [0.05; 0.05; 0.05];
     
     accParams.noiseCovariance = -1;
     accParams.outputRate = 100;
     accParams.outputProbability = 1;
     accParams.observationMatrix = zeros(3);
     
-    
     accelerometer = navigationPkg.Accelerometer(accParams);
+
+     % Gyro
+    gyroParams.ARW = [0.32; 0.29; 0.29] * pi/(180*60);
+    gyroParams.bias = [4.85e-5; 4.85e-5; 4.85e-5];
+    
+    gyroParams.noiseCovariance = -1;
+    gyroParams.outputRate = 100;
+    gyroParams.outputProbability = 1;
+    gyroParams.observationMatrix = zeros(3);
+    
+    gyroscope = navigationPkg.Gyroscope(gyroParams);
     
     % GPS
     gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
@@ -365,25 +381,22 @@ function nav = setupNavigation(dt)
         0 gpsParams.horizontalAccuracy 0;
         0 0 gpsParams.horizontalAccuracy];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = 1;
+    gpsParams.outputProbability = 0.75;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                        0 1 0 0 0 0;
                                        0 0 1 0 0 0];
     gps = navigationPkg.GPS(gpsParams);
     
-    % Gyro
-    gyroParams.ARW = -1;
-    gyroParams.bias = -1;
-    
-    gyroParams.noiseCovariance = -1;
-    gyroParams.outputRate = 100;
-    gyroParams.outputProbability = 1;
-    gyroParams.observationMatrix = zeros(3);
-    
-    gyroscope = navigationPkg.Gyroscope(gyroParams);
-    
+    % Magnetometer Params
+    magParams.outputRate = 10;
+    magParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    magParams.date = '00-01-2026';
+    magnetometer = navigationPkg.Magnetometer(magParams);
+
+    % Nav Params
     navParams.dt = dt;
-    navParams.P = 0.1 * eye(6);
+    navParams.Pscale = 0.1;
+    navParams.P = navParams.Pscale * eye(6);
     
     navParams.dfdx = @(dt) [1, 0, 0, dt, 0,  0;  
                             0, 1, 0, 0,  dt, 0;  
@@ -400,8 +413,15 @@ function nav = setupNavigation(dt)
         dt/2, 0, 0, dt^2, 0, 0;
         0, (dt^3)/2, 0, 0, dt^2, 0;
         0, 0, (dt^3)/2, 0, 0, dt^2];
+
+    navParams.accBias = accParams.bias;
+    navParams.accSF = accParams.SF;
+    navParams.leverArm = accParams.leverArm;
+
+    navParams.gyroBias = gyroParams.bias;
     
-    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
+    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
+
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
@@ -437,6 +457,13 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     flightParams.u0 = controlInput0;
     
     navigation = setupNavigation(flightParams.dt);
+
+    % Run Preflight Attitude Estimation
+    % quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    % state0 = [mass0, pos0, vel0, quat0, omega0].';
+    % flightParams.x0 = state0;
+
+
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
     
     % LOG
@@ -581,6 +608,10 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, environment, fl
     sigmaA3Sigma = getThreeSigmaDeviation(flight.navigation.sigmaA, percentUncertainty);
     uncertaintyObj.addVariable('sigmaA', flight.navigation.sigmaA, sigmaA3Sigma, DistributionType.GAUSSIAN);
 
+    navPscaleNominal = flight.navigation.P(1,1);
+    navPscale3Sigma = getThreeSigmaDeviation(navPscaleNominal, percentUncertainty);
+    uncertaintyObj.addVariable('navPscale', navPscaleNominal, navPscale3Sigma, DistributionType.GAUSSIAN);
+
     gpsVerticalAcc3Sigma = getThreeSigmaDeviation(flight.navigation.gps.verticalAccuracy, percentUncertainty);
     uncertaintyObj.addVariable('gpsVerticalAccuracy', flight.navigation.gps.verticalAccuracy, gpsVerticalAcc3Sigma, DistributionType.GAUSSIAN);
 
@@ -590,20 +621,28 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, environment, fl
     gpsOutputProb3Sigma = getThreeSigmaDeviation(flight.navigation.gps.outputProbability, percentUncertainty);
     uncertaintyObj.addVariable('gpsOutputProbability', flight.navigation.gps.outputProbability, gpsOutputProb3Sigma, DistributionType.GAUSSIAN);
 
-    accVRW3Sigma = getThreeSigmaDeviation(flight.navigation.accelerometer.VRW, percentUncertainty);
-    uncertaintyObj.addVariable('accVRW', flight.navigation.accelerometer.VRW, accVRW3Sigma, DistributionType.GAUSSIAN);
+    axisLabels = {'X','Y','Z'};
+    for axisIdx = 1:3
+        accVRWNominal = flight.navigation.accelerometer.VRW(axisIdx);
+        accVRW3Sigma = getThreeSigmaDeviation(accVRWNominal, percentUncertainty);
+        uncertaintyObj.addVariable(['accVRW' axisLabels{axisIdx}], accVRWNominal, accVRW3Sigma, DistributionType.GAUSSIAN);
 
-    accBias3Sigma = getThreeSigmaDeviation(flight.navigation.accelerometer.bias, percentUncertainty);
-    uncertaintyObj.addVariable('accBias', flight.navigation.accelerometer.bias, accBias3Sigma, DistributionType.GAUSSIAN);
+        accBiasNominal = flight.navigation.accelerometer.bias(axisIdx);
+        accBias3Sigma = getThreeSigmaDeviation(accBiasNominal, percentUncertainty);
+        uncertaintyObj.addVariable(['accBias' axisLabels{axisIdx}], accBiasNominal, accBias3Sigma, DistributionType.GAUSSIAN);
 
-    accSF3Sigma = getThreeSigmaDeviation(flight.navigation.accelerometer.SF, percentUncertainty);
-    uncertaintyObj.addVariable('accSF', flight.navigation.accelerometer.SF, accSF3Sigma, DistributionType.GAUSSIAN);
+        accSFNominal = flight.navigation.accelerometer.SF(axisIdx);
+        accSF3Sigma = getThreeSigmaDeviation(accSFNominal, percentUncertainty);
+        uncertaintyObj.addVariable(['accSF' axisLabels{axisIdx}], accSFNominal, accSF3Sigma, DistributionType.GAUSSIAN);
 
-    gyroARW3Sigma = getThreeSigmaDeviation(flight.navigation.gyroscope.ARW, percentUncertainty);
-    uncertaintyObj.addVariable('gyroARW', flight.navigation.gyroscope.ARW, gyroARW3Sigma, DistributionType.GAUSSIAN);
+        gyroARWNominal = flight.navigation.gyroscope.ARW(axisIdx);
+        gyroARW3Sigma = getThreeSigmaDeviation(gyroARWNominal, percentUncertainty);
+        uncertaintyObj.addVariable(['gyroARW' axisLabels{axisIdx}], gyroARWNominal, gyroARW3Sigma, DistributionType.GAUSSIAN);
 
-    gyroBias3Sigma = getThreeSigmaDeviation(flight.navigation.gyroscope.bias, percentUncertainty);
-    uncertaintyObj.addVariable('gyroBias', flight.navigation.gyroscope.bias, gyroBias3Sigma, DistributionType.GAUSSIAN);
+        gyroBiasNominal = flight.navigation.gyroscope.bias(axisIdx);
+        gyroBias3Sigma = getThreeSigmaDeviation(gyroBiasNominal, percentUncertainty);
+        uncertaintyObj.addVariable(['gyroBias' axisLabels{axisIdx}], gyroBiasNominal, gyroBias3Sigma, DistributionType.GAUSSIAN);
+    end
 
 end
 
@@ -624,7 +663,7 @@ end
 function deviation = getThreeSigmaDeviation(nominalValue, percentUncertainty)
     % Helper function to calculate 3-sigma deviation from percentage
     arguments
-        nominalValue (1,1) double
+        nominalValue {mustBeNumeric}
         percentUncertainty (1,1) double {mustBePositive}
     end
 

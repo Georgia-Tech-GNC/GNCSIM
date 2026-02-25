@@ -183,21 +183,20 @@ classdef MonteCarlo < handle
                     % Navigation / Sensor parameters
                     case 'sigmaA'
                         flight.navigation.setSigmaA(value);
-
+                    case 'navPscale'
+                        flight.navigation.setPscale(value);
                     case 'gpsVerticalAccuracy'
                         gpsVerticalAccuracy = value;
                     case 'gpsHorizontalAccuracy'
                         gpsHorizontalAccuracy = value;
                     case 'gpsOutputProbability'
                         flight.navigation.gps.outputProbability = value;
-
                     case 'accVRW'
                         flight.navigation.accelerometer.VRW = value;
                     case 'accBias'
                         flight.navigation.accelerometer.bias = value;
                     case 'accSF'
                         flight.navigation.accelerometer.SF = value;
-
                     case 'gyroARW'
                         flight.navigation.gyroscope.ARW = value;
                     case 'gyroBias'

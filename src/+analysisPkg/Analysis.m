@@ -289,8 +289,8 @@ classdef Analysis < handle
                  'LineStyle', '--', 'DisplayName', ' Mission Requirement')
 
             plot(timeNominal0, eulNominal, 'r-', 'LineWidth', 1.5, 'DisplayName', 'Nominal')
-            ylabel('\textbf{Yaw Angle (deg)}', 'Interpreter', 'latex')
-            xlabel('\textbf{Time (s)}', 'Interpreter', 'latex')
+            ylabel('Yaw Angle , $(^{\circ})$}', 'Interpreter', 'latex')
+            xlabel('Time, s', 'Interpreter', 'latex')
             xlim([0 25])
             legend('show', 'Location', 'best', 'Interpreter', 'latex')
             grid on

@@ -42,23 +42,15 @@ classdef Gyroscope < navigationPkg.Sensor&handle
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
 
-           % if obj.isOutputReady(currentTime)
                 obj.w = state(obj.idx.omega);
-                measurement = obj.w; %obj.addNoise(); % Add noise + make []
-            %else
-             %   measurement = [];
-           % end
-
-            obj.scheduleNextOutput(currentTime);
+                measurement = obj.addNoise();
+                
 
         end
 
         function noisyGyro = addNoise(obj)
-            
 
-            % Fix white noise
-            noise = obj.ARW .* sqrt(obj.outputRate) .* randn(3,1);
-            noisyGyro = obj.w + obj.bias .* obj.outputRate + noise;
+            noisyGyro = obj.w + obj.bias + (obj.ARW/sqrt(obj.outputPeriod)) .* randn(3,1);
 
         end
 
