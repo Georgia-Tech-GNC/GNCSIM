@@ -24,9 +24,19 @@ function results = TunePID()
     mc.N      = 12;   % trials per BO evaluation (set to your paper's N once decided)
     mc.lambda = 0.5;  % tail-risk weight on P95
 
-    %% BO configuration
-    useParallel = false;
+    useParalellBO = false;
+    useParallelMC = true;
 
+    if useParallelMC
+        p = gcp('nocreate');
+        if isempty(p)
+            try
+                parpool('threads');
+            catch
+                parpool('local'); % fallback
+            end
+        end
+    end
     % Early-stopping (convergence) controls
     conv = struct();
     conv.minEvals   = 30;      % don't stop too early
@@ -65,7 +75,7 @@ function results = TunePID()
         li = zeros(mc.N, 1);       % per-trial costs l(theta; s_i)
         failed = false(mc.N, 1);
 
-        for i = 1:mc.N
+        parfor i = 1:mc.N
             opts_i = opts;
             opts_i.scenario = drawScenario_rollrate(); % fresh draw => stochastic objective
 
@@ -151,7 +161,7 @@ function results = TunePID()
         'MaxObjectiveEvaluations', maxEvalsCap, ...
         'NumSeedPoints', nSeed, ...
         'IsObjectiveDeterministic', false, ...
-        'UseParallel', useParallel, ...
+        'useParallel', useParallelBO, ...
         'AcquisitionFunctionName', 'expected-improvement-plus', ...
         'OutputFcn', @stopFcn, ...
         'Verbose', 1);

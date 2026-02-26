@@ -197,6 +197,11 @@ classdef DatcomManager < handle
                     error('"%s" not found in the current directory.', executableName);
                 end
                 command = sprintf('echo %s | %s', datcomFilename, executableName);
+
+				[status, cmdout] = system(command);
+				if status ~= 0
+					error("DATCOM failed: %s", cmdout);
+				end
             elseif isunix || ismac
 				% --- Unix / macOS ---
                 % Using fullfile ensures the path works across different shells
@@ -243,29 +248,102 @@ classdef DatcomManager < handle
 		end
 
 		function aero = runDatcomCached(datcomFilename)
-			% Run DATCOM + datcomimport only once per unique input deck, per MATLAB session.
+			% Shared cache: in-memory (fast) + disk (shared across local workers).
+			% Keyed by exact deck text.
 
-			persistent cache
-			if isempty(cache)
-				cache = containers.Map('KeyType','char','ValueType','any');
+			persistent memCache
+			if isempty(memCache)
+				memCache = containers.Map('KeyType','char','ValueType','any');
 			end
 
-			% Key = exact DATCOM deck text (collision-free, simplest)
 			deckText = fileread(datcomFilename);
 			key = deckText;
 
-			if isKey(cache, key)
-				aero = cache(key);
+			% Fast path: in-memory
+			if isKey(memCache, key)
+				aero = memCache(key);
 				return;
 			end
 
-			% Cache miss: run DATCOM once, import, store, return
-			rocketPkg.DatcomManager.runDatcom(datcomFilename);
+			% Disk cache path (shared across workers)
+			cacheDir = fullfile(pwd, 'DATCOM', 'cache');
+			if ~exist(cacheDir, 'dir'), mkdir(cacheDir); end
 
-			aeroCell = datcomimport('datcom.out');
-			aero = aeroCell{1};
+			% Deterministic filename without Java: use a simple checksum + length.
+			% (Collision risk is extremely low for your use; if you want zero-risk, we can switch to MD5.)
+			bytes = uint8(deckText);
+			checksum = uint32(0);
+			for i = 1:numel(bytes)
+				checksum = checksum + uint32(bytes(i)) * uint32(mod(i, 65535) + 1);
+			end
+			cacheFile = fullfile(cacheDir, sprintf('aero_%08X_%d.mat', checksum, numel(bytes)));
+			lockDir   = [cacheFile, '.lock'];
 
-			cache(key) = aero;
+			% Disk cache hit
+			if exist(cacheFile, 'file')
+				S = load(cacheFile, 'aero');
+				aero = S.aero;
+				memCache(key) = aero;
+				return;
+			end
+
+			% Acquire lock (atomic mkdir is cross-platform)
+			while true
+				if mkdir(lockDir)
+					break;
+				end
+				% If another worker finished while we waited, load and return
+				if exist(cacheFile, 'file')
+					S = load(cacheFile, 'aero');
+					aero = S.aero;
+					memCache(key) = aero;
+					return;
+				end
+				pause(0.05);
+			end
+
+			% Lock holder: re-check cache after acquiring lock
+			if exist(cacheFile, 'file')
+				rmdir(lockDir);
+				S = load(cacheFile, 'aero');
+				aero = S.aero;
+				memCache(key) = aero;
+				return;
+			end
+
+			% Run DATCOM in a temp working directory to avoid collisions on datcom.out / FOR006 / for005
+			workDir = tempname;
+			mkdir(workDir);
+
+			oldDir = pwd;
+			try
+				cd(workDir);
+
+				% Write deck into temp dir (so runDatcom copies it to for005 locally)
+				deckTmp = fullfile(workDir, 'deck.dcm');
+				fid = fopen(deckTmp, 'w');
+				fwrite(fid, deckText);
+				fclose(fid);
+
+				rocketPkg.DatcomManager.runDatcom(deckTmp);
+
+				aeroCell = datcomimport(fullfile(workDir, 'datcom.out'));
+				aero = aeroCell{1};
+
+				% Save disk cache
+				save(cacheFile, 'aero');
+
+			catch ME
+				cd(oldDir);
+				if exist(lockDir, 'dir'), rmdir(lockDir, 's'); end
+				rethrow(ME);
+			end
+
+			cd(oldDir);
+			rmdir(lockDir, 's');
+
+			% Populate memory cache
+			memCache(key) = aero;
 		end
     end
 end
