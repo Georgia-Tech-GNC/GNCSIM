@@ -15,17 +15,13 @@ classdef Gyroscope < navigationPkg.Sensor & handle
     end
 
     properties
-        % Truth
+        % Truth (latest provided state sample)
         w   % true angular rate (3x1) [rad/s]
 
         % Noise model parameters (all REQUIRED from JSON)
         bias         % constant bias (3x1) [rad/s]
         biasRW_sigma % bias random-walk sigma (3x1) [rad/s/sqrt(s)]
         biasRW       % current random-walk bias state (3x1) [rad/s]
-
-        % Internal smoothing (REQUIRED)
-        lpf_cutoff_hz % >0 enables 1st-order LPF
-        lpf_state
 
         % Latency model (REQUIRED)
         latency_s
@@ -54,8 +50,7 @@ classdef Gyroscope < navigationPkg.Sensor & handle
             obj.bias         = gyroParams.bias(:);
             obj.biasRW_sigma = gyroParams.biasRW_sigma(:);
 
-            obj.lpf_cutoff_hz = gyroParams.lpf_cutoff_hz;
-            obj.latency_s     = gyroParams.latency_s;
+            obj.latency_s = gyroParams.latency_s;
 
             % Derived timing
             obj.outputPeriod   = 1 / obj.outputRate;
@@ -64,8 +59,8 @@ classdef Gyroscope < navigationPkg.Sensor & handle
             obj.nextOutputTime = obj.outputPeriod;
 
             % States
+            obj.w = zeros(3,1);
             obj.biasRW = zeros(3,1);
-            obj.lpf_state = zeros(3,1);
             obj.heldMeasurement = zeros(3,1);
 
             % Validate + initialize latency buffer
@@ -74,12 +69,12 @@ classdef Gyroscope < navigationPkg.Sensor & handle
         end
 
         function measurement = getMeasurement(obj, state, ~, currentTime) %#ok<INUSD>
+            % Cache latest truth omega (state comes from Flight loop)
             obj.w = state(obj.idx.omega); % 3x1 true omega
 
             % First call: initialize to a sensible value (avoid zeros)
             if obj.lastUpdateTime == 0.0 && obj.lastOutputTime == 0.0
                 y0 = obj.w + obj.bias;         % no noise on first output
-                obj.lpf_state = y0;
                 obj.initializeLatencyBuffer(y0);
 
                 obj.heldMeasurement = obj.popLatency(); % output oldest (initialized to y0)
@@ -117,12 +112,6 @@ classdef Gyroscope < navigationPkg.Sensor & handle
             if ~(isnumeric(obj.biasRW_sigma) && numel(obj.biasRW_sigma) == 3)
                 error("Gyroscope:BadBiasRW", "biasRW_sigma must be length-3.");
             end
-            if ~(isnumeric(obj.lpf_cutoff_hz) && isscalar(obj.lpf_cutoff_hz))
-                error("Gyroscope:BadLPF", "lpf_cutoff_hz must be a scalar.");
-            end
-            if obj.lpf_cutoff_hz < 0
-                error("Gyroscope:BadLPF", "lpf_cutoff_hz must be >= 0.");
-            end
             if ~(isnumeric(obj.latency_s) && isscalar(obj.latency_s) && isfinite(obj.latency_s) && obj.latency_s >= 0)
                 error("Gyroscope:BadLatency", "latency_s must be a finite scalar >= 0.");
             end
@@ -159,20 +148,20 @@ classdef Gyroscope < navigationPkg.Sensor & handle
                 return;
             end
 
+            % Pipeline (as requested):
+            % raw truth -> add bias/noise -> buffer -> output delayed sample
+
             % 1) Bias drift random walk
             obj.biasRW = obj.biasRW + obj.biasRW_sigma .* sqrt(dt) .* randn(3,1);
 
             % 2) White noise
             noise = obj.sampleWhiteNoise();
 
-            % 3) Raw measurement
-            y_raw = obj.w + obj.bias + obj.biasRW + noise;
+            % 3) Raw measurement with bias + noise
+            y_meas = obj.w + obj.bias + obj.biasRW + noise;
 
-            % 4) Internal LPF (bandwidth/phase lag)
-            y_filt = obj.applyLPF(y_raw, dt);
-
-            % 5) Latency buffer (fixed delay)
-            obj.pushLatency(y_filt);
+            % 4) Latency buffer (fixed delay applied to final measurement)
+            obj.pushLatency(y_meas);
             obj.heldMeasurement = obj.popLatency();
         end
 
@@ -183,18 +172,6 @@ classdef Gyroscope < navigationPkg.Sensor & handle
                 error("Gyroscope:BadNoiseCov", "noiseCovariance must be symmetric PSD.");
             end
             noise = L * randn(3,1);
-        end
-
-        function y = applyLPF(obj, x, dt)
-            if obj.lpf_cutoff_hz == 0
-                obj.lpf_state = x;
-                y = x;
-                return;
-            end
-
-            alpha = exp(-2*pi*obj.lpf_cutoff_hz*dt);
-            obj.lpf_state = alpha * obj.lpf_state + (1 - alpha) * x;
-            y = obj.lpf_state;
         end
 
         function pushLatency(obj, y_in)

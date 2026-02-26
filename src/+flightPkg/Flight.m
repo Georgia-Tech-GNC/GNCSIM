@@ -120,10 +120,37 @@ classdef Flight < handle
             V_bus_meas   = max(V_bus_true + bias_V + sigma_V * randn(), 0.0);
             tau_max_meas = am.computeTauMax(omega_w_meas, V_bus_meas);
 
+            % ----------------------------
+            % Compute initial controlInput at t = 0 (so first interval is closed-loop)
+            % ----------------------------
+            if obj.runClosedLoop
+                if isa(obj.controller, 'controllerPkg.RollRatePID') && obj.useActuatorModel
+                    gyro_meas0 = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime); % 3x1
+                    state_for_control0 = rocketState;
+                    state_for_control0(obj.idx.omega) = gyro_meas0;
+
+                    % Use nominal dt for the controller's internal discrete-time math at startup.
+                    % (The first dt_k is not sampled until inside the loop.)
+                    controlInput = obj.controller.getControl( ...
+                        state_for_control0, obj.cumVelocity, obj.currentTime, obj.dt_nom, tau_max_meas);
+                else
+                    controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
+                end
+            end
+
             log.add(obj.currentTime, 'states', rocketState);
             log.add(obj.currentTime, 'statedots', rocketStateDot);
             log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
-            log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas]);
+
+            disturbances.tau_roll_x = tau_bias + tau_step * double(obj.currentTime >= t0_step);
+
+            gyro_meas0 = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime);
+            wx_meas0 = gyro_meas0(obj.idx.omega_x);
+            dt_k0 = obj.dt_nom; % you have not sampled dt_k yet at t=0; use nominal
+            tau_dist0 = disturbances.tau_roll_x; % if not set yet, set it once at t=0
+            log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas; ...
+                                                        wx_meas0; dt_k0; tau_dist0]);
+
             log.add(obj.currentTime, 'controlInputs', controlInput);
 
             % ----------------------------
@@ -155,7 +182,7 @@ classdef Flight < handle
                 end
 
                 % Roll disturbance torque about body X (bias + step)
-                disturbances.tau_roll_x = tau_bias + tau_step * double(nextTime >= t0_step);
+                disturbances.tau_roll_x = tau_bias + tau_step * double(obj.currentTime >= t0_step);
 
                 % ----------------------------
                 % Cumulated velocity bookkeeping (variable dt)
@@ -188,7 +215,6 @@ classdef Flight < handle
                 rocketState(obj.idx.quat) = Utils.normalizeQuat(rocketState(obj.idx.quat));
 
                 disturbances.wind = [0, 0, 0].';
-                disturbances.tau_roll_x = tau_bias + tau_step * double(obj.currentTime >= t0_step);
 
                 % Update time after propagation
                 obj.currentTime = nextTime;
@@ -210,7 +236,14 @@ classdef Flight < handle
                 % ----------------------------
                 if obj.runClosedLoop
                     if isa(obj.controller, 'controllerPkg.RollRatePID') && obj.useActuatorModel
-                        controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime, dt_k, tau_max_meas);
+                        % Gyro latency + noise!
+                        gyro_meas = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime); % 3x1
+                        wx_meas = gyro_meas(obj.idx.omega_x);
+                        tau_dist = disturbances.tau_roll_x;
+                        state_for_control = rocketState;
+                        state_for_control(obj.idx.omega) = gyro_meas;
+
+                        controlInput = obj.controller.getControl(state_for_control, obj.cumVelocity, obj.currentTime, dt_k, tau_max_meas);
                     else
                         controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
                     end
@@ -230,7 +263,8 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'states', rocketState);
                 log.add(obj.currentTime, 'statedots', rocketStateDot);
                 log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
-                log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas]);
+                log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas; ...
+                                                            wx_meas; dt_k; tau_dist]);
                 log.add(obj.currentTime, 'controlInputs', controlInput);
             end
         end

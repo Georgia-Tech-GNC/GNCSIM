@@ -178,6 +178,57 @@ function results = TunePID()
 
     fprintf("\nBest (aggregated objective J):\n  Kp=%.6e\n  Ki=%.6e\n  Kd=%.6e\n  J =%.6g\nSaved: %s\n", ...
         best.Kp, best.Ki, best.Kd, best.J, saveFile);
+
+    %% ----------------------------
+    % Auto-generate plots + a saved "best run" log
+    % ----------------------------
+    plotsDir = fullfile(outDir, "plots");
+    if ~exist(plotsDir, "dir"), mkdir(plotsDir); end
+
+    % ---- (1) Convergence plot (best-so-far J vs eval #) ----
+    try
+        bestTrace = results.MinObjectiveTrace(:);
+        x = (1:numel(bestTrace)).';
+
+        fig = figure('Color','w');
+        grid on; hold on;
+        plot(x, bestTrace, 'LineWidth', 2);
+        xlabel("BO evaluation");
+        ylabel("Best-so-far J(\theta)");
+        title("Bayesian Optimization Convergence (Syndrome PID)");
+        set(gca, 'YScale', 'log');
+
+        finalBest = bestTrace(end);
+        text(0.02, 0.05, sprintf("final best = %.6g", finalBest), 'Units','normalized');
+
+        saveas(fig, fullfile(plotsDir, "tuning_convergence.png"));
+        close(fig);
+    catch ME
+        warning("TunePID:PlotConvergenceFailed", "Failed to generate convergence plot: %s", ME.message);
+    end
+
+    % ---- (2) Run one nominal rollout with best gains, save log, and plot ----
+    try
+        optsBest = opts;
+        optsBest.scenario = struct(); % nominal (no MC overrides)
+
+        [logBest, ~] = SyndromeRunOnce(best.Kp, best.Ki, best.Kd, optsBest);
+
+        % Save for later (plot_syndrome_run.m can load this)
+        bestLogFile = fullfile(outDir, "best_run_log.mat");
+        logBest.saveToFile(bestLogFile);
+
+        % Generate PNGs now
+        plotOpts = struct();
+        plotOpts.outDir = plotsDir;
+        plotOpts.prefix = "best_";
+        analysisPkg.SyndromeAnalysis.plotRun(logBest, plotOpts);
+
+        fprintf("Saved best-run log: %s\n", bestLogFile);
+        fprintf("Saved best-run plots to: %s\n", plotsDir);
+    catch ME
+        warning("TunePID:PlotBestRunFailed", "Failed to generate best-run plots/log: %s", ME.message);
+    end
 end
 
 %% Fresh scenario draw per rollout (stochastic; no CRN)

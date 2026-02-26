@@ -266,7 +266,8 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
 
     stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
     controlInputNames = {'Roll', 'Pitch', 'Yaw'};
-    actuatorStateNames = {'omega_w_true','omega_w_meas','V_bus_true','V_bus_meas','tau_max_meas'};
+    actuatorStateNames = {'omega_w_true','omega_w_meas','V_bus_true','V_bus_meas','tau_max_meas', ...
+                            'wx_meas','dt_k','tau_dist_x'};
     log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 
