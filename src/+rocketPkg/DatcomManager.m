@@ -240,9 +240,32 @@ classdef DatcomManager < handle
                 end
             end
 
-			% Run DATCOM and display completion message
-            status = system(command);
-            disp('DATCOM execution finished.');
+		end
+
+		function aero = runDatcomCached(datcomFilename)
+			% Run DATCOM + datcomimport only once per unique input deck, per MATLAB session.
+
+			persistent cache
+			if isempty(cache)
+				cache = containers.Map('KeyType','char','ValueType','any');
+			end
+
+			% Key = exact DATCOM deck text (collision-free, simplest)
+			deckText = fileread(datcomFilename);
+			key = deckText;
+
+			if isKey(cache, key)
+				aero = cache(key);
+				return;
+			end
+
+			% Cache miss: run DATCOM once, import, store, return
+			rocketPkg.DatcomManager.runDatcom(datcomFilename);
+
+			aeroCell = datcomimport('datcom.out');
+			aero = aeroCell{1};
+
+			cache(key) = aero;
 		end
     end
 end

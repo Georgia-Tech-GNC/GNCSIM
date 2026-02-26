@@ -137,6 +137,15 @@ function results = TunePID()
         end
     end
 
+    % Pre-warm DATCOM cache once (any gains are fine)
+    try
+        optsWarm = opts;
+        optsWarm.scenario = struct(); % no overrides
+        SyndromeRunOnce(1, 0, 0, optsWarm); % cheap dummy
+    catch
+        % ignore warm-up failures; BO will surface real errors
+    end
+
     %% Run Bayesian optimization
     results = bayesopt(@objFcn, vars, ...
         'MaxObjectiveEvaluations', maxEvalsCap, ...

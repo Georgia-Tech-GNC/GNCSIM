@@ -127,14 +127,8 @@ classdef RocketBody < rocketPkg.DatcomManager
 			% Close DATCOM file
             obj.closeDatcom();
 
-			% Run the .exe DATCOM file
-			obj.runDatcom(datcomFilename)
-
-			% Import DATCOM Data
-            aeroCell = datcomimport('datcom.out');
-            obj.aero = aeroCell{1};
-
-			obj.buildInterps(obj.aero);
+			obj.aero = rocketPkg.DatcomManager.runDatcomCached(datcomFilename);
+            obj.buildInterps(obj.aero);
 		end
 
 		function drawBody(obj)
