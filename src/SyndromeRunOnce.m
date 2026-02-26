@@ -228,6 +228,15 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
     flightParams.v_bus_sigma   = params.flight.v_bus_sigma;
     flightParams.v_bus_bias    = params.flight.v_bus_bias;
 
+    % Roll disturbance torque injection (optional)
+    if ~isfield(params.flight,"tau_dist_bias_x"),   params.flight.tau_dist_bias_x = 0.0; end
+    if ~isfield(params.flight,"tau_dist_step_x"),   params.flight.tau_dist_step_x = 0.0; end
+    if ~isfield(params.flight,"tau_dist_step_t0_s"),params.flight.tau_dist_step_t0_s = 0.0; end
+
+    flightParams.tau_dist_bias_x    = params.flight.tau_dist_bias_x;
+    flightParams.tau_dist_step_x    = params.flight.tau_dist_step_x;
+    flightParams.tau_dist_step_t0_s = params.flight.tau_dist_step_t0_s;
+
     % Initial state (14x1): [mass, pos(3), vel(3), quat(4), omega(3)]
     mass0 = rocketDynamics.massWet;
     pos0  = [0, 0, 0];

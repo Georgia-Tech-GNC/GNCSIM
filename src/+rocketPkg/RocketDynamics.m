@@ -195,7 +195,12 @@ classdef RocketDynamics < handle
                            0];
 
             mBAero = mBAero + mBRollDamp;
-            
+
+            % --- Injected roll disturbance torque about body X ---
+            if isstruct(disturbances) && isfield(disturbances, 'tau_roll_x')
+                mBAero = mBAero + [disturbances.tau_roll_x; 0; 0];
+            end
+
             mB = mBAero + mBActuator;
         end
 

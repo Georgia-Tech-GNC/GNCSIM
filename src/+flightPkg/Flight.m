@@ -74,6 +74,7 @@ classdef Flight < handle
             lat_max  = obj.getFieldDefault(obj.flightParams, 'latency_max_s', 0.0001); % max extra latency (s)
             lat_mode = obj.getFieldDefault(obj.flightParams, 'latency_mode', 'uniform'); % 'uniform' or 'none'
 
+
             % Normalize probabilities defensively
             p_miss1 = max(p_miss1, 0.0);
             p_miss2 = max(p_miss2, 0.0);
@@ -92,6 +93,11 @@ classdef Flight < handle
             bias_w  = obj.getFieldDefault(obj.flightParams, 'omega_w_bias',  0.0); % [rad/s]
             sigma_V = obj.getFieldDefault(obj.flightParams, 'v_bus_sigma',   0.0); % [V]
             bias_V  = obj.getFieldDefault(obj.flightParams, 'v_bus_bias',    0.0); % [V]
+
+            % Injected disturbance torque (bias + step)
+            tau_bias = obj.getFieldDefault(obj.flightParams, 'tau_dist_bias_x', 0.0);
+            tau_step = obj.getFieldDefault(obj.flightParams, 'tau_dist_step_x', 0.0);
+            t0_step  = obj.getFieldDefault(obj.flightParams, 'tau_dist_step_t0_s', 0.0);
 
             % ----------------------------
             % Initial log entry at t = 0
@@ -148,6 +154,9 @@ classdef Flight < handle
                     nextTime = obj.totalTime;
                 end
 
+                % Roll disturbance torque about body X (bias + step)
+                disturbances.tau_roll_x = tau_bias + tau_step * double(nextTime >= t0_step);
+
                 % ----------------------------
                 % Cumulated velocity bookkeeping (variable dt)
                 % ----------------------------
@@ -179,6 +188,7 @@ classdef Flight < handle
                 rocketState(obj.idx.quat) = Utils.normalizeQuat(rocketState(obj.idx.quat));
 
                 disturbances.wind = [0, 0, 0].';
+                disturbances.tau_roll_x = tau_bias + tau_step * double(obj.currentTime >= t0_step);
 
                 % Update time after propagation
                 obj.currentTime = nextTime;
