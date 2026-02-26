@@ -118,6 +118,7 @@ function rocketDyn = setupRocket(params)
     mustHave(params.reaction_wheel, "Iw");
     mustHave(params.reaction_wheel, "w_max");
     mustHave(params.reaction_wheel, "b");
+    mustHave(params.reaction_wheel, "tau_c");
 
     mustHave(params.reaction_wheel, "Kt");
     mustHave(params.reaction_wheel, "Ke");
@@ -129,6 +130,7 @@ function rocketDyn = setupRocket(params)
         params.reaction_wheel.Iw, ...
         params.reaction_wheel.w_max, ...
         params.reaction_wheel.b, ...
+        params.reaction_wheel.tau_c, ...
         params.reaction_wheel.Kt, ...
         params.reaction_wheel.Ke, ...
         params.reaction_wheel.R_wind, ...
@@ -280,6 +282,9 @@ function params = applyScenarioOverrides(params, s)
     end
     if isfield(s,'b_scale')
         params.reaction_wheel.b = params.reaction_wheel.b * s.b_scale;
+    end
+    if isfield(s,'tau_c_scale')
+        params.reaction_wheel.tau_c = params.reaction_wheel.tau_c * s.tau_c_scale;
     end
     if isfield(s,'Imax_scale')
         params.reaction_wheel.I_max = params.reaction_wheel.I_max * s.Imax_scale;

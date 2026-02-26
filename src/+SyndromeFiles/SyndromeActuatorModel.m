@@ -4,6 +4,7 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
         Iw                 % wheel inertia
         wMax               % hard wheel speed limit [rad/s]
         b = 0              % viscous friction coefficient
+        tau_c = 0          % Coulomb friction magnitude [N*m] (opposes motion)           
 
         % Motor / electrical params (paper Eq. voltage balance)
         Kt                 % torque constant [N*m/A]
@@ -22,10 +23,11 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
     end
 
     methods
-        function obj = SyndromeActuatorModel(Iw, wMax, b, Kt, Ke, R_wind, I_max, V_bus_nom)
+        function obj = SyndromeActuatorModel(Iw, wMax, b, tau_c, Kt, Ke, R_wind, I_max, V_bus_nom)
             obj.Iw = Iw;
             obj.wMax = wMax;
             if nargin >= 3 && ~isempty(b), obj.b = b; end
+            if nargin >= 4 && ~isempty(tau_c), obj.tau_c = tau_c; end
 
             obj.Kt = Kt;
             obj.Ke = Ke;
@@ -51,8 +53,12 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
             % Convert to wheel torque (action-reaction)
             tauWheel = -tau_body;
 
-            % Wheel dynamics: Iw * wdot = tauWheel - b*w
-            wdot_val = (tauWheel - obj.b * w) / obj.Iw;
+            sgn_w = 0;
+            if abs(w) > 1e-6
+                sgn_w = sign(w);
+            end
+            % Wheel dynamics: Iw * wdot = tauWheel - b*w - tau_c*sgn(w)
+            wdot_val = (tauWheel - obj.b * w - obj.tau_c * sgn_w) / obj.Iw;
 
             % Hard speed limit: prevent further acceleration past limit
             if (w >= obj.wMax && wdot_val > 0), wdot_val = 0; end
