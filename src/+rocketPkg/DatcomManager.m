@@ -188,63 +188,62 @@ classdef DatcomManager < handle
 
 	methods (Static)
 		function runDatcom(datcomFilename)
-			% Executes the DATCOM program with the specified input file
+			% runDatcom  Execute DATCOM using an absolute path to the executable.
+			% Works even if caller cd's into a temp working directory.
 
+			% -------------------------
+			% Resolve project root path
+			% -------------------------
+			% This file lives at: <projectRoot>/src/+rocketPkg/DatcomManager.m
+			thisFile = mfilename('fullpath');                 % .../src/+rocketPkg/DatcomManager
+			rocketPkgDir = fileparts(thisFile);               % .../src/+rocketPkg
+			srcDir = fileparts(rocketPkgDir);                 % .../src
+			projectRoot = fileparts(srcDir);                  % .../<projectRoot>
+			datcomDir = fullfile(projectRoot, 'DATCOM');
+
+			% -------------------------
+			% Prepare DATCOM input file
+			% -------------------------
+			if ~isfile(datcomFilename)
+				error("DATCOM input deck not found: %s", datcomFilename);
+			end
+
+			% DATCOM expects the input deck to be named "for005" in the working directory
+			copyfile(datcomFilename, fullfile(pwd, 'for005'));
+
+			% -------------------------
+			% Select executable (absolute path)
+			% -------------------------
 			if ispc
-                % --- Windows ---
-                executableName = 'DATCOM\datcom_win.exe';
-                if exist(executableName, 'file') ~= 2
-                    error('"%s" not found in the current directory.', executableName);
-                end
-                command = sprintf('echo %s | %s', datcomFilename, executableName);
+				exePath = fullfile(datcomDir, 'datcom_win.exe');
+			else
+				% Your repo uses datcom_unix for both Linux/mac (as previously configured)
+				exePath = fullfile(datcomDir, 'datcom_unix');
+			end
 
-				[status, cmdout] = system(command);
-				if status ~= 0
-					error("DATCOM failed: %s", cmdout);
-				end
-            elseif isunix || ismac
-				% --- Unix / macOS ---
-                % Using fullfile ensures the path works across different shells
-                executableName = fullfile('.', 'DATCOM/datcom_unix'); 
-                
-                if exist(executableName, 'file') ~= 2
-                    error('"%s" not found. Did you forget to compile it with gfortran?', executableName);
-                end
-                
-                executableName = './DATCOM/datcom_unix';
-    
-                % Force the input file to be 'FOR005'
-                copyfile(datcomFilename, 'for005');
-                
-                % Pipe the filename string INTO the program
-                command = sprintf('echo "for005\n" | %s', executableName);
-                
-                [status, cmdout] = system(command);
-               
-            else
-                error('Unsupported Operating System.');
-            end
-            
-            % Cleanup
-            if exist('FOR006', 'file')
-                movefile('FOR006', 'datcom.out');
-            elseif exist('for006.dat', 'file')
-                movefile('for006.dat', 'datcom.out');
-            end
-            
-            % Identify all other potential 'FORxxx' files
-            % This handles both FOR005, for0013, etc.
-            leftovers = [dir('FOR0*'); dir('for0*'); dir('*.PTR'); dir('*.SRF')];
-            
-            % Delete them all
-            for k = 1:length(leftovers)
-                fileName = leftovers(k).name;
-                % Don't delete the file you just saved as datcom.out
-                if ~strcmpi(fileName, 'datcom.out') && ~strcmpi(fileName, datcomFilename)
-                    delete(fileName);
-                end
-            end
+			if ~isfile(exePath)
+				error("DATCOM executable not found: %s", exePath);
+			end
 
+			% -------------------------
+			% Execute DATCOM
+			% -------------------------
+			if ispc
+				% Windows: run the .exe
+				command = sprintf('"%s"', exePath);
+			else
+				% Unix/mac: ensure executable bit, then run
+				system(sprintf('chmod +x "%s"', exePath));
+				command = sprintf('"%s"', exePath);
+			end
+
+			[status, cmdout] = system(command);
+			if status ~= 0
+				error("DATCOM failed (status=%d): %s", status, cmdout);
+			end
+
+			% DATCOM writes outputs in the current working directory (e.g., datcom.out).
+			% Caller (runDatcomCached) is responsible for importing datcom.out from cwd.
 		end
 
 		function aero = runDatcomCached(datcomFilename)
@@ -266,7 +265,11 @@ classdef DatcomManager < handle
 			end
 
 			% Disk cache path (shared across workers)
-			cacheDir = fullfile(pwd, 'DATCOM', 'cache');
+			thisFile = mfilename('fullpath');
+			rocketPkgDir = fileparts(thisFile);
+			srcDir = fileparts(rocketPkgDir);
+			projectRoot = fileparts(srcDir);
+			cacheDir = fullfile(projectRoot, 'DATCOM', 'cache');
 			if ~exist(cacheDir, 'dir'), mkdir(cacheDir); end
 
 			% Deterministic filename without Java: use a simple checksum + length.
@@ -304,7 +307,7 @@ classdef DatcomManager < handle
 
 			% Lock holder: re-check cache after acquiring lock
 			if exist(cacheFile, 'file')
-				rmdir(lockDir);
+				rmdir(lockDir, 's');
 				S = load(cacheFile, 'aero');
 				aero = S.aero;
 				memCache(key) = aero;
