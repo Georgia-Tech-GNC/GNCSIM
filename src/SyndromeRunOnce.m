@@ -12,26 +12,20 @@ function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
     end
 
     %% Instantiate Classes
-    % Rocket Dynamics (includes actuator model)
     rocketDynamics = setupRocket(params);
     rocketDynamics.computeBuildup();
 
-    % Setup Controller
     useActuatorModel = true;
     controller = setupController(params, useActuatorModel);
 
-    % Setup Environment
     environment = setupEnvironment(params);
 
-    % Setup Flight Simulation (sets up navigation too)
     [flight, log] = setupFlight(params, rocketDynamics, controller, environment);
     flight.runClosedLoop = true;
 
     log = flight.runSim(log);
     log.trim();
-
 end
-
 
 function rocketDyn = setupRocket(params)
     % ---- Required JSON sections ----
@@ -112,33 +106,36 @@ function rocketDyn = setupRocket(params)
     mustHave(params.motor, "mass");
     mustHave(params.motor, "x_ref");
 
-    tc = params.motor.tc;
-    tc = reshape(tc, [], 2); % ensure Nx2
+    tc = reshape(params.motor.tc, [], 2);
     motorParams.thrustCurve = tc;
     motorParams.mass        = params.motor.mass;
     motorParams.xRef        = params.motor.x_ref;
 
-    % burnTime + totalImpulse are required by RocketDynamics
     motorParams.burnTime     = tc(end, 1);
     motorParams.totalImpulse = trapz(tc(:, 1), tc(:, 2));
 
     % ---- Actuator Model (Reaction Wheel) ----
     mustHave(params.reaction_wheel, "Iw");
-    mustHave(params.reaction_wheel, "tau_max");
     mustHave(params.reaction_wheel, "w_max");
-    mustHave(params.reaction_wheel, "w_soft");
     mustHave(params.reaction_wheel, "b");
+
+    mustHave(params.reaction_wheel, "Kt");
+    mustHave(params.reaction_wheel, "Ke");
+    mustHave(params.reaction_wheel, "R_wind");
+    mustHave(params.reaction_wheel, "I_max");
+    mustHave(params.reaction_wheel, "V_bus_nom");
 
     actuatorModel = SyndromeFiles.SyndromeActuatorModel( ...
         params.reaction_wheel.Iw, ...
-        params.reaction_wheel.tau_max, ...
         params.reaction_wheel.w_max, ...
-        params.reaction_wheel.w_soft, ...
-        params.reaction_wheel.b);
+        params.reaction_wheel.b, ...
+        params.reaction_wheel.Kt, ...
+        params.reaction_wheel.Ke, ...
+        params.reaction_wheel.R_wind, ...
+        params.reaction_wheel.I_max, ...
+        params.reaction_wheel.V_bus_nom);
 
-    % No CFD aerodynamics
-    aerodynamics = [];
-
+    aerodynamics = []; % No CFD aerodynamics
     rocketDyn = rocketPkg.RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, aerodynamics);
 end
 
@@ -147,17 +144,18 @@ function controller = setupController(params, useActuatorModel)
     mustHave(params.controller, "kp");
     mustHave(params.controller, "ki");
     mustHave(params.controller, "kd");
-    mustHave(params.controller, "dt");
-    mustHave(params.controller, "tau_max");
     mustHave(params.controller, "gamma");
+
+    if ~isfield(params.controller, "beta")
+        params.controller.beta = 0.8;
+    end
 
     controller = controllerPkg.RollRatePID( ...
         params.controller.kp, ...
         params.controller.ki, ...
         params.controller.kd, ...
-        params.controller.dt, ...
-        params.controller.tau_max, ...
-        params.controller.gamma);
+        params.controller.gamma, ...
+        params.controller.beta);
 
     controller.useActuatorModel = useActuatorModel;
 end
@@ -168,20 +166,16 @@ function environment = setupEnvironment(~)
 end
 
 function nav = setupNavigation(dt, navParams)
-    % Pull from JSON
-    accParams  = navParams.accel;
-    gyroParams = navParams.gyro;
-
-    accelerometer = navigationPkg.Accelerometer(accParams);
-    gyroscope     = navigationPkg.Gyroscope(gyroParams);
-
+    accelerometer = navigationPkg.Accelerometer(navParams.accel);
+    gyroscope     = navigationPkg.Gyroscope(navParams.gyro);
     nav = navigationPkg.SimpleNavigation(dt, gyroscope, accelerometer);
 end
 
 function [flight, log] = setupFlight(params, rocketDynamics, controller, environment)
-    mustHave(params, "controller");
     mustHave(params, "navigation");
+    mustHave(params, "flight");
 
+    % Navigation required fields (unchanged)
     mustHave(params.navigation, "gyro");
     mustHave(params.navigation.gyro, "bias");
     mustHave(params.navigation.gyro, "biasRW_sigma");
@@ -202,12 +196,35 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
     mustHave(params.navigation.accel, "outputProbability");
     mustHave(params.navigation.accel, "observationMatrix");
 
-    dt = params.controller.dt;
+    % FreeRTOS-style dt jitter params (used by Flight.m)
+    mustHave(params.flight, "dt_nom");
+    mustHave(params.flight, "tick_s");
+    mustHave(params.flight, "p_miss1");
+    mustHave(params.flight, "p_miss2");
+    mustHave(params.flight, "latency_max_s");
+    % ESC telemetry noise (no latency) used by Flight.m for tau_max_meas
+    if ~isfield(params.flight, "omega_w_sigma"), params.flight.omega_w_sigma = 0.0; end
+    if ~isfield(params.flight, "omega_w_bias"),  params.flight.omega_w_bias  = 0.0; end
+    if ~isfield(params.flight, "v_bus_sigma"),   params.flight.v_bus_sigma   = 0.0; end
+    if ~isfield(params.flight, "v_bus_bias"),    params.flight.v_bus_bias    = 0.0; end
+    if ~isfield(params.flight, "latency_mode"),   params.flight.latency_mode = "uniform"; end
+
+    dt_nom = params.flight.dt_nom;
 
     totalTime = 20;
 
     flightParams.totalTime = totalTime;
-    flightParams.dt = dt;
+    flightParams.dt = dt_nom;
+
+    flightParams.tick_s = params.flight.tick_s;
+    flightParams.p_miss1 = params.flight.p_miss1;
+    flightParams.p_miss2 = params.flight.p_miss2;
+    flightParams.latency_max_s = params.flight.latency_max_s;
+    flightParams.latency_mode = params.flight.latency_mode;
+    flightParams.omega_w_sigma = params.flight.omega_w_sigma;
+    flightParams.omega_w_bias  = params.flight.omega_w_bias;
+    flightParams.v_bus_sigma   = params.flight.v_bus_sigma;
+    flightParams.v_bus_bias    = params.flight.v_bus_bias;
 
     % Initial state (14x1): [mass, pos(3), vel(3), quat(4), omega(3)]
     mass0 = rocketDynamics.massWet;
@@ -216,27 +233,29 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
     quat0 = Utils.eulerToQuat([0, -90, 0]).';
     omega0 = [0, 0, 0];
 
-    % MC stuff
-    if isfield(params,'flight') && isfield(params.flight,'wx0')
+    % Optional MC initial roll rate
+    if isfield(params.flight, "wx0")
         omega0(1) = params.flight.wx0;
     end
 
     flightParams.x0 = [mass0, pos0, vel0, quat0, omega0].';
 
-    % Actuator initial state (1x1): wheel speed
+    % Actuator initial state (wheel speed)
     mustHave(params, "reaction_wheel");
     mustHave(params.reaction_wheel, "w0");
-    flightParams.del0 = params.reaction_wheel.w0; % 1x1
+    flightParams.del0 = params.reaction_wheel.w0;
 
     navigation = setupNavigation(flightParams.dt, params.navigation);
 
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
 
-    % LOG (repo-standard)
-    maxSteps = round(flightParams.totalTime / flightParams.dt);
+    % LOG
+    dt_min = flightParams.dt; % dt_k >= dt_nom (lateness-only model)
+    maxSteps = ceil(flightParams.totalTime / dt_min) + 1;
+
     stateNames = {'mass', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
     controlInputNames = {'Roll', 'Pitch', 'Yaw'};
-    actuatorStateNames = {'omega_w'}; % 1-state actuator (wheel speed)
+    actuatorStateNames = {'omega_w_true','omega_w_meas','V_bus_true','V_bus_meas','tau_max_meas'};
     log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 
@@ -246,9 +265,7 @@ function mustHave(s, fieldName)
     end
 end
 
-% MC scenario overrides
 function params = applyScenarioOverrides(params, s)
-
     % --- Plant ---
     if isfield(s,'Ix_scale')
         params.rocket.rotational_moi = params.rocket.rotational_moi * s.Ix_scale;
@@ -258,20 +275,20 @@ function params = applyScenarioOverrides(params, s)
     end
 
     % --- Actuator ---
-    if isfield(s,'tauMax_scale')
-        params.reaction_wheel.tau_max = params.reaction_wheel.tau_max * s.tauMax_scale;
-        % keep controller.tau_max consistent with actuator authority
-        params.controller.tau_max = params.reaction_wheel.tau_max;
-    end
     if isfield(s,'Iw_scale')
         params.reaction_wheel.Iw = params.reaction_wheel.Iw * s.Iw_scale;
     end
     if isfield(s,'b_scale')
         params.reaction_wheel.b = params.reaction_wheel.b * s.b_scale;
     end
+    if isfield(s,'Imax_scale')
+        params.reaction_wheel.I_max = params.reaction_wheel.I_max * s.Imax_scale;
+    end
+    if isfield(s,'Vbus_scale')
+        params.reaction_wheel.V_bus_nom = params.reaction_wheel.V_bus_nom * s.Vbus_scale;
+    end
 
-    % --- Initial condition for roll rate (handled in setupFlight via opts) ---
-    % We'll store it in params so setupFlight can read it without changing signature.
+    % --- Initial condition for roll rate ---
     if isfield(s,'wx0')
         params.flight.wx0 = s.wx0;
     end
@@ -284,11 +301,24 @@ function params = applyScenarioOverrides(params, s)
         params.navigation.gyro.biasRW_sigma(1) = params.navigation.gyro.biasRW_sigma(1) * s.gyro_biasRW_scale;
     end
     if isfield(s,'gyro_noise_scale')
-        % scale variance (not stddev): R <- (scale^2) R
         scale2 = s.gyro_noise_scale.^2;
         params.navigation.gyro.noiseCovariance(1,1) = params.navigation.gyro.noiseCovariance(1,1) * scale2;
     end
     if isfield(s,'gyro_latency_s')
         params.navigation.gyro.latency_s = s.gyro_latency_s;
+    end
+
+    % --- Scheduler timing jitter (FreeRTOS-style) ---
+    if isfield(s,'p_miss1')
+        params.flight.p_miss1 = s.p_miss1;
+    end
+    if isfield(s,'p_miss2')
+        params.flight.p_miss2 = s.p_miss2;
+    end
+    if isfield(s,'latency_max_s')
+        params.flight.latency_max_s = s.latency_max_s;
+    end
+    if isfield(s,'latency_mode')
+        params.flight.latency_mode = s.latency_mode;
     end
 end

@@ -5,6 +5,7 @@ classdef Flight < handle
     properties (Constant)
         idx = StateIndices
     end
+
     properties
         rocketDynamics
         controller
@@ -15,15 +16,17 @@ classdef Flight < handle
         totalTime
         currentTime
         cumVelocity
-        dt
+
+        % Nominal scheduler period (seconds) for control / integration
+        dt_nom
 
         rocketInitialState
         actuatorInitialState
 
         runClosedLoop = true
         useActuatorModel
-	end
-	
+    end
+
     methods
         function obj = Flight(rocketDynamics, environment, controller, navigation, flightParams)
             obj.rocketDynamics = rocketDynamics;
@@ -32,85 +35,182 @@ classdef Flight < handle
             obj.navigation = navigation;
             obj.flightParams = flightParams;
 
-            obj.dt = obj.flightParams.dt;
+            % Nominal dt for 100 Hz control
+            obj.dt_nom = obj.flightParams.dt;
+
             obj.rocketInitialState = obj.flightParams.x0;
             obj.actuatorInitialState = obj.flightParams.del0;
             obj.totalTime = obj.flightParams.totalTime;
 
-            obj.useActuatorModel = controller.useActuatorModel;      
+            obj.useActuatorModel = controller.useActuatorModel;
         end
 
         function log = runSim(obj, log)
+            % ----------------------------
+            % Initialize sim state / time
+            % ----------------------------
             obj.currentTime = 0.0;
             obj.cumVelocity = 0.0;
+
             rocketState = obj.rocketInitialState(:);
             actuatorState = obj.actuatorInitialState(:);
 
             controlInput = [0, 0, 0].';
             disturbances.wind = [0, 0, 0].';
-            
-            % Initialize logger time step
+
+            % Actuator model handle (for tau_max computation, V_bus truth, etc.)
+            am = obj.rocketDynamics.actuatorModel;
+
+            % Cum-velocity bookkeeping for variable dt
+            cumVelInterval = obj.controller.breakPoints.cumVelocityInterval;
+            cumVelTimer = 0.0;
+
+            % ----------------------------
+            % FreeRTOS-style dt jitter params (lateness-only)
+            % ----------------------------
+            tick_s   = obj.getFieldDefault(obj.flightParams, 'tick_s', 0.001);          % 1 ms tick
+            p_miss1  = obj.getFieldDefault(obj.flightParams, 'p_miss1', 0.05);         % P(+1 tick)
+            p_miss2  = obj.getFieldDefault(obj.flightParams, 'p_miss2', 0.005);        % P(+2 ticks)
+            lat_max  = obj.getFieldDefault(obj.flightParams, 'latency_max_s', 0.0001); % max extra latency (s)
+            lat_mode = obj.getFieldDefault(obj.flightParams, 'latency_mode', 'uniform'); % 'uniform' or 'none'
+
+            % Normalize probabilities defensively
+            p_miss1 = max(p_miss1, 0.0);
+            p_miss2 = max(p_miss2, 0.0);
+            p0 = max(0.0, 1.0 - (p_miss1 + p_miss2));
+            psum = p0 + p_miss1 + p_miss2;
+            if psum <= 0
+                p0 = 1.0; p_miss1 = 0.0; p_miss2 = 0.0;
+            else
+                p0 = p0 / psum; p_miss1 = p_miss1 / psum; p_miss2 = p_miss2 / psum;
+            end
+
+            % ----------------------------
+            % ESC telemetry "sensors" (noise-only, no latency)
+            % ----------------------------
+            sigma_w = obj.getFieldDefault(obj.flightParams, 'omega_w_sigma', 0.0); % [rad/s]
+            bias_w  = obj.getFieldDefault(obj.flightParams, 'omega_w_bias',  0.0); % [rad/s]
+            sigma_V = obj.getFieldDefault(obj.flightParams, 'v_bus_sigma',   0.0); % [V]
+            bias_V  = obj.getFieldDefault(obj.flightParams, 'v_bus_bias',    0.0); % [V]
+
+            % ----------------------------
+            % Initial log entry at t = 0
+            % ----------------------------
             log.initializeTimestep(obj.currentTime);
-            
-            % Get state estimate
+
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
 
-            if obj.useActuatorModel 
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); % thrust starts at t=0s
+            if obj.useActuatorModel
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log);
             else
                 rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, log);
             end
 
+            % Telemetry for logging at t=0 (not used for control at t=0 here)
+            omega_w_true = actuatorState(1);
+            V_bus_true   = am.V_bus_nom;
+
+            omega_w_meas = omega_w_true + bias_w + sigma_w * randn();
+            V_bus_meas   = max(V_bus_true + bias_V + sigma_V * randn(), 0.0);
+            tau_max_meas = am.computeTauMax(omega_w_meas, V_bus_meas);
+
             log.add(obj.currentTime, 'states', rocketState);
             log.add(obj.currentTime, 'statedots', rocketStateDot);
-			log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
-            log.add(obj.currentTime, 'actuatorStates', actuatorState);
+            log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
+            log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas]);
             log.add(obj.currentTime, 'controlInputs', controlInput);
 
-            for ii = 1:log.maxSteps - 1
+            % ----------------------------
+            % Main simulation loop
+            % ----------------------------
+            step = 0;
+            while (obj.currentTime < obj.totalTime) && (step < log.maxSteps - 1)
+                step = step + 1;
 
-                obj.currentTime = ii * obj.dt;
-                log.initializeTimestep(obj.currentTime);
+                % ----------------------------
+                % Sample control timestep dt_k (lateness-only)
+                % dt_k = dt_nom + missed_ticks * tick + latency
+                % ----------------------------
+                missed_ticks = randsample([0, 1, 2], 1, true, [p0, p_miss1, p_miss2]);
 
+                if strcmpi(lat_mode, 'none') || lat_max <= 0
+                    latency_s = 0.0;
+                else
+                    latency_s = lat_max * rand(); % non-negative
+                end
+
+                dt_k = obj.dt_nom + missed_ticks * tick_s + latency_s;
+
+                % Advance time
+                nextTime = obj.currentTime + dt_k;
+                if nextTime > obj.totalTime
+                    dt_k = obj.totalTime - obj.currentTime;
+                    nextTime = obj.totalTime;
+                end
+
+                % ----------------------------
+                % Cumulated velocity bookkeeping (variable dt)
+                % ----------------------------
                 if obj.runClosedLoop
-                    % Calculate cumulated velocity every interval
-                    if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2 
+                    cumVelTimer = cumVelTimer + dt_k;
+                    while cumVelTimer >= cumVelInterval
                         vx = rocketState(obj.idx.vx);
                         vy = rocketState(obj.idx.vy);
                         vz = rocketState(obj.idx.vz);
                         vel = sqrt(vx.^2 + vy.^2 + vz.^2);
                         obj.cumVelocity = obj.cumVelocity + vel;
+                        cumVelTimer = cumVelTimer - cumVelInterval;
                     end
                 end
-                
+
+                % ----------------------------
+                % Integrate actuator then rocket over dt_k
+                % ----------------------------
                 if obj.useActuatorModel
                     actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);
-                    actuatorState = Utils.RK4(actuatorDyn, actuatorState, obj.dt);
-                    rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, obj.currentTime);
+                    actuatorState = Utils.RK4(actuatorDyn, actuatorState, dt_k);
+
+                    rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, actuatorState, disturbances, nextTime);
                 else
-                    rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, obj.currentTime);
+                    rocketDyn = @(x) obj.rocketDynamics.rocketModelControlWrapper(x, controlInput, disturbances, nextTime);
                 end
 
-                rocketState = Utils.RK4(rocketDyn, rocketState, obj.dt);
-                quat = rocketState(obj.idx.quat);
-                quatNorm = Utils.normalizeQuat(quat);
-                rocketState(obj.idx.quat) = quatNorm;
+                rocketState = Utils.RK4(rocketDyn, rocketState, dt_k);
+                rocketState(obj.idx.quat) = Utils.normalizeQuat(rocketState(obj.idx.quat));
 
                 disturbances.wind = [0, 0, 0].';
-                
+
+                % Update time after propagation
+                obj.currentTime = nextTime;
+                log.initializeTimestep(obj.currentTime);
+
+                % ----------------------------
+                % Compute ESC telemetry once (used for BOTH control + logging)
+                % ----------------------------
+                omega_w_true = actuatorState(1);
+                V_bus_true   = am.V_bus_nom;
+
+                omega_w_meas = omega_w_true + bias_w + sigma_w * randn();
+                V_bus_meas   = max(V_bus_true + bias_V + sigma_V * randn(), 0.0);
+
+                tau_max_meas = am.computeTauMax(omega_w_meas, V_bus_meas);
+
+                % ----------------------------
+                % Closed-loop: compute control for next interval
+                % ----------------------------
                 if obj.runClosedLoop
-                    % HACKY SOLUTION FOR NOW: code specific to RollRatePID
                     if isa(obj.controller, 'controllerPkg.RollRatePID') && obj.useActuatorModel
-                        w = actuatorState(1);  % wheel speed state
-                        alpha = obj.rocketDynamics.actuatorModel.computeAlpha(w);
-                        controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime, alpha);
+                        controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime, dt_k, tau_max_meas);
                     else
                         controlInput = obj.controller.getControl(rocketState, obj.cumVelocity, obj.currentTime);
                     end
                 end
 
-                if obj.useActuatorModel 
-                    rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log); 
+                % ----------------------------
+                % Logging at currentTime
+                % ----------------------------
+                if obj.useActuatorModel
+                    rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, disturbances, obj.currentTime, log);
                 else
                     rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, disturbances, obj.currentTime, log);
                 end
@@ -120,8 +220,18 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'states', rocketState);
                 log.add(obj.currentTime, 'statedots', rocketStateDot);
                 log.add(obj.currentTime, 'stateestimates', rocketStateEstimate);
-                log.add(obj.currentTime, 'actuatorStates', actuatorState);
+                log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas]);
                 log.add(obj.currentTime, 'controlInputs', controlInput);
+            end
+        end
+    end
+
+    methods (Access = private)
+        function v = getFieldDefault(~, s, fieldName, defaultVal)
+            if isstruct(s) && isfield(s, fieldName)
+                v = s.(fieldName);
+            else
+                v = defaultVal;
             end
         end
     end

@@ -1,37 +1,42 @@
 function results = TunePID()
 % TunePID  Bayesian optimization driver for Syndrome PID gains (stochastic MC objective).
 %
-% Uses Monte Carlo rollouts inside the objective. Each bayesopt evaluation
-% draws fresh scenarios (non-CRN), so the objective is stochastic.
-%
-% Assumes on MATLAB path:
-%   - SyndromeRunOnce.m   : [log, params] = SyndromeRunOnce(kp,ki,kd,opts)
-%   - SyndromeObjective.m : [J, detail] = SyndromeObjective(kp,ki,kd,weights,opts)
+% Per paper:
+%   Per-trial cost:            l(theta; s)  from SyndromeObjective()
+%   Aggregated MC objective:   J(theta) = mean(l_i) + lambda * P95({l_i})
+%   Optimization variables:    (log10 Kp, log10 Ki, log10 Kd)
+%   Objective determinism:     stochastic (fresh scenario draws each trial)
+%   Stopping:                 early-stop on convergence (with a safety cap)
 
     %% Options passed through objective -> SyndromeRunOnce
     opts = struct();
     opts.paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
     opts.fail_cost  = 1e9;
 
-    %% Cost weights
+    %% Per-trial objective weights (LaTeX: (w_e, w_u, w_r))
     weights = struct();
     weights.w_e = 1.0;
     weights.w_u = 1e-4;
-    weights.w_s = 10.0;
     weights.w_r = 1e-6;
-    weights.eps_frac = 0.01;
-    weights.eps_abs  = 0.0;
 
-    %% Monte Carlo aggregation settings (stochastic)
+    %% Monte Carlo aggregation settings (LaTeX)
     mc = struct();
-    mc.N = 12;              % rollouts per BO evaluation
-    mc.lambdaP95 = 0.5;     % weight on tail risk
-    mc.failPenalty = 1e4;   % added per failed rollout
+    mc.N      = 12;   % trials per BO evaluation (set to your paper's N once decided)
+    mc.lambda = 0.5;  % tail-risk weight on P95
 
-    %% BO budget
-    maxEvals = 120;
-    nSeed    = 20;
+    %% BO configuration
     useParallel = false;
+
+    % Early-stopping (convergence) controls
+    conv = struct();
+    conv.minEvals   = 30;      % don't stop too early
+    conv.patience   = 25;      % window length with no meaningful improvement
+    conv.relTol     = 1e-3;    % relative improvement threshold (0.1%)
+    conv.absTol     = 1e-6;    % absolute improvement floor
+
+    % Safety cap (still required to prevent infinite runs)
+    maxEvalsCap = 500;
+    nSeed       = 20;
 
     %% Output
     outDir = fullfile(pwd, "tuning_out");
@@ -40,12 +45,12 @@ function results = TunePID()
 
     %% Decision variables (log space)
     vars = [
-        optimizableVariable('logKp', [-3, 3],  'Type','real')  % Kp in [1e-3, 1e3]
-        optimizableVariable('logKi', [-6, 2],  'Type','real')  % Ki in [1e-6, 1e2]
-        optimizableVariable('logKd', [-6, 2],  'Type','real')  % Kd in [1e-6, 1e2]
+        optimizableVariable('logKp', [-3, 3], 'Type','real')  % Kp in [1e-3, 1e3]
+        optimizableVariable('logKi', [-6, 2], 'Type','real')  % Ki in [1e-6, 1e2]
+        optimizableVariable('logKd', [-6, 2], 'Type','real')  % Kd in [1e-6, 1e2]
     ];
 
-    %% Objective wrapper (stochastic MC)
+    %% Objective wrapper: returns aggregated J(theta)
     function J = objFcn(X)
         kp = 10.^X.logKp;
         ki = 10.^X.logKi;
@@ -57,46 +62,89 @@ function results = TunePID()
             return;
         end
 
-        Ji = zeros(mc.N,1);
-        failed = false(mc.N,1);
+        li = zeros(mc.N, 1);       % per-trial costs l(theta; s_i)
+        failed = false(mc.N, 1);
 
         for i = 1:mc.N
             opts_i = opts;
-            opts_i.scenario = drawScenario_rollrate();
+            opts_i.scenario = drawScenario_rollrate(); % fresh draw => stochastic objective
 
             try
-                [Ji(i), detail] = SyndromeObjective(kp, ki, kd, weights, opts_i);
+                [li(i), detail] = SyndromeObjective(kp, ki, kd, weights, opts_i);
 
-                if ~isfinite(Ji(i)) || Ji(i) < 0
-                    Ji(i) = opts.fail_cost;
+                if ~isfinite(li(i)) || li(i) < 0
+                    li(i) = opts.fail_cost;
                     failed(i) = true;
                 elseif isfield(detail,'failed') && detail.failed
+                    li(i) = opts.fail_cost;
                     failed(i) = true;
                 end
             catch
-                Ji(i) = opts.fail_cost;
+                li(i) = opts.fail_cost;
                 failed(i) = true;
             end
         end
 
-        Jmean  = mean(Ji);
-        Jp95   = prctile(Ji, 95);
-        nfails = sum(failed);
+        % Per LaTeX: J = mean(l_i) + lambda*P95(l_i)
+        Jmean = mean(li);
+        Jp95  = prctile(li, 95);
+        J     = Jmean + mc.lambda * Jp95;
 
-        J = Jmean + mc.lambdaP95 * Jp95 + mc.failPenalty * nfails;
-
+        % Failure handling (paper: "large penalty for failed trials"):
+        % already enforced by setting li(i)=fail_cost, which increases mean and P95.
         if ~isfinite(J) || J < 0
             J = opts.fail_cost;
         end
     end
 
-    %% Run Bayesian optimization (stochastic objective)
+    %% Convergence stop function (early stopping)
+    function stop = stopFcn(boResults, state)
+        %#ok<INUSD>
+        stop = false;
+
+        % Only meaningful after an iteration completes
+        if ~strcmp(state, "iteration")
+            return;
+        end
+
+        % Need enough completed evaluations
+        n = boResults.NumObjectiveEvaluations;
+        if n < conv.minEvals
+            return;
+        end
+
+        % If not enough history to check patience window, do nothing
+        if n < conv.patience + 1
+            return;
+        end
+
+        % Best objective so far at each iteration is in MinObjectiveTrace
+        trace = boResults.MinObjectiveTrace;
+        if numel(trace) < conv.patience + 1 || any(~isfinite(trace))
+            return;
+        end
+
+        best_now    = trace(end);
+        best_before = trace(end - conv.patience);
+
+        % Improvement is decrease in objective
+        abs_impr = best_before - best_now;
+        rel_impr = abs_impr / max(abs(best_before), eps);
+
+        % Converged if improvement over the patience window is tiny
+        if (abs_impr <= conv.absTol) || (rel_impr <= conv.relTol)
+            stop = true;
+        end
+    end
+
+    %% Run Bayesian optimization
     results = bayesopt(@objFcn, vars, ...
-        'MaxObjectiveEvaluations', maxEvals, ...
+        'MaxObjectiveEvaluations', maxEvalsCap, ...
         'NumSeedPoints', nSeed, ...
         'IsObjectiveDeterministic', false, ...
         'UseParallel', useParallel, ...
         'AcquisitionFunctionName', 'expected-improvement-plus', ...
+        'OutputFcn', @stopFcn, ...
         'Verbose', 1);
 
     %% Save best + metadata
@@ -105,11 +153,11 @@ function results = TunePID()
     best.Kp = 10.^bestX.logKp;
     best.Ki = 10.^bestX.logKi;
     best.Kd = 10.^bestX.logKd;
-    best.J  = results.MinObjective;
+    best.J  = results.MinObjective; % aggregated J(theta)
 
-    save(saveFile, "results", "best", "weights", "opts", "mc");
+    save(saveFile, "results", "best", "weights", "opts", "mc", "conv", "maxEvalsCap", "nSeed");
 
-    fprintf("\nBest:\n  Kp=%.6e\n  Ki=%.6e\n  Kd=%.6e\n  J =%.6g\nSaved: %s\n", ...
+    fprintf("\nBest (aggregated objective J):\n  Kp=%.6e\n  Ki=%.6e\n  Kd=%.6e\n  J =%.6g\nSaved: %s\n", ...
         best.Kp, best.Ki, best.Kd, best.J, saveFile);
 end
 
@@ -122,9 +170,11 @@ function s = drawScenario_rollrate()
     s.rollDampLin_scale = exp(0.25*randn());
 
     % Actuator
-    s.tauMax_scale = exp(0.10*randn());
-    s.Iw_scale     = exp(0.10*randn());
-    s.b_scale      = exp(0.30*randn());
+    s.Iw_scale = exp(0.10*randn());
+    s.b_scale  = exp(0.30*randn());
+
+    s.Imax_scale = exp(0.10*randn());
+    s.Vbus_scale = exp(0.03*randn());
 
     % Initial condition
     s.wx0 = deg2rad(30) * (2*rand() - 1);
@@ -134,4 +184,9 @@ function s = drawScenario_rollrate()
     s.gyro_biasRW_scale = exp(0.30*randn());
     s.gyro_noise_scale  = exp(0.30*randn());
     s.gyro_latency_s    = max(0, 0.010 + 0.002*randn());
+
+    % Scheduler jitter (FreeRTOS-style)
+    s.p_miss1 = max(0, 0.05 + 0.02*randn());
+    s.p_miss2 = max(0, 0.005 + 0.003*randn());
+    s.latency_max_s = max(0, 1e-4 + 5e-5*randn());
 end

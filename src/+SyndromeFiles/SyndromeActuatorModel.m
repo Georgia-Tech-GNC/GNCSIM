@@ -1,11 +1,18 @@
 classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
     properties
-        % Wheel params
-        Iw
-        tauMax
-        wMax
-        wSoft
-        b = 0
+        % Wheel / friction params
+        Iw                 % wheel inertia
+        wMax               % hard wheel speed limit [rad/s]
+        b = 0              % viscous friction coefficient
+
+        % Motor / electrical params (paper Eq. voltage balance)
+        Kt                 % torque constant [N*m/A]
+        Ke                 % back-EMF constant [V/(rad/s)]
+        R_wind             % winding resistance [ohm]
+        I_max              % hardware current limit [A]
+
+        % fixed bus voltage
+        V_bus_nom          % [V]
 
         % Bookkeeping for applied moment
         tauApplied = 0
@@ -15,35 +22,47 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
     end
 
     methods
-        function obj = SyndromeActuatorModel(Iw, tauMax, wMax, wSoft, b)
+        function obj = SyndromeActuatorModel(Iw, wMax, b, Kt, Ke, R_wind, I_max, V_bus_nom)
             obj.Iw = Iw;
-            obj.tauMax = tauMax;
             obj.wMax = wMax;
-            obj.wSoft = wSoft;
-            if nargin >= 5, obj.b = b; end
+            if nargin >= 3 && ~isempty(b), obj.b = b; end
+
+            obj.Kt = Kt;
+            obj.Ke = Ke;
+            obj.R_wind = R_wind;
+            obj.I_max = I_max;
+
+            obj.V_bus_nom = V_bus_nom;
         end
 
         function wdot = actuatorDynamics(obj, controlInput, actuatorState)
+            % actuatorState(1) is wheel speed [rad/s]
             w = actuatorState(1);
-            tauCmd = controlInput(1);
 
-            % Saturate torque command
-            tau = min(max(tauCmd, -obj.tauMax), obj.tauMax);
+            % Control input is body torque command about +x [N*m]
+            tauCmd_body = controlInput(1);
 
-            % Enforce wheel speed limit: prevent further acceleration past limit
-            % Wheel torque is opposite of body torque
-            tauWheel = -tau;
-            wdot_val = (tauWheel - obj.b*w) / obj.Iw;
+            % Compute instantaneous true torque authority using fixed V_bus_nom (Option A)
+            tauMax_true = obj.computeTauMax(w, obj.V_bus_nom);
 
+            % Saturate body torque command to true authority
+            tau_body = obj.clamp(tauCmd_body, -tauMax_true, +tauMax_true);
+
+            % Convert to wheel torque (action-reaction)
+            tauWheel = -tau_body;
+
+            % Wheel dynamics: Iw * wdot = tauWheel - b*w
+            wdot_val = (tauWheel - obj.b * w) / obj.Iw;
+
+            % Hard speed limit: prevent further acceleration past limit
             if (w >= obj.wMax && wdot_val > 0), wdot_val = 0; end
             if (w <= -obj.wMax && wdot_val < 0), wdot_val = 0; end
 
             wdot = zeros(size(actuatorState));
             wdot(1) = wdot_val;
 
-
             % Store what we actually applied to the body this step
-            obj.tauApplied = -tauWheel; % equals tau
+            obj.tauApplied = tau_body;
         end
 
         function [fB, mB] = getForcesMoments(obj, ~, ~, ~, ~)
@@ -51,16 +70,22 @@ classdef SyndromeActuatorModel < controllerPkg.ActuatorModel
             mB = [obj.tauApplied; 0; 0];
         end
 
-        function alpha = computeAlpha(obj, w)
-            absw = abs(w);
-            if absw <= obj.wSoft
-                alpha = 1.0;
-            elseif absw >= obj.wMax
-                alpha = 0.0;
-            else
-                alpha = (obj.wMax - absw) / (obj.wMax - obj.wSoft);
-            end
-            alpha = min(max(alpha, 0.0), 1.0);
+        function tau_max = computeTauMax(obj, omega_w, V_bus)
+            % Implements paper torque bound:
+            % I_avail = max(0, V_bus - Ke*omega_w)/R_wind
+            % I_lim   = min(I_max, I_avail)
+            % tau_max = Kt * I_lim
+
+            V_headroom = V_bus - obj.Ke * omega_w;
+            I_avail = max(0.0, V_headroom) / obj.R_wind;
+            I_lim = min(obj.I_max, I_avail);
+            tau_max = obj.Kt * I_lim;
+        end
+    end
+
+    methods (Static, Access = private)
+        function y = clamp(x, lo, hi)
+            y = min(max(x, lo), hi);
         end
     end
 end
