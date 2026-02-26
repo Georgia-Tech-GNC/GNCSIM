@@ -28,9 +28,10 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     % ---- Run sim ----
     try
         [log, params] = SyndromeRunOnce(kp, ki, kd, opts);
-    catch
+    catch ME
         l = opts.fail_cost;
-        detail = struct('failed', true);
+        detail = struct('failed', true, 'stage', 'SyndromeRunOnce', ...
+                        'identifier', ME.identifier, 'message', ME.message);
         return;
     end
 
@@ -53,12 +54,27 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
         if any(~isfinite(wx)) || any(~isfinite(tau_raw)) || any(~isfinite(tau_max_t))
             error('Non-finite signals');
         end
-        if any(tau_max_t <= 0)
-            error('Non-positive tau_max_t');
+        if any(tau_max_t < 0)
+            error('Negative tau_max_t');
         end
-    catch
+    catch ME
         l = opts.fail_cost;
-        detail = struct('failed', true);
+        detail = struct('failed', true, 'stage', 'ExtractSignals', ...
+                        'identifier', ME.identifier, 'message', ME.message);
+
+        % Optional: save the log for inspection if requested
+        if isfield(opts,'debug_fail_save') && opts.debug_fail_save && exist('log','var')
+            try
+                if ~isfield(opts,'debug_fail_dir') || isempty(opts.debug_fail_dir)
+                    opts.debug_fail_dir = fullfile(pwd, "tuning_out", "fail_logs");
+                end
+                if ~exist(opts.debug_fail_dir, 'dir'), mkdir(opts.debug_fail_dir); end
+                fname = sprintf("fail_kp%.3e_ki%.3e_kd%.3e.mat", kp, ki, kd);
+                log.saveToFile(fullfile(opts.debug_fail_dir, fname));
+            catch
+                % ignore secondary failures
+            end
+        end
         return;
     end
 

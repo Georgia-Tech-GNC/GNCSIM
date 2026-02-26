@@ -8,10 +8,14 @@ function results = TunePID()
 %   Objective determinism:     stochastic (fresh scenario draws each trial)
 %   Stopping:                 early-stop on convergence (with a safety cap)
 
+    outDir = fullfile(pwd, "tuning_out");
+
     %% Options passed through objective -> SyndromeRunOnce
     opts = struct();
     opts.paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
     opts.fail_cost  = 1e9;
+    opts.debug_fail_save = true;
+    opts.debug_fail_dir  = fullfile(outDir, "fail_logs");
 
     %% Per-trial objective weights (LaTeX: (w_e, w_u, w_r))
     weights = struct();
@@ -49,7 +53,6 @@ function results = TunePID()
     nSeed       = 20;
 
     %% Output
-    outDir = fullfile(pwd, "tuning_out");
     if ~exist(outDir, "dir"), mkdir(outDir); end
     saveFile = fullfile(outDir, "bayesopt_pid.mat");
 
@@ -128,8 +131,22 @@ function results = TunePID()
             return;
         end
 
-        % Best objective so far at each iteration is in MinObjectiveTrace
-        trace = boResults.MinObjectiveTrace;
+        % Get best-so-far trace robustly across MATLAB versions
+        trace = [];
+
+        if isprop(boResults, "ObjectiveMinimumTrace")
+            trace = boResults.ObjectiveMinimumTrace;
+        elseif isprop(boResults, "ObjectiveTrace")
+            ot = boResults.ObjectiveTrace;
+            trace = cummin(ot); % best-so-far from per-eval objective
+        elseif isprop(boResults, "MinObjective") && isprop(boResults, "NumObjectiveEvaluations")
+            % Last-resort: cannot form a windowed trace -> disable early-stop
+            return;
+        else
+            return;
+        end
+
+        trace = trace(:);
         if numel(trace) < conv.patience + 1 || any(~isfinite(trace))
             return;
         end
@@ -164,6 +181,7 @@ function results = TunePID()
         'UseParallel', useParallelBO, ...
         'AcquisitionFunctionName', 'expected-improvement-plus', ...
         'OutputFcn', @stopFcn, ...
+        'PlotFcn', {}, ...
         'Verbose', 1);
 
     %% Save best + metadata
@@ -187,7 +205,7 @@ function results = TunePID()
 
     % ---- (1) Convergence plot (best-so-far J vs eval #) ----
     try
-        bestTrace = results.MinObjectiveTrace(:);
+        bestTrace = results.ObjectiveMinimumTrace(:);
         x = (1:numel(bestTrace)).';
 
         fig = figure('Color','w');

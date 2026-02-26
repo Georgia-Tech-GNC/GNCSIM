@@ -292,9 +292,15 @@ classdef DatcomManager < handle
 
 			% Acquire lock (atomic mkdir is cross-platform)
 			while true
-				if mkdir(lockDir)
+				% Suppress spam when the lock directory already exists
+				warnState = warning('off', 'MATLAB:MKDIR:DirectoryExists');
+				ok = mkdir(lockDir);
+				warning(warnState);
+
+				if ok
 					break;
 				end
+
 				% If another worker finished while we waited, load and return
 				if exist(cacheFile, 'file')
 					S = load(cacheFile, 'aero');
