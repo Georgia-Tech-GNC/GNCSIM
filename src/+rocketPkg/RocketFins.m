@@ -6,12 +6,12 @@ classdef RocketFins < rocketPkg.DatcomManager
 	% to facilitate DATCOM analysis.
 
 	properties
-		finParamsArr		    % Array of structs containing fin geometry parameters
-		fins			        % Array of individual rocket_pkg.Fin objects
-		finVertices		        % (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
-        numFins                 % Number of Fins in set
-        numMovableFins          % Number of Fins in set that can deflect
-        numMovableIndex = []    % The index of which fins can deflect
+		finParamsArr struct		% Array of structs containing fin geometry parameters
+		fins rocketPkg.Fin      % Array of individual rocket_pkg.Fin objects
+		finVertices (4,3) double % (4x3 array) (x, y, z) coordinates of the single reference fin's vertices
+        numFins (1,1) double     % Number of Fins in set
+        numMovableFins (1,1) double % Number of Fins in set that can deflect
+        numMovableIndex (1,:) double = [] % The index of which fins can deflect
     end
 
 	methods
@@ -58,7 +58,14 @@ classdef RocketFins < rocketPkg.DatcomManager
             obj.numMovableFins = numMovableFins;
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, envConditions)
+            arguments
+                obj
+                state (:,1) double
+                deflections (:,1) double
+                currentCg (1,1) double
+                envConditions (1,1) flightPkg.AtmosphericConditions
+            end
             % Calculates the total aerodynamic forces and moments in the body frame
 			fB = [0, 0, 0].';
 			mB = [0, 0, 0].';
@@ -77,7 +84,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 % Compute the current fin forces and moments based on
                 % state, current deflection, cg location and any
                 % disterbances
-				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, disturbances);
+				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, envConditions);
 				fB = fB + fBFin;
 				mB = mB + mBFin;
 			end
@@ -160,6 +167,13 @@ classdef RocketFins < rocketPkg.DatcomManager
 		end
 
 		function calculateRefGeometry(obj, rootChord, tipChord, semiSpan, sweepRad)
+            arguments
+                obj
+                rootChord (1,1) double
+                tipChord (1,1) double
+                semiSpan (1,1) double
+                sweepRad (1,1) double
+            end
 			% Calculate Reference Geometry
 			v1 = [0, 0, 0];
             v2 = [rootChord, 0, 0];

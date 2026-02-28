@@ -5,14 +5,14 @@ classdef DecoupledLQR < controllerPkg.Controller
     % DECOUPLEDLQR Represents the controller for pitch, yaw and roll
 
     properties
-        breakPoints                 % breakpoints object holding states 
-        referenceAttitudes          % Refrence attitudes in including [time, roll, pitch yaw]
-        Q2                          % Q matrix for roll LQR control
-        Q3                          % Q matrix for pitch/yaw LQR control
-        R2                          % R matrix for roll LQR control
-        R3                          % R matrix for pitch/yaw LQR control
-        reduceLTI                   % object of reduceLTI class
-        useActuatorModel = false    % boolean to check if the actuator model is being used
+        breakPoints                             % breakpoints object holding states (type hint in Controller.m)
+        referenceAttitudes                      % Refrence attitudes in including [time, roll, pitch yaw] (type hint in Controller.m)
+        Q2 (2,2) double                         % Q matrix for roll LQR control
+        Q3 (3,3) double                         % Q matrix for pitch/yaw LQR control
+        R2 (1,1) double                         % R matrix for roll LQR control
+        R3 (1,1) double                         % R matrix for pitch/yaw LQR control
+        reduceLTI controllerPkg.ReduceLTI       % object of reduceLTI class
+        useActuatorModel = false                % boolean to check if the actuator model is being used (type hint in Controller.m)
     end
 
     methods
@@ -29,6 +29,12 @@ classdef DecoupledLQR < controllerPkg.Controller
         end
 
         function rocketControl = getControl(obj, state, currentCumVelocity, currentTime)
+            arguments
+                obj
+                state (:,1) double
+                currentCumVelocity (1,1) double {mustBeNonnegative}
+                currentTime (1,1) double {mustBeNonnegative}
+            end
 
             % Get current gains for roll control (K2) and pitch control
             % (K3)
@@ -56,12 +62,19 @@ classdef DecoupledLQR < controllerPkg.Controller
             rocketControl = rad2deg(rocketControlRad);
         end
            
-        function [rollErr, pitchErr, yawErr] = getError(obj, rocketState, currentTime)
+        function [rollErr, pitchErr, yawErr] = getError(obj, rocketStateEstimate, currentTime)
+            arguments
+                obj
+                rocketStateEstimate (:,1) double
+                currentTime (1,1) double {mustBeNonnegative}
+            end
+            %Estimate and State
+            rocketStateEstimate(:,1);
 
             % Get reduced state from full state
-            x3Pitch = obj.reduceLTI.pitchReduce(rocketState);
-            x3Yaw = obj.reduceLTI.pitchReduce(rocketState, true);
-            x2Roll = obj.reduceLTI.rollReduce(rocketState);
+            x3Pitch = obj.reduceLTI.pitchReduce(rocketStateEstimate);
+            x3Yaw = obj.reduceLTI.pitchReduce(rocketStateEstimate, true);
+            x2Roll = obj.reduceLTI.rollReduce(rocketStateEstimate);
 
             % Find the index in reference that corresponds to current time
             time_vec = obj.referenceAttitudes(1, :);

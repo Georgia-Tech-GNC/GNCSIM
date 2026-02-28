@@ -18,7 +18,10 @@ classdef GPS < navigationPkg.Sensor&handle
     properties
         refLLA
         posI
-        gpsBuiltIn    
+        gpsBuiltIn
+        verticalAccuracy
+        horizontalAccuracy
+        velocityAccuracy
     end
 
 
@@ -37,6 +40,9 @@ classdef GPS < navigationPkg.Sensor&handle
             obj.nextOutputTime = obj.outputPeriod;
 
             obj.refLLA = gpsParams.refLLA;
+            obj.verticalAccuracy = gpsParams.verticalAccuracy;
+            obj.horizontalAccuracy = gpsParams.horizontalAccuracy;
+            obj.velocityAccuracy = gpsParams.velocityAccuracy;
             obj.gpsBuiltIn = gpsSensor('SampleRate', obj.outputRate, ...
                                 'ReferenceLocation', obj.refLLA, ...
                                 'PositionInputFormat', 'Geodetic', ...

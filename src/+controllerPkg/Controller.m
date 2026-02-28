@@ -1,24 +1,35 @@
 % Main Authors: Aditya Swami (aswami8@gatech.edu)
 %               Karsten Caillet (kcaillet3@gatech.edu)
 
-classdef (Abstract) Controller < handle
+% "Abstract" Controller Class"
+% (MATLAB doesn't handle type hinting with real abtract classes)
 
-    properties (Abstract)
-        breakPoints
-        referenceAttitudes % (5xn) time and quaternion for every timestep.
-        useActuatorModel
-    end
+classdef Controller < handle
 
-    methods (Abstract)
-        u = getControl(obj, state);
-        % Get control input based on state and breakpoints
+    % properties (Abstract)
+    %     breakPoints controllerPkg.BreakPoints
+    %     referenceAttitudes (:,:) double % ((1+m)xn) time and attitude (m) for every timestep (n).
+    %     useActuatorModel (1,1) logical
+    % end
 
-        populateBreakPoints(obj);
-        % Populate breakPoints with A, B, and gain(s)
+    methods
+        function u = getControl(obj, state, currentCumVelocity, currentTime) %#ok<STOUT,INUSD>
+            error('Controller:getControl', ...
+                  'getControl must be implemented in a subclass.');
+        end
+
+        function populateBreakPoints(obj) 
+            error('Controller:populateBreakPoints', ...
+                  'populateBreakPoints must be implemented in a subclass.');
+        end
     end
 
     methods (Static)
         function check_controllability(A, B)
+            arguments
+                A (:,:) double
+                B (:,:) double
+            end
             C = ctrb(A, B);
             r = rank(C);
             n = size(A, 1);

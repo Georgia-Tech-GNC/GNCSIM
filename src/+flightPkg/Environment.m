@@ -4,63 +4,63 @@
 % (ported from GNCSIM 1.0, modified to implement 3D wind,
 %  updated with smoother turbulence, veer limiting, and RNG control)
 
-classdef Environment < handle
+classdef Environment < handle & matlab.mixin.Copyable
     %ENVIRONMENT Atmospheric wind model with shear, veer, and turbulence.
     %   Builds a 3D wind field as a function of altitude using:
     %     - Power-law vertical shear
     %     - Logarithmic veer (direction change with altitude)
     %     - Turbulence scaled with mean wind and vertically correlated
     
-    properties (SetAccess = private)
+    properties
 
         %--------------------------------------------------------------
         % Altitude grid
         %--------------------------------------------------------------
-        alts                    % altitude vector (m)
-        stepSize = 1            % vertical resolution (m)
-        maxAltitude = 10000     % maximum altitude (m)
+        alts (1,:) double                   % altitude vector (m)
+        stepSize (1,1) double = 1           % vertical resolution (m)
+        maxAltitude (1,1) double = 10000    % maximum altitude (m)
 
         %--------------------------------------------------------------
         % Shear law parameters (Power Law)
         % U(z) = U0 * (z / zRef)^alpha
         %--------------------------------------------------------------
-        U0 = 5                  % reference wind speed at zRef (m/s)
-        zRef = 10               % reference height (m)
-        alpha = 0.14            % terrain exponent (0.1–0.3)
+        U0 (1,1) double = 5                 % reference wind speed at zRef (m/s)
+        zRef (1,1) double = 10              % reference height (m)
+        alpha (1,1) double = 0.14           % terrain exponent (0.1–0.3)
 
-        windMag                 % mean wind magnitude profile U(z)
+        windMag (1,:) double                % mean wind magnitude profile U(z)
 
         %--------------------------------------------------------------
         % Turbulence intensity scaling
         % sigma(z) = I0 * U(z)
         %--------------------------------------------------------------
-        I0 = 0.10               % turbulence intensity (5–15%)
-        sigmaVec                % turbulence amplitude at each altitude
+        I0 (1,1) double = 0.005              % turbulence intensity (5–15%)
+        sigmaVec (1,:) double               % turbulence amplitude at each altitude
 
         %--------------------------------------------------------------
         % Veer (Coriolis rotation)
         % theta(z) = theta0 + k * log(z/zRef + 1)
         %--------------------------------------------------------------
-        theta0 = 0              % base wind direction (radians)
-        k = 0.1                 % veer coefficient
-        thetaVec                % direction vs altitude (radians)
+        theta0 (1,1) double = pi             % base wind direction (radians)
+        k (1,1) double = 0.1                % veer coefficient
+        thetaVec (1,:) double               % direction vs altitude (radians)
 
         %--------------------------------------------------------------
         % Turbulence structure parameters
         %--------------------------------------------------------------
-        rhoTurb = 0.95          % vertical AR(1) correlation coefficient
-        wScale = 0.5            % vertical turbulence scale vs horizontal
+        rhoTurb (1,1) double = 0.95         % vertical AR(1) correlation coefficient
+        wScale (1,1) double = 0.5           % vertical turbulence scale vs horizontal
 
         %--------------------------------------------------------------
         % RNG control (optional)
         %--------------------------------------------------------------
-        rngSeed = []            % if set, used to seed RNG for reproducibility
+        rngSeed (:,:) double = []           % if set, used to seed RNG for reproducibility
 
         %--------------------------------------------------------------
         % Final 3D wind field
         % windVec3D(n,:) = [Wx(z), Wy(z), Wz(z)]
         %--------------------------------------------------------------
-        windVec3D               % Nx3 matrix of 3D wind vectors
+        windVec3D (:,3) double              % Nx3 matrix of 3D wind vectors
 
     end
 
@@ -118,10 +118,34 @@ classdef Environment < handle
         %   windVec = [Wx, Wy, Wz] at the nearest altitude index
         %--------------------------------------------------------------
         function windVec = getWindVector(obj, alt)
+            arguments
+                obj
+                alt (1,1) double
+            end
             % Map altitude to nearest index (alts start near 0 with stepSize)
             idx = round(alt / obj.stepSize) + 1;
             idx = max(min(idx, numel(obj.alts)), 1);
             windVec = obj.windVec3D(idx, :);
+        end
+
+
+        %--------------------------------------------------------------
+        % getAtmosphere
+        % Returns the standard atmosphere properties at a given altitude.
+        % Wraps MATLAB's atmosisa.
+        %
+        % INPUT:
+        %   alt  - altitude (m)
+        %
+        % OUTPUT:
+        %   [T, a, P, rho]
+        %--------------------------------------------------------------
+        function [T, a, P, rho] = getAtmosphere(obj, alt)
+            arguments
+                obj
+                alt (1,1) double
+            end
+            [T, a, P, rho] = atmosisa(alt);
         end
 
 
@@ -292,6 +316,10 @@ classdef Environment < handle
         %   - If rngSeed is set, RNG is reseeded for reproducibility
         %--------------------------------------------------------------
         function obj = setMaxAltitude(obj, altitude)
+            arguments
+                obj
+                altitude (1,1) double {mustBeNonnegative}
+            end
             obj.maxAltitude = altitude;
 
             if ~isempty(obj.rngSeed)
