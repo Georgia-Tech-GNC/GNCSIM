@@ -39,7 +39,8 @@ end
 
 %% MonteCarlo
 runMonteCarlo = true;
-numWorkers = 12;
+numWorkers = 4;
+numRuns = 10;
 
 if runMonteCarlo
     % Close existing pool    
@@ -50,7 +51,7 @@ if runMonteCarlo
     mcFlight.runClosedLoop = true;
     
     uncertaintyParams = setupUncertaintyParams(rocketDynamics, environment, mcFlight);
-    monteCarlo = setupMonteCarlo(uncertaintyParams, mcFlight, rocketDynamics, environment, mcLogTemplate, 12);
+    monteCarlo = setupMonteCarlo(uncertaintyParams, mcFlight, rocketDynamics, environment, mcLogTemplate, numRuns);
 
     tic;
     mcLogs = monteCarlo.runMonteCarlo();
@@ -64,7 +65,8 @@ if runFlight && ~isempty(nominalLog)
         % If (Montecarlo + Nominal) generate just yaw angles plots for all runs
         mcLogs{end+1} = nominalLog;
         analysis = analysisPkg.Analysis(mcLogs);
-        analysis.generateYawAnglePlots();
+        analysis.generateAllPlots();
+        %analysis.generateYawAnglePlots();
     else
         % If only Nominal generate all plots
         analysis = analysisPkg.Analysis(nominalLog);
@@ -490,16 +492,14 @@ function firstParachute = setupParachute()
     main = rocketPkg.ParachuteDynamics("Main Parachute", mainDiameter, mainMass, mainCD, mainDeployAlt);
 
     % Extra chute (deploys at altitude)
-    extraDiameter = 1.54; % m
-    extraMass = 0.34; % kg
-    extraCD = 0.5;
-    extraDeployAlt = 100; % m
-    extra = rocketPkg.ParachuteDynamics("Extra Parachute", extraDiameter, extraMass, extraCD, extraDeployAlt);
+    % extraDiameter = 1.54; % m
+    % extraMass = 0.34; % kg
+    % extraCD = 0.5;
+    % extraDeployAlt = 100; % m
+    % extra = rocketPkg.ParachuteDynamics("Extra Parachute", extraDiameter, extraMass, extraCD, extraDeployAlt);
 
     % Link parachutes: drogue -> main
     drogue.setNext(main);
-    % Link parachutes: main -> extra
-    main.setNext(extra)
 
     firstParachute = drogue;
 end
@@ -510,7 +510,7 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, environment, fl
     uncertaintyObj = analysisPkg.Uncertainty();
 
     % Default uncertainty percentage (3-sigma as percentage of nominal)
-    percentUncertainty = 0.10; % 10%
+    percentUncertainty = 0.1; % 10%
 
     % Aerodynamic scale factors
     caScaleFactor3Sigma = getThreeSigmaDeviation(rocketDynamics.body.scaleFactor, percentUncertainty);

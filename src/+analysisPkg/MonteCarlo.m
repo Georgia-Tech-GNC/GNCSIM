@@ -67,6 +67,7 @@ classdef MonteCarlo < handle
 
                 % Update flight with modified rocket
                 flightCopy.rocketDynamics = rocketCopy;
+                flightCopy.environment = environmentCopy;
 
                 % Copy log template
                 log = obj.logTemplate.copy();
@@ -223,6 +224,11 @@ classdef MonteCarlo < handle
             end
 
             % Dependent parameters values
+
+            environment.computeShearLaw();
+            environment.computeTurbulence();
+            environment.computeVeer();
+            environment.computeWind3D();
 
             flight.navigation.gps.verticalAccuracy = gpsVerticalAccuracy;
             flight.navigation.gps.horizontalAccuracy = gpsHorizontalAccuracy;

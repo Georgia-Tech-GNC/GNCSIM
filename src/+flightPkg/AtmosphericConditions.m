@@ -15,7 +15,7 @@ classdef AtmosphericConditions
                 obj.SpeedOfSound = sos;
                 obj.Pressure = P;
                 obj.Temperature = T;
-                obj.WindVector = [0;0;0];
+                obj.WindVector = wind;
             end
         end
     end

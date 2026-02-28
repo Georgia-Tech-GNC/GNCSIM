@@ -95,6 +95,14 @@ classdef Analysis < handle
                 y_pos = y_pos(obj.timeMask{i});
                 z_pos = z_pos(obj.timeMask{i});
 
+                % For Monte Carlo (multiple runs), crop to ascent only
+                if obj.numSamples > 1 && ~isempty(z_pos)
+                    [~, apogeeIdx] = max(z_pos);
+                    x_pos = x_pos(1:apogeeIdx);
+                    y_pos = y_pos(1:apogeeIdx);
+                    z_pos = z_pos(1:apogeeIdx);
+                end
+
                 % Plot final position
                 if ~isempty(x_pos)
                     plot3(x_pos(end), y_pos(end), z_pos(end), 'x','MarkerSize', 10)
@@ -118,6 +126,56 @@ classdef Analysis < handle
             end
         end
 
+        function generateAscentTrajectoryPlot(obj)
+            fig = figure('Visible', 'off');
+
+            plot3(0,0,0,'o','MarkerSize',10)
+            hold on
+
+            for i = 1:obj.numSamples
+                log = obj.logs{i};
+
+                % Get position states and apply mask
+                x_pos = log.getState('x');
+                y_pos = log.getState('y');
+                z_pos = log.getState('z');
+
+                x_pos = x_pos(obj.timeMask{i});
+                y_pos = y_pos(obj.timeMask{i});
+                z_pos = z_pos(obj.timeMask{i});
+
+                % Crop to ascent phase (from launch to apogee)
+                if ~isempty(z_pos)
+                    [~, apogeeIdx] = max(z_pos);
+                    x_pos = x_pos(1:apogeeIdx);
+                    y_pos = y_pos(1:apogeeIdx);
+                    z_pos = z_pos(1:apogeeIdx);
+                end
+
+                % Plot final position
+                if ~isempty(x_pos)
+                    plot3(x_pos(end), y_pos(end), z_pos(end), 'x','MarkerSize', 10)
+                    % Plot trajectory
+                    plot3(x_pos, y_pos, z_pos, 'LineWidth', 2)
+                end
+            end
+
+            grid on
+            xlabel('\textbf{Flat Earth X (m)}', 'Interpreter', 'latex')
+            ylabel('\textbf{Flat Earth Y (m)}', 'Interpreter', 'latex')
+            zlabel('\textbf{Flat Earth Z (m)}', 'Interpreter', 'latex')
+            title('\textbf{Ascent Trajectory}', 'Interpreter', 'latex')
+            axis equal
+
+            if obj.saveAsPDF
+                saveas(fig, fullfile(obj.plotDir, 'trajectory.png'));
+                close(fig);
+            else
+                set(fig, 'Visible', 'on');
+            end
+        end
+
+        
          function generateVelocityPlot(obj)
             % Calculate Mach Numbers
             a = 340; % m/s (Speed of sound PLACEHOLDER)

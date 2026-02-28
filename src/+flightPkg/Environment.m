@@ -24,7 +24,7 @@ classdef Environment < handle & matlab.mixin.Copyable
         % Shear law parameters (Power Law)
         % U(z) = U0 * (z / zRef)^alpha
         %--------------------------------------------------------------
-        U0 (1,1) double = 1                 % reference wind speed at zRef (m/s)
+        U0 (1,1) double = 5                 % reference wind speed at zRef (m/s)
         zRef (1,1) double = 10              % reference height (m)
         alpha (1,1) double = 0.14           % terrain exponent (0.1–0.3)
 
@@ -34,14 +34,14 @@ classdef Environment < handle & matlab.mixin.Copyable
         % Turbulence intensity scaling
         % sigma(z) = I0 * U(z)
         %--------------------------------------------------------------
-        I0 (1,1) double = 0.10              % turbulence intensity (5–15%)
+        I0 (1,1) double = 0.005              % turbulence intensity (5–15%)
         sigmaVec (1,:) double               % turbulence amplitude at each altitude
 
         %--------------------------------------------------------------
         % Veer (Coriolis rotation)
         % theta(z) = theta0 + k * log(z/zRef + 1)
         %--------------------------------------------------------------
-        theta0 (1,1) double = 0             % base wind direction (radians)
+        theta0 (1,1) double = pi             % base wind direction (radians)
         k (1,1) double = 0.1                % veer coefficient
         thetaVec (1,:) double               % direction vs altitude (radians)
 
