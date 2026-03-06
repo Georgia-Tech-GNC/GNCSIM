@@ -4,8 +4,8 @@ classdef RocketBody < rocketPkg.DatcomManager
 	% ROCKETBODY Represents the aerodynamic body of a rocket
     
 	properties
-		bodyParams			% Structure containing body geometry parameters
-		bodyOutline		    % [2 x n] array: row 1 = x stations, row 2 = body radii
+		bodyParams struct			% Structure containing body geometry parameters
+		bodyOutline (2,:) double    % [2 x n] array: row 1 = x stations, row 2 = body radii
 						    % DATCOM aerodynamic data
 	end
 
@@ -18,7 +18,12 @@ classdef RocketBody < rocketPkg.DatcomManager
 			obj.bodyParams = bodyParams;
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, disturbances)
+        function [fB, mB] = getForcesMoments(obj, state, envConditions)
+            arguments
+                obj
+                state (:,1) double
+                envConditions (1,1) flightPkg.AtmosphericConditions
+            end
            	% Computes aerodynamic forces and moments on the body
 
            	% Rotation from inertial frame to body frame using quaternion
@@ -28,8 +33,8 @@ classdef RocketBody < rocketPkg.DatcomManager
             % Body frame velocity
             vB = state(obj.idx.vel);
 
-            % vW = cBI * disturbances.wind
-            vW = cBI * [0;0;0]; % Wind velocity (ignored for now)
+            % vW = cBI * envConditions.WindVector
+            vW = cBI * envConditions.WindVector; % Wind velocity (ignored for now)
 
 			% add wind velocity to body velocity
             vB = vB + vW;
@@ -44,13 +49,17 @@ classdef RocketBody < rocketPkg.DatcomManager
 			vC = (vB + cross(wB, rCb));
 
 			% Compute aerodynamic forces and moments using DATCOM data
-			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC);
+			[fB, mC] = obj.getForcesMomentsDatcomBody(state, vC, envConditions);
 
 			mBRoss = cross(rCb, fB);
             mB = mC + mBRoss(:);
 		end
 
 		function rNose = getNoseRadii(obj, xNose)
+            arguments
+                obj
+                xNose (:,:) double
+            end
 			% Computes nose cone radius distribution
 
 			L = obj.bodyParams.noseLength;

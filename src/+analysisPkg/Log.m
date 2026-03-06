@@ -1,34 +1,35 @@
 % Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
 
-classdef Log < handle
+classdef Log < handle & matlab.mixin.Copyable
     properties
-        time                    % 1 x N
-        states                  % nStates x N
-        stateDots               % nStates x N
-        stateEstimates          % nStates x N
-        ekfCovariances
-        controlInputs           % nControlInputs x N
-        aeroForces              % 3 x N
-        aeroMoments             % 3 x N
-        thrust                  % 1 x N
-        parachuteForces         % 3 x N
-        actuatorStates           % nActuatorStates x N
-        actuatorForces          % 3 x N
-        actuatorMoments         % 3 x N
+        time (1,:) double                    % 1 x N
+        states (:,:) double                  % nStates x N
+        stateDots (:,:) double               % nStates x N
+        stateEstimates (:,:) double          % nStates x N
+        ekfCovariances (:,:) double
+        controlInputs (:,:) double           % nControlInputs x N
+        aeroForces (3,:) double              % 3 x N
+        aeroMoments (3,:) double             % 3 x N
+        thrust (1,:) double                  % 1 x N
+        parachuteForces (3,:) double         % 3 x N
+        actuatorStates (:,:) double          % nActuatorStates x N
+        actuatorForces (3,:) double          % 3 x N
+        actuatorMoments (3,:) double         % 3 x N
+        flightStates (1,:) uint8             % 1 x N (FlightState enum values)
 
-        stateNames              % Cell array of state names
-        stateDotNames
-        ekfCovarianceNames
-        controlInputNames       % Cell array of control input names
-        aeroForcesNames
-        aeroMomentNames
-        parachuteForcesNames
-        actuatorStateNames      % Cell array of actuator state names
-        actuatorForcesNames
-        actuatorMomentNames
+        stateNames cell              % Cell array of state names
+        stateDotNames cell
+        ekfCovarianceNames cell
+        controlInputNames cell       % Cell array of control input names
+        aeroForcesNames cell
+        aeroMomentNames cell
+        parachuteForcesNames cell
+        actuatorStateNames cell      % Cell array of actuator state names
+        actuatorForcesNames cell
+        actuatorMomentNames cell
 
-        maxSteps                % Preallocated size
-        currentIdx              % Current write index
+        maxSteps (1,1) double {mustBeNonnegative}                % Preallocated size
+        currentIdx (1,1) double {mustBeNonnegative}              % Current write index
     end
     
     methods
@@ -61,9 +62,14 @@ classdef Log < handle
             obj.actuatorStates = zeros(length(obj.actuatorStateNames), obj.maxSteps);
             obj.actuatorForces = zeros(3, obj.maxSteps);
             obj.actuatorMoments = zeros(3, obj.maxSteps);
+            obj.flightStates = zeros(1, obj.maxSteps, 'uint8');
         end
 
         function initializeTimestep(obj, t)
+            arguments
+                obj
+                t (1,1) double {mustBeNonnegative}
+            end
             % Initialize a new timestep
             obj.currentIdx = obj.currentIdx + 1;
             
@@ -76,10 +82,16 @@ classdef Log < handle
         end
         
         function add(obj, t, attributeName, value)
+            arguments
+                obj
+                t (1,1) double {mustBeNonnegative}
+                attributeName (1,1) string
+                value
+            end
             % Add a vector/array to specified attribute at current timestep
             % attributeName: 'states', 'stateDots', 'stateEstimates', 'ekfCovariances',
-            %                'controlInputs', 'controlMoments', 'controlForces', 'aeroForces', 'aeroMoments', 'thrust', 'ActuatorStates'
-            % value: vector/array of values to add (must match dimension)
+            %                'controlInputs', 'controlMoments', 'controlForces', 'aeroForces', 'aeroMoments', 'thrust', 'ActuatorStates', 'flightState'
+            % value: vector/array of values to add (must match dimension), or flightPkg.FlightState enum for 'flightState'
 
             if obj.currentIdx < 1
                 error('Must call initializeTimestep(t) before adding data');
@@ -175,13 +187,20 @@ classdef Log < handle
                     end
                     obj.actuatorMoments(:, obj.currentIdx) = value;
 
+                case 'flightstate'
+                    % value should be a flightPkg.FlightState enum
+                    obj.flightStates(obj.currentIdx) = uint8(value);
+
                 otherwise
-                    error('Unknown attribute "%s". Valid options: states, stateDots, stateEstimates, ekfCovariances, controlInputs, controlMoments, controlForces, aeroForces, aeroMoments, thrust, actuatorStates', ...
+                    error('Unknown attribute "%s". Valid options: states, stateDots, stateEstimates, ekfCovariances, controlInputs, controlMoments, controlForces, aeroForces, aeroMoments, thrust, actuatorStates, flightState', ...
                           attributeName);
             end
         end
         
         function trim(obj)
+            arguments
+                obj
+            end
             % Remove unused preallocated space
             obj.time = obj.time(1:obj.currentIdx);
             obj.states = obj.states(:, 1:obj.currentIdx);
@@ -196,6 +215,7 @@ classdef Log < handle
             obj.actuatorStates = obj.actuatorStates(:, 1:obj.currentIdx);
             obj.actuatorForces = obj.actuatorForces(:, 1:obj.currentIdx);
             obj.actuatorMoments = obj.actuatorMoments(:, 1:obj.currentIdx);
+            obj.flightStates = obj.flightStates(1:obj.currentIdx);
         end
         
         function expand(obj)
@@ -216,11 +236,16 @@ classdef Log < handle
             obj.actuatorStates = [obj.actuatorStates, zeros(size(obj.actuatorStates, 1), extraCols)];
             obj.actuatorForces = [obj.actuatorForces, zeros(3, extraCols)];
             obj.actuatorMoments = [obj.actuatorMoments, zeros(3, extraCols)];
+            obj.flightStates = [obj.flightStates, zeros(1, extraCols, 'uint8')];
 
             obj.maxSteps = newSize;
         end
         
         function data = getState(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific state by name
             idx = find(strcmp(obj.stateNames, name), 1);
             if isempty(idx)
@@ -230,6 +255,10 @@ classdef Log < handle
         end
         
         function data = getStateDot(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific state derivative by name
             idx = find(strcmp(obj.stateDotNames, name), 1);
             if isempty(idx)
@@ -239,6 +268,10 @@ classdef Log < handle
         end
         
         function data = getStateEstimate(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific state estimate by name
             idx = find(strcmp(obj.stateNames, name), 1);
             if isempty(idx)
@@ -248,6 +281,10 @@ classdef Log < handle
         end
         
         function data = getControlInput(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific control input by name
             idx = find(strcmp(obj.controlInputNames, name), 1);
             if isempty(idx)
@@ -257,6 +294,10 @@ classdef Log < handle
         end
 
         function data = getAeroForce(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific aero force by name (Fx, Fy, Fz)
             idx = find(strcmp(obj.aeroForcesNames, name), 1);
             if isempty(idx)
@@ -266,6 +307,10 @@ classdef Log < handle
         end
         
         function data = getAeroMoment(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific aero moment by name (Mx, My, Mz)
             idx = find(strcmp(obj.aeroMomentNames, name), 1);
             if isempty(idx)
@@ -275,11 +320,18 @@ classdef Log < handle
         end
 
         function data = getThrust(obj)
+            arguments
+                obj
+            end
             % Get thrust data
             data = obj.thrust(1:obj.currentIdx);
         end
 
         function data = getEkfCovariance(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific EKF covariance by name (Px, Py, Pz, Vx, Vy, Vz)
             idx = find(strcmp(obj.ekfCovarianceNames, name), 1);
             if isempty(idx)
@@ -289,6 +341,10 @@ classdef Log < handle
         end
 
         function data = getActuatorState(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific actuator state by name
             idx = find(strcmp(obj.actuatorStateNames, name), 1);
             if isempty(idx)
@@ -298,6 +354,10 @@ classdef Log < handle
         end
 
         function data = getActuatorForce(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific actuator force by name (Fx, Fy, Fz)
             idx = find(strcmp(obj.actuatorForcesNames, name), 1);
             if isempty(idx)
@@ -307,6 +367,10 @@ classdef Log < handle
         end
 
         function data = getActuatorMoment(obj, name)
+            arguments
+                obj
+                name (1,1) string
+            end
             % Get specific actuator moment by name (Mx, My, Mz)
             idx = find(strcmp(obj.actuatorMomentNames, name), 1);
             if isempty(idx)
@@ -316,6 +380,10 @@ classdef Log < handle
         end
 
         function saveToFile(obj, filename)
+            arguments
+                obj
+                filename (1,1) string
+            end
             % Save to .mat file
             data.time = obj.time(1:obj.currentIdx);
             data.states = obj.states(:, 1:obj.currentIdx);
@@ -330,6 +398,7 @@ classdef Log < handle
             data.actuatorState = obj.actuatorStates(:, 1:obj.currentIdx);
             data.actuatorForces = obj.actuatorForces(:, 1:obj.currentIdx);
             data.actuatorMoments = obj.actuatorMoments(:, 1:obj.currentIdx);
+            data.flightStates = obj.flightStates(1:obj.currentIdx);
             data.stateNames = obj.stateNames;
             data.stateDotNames = obj.stateDotNames;
             data.ekfCovarianceNames = obj.ekfCovarianceNames;
@@ -341,6 +410,14 @@ classdef Log < handle
             data.actuatorForcesNames = obj.actuatorForcesNames;
             data.actuatorMomentNames = obj.actuatorMomentNames;
             save(filename, 'data');
+        end
+    end
+
+    methods (Access = protected)
+        function cp = copyElement(obj)
+            % Value and cell properties in Log are copied independently by
+            % MATLAB; this override keeps copy behavior explicit.
+            cp = copyElement@matlab.mixin.Copyable(obj);
         end
     end
 end
