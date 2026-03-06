@@ -27,7 +27,7 @@ controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajecto
 flight.runClosedLoop = true;
 
 %% Run Flight
-runFlight = false;
+runFlight = true;
 if runFlight
     tic;
     log = flight.runSim(log);
@@ -38,7 +38,7 @@ if runFlight
 end
 
 %% MonteCarlo
-runMonteCarlo = true;
+runMonteCarlo = false;
 numWorkers = 4;
 numRuns = 10;
 
@@ -59,24 +59,24 @@ if runMonteCarlo
     fprintf('Monte Carlo elapsed time: %.4f seconds\n', mc_elapsed_time);
 end
 
-%% Analysis
-if runFlight && ~isempty(nominalLog)
-    if runMonteCarlo
-        % If (Montecarlo + Nominal) generate just yaw angles plots for all runs
-        mcLogs{end+1} = nominalLog;
-        analysis = analysisPkg.Analysis(mcLogs);
-        analysis.generateAllPlots();
-        %analysis.generateYawAnglePlots();
-    else
-        % If only Nominal generate all plots
-        analysis = analysisPkg.Analysis(nominalLog);
-        analysis.generateAllPlots();
-    end
-else
-        % If only Montecarlo is true generate all plots
-        analysis = analysisPkg.Analysis(mcLogs);
-        analysis.generateAllPlots();
-end
+% %% Analysis
+% if runFlight && ~isempty(nominalLog)
+%     if runMonteCarlo
+%         % If (Montecarlo + Nominal) generate just yaw angles plots for all runs
+%         mcLogs{end+1} = nominalLog;
+%         analysis = analysisPkg.Analysis(mcLogs);
+%         analysis.generateAllPlots();
+%         %analysis.generateYawAnglePlots();
+%     else
+%         % If only Nominal generate all plots
+%         analysis = analysisPkg.Analysis(nominalLog);
+%         analysis.generateAllPlots();
+%     end
+% else
+%         % If only Montecarlo is true generate all plots
+%         analysis = analysisPkg.Analysis(mcLogs);
+%         analysis.generateAllPlots();
+% end
 
 
 %analysis.generateAllEstimatePlots();
@@ -461,9 +461,9 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     navigation = setupNavigation(flightParams.dt);
 
     % Run Preflight Attitude Estimation
-    % quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
-    % state0 = [mass0, pos0, vel0, quat0, omega0].';
-    % flightParams.x0 = state0;
+    quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    state0 = [mass0, pos0, vel0, quat0, omega0].';
+    flightParams.x0 = state0;
 
 
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
