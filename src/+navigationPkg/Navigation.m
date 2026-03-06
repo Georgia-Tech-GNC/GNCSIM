@@ -34,12 +34,6 @@ classdef Navigation < handle
         gps
         magnetometer
 
-        leverArm
-        accBias
-        accSF
-
-        gyroBias
-
         covHistory = struct('Px', [], 'Py', [], 'Pz', [], ...
                         'Vx', [], 'Vy', [], 'Vz', [], ...
                         'time', []);
@@ -66,12 +60,6 @@ classdef Navigation < handle
                 obj.magnetometer = magnetometer;
                 obj.generateObservationMatrices;
 
-                obj.leverArm = navParams.leverArm;
-                obj.accBias = navParams.accBias;
-                obj.accSF = navParams.accSF;
-
-                obj.gyroBias = navParams.gyroBias;
-
         end
 
 
@@ -81,12 +69,9 @@ classdef Navigation < handle
             
             % Initial state estimate
             if currentTime == 0
-                obj.q = state(obj.idx.quat);          % Use actual sim quaternion, not hardcoded
-                cBI0 = Utils.dirCosine(obj.q);
-                cIB0 = cBI0';
-                velInertial = cIB0 * state(obj.idx.vel);  % Convert body vel → inertial
-                obj.x = [state(obj.idx.pos); velInertial];
-            
+                obj.q = state(8:11);
+                obj.x = [state(2:7)];
+
                 ekfState = state;
                 return
             end
@@ -270,8 +255,9 @@ obj.posHistory.time(end+1) = obj.currentTime;
                 obj.gpsRawData = [];
             end
 
-            obj.accRawData = (obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime) - obj.accBias) ./ (1+obj.accSF);
-            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime) - obj.gyroBias;
+            obj.accRawData = obj.accelerometer.getMeasurement(state,stateDot,obj.currentTime);
+
+            obj.gyroRawData = obj.gyroscope.getMeasurement(state,stateDot,obj.currentTime);
 
         end
 
