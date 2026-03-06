@@ -49,11 +49,10 @@ classdef Accelerometer < navigationPkg.Sensor&handle
 
         function measurement = getMeasurement(obj, state, stateDot, currentTime)
 
-            %if obj.isOutputReady(currentTime)
                 obj.q = state(obj.idx.quat);
                 obj.angVelB = state(obj.idx.omega);
 
-                obj.accelB = stateDot(obj.idx.vel); % 
+                obj.accelB = stateDot(obj.idx.vel);
     
                 accelIMU = obj.accLeverArm();
                 measurement = obj.addNoise(accelIMU);
@@ -73,8 +72,7 @@ classdef Accelerometer < navigationPkg.Sensor&handle
 
         function noisyAccel = addNoise(obj, accelIMU)
             % Add noise, bias, and scale factor
-
-            noisyAccel = (eye(3) + obj.SF) * (accelIMU + obj.bias + (obj.VRW/sqrt(obj.outputPeriod)) .* randn(3,1));
+            noisyAccel = diag(1+obj.SF) * accelIMU + obj.bias + (obj.VRW/sqrt(obj.outputPeriod)) .* randn(3,1);
 
         end
 

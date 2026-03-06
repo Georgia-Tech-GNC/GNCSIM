@@ -8,22 +8,24 @@ classdef Log < handle
         stateEstimates          % nStates x N
         ekfCovariances
         controlInputs           % nControlInputs x N
-        controlMoments          % 3 x N
-        controlForces           % 3 x N
         aeroForces              % 3 x N
         aeroMoments             % 3 x N
         thrust                  % 1 x N
+        parachuteForces         % 3 x N
         actuatorStates           % nActuatorStates x N
+        actuatorForces          % 3 x N
+        actuatorMoments         % 3 x N
 
         stateNames              % Cell array of state names
         stateDotNames
         ekfCovarianceNames
         controlInputNames       % Cell array of control input names
-        controlMomentNames      % Cell array of control moment names
-        controlForcesNames      % Cell array of control force names
         aeroForcesNames
         aeroMomentNames
+        parachuteForcesNames
         actuatorStateNames      % Cell array of actuator state names
+        actuatorForcesNames
+        actuatorMomentNames
 
         maxSteps                % Preallocated size
         currentIdx              % Current write index
@@ -36,11 +38,12 @@ classdef Log < handle
             obj.stateDotNames = stateNames;  % Same names with 'Dot' suffix implied
             obj.ekfCovarianceNames = {'Px', 'Py', 'Pz', 'Vx', 'Vy', 'Vz'};
             obj.controlInputNames = controlInputNames;
-            obj.controlMomentNames = {'Mx', 'My', 'Mz'};
-            obj.controlForcesNames = {'Fx', 'Fy', 'Fz'};
             obj.aeroForcesNames = {'Fx', 'Fy', 'Fz'};
             obj.aeroMomentNames = {'Mx', 'My', 'Mz'};
+            obj.parachuteForcesNames = {'Fx', 'Fy', 'Fz'};
             obj.actuatorStateNames = actuatorStateNames;
+            obj.actuatorForcesNames = {'Fx', 'Fy', 'Fz'};
+            obj.actuatorMomentNames = {'Mx', 'My', 'Mz'};
             obj.maxSteps = maxSteps;
             obj.currentIdx = 0;
 
@@ -51,12 +54,13 @@ classdef Log < handle
             obj.stateEstimates = zeros(length(obj.stateNames), obj.maxSteps);
             obj.ekfCovariances = zeros(length(obj.ekfCovarianceNames), obj.maxSteps);
             obj.controlInputs = zeros(length(obj.controlInputNames), obj.maxSteps);
-            obj.controlMoments = zeros(length(obj.controlMomentNames), obj.maxSteps);
-            obj.controlForces = zeros(3, obj.maxSteps);
             obj.aeroForces = zeros(3, obj.maxSteps);
             obj.aeroMoments = zeros(3, obj.maxSteps);
             obj.thrust = zeros(1, obj.maxSteps);
+            obj.parachuteForces = zeros(3, obj.maxSteps);
             obj.actuatorStates = zeros(length(obj.actuatorStateNames), obj.maxSteps);
+            obj.actuatorForces = zeros(3, obj.maxSteps);
+            obj.actuatorMoments = zeros(3, obj.maxSteps);
         end
 
         function initializeTimestep(obj, t)
@@ -122,20 +126,6 @@ classdef Log < handle
                     end
                     obj.controlInputs(:, obj.currentIdx) = value;
 
-                case 'controlmoments'
-                    if length(value) ~= length(obj.controlMomentNames)
-                        error('Control moment vector size mismatch: expected %d, got %d', ...
-                              length(obj.controlMomentNames), length(value));
-                    end
-                    obj.controlMoments(:, obj.currentIdx) = value;
-
-                case 'controlforces'
-                    if length(value) ~= 3
-                        error('Control forces vector size mismatch: expected 3, got %d', ...
-                              length(value));
-                    end
-                    obj.controlForces(:, obj.currentIdx) = value;
-
                 case 'aeroforces'
                     if length(value) ~= 3
                         error('Aero forces vector size mismatch: expected 3, got %d', ...
@@ -157,12 +147,33 @@ classdef Log < handle
                     end
                     obj.thrust(obj.currentIdx) = value;
 
+                case 'parachuteforces'
+                    if length(value) ~= 3
+                        error('Parachute forces vector size mismatch: expected 3, got %d', ...
+                              length(value));
+                    end
+                    obj.parachuteForces(:, obj.currentIdx) = value;
+
                 case 'actuatorstates'
                     if length(value) ~= length(obj.actuatorStateNames)
                         error('Actuator state vector size mismatch: expected %d, got %d', ...
                               length(obj.actuatorStateNames), length(value));
                     end
                     obj.actuatorStates(:, obj.currentIdx) = value;
+
+                case 'actuatorforces'
+                    if length(value) ~= 3
+                        error('Actuator forces vector size mismatch: expected 3, got %d', ...
+                              length(value));
+                    end
+                    obj.actuatorForces(:, obj.currentIdx) = value;
+
+                case 'actuatormoments'
+                    if length(value) ~= 3
+                        error('Actuator moments vector size mismatch: expected 3, got %d', ...
+                              length(value));
+                    end
+                    obj.actuatorMoments(:, obj.currentIdx) = value;
 
                 otherwise
                     error('Unknown attribute "%s". Valid options: states, stateDots, stateEstimates, ekfCovariances, controlInputs, controlMoments, controlForces, aeroForces, aeroMoments, thrust, actuatorStates', ...
@@ -178,12 +189,13 @@ classdef Log < handle
             obj.stateEstimates = obj.stateEstimates(:, 1:obj.currentIdx);
             obj.ekfCovariances = obj.ekfCovariances(:, 1:obj.currentIdx);
             obj.controlInputs = obj.controlInputs(:, 1:obj.currentIdx);
-            obj.controlMoments = obj.controlMoments(:, 1:obj.currentIdx);
-            obj.controlForces = obj.controlForces(:, 1:obj.currentIdx);
             obj.aeroForces = obj.aeroForces(:, 1:obj.currentIdx);
             obj.aeroMoments = obj.aeroMoments(:, 1:obj.currentIdx);
             obj.thrust = obj.thrust(1:obj.currentIdx);
+            obj.parachuteForces = obj.parachuteForces(:, 1:obj.currentIdx);
             obj.actuatorStates = obj.actuatorStates(:, 1:obj.currentIdx);
+            obj.actuatorForces = obj.actuatorForces(:, 1:obj.currentIdx);
+            obj.actuatorMoments = obj.actuatorMoments(:, 1:obj.currentIdx);
         end
         
         function expand(obj)
@@ -197,12 +209,13 @@ classdef Log < handle
             obj.stateEstimates = [obj.stateEstimates, zeros(size(obj.stateEstimates, 1), extraCols)];
             obj.ekfCovariances = [obj.ekfCovariances, zeros(size(obj.ekfCovariances, 1), extraCols)];
             obj.controlInputs = [obj.controlInputs, zeros(size(obj.controlInputs, 1), extraCols)];
-            obj.controlMoments = [obj.controlMoments, zeros(size(obj.controlMoments, 1), extraCols)];
-            obj.controlForces = [obj.controlForces, zeros(3, extraCols)];
             obj.aeroForces = [obj.aeroForces, zeros(3, extraCols)];
             obj.aeroMoments = [obj.aeroMoments, zeros(3, extraCols)];
             obj.thrust = [obj.thrust, zeros(1, extraCols)];
+            obj.parachuteForces = [obj.parachuteForces, zeros(3, extraCols)];
             obj.actuatorStates = [obj.actuatorStates, zeros(size(obj.actuatorStates, 1), extraCols)];
+            obj.actuatorForces = [obj.actuatorForces, zeros(3, extraCols)];
+            obj.actuatorMoments = [obj.actuatorMoments, zeros(3, extraCols)];
 
             obj.maxSteps = newSize;
         end
@@ -241,24 +254,6 @@ classdef Log < handle
                 error('Control input "%s" not found', name);
             end
             data = obj.controlInputs(idx, 1:obj.currentIdx);
-        end
-        
-        function data = getControlMoment(obj, name)
-            % Get specific control moment by name
-            idx = find(strcmp(obj.controlMomentNames, name), 1);
-            if isempty(idx)
-                error('Control moment "%s" not found', name);
-            end
-            data = obj.controlMoments(idx, 1:obj.currentIdx);
-        end
-
-        function data = getControlForce(obj, name)
-            % Get specific control force by name (Fx, Fy, Fz)
-            idx = find(strcmp(obj.controlForcesNames, name), 1);
-            if isempty(idx)
-                error('Control force "%s" not found. Valid: Fx, Fy, Fz', name);
-            end
-            data = obj.controlForces(idx, 1:obj.currentIdx);
         end
 
         function data = getAeroForce(obj, name)
@@ -302,6 +297,24 @@ classdef Log < handle
             data = obj.actuatorStates(idx, 1:obj.currentIdx);
         end
 
+        function data = getActuatorForce(obj, name)
+            % Get specific actuator force by name (Fx, Fy, Fz)
+            idx = find(strcmp(obj.actuatorForcesNames, name), 1);
+            if isempty(idx)
+                error('Actuator force "%s" not found. Valid: Fx, Fy, Fz', name);
+            end
+            data = obj.actuatorForces(idx, 1:obj.currentIdx);
+        end
+
+        function data = getActuatorMoment(obj, name)
+            % Get specific actuator moment by name (Mx, My, Mz)
+            idx = find(strcmp(obj.actuatorMomentNames, name), 1);
+            if isempty(idx)
+                error('Actuator moment "%s" not found. Valid: Mx, My, Mz', name);
+            end
+            data = obj.actuatorMoments(idx, 1:obj.currentIdx);
+        end
+
         function saveToFile(obj, filename)
             % Save to .mat file
             data.time = obj.time(1:obj.currentIdx);
@@ -310,21 +323,23 @@ classdef Log < handle
             data.stateEstimates = obj.stateEstimates(:, 1:obj.currentIdx);
             data.ekfCovariances = obj.ekfCovariances(:, 1:obj.currentIdx);
             data.controlInputs = obj.controlInputs(:, 1:obj.currentIdx);
-            data.controlMoments = obj.controlMoments(:, 1:obj.currentIdx);
-            data.controlForces = obj.controlForces(:, 1:obj.currentIdx);
             data.aeroForces = obj.aeroForces(:, 1:obj.currentIdx);
             data.aeroMoments = obj.aeroMoments(:, 1:obj.currentIdx);
             data.thrust = obj.thrust(1:obj.currentIdx);
+            data.parachuteForces = obj.parachuteForces(:, 1:obj.currentIdx);
             data.actuatorState = obj.actuatorStates(:, 1:obj.currentIdx);
+            data.actuatorForces = obj.actuatorForces(:, 1:obj.currentIdx);
+            data.actuatorMoments = obj.actuatorMoments(:, 1:obj.currentIdx);
             data.stateNames = obj.stateNames;
             data.stateDotNames = obj.stateDotNames;
             data.ekfCovarianceNames = obj.ekfCovarianceNames;
             data.controlInputNames = obj.controlInputNames;
-            data.controlMomentNames = obj.controlMomentNames;
-            data.controlForcesNames = obj.controlForcesNames;
             data.aeroForcesNames = obj.aeroForcesNames;
             data.aeroMomentNames = obj.aeroMomentNames;
+            data.parachuteForcesNames = obj.parachuteForcesNames;
             data.actuatorStateNames = obj.actuatorStateNames;
+            data.actuatorForcesNames = obj.actuatorForcesNames;
+            data.actuatorMomentNames = obj.actuatorMomentNames;
             save(filename, 'data');
         end
     end

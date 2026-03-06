@@ -1,0 +1,3 @@
+[submodule "src/+trajOptimizationPkg/OptimTraj"]
+	path = src/+trajOptimizationPkg/OptimTraj
+	url = https://github.com/MatthewPeterKelly/OptimTraj.git

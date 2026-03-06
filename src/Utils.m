@@ -156,7 +156,7 @@ classdef Utils
             q2 = q(3); % Vector part y
             q3 = q(4); % Vector part z
 
-
+			
             quatDCM = [ 1 - 2 * (q2^2 + q3^2),   2 * (q1 * q2 + q0 * q3),   2 * (q1 * q3 - q0 * q2);
                     2 * (q1 * q2 - q0 * q3),   1 - 2 * (q1^2 + q3^2),   2 * (q2 * q3 + q0 * q1);
                     2 * (q1 * q3 + q0 * q2),   2 * (q2 * q3 - q0 * q1),   1 - 2 * (q1^2 + q2^2) ];
@@ -243,7 +243,36 @@ classdef Utils
             ];
 
             quatDot = 0.5 * mat_omega * quat;
-        end
+		end
+
+		function qout = quatMult(q, p)
+            % quatMult: Performs quaternion multiplication (Hamilton product).
+            % Represents the combined rotation of q followed by p (q * p).
+            %
+            % INPUTS:
+            %   q, p: Quaternions in [w, x, y, z] format.
+            %
+            % OUTPUT:
+            %   qout: Resulting quaternion [w, x, y, z].
+            
+            % Ensure column vectors for calculation
+            q = q(:); 
+            p = p(:);
+            
+            w1 = q(1); x1 = q(2); y1 = q(3); z1 = q(4);
+            w2 = p(1); x2 = p(2); y2 = p(3); z2 = p(4);
+            
+            qout = [
+                w1*w2 - x1*x2 - y1*y2 - z1*z2;
+                w1*x2 + x1*w2 + y1*z2 - z1*y2;
+                w1*y2 - x1*z2 + y1*w2 + z1*x2;
+                w1*z2 + x1*y2 - y1*x2 + z1*w2
+            ];
+            
+            % If inputs were row vectors, return a row vector
+            if size(q, 2) > size(q, 1) || size(p, 2) > size(p, 1)
+                qout = qout';
+            end
+		end
     end
 end
-

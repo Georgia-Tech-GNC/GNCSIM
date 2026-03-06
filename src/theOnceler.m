@@ -2,12 +2,18 @@
 clear; clc; close all;
 
 %% Instantiate Classes
+
 % Rocket Dynamics
 rocketDynamics = setupRocket();
 rocketDynamics.computeBuildup()
 
-% Parachute Dynamics
-parachuteDynamics = setupParachute();
+% Nominal Trajectory
+generateNominalTrajectory = false;
+if generateNominalTrajectory
+    nominalTrajectory = setupNominalTrajectory(rocketDynamics);
+else
+    nominalTrajectory.useThisTraj = false;
+end
 
 % Nominal Trajectory
 generateNominalTrajectory = false;
@@ -29,22 +35,12 @@ environment = setupEnvironment();
 flight.runClosedLoop = true;
 
 %% Run Flight
-
 tic;
 log = flight.runSim(log);
 elapsed_time = toc;
 fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 log.trim();
-
-% lti = controllerPkg.ReduceLTI(rocketDynamics);
-% xStar = flight.rocketInitialState;
-% xStar(5:7) = [20, 0, 0].';
-% xStar(12:14) = [0, 0, 0].';
-% lti.generateROM(xStar);
-% lti.performComparison(log)
-
-% log.saveToFile("theOncelerNominalFlightLog")
 
 %% Analysis
 analysis = analysisPkg.Analysis(log);
@@ -120,6 +116,7 @@ function rocketDyn = setupRocket()
     motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
     motorParams.mass = 0.4;  % [kg]
     motorParams.xRef = -1;  % [m]
+    motorParams.tIgnition = 1.0;
     motorParams.totalImpulse = 7561.0; % N-sec
 
     % CFD Aerodynamics not needed
@@ -136,12 +133,15 @@ function rocketDyn = setupRocket()
     allocationMatrix = [0, -1, 0, -1;
                         -1, 0, 1, 0;
                         0, 1, 0, -1].';
-    timeConstant = 0.05; % [s]
+    timeConstant = 0.1; % [s]
     limits.maxDeflection = 15;        % deg
     limits.maxRate       = 300;       % deg/s
     actuatorModel = theOncelerFiles.TheOncelerActuatorModel(rocketFinTabs, timeConstant, allocationMatrix, limits);
+    
+    % Set Up Parachutes (linked list)
+    firstParachute = setupParachute();
 
-    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, aerodynamics);
+    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamics);
 end
 
 function environment = setupEnvironment()
@@ -198,8 +198,9 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
 
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
-    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, log, useGravity, useThrust)
-    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, [], true, true) ); 
+
+    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
+    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, [], t, flightPkg.FlightState.POWERED_ASCENT, [], true, true) ); 
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
     problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
     problem.func.pathCst = @(t,x,u) ( trajectoryOptimization.pathConstraintFunction(t,x,u) ); 
@@ -256,47 +257,46 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     time = linspace(dt, controlTime, controlTime/dt);
     n = length(time);
     
-    % Preallocate yaw angles
-    yaw_deg = zeros(1, n);
-    
-    % Compute yaw for all time steps (vectorized)
-    mask1 = time < 5;
-    mask2 = (time >= 5) & (time < 10);
-    mask3 = time >= 10;
-    
-    yaw_deg(mask1) = 5 * time(mask1);
-    yaw_deg(mask2) = 25 - (time(mask2) - 5) * 5;
-    yaw_deg(mask3) = 0;
-    
-    % Convert to radians
-    yaw_rad = deg2rad(yaw_deg);
-    pitch_rad = yaw_rad;
-    
-    % Build reference attitudes [4×n]: [time; roll; pitch; yaw]
-    referenceAttitudes = [
-        time;
-        zeros(1, n);  % roll = 0
-        pitch_rad;  % pitch traj (same as yaw)
-        yaw_rad       % yaw trajectory
-    ];
-    
+	% --- Define Trajectories in Degrees ---
+	roll_deg  = zeros(1, n);
+	pitch_deg = zeros(1, n);
+	yaw_deg   = zeros(1, n);
+	
+	% Apply the step at 6 seconds
+	% Logical mask for time >= 6 seconds
+	mask_step1 = (time >= 4.0);
+    mask_step2 = (time >= 10.0);
+	
+	% Set pitch to 12 degrees for all points where time >= 6
+	yaw_deg(mask_step1) = 10.0;
+    yaw_deg(mask_step2) = 2.0;
+
+	roll_rad  = deg2rad(roll_deg);
+	pitch_rad = deg2rad(pitch_deg);
+	yaw_rad   = deg2rad(yaw_deg);
+	
+	% --- Build Reference Attitudes [4 x n] ---
+	% Format: [Time; Roll; Pitch; Yaw]
+	referenceAttitudes = [
+    	time;
+    	roll_rad;
+    	pitch_rad;
+    	yaw_rad
+	];
+
     % Generate Breakpoints
-    if nominalTrajectory.useThisTraj
-        nominalTrajLog = nominalTrajectory;
-    else
-        %tmp = load("+theOncelerFiles/theOncelerNominalFlightLog.mat");
-        tmp = load("+theOncelerFiles/testTraj.mat");
-        nominalTrajLog = tmp.nominalTrajectory;
-    end
+
+    tmp = load("+theOncelerFiles/theOncelerNominalFlightLogQuat.mat");
+    nominalTrajLog = tmp.log;
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
 
     % Get controller
 	Q2 = diag([1 1]);       
-	R2 = 1;   	
+	R2 = 20;   	
 	Q3 = diag([1 1 1]);
-	R3 = 1; 
+	R3 = 2; 
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
@@ -313,8 +313,8 @@ function nav = setupNavigation(dt)
     % Acc
     accParams.VRW = [0.033; 0.039; 0.039] * 1/60; % Which way will z-axis be mounted, assumed up, aligned with x in body
     accParams.leverArm = -1;
-    accParams.SF = 0.01;
-    accParams.bias = 0.05;
+    accParams.SF = [0.01; 0.01; 0.01];
+    accParams.bias = [0.05; 0.05; 0.05];
     
     accParams.noiseCovariance = -1;
     accParams.outputRate = 100;
@@ -325,7 +325,7 @@ function nav = setupNavigation(dt)
 
      % Gyro
     gyroParams.ARW = [0.32; 0.29; 0.29] * pi/(180*60);
-    gyroParams.bias = 4.85e-5;
+    gyroParams.bias = [4.85e-5; 4.85e-5; 4.85e-5];
     
     gyroParams.noiseCovariance = -1;
     gyroParams.outputRate = 100;
@@ -341,10 +341,10 @@ function nav = setupNavigation(dt)
     gpsParams.velocityAccuracy = .05;
     
     gpsParams.noiseCovariance = [8.4 0 0;
-        0 4.2 0;
-        0 0 4.2];
+                                 0 4.2 0;
+                                0 0 4.2];
     gpsParams.outputRate = 10;
-    gpsParams.outputProbability = .8;
+    gpsParams.outputProbability = .9;
     gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
                                        0 1 0 0 0 0;
                                        0 0 1 0 0 0];
@@ -368,38 +368,62 @@ function nav = setupNavigation(dt)
                             0, 0, 0, 0,  0,  1]; 
     sigmaA = 5;
     
-    navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
-                                  0, (dt^4)/4, 0, 0, dt/2, 0;
-        0, 0, (dt^4)/4, 0, 0, dt/2;
-        dt/2, 0, 0, dt^2, 0, 0;
-        0, (dt^3)/2, 0, 0, dt^2, 0;
-        0, 0, (dt^3)/2, 0, 0, dt^2];
+    % navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+    %                               0, (dt^4)/4, 0, 0, dt/2, 0;
+    %     0, 0, (dt^4)/4, 0, 0, dt/2;
+    %     dt/2, 0, 0, dt^2, 0, 0;
+    %     0, (dt^3)/2, 0, 0, dt^2, 0;
+    %     0, 0, (dt^3)/2, 0, 0, dt^2];
+    navParams.Q = sigmaA^2 .* [(dt^4)/4,  0,        0,        (dt^3)/2, 0,        0;
+                            0,        (dt^4)/4,  0,        0,        (dt^3)/2, 0;
+                            0,        0,        (dt^4)/4,  0,        0,        (dt^3)/2;
+                            (dt^3)/2, 0,        0,         dt^2,     0,        0;
+                            0,        (dt^3)/2, 0,         0,        dt^2,     0;
+                            0,        0,        (dt^3)/2,  0,        0,        dt^2];
+
+    navParams.accBias = accParams.bias;
+    navParams.accSF = accParams.SF;
+    navParams.leverArm = accParams.leverArm;
+
+    navParams.gyroBias = gyroParams.bias;
     
     nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
-    % Flight
-    flightParams.totalTime = 21;  % length of simulation [s]
+    % End conditions (whichever comes first)
+    flightParams.totalTime = 150;  % max simulation length [s]
+    flightParams.endState = flightPkg.FlightState.LANDED; % State to stop simulation
+
+    % Flight state parameters
+    flightParams.launchRailLength = 5.0;  % launch rail length [m]
+
     flightParams.dt = 0.01;  % time step [s]
-    
+
+    % Initial conditions
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0];
-    vel0 = [0, 0, 0];
-    quat0 = Utils.eulerToQuat([0, -90, 0]).';
+    vel0 = [1, 0, 0];
+	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
+	quatRot = Utils.eulerToQuat([0, -90, 0]).';
+    orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];
-    state0 = [mass0, pos0, vel0, quat0, omega0].';
+    state0 = [mass0, pos0, vel0, orientationLaunchRail, omega0].';
     flightParams.x0 = state0;
 
+    % Open Loop Default
     actuatorState0 = [0, 0, 0, 0];
     flightParams.del0 = actuatorState0;
+
+    controlInput0 = [0, 0, 0];
+    flightParams.u0 = controlInput0;
     
     navigation = setupNavigation(flightParams.dt);
 
     % Run Preflight Attitude Estimation
-    quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
-    state0 = [mass0, pos0, vel0, quat0, omega0].';
-    flightParams.x0 = state0;
+    % quat0 = navigation.preFlightAttitudeEstimation(state0, zeros(14, 1), 1, 1, eye(3), zeros(3, 1));
+    % state0 = [mass0, pos0, vel0, quat0, omega0].';
+    % flightParams.x0 = state0;
 
 
     flight = flightPkg.Flight(rocketDynamics, environment, controller, navigation, flightParams);
@@ -412,19 +436,25 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     log = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, maxSteps);
 end
 
-function parachuteObjects =  setupParachute()
-    parachuteObjects = -1;
-    % drogueDiameter = .508; % m
-    % drogueMass = 0.016811267; % kg
-    % drogueCordLength = 1.52; %m
-    % drogueDynamics = rocketPkg.ParachuteDynamics(drogueDiameter, drogueMass, drogueCordLength);
-    % 
-    % mainParachuteDiameter = 2.54; %m
-    % mainParachuteMass = 0.3430292; %kg
-    % mainParachuteCordLength = 1.78; %m
-    % mainParachuteDynamics = rocketPkg.ParachuteDynamics(mainParachuteDiameter, mainParachuteMass, mainParachuteCordLength);
-    % 
-    % parachuteObjects = [mainParachuteDynamics, drogueDynamics];
+function firstParachute = setupParachute()
+    % Drogue chute (deploys at apogee)
+    drogueDiameter = .508; % m
+    drogueMass = 0.016811267; % kg
+    drogueCD = 1.52;
+    drogueDeployAlt = 0; % m (not used for first chute)
+    drogue = rocketPkg.ParachuteDynamics("Drogue Parachute", drogueDiameter, drogueMass, drogueCD, drogueDeployAlt);
+
+    % Main chute (deploys at altitude)
+    mainDiameter = 2.54; % m
+    mainMass = 0.3430292; % kg
+    mainCD = .8;
+    mainDeployAlt = 305; % m
+    main = rocketPkg.ParachuteDynamics("Main Parachute", mainDiameter, mainMass, mainCD, mainDeployAlt);
+
+    % Link parachutes: drogue -> main
+    drogue.setNext(main);
+
+    firstParachute = drogue;
 end
 
 

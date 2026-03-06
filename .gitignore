@@ -1,2 +1,5 @@
 *.asv
 /site
+/vscode
+*.dat
+*.out
