@@ -142,13 +142,19 @@ classdef RocketFins < rocketPkg.DatcomManager
     
                 % Close DATCOM file
                 obj.closeDatcom();
-    
-                aero = rocketPkg.DatcomManager.runDatcomCached(datcomFilename);
+                
+                % Run the .exe DATCOM file
+			    obj.runDatcom(datcomFilename)
 
+			    % Import DATCOM Data
+                aeroCell = datcomimport('datcom.out');
+                obj.aero = aeroCell{1};
+    
+                
                 for jj=1:length(obj.fins)
                     if isequal(obj.fins(jj).name, finParams.name)
-                        obj.fins(jj).aero = aero;
-                        obj.fins(jj).buildInterps(aero);
+                        obj.fins(jj).aero = obj.aero;
+                        obj.fins(jj).buildInterps(obj.aero);
                     end
                 end
             end

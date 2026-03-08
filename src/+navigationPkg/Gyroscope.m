@@ -32,9 +32,9 @@ classdef Gyroscope < navigationPkg.Sensor & handle
         % Sample/hold
         heldMeasurement
         lastUpdateTime
-        outputPeriod
-        nextOutputTime
-        lastOutputTime
+        % outputPeriod
+        % nextOutputTime
+        % lastOutputTime
     end
 
     methods

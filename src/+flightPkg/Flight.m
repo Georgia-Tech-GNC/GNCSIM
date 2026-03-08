@@ -145,7 +145,7 @@ classdef Flight < handle
             disturbances.tau_roll_x = tau_bias + tau_step * double(obj.currentTime >= t0_step);
 
             gyro_meas0 = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime);
-            wx_meas0 = gyro_meas0(obj.idx.omega_x);
+            wx_meas0 = gyro_meas0(1); % was wx_meas0 = gyro_meas0(obj.idx.omega_x);
             dt_k0 = obj.dt_nom; % you have not sampled dt_k yet at t=0; use nominal
             tau_dist0 = disturbances.tau_roll_x; % if not set yet, set it once at t=0
             log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas; ...
@@ -238,7 +238,7 @@ classdef Flight < handle
                     if isa(obj.controller, 'controllerPkg.RollRatePID') && obj.useActuatorModel
                         % Gyro latency + noise!
                         gyro_meas = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime); % 3x1
-                        wx_meas = gyro_meas(obj.idx.omega_x);
+                        wx_meas = gyro_meas(1); % was wx_meas = gyro_meas(obj.idx.omega_x)
                         tau_dist = disturbances.tau_roll_x;
                         state_for_control = rocketState;
                         state_for_control(obj.idx.omega) = gyro_meas;
