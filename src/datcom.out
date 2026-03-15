@@ -1,0 +1,305 @@
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION
+ IS RELEASED "AS IS".  THE U.S. GOVERNMENT MAKES NO
+ WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, CONCERNING
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION,
+ INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OF
+ MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ IN NO EVENT WILL THE U.S. GOVERNMENT BE LIABLE FOR ANY
+ DAMAGES, INCLUDING LOST PROFITS, LOST SAVINGS OR OTHER
+ INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE 
+ USE, OR INABILITY TO USE, THIS SOFTWARE OR ANY
+ ACCOMPANYING DOCUMENTATION, EVEN IF INFORMED IN ADVANCE
+ OF THE POSSIBILITY OF SUCH DAMAGES.
+  ****************************************************
+  *    USAF STABILITY AND CONTROL  DIGITAL DATCOM    *
+  *    PROGRAM REV. JAN 96   DIRECT INQUIRIES TO:    *
+  *    WRIGHT LABORATORY  (WL/FIGC)  ATTN: W. BLAKE  *
+  *      WRIGHT PATTERSON AFB, OHIO  45433           *
+  *    PHONE (513) 255-6764,   FAX (513) 258-4054    *
+  ****************************************************
+ Preparing to start the big loop
+ At 1000
+1                         CONERR - INPUT ERROR CHECKING
+0 ERROR CODES - N* DENOTES THE NUMBER OF OCCURENCES OF EACH ERROR
+0 A - UNKNOWN VARIABLE NAME
+0 B - MISSING EQUAL SIGN FOLLOWING VARIABLE NAME
+0 C - NON-ARRAY VARIABLE HAS AN ARRAY ELEMENT DESIGNATION - (N)
+0 D - NON-ARRAY VARIABLE HAS MULTIPLE VALUES ASSIGNED
+0 E - ASSIGNED VALUES EXCEED ARRAY DIMENSION
+0 F - SYNTAX ERROR
+
+0******************************  INPUT DATA CARDS  ******************************
+
+  $FLTCON NMACH=3.0, MACH(1)=0.2000,                                             
+  0.4000,                                                                        
+  0.6000,                                                                        
+  NALT=3.0, ALT(1)=0.0000,                                                       
+  5000.0000,                                                                     
+  10000.0000,                                                                    
+  NALPHA=11.0, ALSCHD(1)=-10.0000,                                               
+  -8.0000,                                                                       
+  -6.0000,                                                                       
+  -4.0000,                                                                       
+  -2.0000,                                                                       
+  0.0000,                                                                        
+  2.0000,                                                                        
+  4.0000,                                                                        
+  6.0000,                                                                        
+  8.0000,                                                                        
+  10.0000,                                                                       
+  LOOP=2.0$                                                                      
+  $OPTINS SREF=0.0081, CBARR=1.8280, BLREF=0.1016$                               
+  $SYNTHS XW=0.0000, XCG=1.3200$                                                 
+  $BODY   NX=14.0,                                                               
+  X(1)=0.0000, 0.0451, 0.0902, 0.1353, 0.1804, 0.2256, 0.2707, 0.3158, 0.3609,   
+  0.4060, 0.7615, 1.1170, 1.4725, 1.8280,                                        
+  R(1)=0.0001, 0.0109, 0.0204, 0.0285, 0.0354, 0.0410, 0.0453, 0.0484, 0.0503,   
+  0.0508, 0.0508, 0.0508, 0.0508, 0.0508$                                        
+ DIM M                                                                           
+ NEXT CASE                                                                       
+1          THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE.
+0
+  $FLTCON NMACH=3.0, MACH(1)=0.2000,                                             
+  0.4000,                                                                        
+  0.6000,                                                                        
+  NALT=3.0, ALT(1)=0.0000,                                                       
+  5000.0000,                                                                     
+  10000.0000,                                                                    
+  NALPHA=11.0, ALSCHD(1)=-10.0000,                                               
+  -8.0000,                                                                       
+  -6.0000,                                                                       
+  -4.0000,                                                                       
+  -2.0000,                                                                       
+  0.0000,                                                                        
+  2.0000,                                                                        
+  4.0000,                                                                        
+  6.0000,                                                                        
+  8.0000,                                                                        
+  10.0000,                                                                       
+  LOOP=2.0$                                                                      
+  $OPTINS SREF=0.0081, CBARR=1.8280, BLREF=0.1016$                               
+  $SYNTHS XW=0.0000, XCG=1.3200$                                                 
+  $BODY   NX=14.0,                                                               
+  X(1)=0.0000, 0.0451, 0.0902, 0.1353, 0.1804, 0.2256, 0.2707, 0.3158, 0.3609,   
+  0.4060, 0.7615, 1.1170, 1.4725, 1.8280,                                        
+  R(1)=0.0001, 0.0109, 0.0204, 0.0285, 0.0354, 0.0410, 0.0453, 0.0484, 0.0503,   
+  0.0508, 0.0508, 0.0508, 0.0508, 0.0508$                                        
+ DIM M                                                                           
+ NEXT CASE                                                                       
+0 INPUT DIMENSIONS ARE IN M , SCALE FACTOR IS 1.0000
+
+ Return to main program from M01O01
+ Return to main program from M50O62
+ Return to main program from M02O02
+ Return to main program from M51O63
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.200       0.00      68.05   1.0133E+05     288.150     4.6379E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.336   -0.340   -0.2106  -0.393    0.272    0.536    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.315   -0.272   -0.1685  -0.313    0.274    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.299   -0.204   -0.1264  -0.234    0.276    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.287   -0.136   -0.0842  -0.156    0.277    0.541    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.280   -0.068   -0.0421  -0.078    0.277    0.542    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.277    0.000    0.0000   0.000    0.277   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.280    0.068    0.0421   0.078    0.277    0.542    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.287    0.136    0.0842   0.156    0.277    0.541    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.299    0.204    0.1264   0.234    0.276    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.315    0.272    0.1685   0.313    0.274    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.336    0.340    0.2106   0.393    0.272    0.536    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.400       0.00     136.10   1.0133E+05     288.150     9.2759E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.316   -0.340   -0.2106  -0.390    0.252    0.541    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.294   -0.272   -0.1685  -0.310    0.254    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.278   -0.204   -0.1264  -0.232    0.255    0.545    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.266   -0.136   -0.0842  -0.154    0.256    0.546    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.259   -0.068   -0.0421  -0.077    0.256    0.547    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.257    0.000    0.0000   0.000    0.257   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.259    0.068    0.0421   0.077    0.256    0.547    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.266    0.136    0.0842   0.154    0.256    0.546    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.278    0.204    0.1264   0.232    0.255    0.545    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.294    0.272    0.1685   0.310    0.254    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.316    0.340    0.2106   0.390    0.252    0.541    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.600       0.00     204.15   1.0133E+05     288.150     1.3914E+07             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.304   -0.340   -0.2106  -0.388    0.241    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.283   -0.272   -0.1685  -0.309    0.242    0.546    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.267   -0.204   -0.1264  -0.231    0.244    0.548    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.255   -0.136   -0.0842  -0.153    0.245    0.549    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.248   -0.068   -0.0421  -0.077    0.245    0.550    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.245    0.000    0.0000   0.000    0.245   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.248    0.068    0.0421   0.077    0.245    0.550    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.255    0.136    0.0842   0.153    0.245    0.549    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.267    0.204    0.1264   0.231    0.244    0.548    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.283    0.272    0.1685   0.309    0.242    0.546    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.304    0.340    0.2106   0.388    0.241    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.200    5000.00      64.10   5.4048E+04     255.675     2.8862E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.351   -0.340   -0.2106  -0.396    0.287    0.532    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.330   -0.272   -0.1685  -0.315    0.289    0.534    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.314   -0.204   -0.1264  -0.236    0.291    0.536    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.302   -0.136   -0.0842  -0.157    0.292    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.295   -0.068   -0.0421  -0.078    0.292    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.292    0.000    0.0000   0.000    0.292   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.295    0.068    0.0421   0.078    0.292    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.302    0.136    0.0842   0.157    0.292    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.314    0.204    0.1264   0.236    0.291    0.536    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.330    0.272    0.1685   0.315    0.289    0.534    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.351    0.340    0.2106   0.396    0.287    0.532    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.400    5000.00     128.20   5.4048E+04     255.675     5.7724E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.328   -0.340   -0.2106  -0.392    0.264    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.307   -0.272   -0.1685  -0.312    0.266    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.290   -0.204   -0.1264  -0.233    0.267    0.542    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.278   -0.136   -0.0842  -0.155    0.268    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.271   -0.068   -0.0421  -0.077    0.269    0.544    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.269    0.000    0.0000   0.000    0.269   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.271    0.068    0.0421   0.077    0.269    0.544    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.278    0.136    0.0842   0.155    0.268    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.290    0.204    0.1264   0.233    0.267    0.542    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.307    0.272    0.1685   0.312    0.266    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.328    0.340    0.2106   0.392    0.264    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.600    5000.00     192.31   5.4048E+04     255.675     8.6586E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.315   -0.340   -0.2106  -0.390    0.251    0.541    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.294   -0.272   -0.1685  -0.310    0.253    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.277   -0.204   -0.1264  -0.232    0.255    0.545    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.266   -0.136   -0.0842  -0.154    0.255    0.546    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.258   -0.068   -0.0421  -0.077    0.256    0.547    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.256    0.000    0.0000   0.000    0.256   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.258    0.068    0.0421   0.077    0.256    0.547    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.266    0.136    0.0842   0.154    0.255    0.546    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.277    0.204    0.1264   0.232    0.255    0.545    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.294    0.272    0.1685   0.310    0.253    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.315    0.340    0.2106   0.390    0.251    0.541    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.200   10000.00      59.90   2.6500E+04     223.251     1.6916E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.371   -0.340   -0.2106  -0.399    0.306    0.528    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.350   -0.272   -0.1685  -0.318    0.308    0.530    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.333   -0.204   -0.1264  -0.238    0.310    0.532    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.321   -0.136   -0.0842  -0.158    0.311    0.533    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.314   -0.068   -0.0421  -0.079    0.312    0.534    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.312    0.000    0.0000   0.000    0.312   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.314    0.068    0.0421   0.079    0.312    0.534    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.321    0.136    0.0842   0.158    0.311    0.533    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.333    0.204    0.1264   0.238    0.310    0.532    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.350    0.272    0.1685   0.318    0.308    0.530    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.371    0.340    0.2106   0.399    0.306    0.528    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.400   10000.00     119.80   2.6500E+04     223.251     3.3831E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.344   -0.340   -0.2106  -0.394    0.280    0.534    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.323   -0.272   -0.1685  -0.314    0.282    0.536    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.306   -0.204   -0.1264  -0.235    0.283    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.294   -0.136   -0.0842  -0.156    0.284    0.539    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.287   -0.068   -0.0421  -0.078    0.285    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.285    0.000    0.0000   0.000    0.285   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.287    0.068    0.0421   0.078    0.285    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.294    0.136    0.0842   0.156    0.284    0.539    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.306    0.204    0.1264   0.235    0.283    0.538    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.323    0.272    0.1685   0.314    0.282    0.536    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.344    0.340    0.2106   0.394    0.280    0.534    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+1                               AUTOMATED STABILITY AND CONTROL METHODS PER APRIL 1976 VERSION OF DATCOM
+                                         CHARACTERISTICS AT ANGLE OF ATTACK AND IN SIDESLIP
+                                                   DATCOM BODY ALONE CONFIGURATION
+ 
+ -----------------------  FLIGHT CONDITIONS  ------------------------           --------------  REFERENCE DIMENSIONS  ------------
+  MACH    ALTITUDE   VELOCITY    PRESSURE    TEMPERATURE     REYNOLDS             REF.      REFERENCE LENGTH   MOMENT REF. CENTER
+ NUMBER                                                       NUMBER              AREA       LONG.     LAT.     HORIZ      VERT
+              M        M/SEC      N/ M**2       DEG K         1/ M                M**2         M         M         M         M
+0 0.600   10000.00     179.70   2.6500E+04     223.251     5.0747E+06             0.008      1.828     0.102     1.320     0.000
+0                                                               -------------------DERIVATIVE (PER DEGREE)-------------------
+0 ALPHA     CD       CL       CM       CN       CA       XCP        CLA          CMA          CYB          CNB          CLB
+0
+  -10.0    0.329   -0.340   -0.2106  -0.392    0.265    0.537    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -8.0    0.308   -0.272   -0.1685  -0.312    0.267    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -6.0    0.291   -0.204   -0.1264  -0.233    0.268    0.542    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -4.0    0.279   -0.136   -0.0842  -0.155    0.269    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   -2.0    0.272   -0.068   -0.0421  -0.077    0.270    0.544    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    0.0    0.270    0.000    0.0000   0.000    0.270   ******    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    2.0    0.272    0.068    0.0421   0.077    0.270    0.544    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    4.0    0.279    0.136    0.0842   0.155    0.269    0.543    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    6.0    0.291    0.204    0.1264   0.233    0.268    0.542    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+    8.0    0.308    0.272    0.1685   0.312    0.267    0.540    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+   10.0    0.329    0.340    0.2106   0.392    0.265    0.537    3.399E-02    2.106E-02   -3.399E-02   -3.789E-01    0.000E+00
+ Return to main program from M57O71
+1          THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE.
+0
+1 END OF JOB.
