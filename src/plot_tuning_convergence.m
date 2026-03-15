@@ -3,11 +3,11 @@
 
 clear; clc;
 
-% Run from GNCSIM/src
-addpath(genpath(pwd));
+scriptDir = fileparts(mfilename('fullpath'));
+addpath(genpath(scriptDir));
 
-inFile = fullfile(pwd, "tuning_out", "bayesopt_pid.mat");
-outDir = fullfile(pwd, "tuning_out", "plots");
+inFile = fullfile(scriptDir, "tuning_out", "bayesopt_pid.mat");
+outDir = fullfile(scriptDir, "tuning_out", "plots");
 outPng = fullfile(outDir, "tuning_convergence.png");
 
 if ~isfile(inFile)

@@ -1,5 +1,7 @@
+scriptDir = fileparts(mfilename('fullpath'));
+
 opts = struct();
-opts.paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
+opts.paramsPath = fullfile(scriptDir, "+SyndromeFiles", "params.json");
 opts.fail_cost  = 1e9;
 opts.scenario   = struct(); % nominal
 

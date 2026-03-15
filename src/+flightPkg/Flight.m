@@ -64,6 +64,10 @@ classdef Flight < handle
             % Cum-velocity bookkeeping for variable dt
             cumVelInterval = obj.controller.breakPoints.cumVelocityInterval;
             cumVelTimer = 0.0;
+            stopAtApogee = obj.getFieldDefault(obj.flightParams, 'stopAtApogee', false);
+            minApogeeStopAltitude = obj.getFieldDefault(obj.flightParams, 'minApogeeStopAltitude', 0.0);
+            minAscentVz = obj.getFieldDefault(obj.flightParams, 'minAscentVz', 0.0);
+            hasSeenAscent = false;
 
             % ----------------------------
             % FreeRTOS-style dt jitter params (lateness-only)
@@ -145,7 +149,7 @@ classdef Flight < handle
             disturbances.tau_roll_x = tau_bias + tau_step * double(obj.currentTime >= t0_step);
 
             gyro_meas0 = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime);
-            wx_meas0 = gyro_meas0(obj.idx.omega_x);
+            wx_meas0 = gyro_meas0(1);
             dt_k0 = obj.dt_nom; % you have not sampled dt_k yet at t=0; use nominal
             tau_dist0 = disturbances.tau_roll_x; % if not set yet, set it once at t=0
             log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas; ...
@@ -238,7 +242,7 @@ classdef Flight < handle
                     if isa(obj.controller, 'controllerPkg.RollRatePID') && obj.useActuatorModel
                         % Gyro latency + noise!
                         gyro_meas = obj.navigation.gyroscope.getMeasurement(rocketState, [], obj.currentTime); % 3x1
-                        wx_meas = gyro_meas(obj.idx.omega_x);
+                        wx_meas = gyro_meas(1);
                         tau_dist = disturbances.tau_roll_x;
                         state_for_control = rocketState;
                         state_for_control(obj.idx.omega) = gyro_meas;
@@ -266,6 +270,22 @@ classdef Flight < handle
                 log.add(obj.currentTime, 'actuatorStates', [omega_w_true; omega_w_meas; V_bus_true; V_bus_meas; tau_max_meas; ...
                                                             wx_meas; dt_k; tau_dist]);
                 log.add(obj.currentTime, 'controlInputs', controlInput);
+
+                if stopAtApogee
+                    cBI = Utils.dirCosine(rocketState(obj.idx.quat));
+                    cIB = cBI.';
+                    vInertial = cIB * rocketState(obj.idx.vel);
+                    vzInertial = vInertial(3);
+                    altitude = rocketState(obj.idx.z);
+
+                    if vzInertial > minAscentVz
+                        hasSeenAscent = true;
+                    end
+
+                    if hasSeenAscent && altitude >= minApogeeStopAltitude && vzInertial <= 0
+                        break;
+                    end
+                end
             end
         end
     end

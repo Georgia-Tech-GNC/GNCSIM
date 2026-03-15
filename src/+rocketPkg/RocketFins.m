@@ -99,6 +99,8 @@ classdef RocketFins < rocketPkg.DatcomManager
     
                 airfoilNaca = 'NACA 0012';
                 datcomFilename = [name, '.dat'];
+                datcomFilePath = [tempname, '_', datcomFilename];
+                cleanupDeck = onCleanup(@() rocketPkg.DatcomManager.deleteIfExists(datcomFilePath)); %#ok<NASGU>
     
                 % Convert angles to radians for MATLAB's trig functions
                 sweepRad = deg2rad(sweepDeg);
@@ -119,7 +121,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 cbarr = (2/3) * rootChord * (1 + taperRatio + taperRatio^2) / (1 + taperRatio);
     
 			    % Open DATCOM file
-			    obj.openDatcom(datcomFilename)
+			    obj.openDatcom(datcomFilePath)
     
 			    % Adds flight conditions section into DATCOM file
 			    obj.addFlightCondition()
@@ -142,8 +144,9 @@ classdef RocketFins < rocketPkg.DatcomManager
     
                 % Close DATCOM file
                 obj.closeDatcom();
+                obj.lastDatcomDeckText = fileread(datcomFilePath);
     
-                aero = rocketPkg.DatcomManager.runDatcomCached(datcomFilename);
+                aero = obj.resolveAeroData(datcomFilePath);
 
                 for jj=1:length(obj.fins)
                     if isequal(obj.fins(jj).name, finParams.name)
@@ -187,4 +190,3 @@ classdef RocketFins < rocketPkg.DatcomManager
 		end
 	end
 end
-

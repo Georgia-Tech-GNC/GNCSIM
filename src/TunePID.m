@@ -8,14 +8,17 @@ function results = TunePID()
 %   Objective determinism:     stochastic (fresh scenario draws each trial)
 %   Stopping:                 early-stop on convergence (with a safety cap)
 
-    outDir = fullfile(pwd, "tuning_out");
+    srcDir = localSrcDir();
+    outDir = fullfile(srcDir, "tuning_out");
 
     %% Options passed through objective -> SyndromeRunOnce
     opts = struct();
-    opts.paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
+    opts.paramsPath = fullfile(srcDir, "+SyndromeFiles", "params.json");
     opts.fail_cost  = 1e9;
     opts.debug_fail_save = true;
     opts.debug_fail_dir  = fullfile(outDir, "fail_logs");
+    opts.aeroSourceMode = "precomputed_only";
+    opts.precomputedAeroDir = fullfile(fileparts(srcDir), "DATCOM", "precomputed");
 
     %% Per-trial objective weights (LaTeX: (w_e, w_u, w_r))
     weights = struct();
@@ -30,17 +33,6 @@ function results = TunePID()
 
     useParallelBO = false;
     useParallelMC = true;
-
-    if useParallelMC
-        p = gcp('nocreate');
-        if isempty(p)
-            try
-                parpool('threads');
-            catch
-                parpool('local'); % fallback
-            end
-        end
-    end
     % Early-stopping (convergence) controls
     conv = struct();
     conv.minEvals   = 30;      % don't stop too early
@@ -78,23 +70,51 @@ function results = TunePID()
         li = zeros(mc.N, 1);       % per-trial costs l(theta; s_i)
         failed = false(mc.N, 1);
 
-        parfor i = 1:mc.N
-            opts_i = opts;
-            opts_i.scenario = drawScenario_rollrate(); % fresh draw => stochastic objective
+        if useParallelMC
+            parfor i = 1:mc.N
+                opts_i = opts;
+                opts_i.scenario = drawScenario_rollrate(); % fresh draw => stochastic objective
 
-            try
-                [li(i), detail] = SyndromeObjective(kp, ki, kd, weights, opts_i);
+                try
+                    [li(i), detail] = SyndromeObjective(kp, ki, kd, weights, opts_i);
 
-                if ~isfinite(li(i)) || li(i) < 0
-                    li(i) = opts.fail_cost;
-                    failed(i) = true;
-                elseif isfield(detail,'failed') && detail.failed
+                    if ~isfinite(li(i)) || li(i) < 0
+                        li(i) = opts.fail_cost;
+                        failed(i) = true;
+                    elseif isfield(detail,'failed') && detail.failed
+                        li(i) = opts.fail_cost;
+                        failed(i) = true;
+                    end
+                catch ME
+                    if isSetupFailure(ME)
+                        rethrow(ME);
+                    end
                     li(i) = opts.fail_cost;
                     failed(i) = true;
                 end
-            catch
-                li(i) = opts.fail_cost;
-                failed(i) = true;
+            end
+        else
+            for i = 1:mc.N
+                opts_i = opts;
+                opts_i.scenario = drawScenario_rollrate(); % fresh draw => stochastic objective
+
+                try
+                    [li(i), detail] = SyndromeObjective(kp, ki, kd, weights, opts_i);
+
+                    if ~isfinite(li(i)) || li(i) < 0
+                        li(i) = opts.fail_cost;
+                        failed(i) = true;
+                    elseif isfield(detail,'failed') && detail.failed
+                        li(i) = opts.fail_cost;
+                        failed(i) = true;
+                    end
+                catch ME
+                    if isSetupFailure(ME)
+                        rethrow(ME);
+                    end
+                    li(i) = opts.fail_cost;
+                    failed(i) = true;
+                end
             end
         end
 
@@ -168,9 +188,23 @@ function results = TunePID()
     try
         optsWarm = opts;
         optsWarm.scenario = struct(); % no overrides
+        optsWarm.setupOnly = true;
         SyndromeRunOnce(1, 0, 0, optsWarm); % cheap dummy
-    catch
-        % ignore warm-up failures; BO will surface real errors
+    catch ME
+        error("Syndrome:Tuning:SetupFailed", ...
+            "TunePID setup failed during DATCOM/aero warmup: %s (%s)", ...
+            ME.message, ME.identifier);
+    end
+
+    if useParallelMC
+        p = gcp('nocreate');
+        if isempty(p)
+            try
+                parpool('threads');
+            catch
+                parpool('local'); % fallback
+            end
+        end
     end
 
     %% Run Bayesian optimization
@@ -249,32 +283,72 @@ function results = TunePID()
     end
 end
 
+function tf = isSetupFailure(ME)
+    tf = startsWith(string(ME.identifier), "Syndrome:Setup:") || ...
+         startsWith(string(ME.identifier), "Syndrome:DATCOM:");
+end
+
+function srcDir = localSrcDir()
+    thisFile = mfilename('fullpath');
+    srcDir = fileparts(thisFile);
+end
+
 %% Fresh scenario draw per rollout (stochastic; no CRN)
 function s = drawScenario_rollrate()
     s = struct();
 
     % Plant
-    s.Ix_scale = 1 + 0.20*randn();
-    s.rollDampLin_scale = exp(0.25*randn());
+    % Use a tighter bounded MOI variation for tuning. The paper's early
+    % uncertainty table is very loose for flight-tuning purposes; until a
+    % measured inertia range is available, keep the MC spread to +/-10%.
+    moiRelTol = 0.10;
+    s.Ix_scale = boundedUniformScale(moiRelTol);
+
+    % The paper identifies c_d as a tuned/identified effective damping term but
+    % does not provide a measurement-based tolerance yet. Keep this bounded and
+    % modest until hardware characterization replaces it.
+    s.rollDampLin_scale = boundedUniformScale(0.15);
 
     % Actuator
-    s.Iw_scale = exp(0.10*randn());
-    s.b_scale  = exp(0.30*randn());
+    s.Iw_scale = boundedUniformScale(0.05);
 
-    s.Imax_scale = exp(0.10*randn());
-    s.Vbus_scale = exp(0.03*randn());
+    % Friction parameters are not yet hardware-identified in this model, and
+    % the nominal viscous friction is currently zero. Avoid inventing a large
+    % spread here until measured values are available.
+    s.b_scale = 1.0;
+
+    s.Imax_scale = boundedUniformScale(0.05);
+    s.Vbus_scale = boundedUniformScale(0.02);
 
     % Initial condition
-    s.wx0 = deg2rad(30) * (2*rand() - 1);
+    s.wx0 = boundedUniform(-deg2rad(10), deg2rad(10));
 
     % Gyro (x-axis dominates roll-rate control)
-    s.gyro_bias_x = deg2rad(0.5) * randn();  % rad/s
-    s.gyro_biasRW_scale = exp(0.30*randn());
-    s.gyro_noise_scale  = exp(0.30*randn());
-    s.gyro_latency_s    = max(0, 0.010 + 0.002*randn());
+    s.gyro_bias_x = boundedUniform(-deg2rad(0.2), deg2rad(0.2));
+    s.gyro_biasRW_scale = boundedUniformScale(0.10);
+    s.gyro_noise_scale  = boundedUniformScale(0.10);
+    s.gyro_latency_s    = boundedUniform(0.009, 0.011);
 
     % Scheduler jitter (FreeRTOS-style)
-    s.p_miss1 = max(0, 0.05 + 0.02*randn());
-    s.p_miss2 = max(0, 0.005 + 0.003*randn());
-    s.latency_max_s = max(0, 1e-4 + 5e-5*randn());
+    s.p_miss1 = boundedUniform(0.03, 0.07);
+    s.p_miss2 = boundedUniform(0.002, 0.008);
+    s.latency_max_s = boundedUniform(5e-5, 1.5e-4);
+
+    % External roll disturbance torque: paper-model stress case
+    % tau_dist(t) = tau_bias + tau_step * 1[t >= t0]
+    % Keep these bounded around the nominal stress case instead of allowing
+    % long-tail draws to dominate the objective.
+    tauBiasMag = boundedUniform(0.5e-3, 1.5e-3);
+    tauStepMag = boundedUniform(1.0e-3, 3.0e-3);
+    s.tau_dist_bias_x = tauBiasMag * sign(randn());
+    s.tau_dist_step_x = tauStepMag * sign(randn());
+    s.tau_dist_step_t0_s = boundedUniform(0.20, 0.80);
+end
+
+function x = boundedUniform(lo, hi)
+    x = lo + (hi - lo) * rand();
+end
+
+function scale = boundedUniformScale(relTol)
+    scale = boundedUniform(1 - relTol, 1 + relTol);
 end

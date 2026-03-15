@@ -3,12 +3,12 @@
 
 clear; clc;
 
-% Ensure package folders are on path (run this from GNCSIM/src)
-addpath(genpath(pwd));
+scriptDir = fileparts(mfilename('fullpath'));
+addpath(genpath(scriptDir));
 
 % ---- User config ----
-logFile = fullfile(pwd, "tuning_out", "syndrome_run_log.mat");  % change as needed
-outDir  = fullfile(pwd, "tuning_out", "plots");                % where PNGs go
+logFile = fullfile(scriptDir, "tuning_out", "syndrome_run_log.mat");  % change as needed
+outDir  = fullfile(scriptDir, "tuning_out", "plots");                % where PNGs go
 tStart  = [];   % e.g., 0
 tEnd    = [];   % e.g., 10
 prefix  = "run_"; % filename prefix

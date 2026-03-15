@@ -63,12 +63,14 @@ classdef RocketBody < rocketPkg.DatcomManager
 			rNose = sqrt(rhoArc^2 - (xNose - L).^2) + R - rhoArc + 0.0001;
 		end
 
-		function computeBuildup(obj)
+        function computeBuildup(obj)
 			% Generates DATCOM input file for the rocket body
 
             nNosePoints = 10;   % Number of points defining the nose cone
             nBodyPoints = 5;    % Number of points defining the cylindrical body
             datcomFilename = 'BODY.dat';
+            datcomFilePath = [tempname, '_', datcomFilename];
+            cleanupDeck = onCleanup(@() rocketPkg.DatcomManager.deleteIfExists(datcomFilePath)); %#ok<NASGU>
 			xcg = obj.bodyParams.cgXWet; 
 			xw = 0;
 
@@ -90,7 +92,7 @@ classdef RocketBody < rocketPkg.DatcomManager
 			obj.bodyOutline = [bodyStationsX; bodyRadii];
 
 			% Open DATCOM input file and write sections
-            obj.openDatcom(datcomFilename)
+            obj.openDatcom(datcomFilePath)
 			obj.addFlightCondition()
 
 			% Write $OPTINS Namelist
@@ -126,8 +128,9 @@ classdef RocketBody < rocketPkg.DatcomManager
 
 			% Close DATCOM file
             obj.closeDatcom();
+            obj.lastDatcomDeckText = fileread(datcomFilePath);
 
-			obj.aero = rocketPkg.DatcomManager.runDatcomCached(datcomFilename);
+			obj.aero = obj.resolveAeroData(datcomFilePath);
             obj.buildInterps(obj.aero);
 		end
 
@@ -170,4 +173,3 @@ classdef RocketBody < rocketPkg.DatcomManager
         end
 	end
 end
-

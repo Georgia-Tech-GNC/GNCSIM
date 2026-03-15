@@ -19,6 +19,9 @@ classdef DatcomManager < handle
 		aero
 		scaleFactor = 1;
 		momentScaleFactor = 1;
+		aeroSourceMode = "runtime_cache";
+		precomputedAeroDir = "";
+        lastDatcomDeckText = "";
 	end
 
 	methods
@@ -181,8 +184,75 @@ classdef DatcomManager < handle
            	N = cn*q*S;
            	A = ca*q*S;
            	M = cm*q*c;
-           	fC = [-A; 0; -N];
+            fC = [-A; 0; -N];
 		   	mC = [0; M; 0];
+		end
+
+		function aero = resolveAeroData(obj, datcomFilename)
+			mode = string(obj.aeroSourceMode);
+			if strlength(mode) == 0
+				mode = "runtime_cache";
+			end
+
+			deckText = fileread(datcomFilename);
+			bytes = uint8(deckText);
+			checksum = uint32(0);
+			for i = 1:numel(bytes)
+				checksum = checksum + uint32(bytes(i)) * uint32(mod(i, 65535) + 1);
+			end
+			byteCount = numel(bytes);
+
+			thisFile = mfilename('fullpath');
+			rocketPkgDir = fileparts(thisFile);
+			srcDir = fileparts(rocketPkgDir);
+			projectRoot = fileparts(srcDir);
+			cacheFile = fullfile(projectRoot, 'DATCOM', 'cache', sprintf('aero_%08X_%d.mat', checksum, byteCount));
+
+			precomputedDir = char(obj.precomputedAeroDir);
+			if isempty(precomputedDir)
+				precomputedDir = fullfile(projectRoot, 'DATCOM', 'precomputed');
+			end
+			precomputedFile = fullfile(precomputedDir, sprintf('aero_%08X_%d.mat', checksum, byteCount));
+
+			switch mode
+				case "precomputed_only"
+					if exist(precomputedFile, 'file')
+						S = load(precomputedFile, 'aero');
+						aero = S.aero;
+						return;
+					end
+
+					if exist(cacheFile, 'file')
+						S = load(cacheFile, 'aero');
+						aero = S.aero;
+						return;
+					end
+
+					error("Syndrome:DATCOM:PrecomputedMissing", ...
+						"Precomputed DATCOM aero not found for deck '%s'. Expected '%s' or cached '%s'.", ...
+						datcomFilename, precomputedFile, cacheFile);
+
+				case "prefer_precomputed"
+					if exist(precomputedFile, 'file')
+						S = load(precomputedFile, 'aero');
+						aero = S.aero;
+						return;
+					end
+
+					aero = rocketPkg.DatcomManager.runDatcomCached(datcomFilename);
+					if ~exist(precomputedDir, 'dir')
+						mkdir(precomputedDir);
+					end
+					save(precomputedFile, 'aero', 'deckText');
+
+				case "runtime_cache"
+					aero = rocketPkg.DatcomManager.runDatcomCached(datcomFilename);
+
+				otherwise
+					error("Syndrome:DATCOM:UnknownAeroMode", ...
+						"Unknown aero source mode '%s'. Use runtime_cache, prefer_precomputed, or precomputed_only.", ...
+						mode);
+			end
 		end
 	end
 
@@ -190,39 +260,24 @@ classdef DatcomManager < handle
 		function runDatcom(datcomFilename)
 			% runDatcom  Execute DATCOM using an absolute path to the executable.
 			% Works even if caller cd's into a temp working directory.
-
-			% -------------------------
-			% Resolve project root path
-			% -------------------------
-			% This file lives at: <projectRoot>/src/+rocketPkg/DatcomManager.m
-			thisFile = mfilename('fullpath');                 % .../src/+rocketPkg/DatcomManager
-			rocketPkgDir = fileparts(thisFile);               % .../src/+rocketPkg
-			srcDir = fileparts(rocketPkgDir);                 % .../src
-			projectRoot = fileparts(srcDir);                  % .../<projectRoot>
-			datcomDir = fullfile(projectRoot, 'DATCOM');
+			datcomPaths = rocketPkg.DatcomManager.getDatcomPaths();
+			exePath = rocketPkg.DatcomManager.getDatcomExecutable(datcomPaths);
 
 			% -------------------------
 			% Prepare DATCOM input file
 			% -------------------------
 			if ~isfile(datcomFilename)
-				error("DATCOM input deck not found: %s", datcomFilename);
+				error("Syndrome:DATCOM:InputDeckNotFound", ...
+					"DATCOM input deck not found: %s", datcomFilename);
 			end
 
 			% DATCOM expects the input deck to be named "for005" in the working directory
-			copyfile(datcomFilename, fullfile(pwd, 'for005'));
-
-			% -------------------------
-			% Select executable (absolute path)
-			% -------------------------
-			if ispc
-				exePath = fullfile(datcomDir, 'datcom_win.exe');
-			else
-				% Your repo uses datcom_unix for both Linux/mac (as previously configured)
-				exePath = fullfile(datcomDir, 'datcom_unix');
-			end
-
-			if ~isfile(exePath)
-				error("DATCOM executable not found: %s", exePath);
+			try
+				copyfile(datcomFilename, fullfile(pwd, 'for005'));
+			catch ME
+				error("Syndrome:DATCOM:InputCopyFailed", ...
+					"Failed to copy DATCOM deck '%s' into working directory '%s': %s", ...
+					datcomFilename, pwd, ME.message);
 			end
 
 			% -------------------------
@@ -230,16 +285,18 @@ classdef DatcomManager < handle
 			% -------------------------
 			if ispc
 				% Windows: run the .exe
-				command = sprintf('"%s"', exePath);
+				command = sprintf('echo for005 | "%s"', exePath);
 			else
 				% Unix/mac: ensure executable bit, then run
 				system(sprintf('chmod +x "%s"', exePath));
-				command = sprintf('"%s"', exePath);
+				command = sprintf('printf ''for005\n'' | "%s"', exePath);
 			end
 
 			[status, cmdout] = system(command);
 			if status ~= 0
-				error("DATCOM failed (status=%d): %s", status, cmdout);
+				error("Syndrome:DATCOM:ExecutionFailed", ...
+					"DATCOM execution failed using '%s' (status=%d, arch=%s, workdir=%s). %s", ...
+					exePath, status, computer('arch'), pwd, rocketPkg.DatcomManager.formatSystemOutput(cmdout));
 			end
 
 			% DATCOM writes outputs in the current working directory (e.g., datcom.out).
@@ -269,6 +326,7 @@ classdef DatcomManager < handle
 			rocketPkgDir = fileparts(thisFile);
 			srcDir = fileparts(rocketPkgDir);
 			projectRoot = fileparts(srcDir);
+			datcomSourceDir = fullfile(srcDir, 'DATCOM');
 			cacheDir = fullfile(projectRoot, 'DATCOM', 'cache');
 			if ~exist(cacheDir, 'dir'), mkdir(cacheDir); end
 
@@ -279,8 +337,13 @@ classdef DatcomManager < handle
 			for i = 1:numel(bytes)
 				checksum = checksum + uint32(bytes(i)) * uint32(mod(i, 65535) + 1);
 			end
-			cacheFile = fullfile(cacheDir, sprintf('aero_%08X_%d.mat', checksum, numel(bytes)));
+			byteCount = numel(bytes);
+			cacheFile = fullfile(cacheDir, sprintf('aero_%08X_%d.mat', checksum, byteCount));
 			lockDir   = [cacheFile, '.lock'];
+			lockMetaFile = fullfile(lockDir, 'owner.txt');
+			staleLockSeconds = 45;
+			waitTimeoutSeconds = 90;
+			waitStart = tic;
 
 			% Disk cache hit
 			if exist(cacheFile, 'file')
@@ -298,6 +361,17 @@ classdef DatcomManager < handle
 				warning(warnState);
 
 				if ok
+					fidLock = fopen(lockMetaFile, 'w');
+					if fidLock ~= -1
+						fprintf(fidLock, 'pid=%d\n', feature('getpid'));
+						hostName = getenv('HOSTNAME');
+						if isempty(hostName)
+							hostName = 'unknown';
+						end
+						fprintf(fidLock, 'host=%s\n', hostName);
+						fprintf(fidLock, 'created=%s\n', datestr(now, 31));
+						fclose(fidLock);
+					end
 					break;
 				end
 
@@ -308,12 +382,30 @@ classdef DatcomManager < handle
 					memCache(key) = aero;
 					return;
 				end
+
+				info = dir(lockDir);
+				lockAgeSeconds = inf;
+				if ~isempty(info)
+					lockAgeSeconds = (now - info(1).datenum) * 86400;
+				end
+				if lockAgeSeconds > staleLockSeconds
+					if exist(lockDir, 'dir')
+						rmdir(lockDir, 's');
+					end
+					continue;
+				end
+
+				if toc(waitStart) > waitTimeoutSeconds
+					error("Syndrome:DATCOM:LockTimeout", ...
+						"Timed out waiting for DATCOM cache lock '%s'. If another MATLAB worker is not actively building this cache entry, delete the stale lock directory and retry.", ...
+						lockDir);
+				end
 				pause(0.05);
 			end
 
 			% Lock holder: re-check cache after acquiring lock
 			if exist(cacheFile, 'file')
-				rmdir(lockDir, 's');
+				rocketPkg.DatcomManager.removeLockPath(lockDir);
 				S = load(cacheFile, 'aero');
 				aero = S.aero;
 				memCache(key) = aero;
@@ -334,9 +426,65 @@ classdef DatcomManager < handle
 				fwrite(fid, deckText);
 				fclose(fid);
 
-				rocketPkg.DatcomManager.runDatcom(deckTmp);
+				if ispc
+					exePath = fullfile(datcomSourceDir, 'datcom_win.exe');
+				elseif ismac && isfile(fullfile(datcomSourceDir, 'datcom_macos'))
+					exePath = fullfile(datcomSourceDir, 'datcom_macos');
+				else
+					exePath = fullfile(datcomSourceDir, 'datcom_unix');
+				end
 
-				aeroCell = datcomimport(fullfile(workDir, 'datcom.out'));
+				if ~isfile(exePath)
+					error("Syndrome:DATCOM:ExecutableNotFound", ...
+						"DATCOM executable not found at '%s'. Expected DATCOM assets under '%s'.", ...
+						exePath, datcomSourceDir);
+				end
+
+				if ismac
+					[statusFile, fileInfo] = system(sprintf('file "%s"', exePath));
+					if statusFile == 0 && contains(fileInfo, 'ELF')
+						error("Syndrome:DATCOM:UnsupportedBinary", ...
+							"DATCOM executable '%s' is reported as '%s', but this machine is macOS (%s). The bundled executable is not expected to run natively on macOS. Build a macOS-compatible DATCOM binary or precompute/cache the aero data elsewhere.", ...
+							exePath, strtrim(fileInfo), computer('arch'));
+					end
+				end
+
+				try
+					copyfile(deckTmp, fullfile(pwd, 'for005'));
+				catch MEcopy
+					error("Syndrome:DATCOM:InputCopyFailed", ...
+						"Failed to copy DATCOM deck '%s' into working directory '%s': %s", ...
+						deckTmp, pwd, MEcopy.message);
+				end
+
+				if ispc
+					command = sprintf('echo for005 | "%s"', exePath);
+				else
+					system(sprintf('chmod +x "%s"', exePath));
+					command = sprintf('printf ''for005\n'' | "%s"', exePath);
+				end
+
+				[status, cmdout] = system(command);
+				if status ~= 0
+					if isempty(strtrim(cmdout))
+						cmdout = 'No stderr/stdout was returned by the DATCOM process.';
+					end
+					error("Syndrome:DATCOM:ExecutionFailed", ...
+						"DATCOM execution failed using '%s' (status=%d, arch=%s, workdir=%s). %s", ...
+						exePath, status, computer('arch'), pwd, strtrim(cmdout));
+				end
+
+				outPath = fullfile(workDir, 'datcom.out');
+				if ~isfile(outPath)
+					error("Syndrome:DATCOM:OutputMissing", ...
+						"DATCOM finished but did not create datcom.out in working directory '%s'.", workDir);
+				end
+
+				aeroCell = datcomimport(outPath);
+				if isempty(aeroCell)
+					error("Syndrome:DATCOM:ImportFailed", ...
+						"datcomimport returned no aerodynamic cases for '%s'.", outPath);
+				end
 				aero = aeroCell{1};
 
 				% Save disk cache
@@ -344,16 +492,143 @@ classdef DatcomManager < handle
 
 			catch ME
 				cd(oldDir);
-				if exist(lockDir, 'dir'), rmdir(lockDir, 's'); end
+				rocketPkg.DatcomManager.removeLockPath(lockDir);
 				rethrow(ME);
 			end
 
 			cd(oldDir);
-			rmdir(lockDir, 's');
+			rocketPkg.DatcomManager.removeLockPath(lockDir);
 
 			% Populate memory cache
 			memCache(key) = aero;
 		end
+
+		function paths = getDatcomPaths()
+			thisFile = mfilename('fullpath');
+			rocketPkgDir = fileparts(thisFile);
+			srcDir = fileparts(rocketPkgDir);
+			projectRoot = fileparts(srcDir);
+
+			paths.projectRoot = projectRoot;
+			paths.srcRoot = srcDir;
+			paths.datcomSourceDir = fullfile(srcDir, 'DATCOM');
+			paths.cacheRoot = fullfile(projectRoot, 'DATCOM');
+		end
+
+		function exePath = getDatcomExecutable(paths)
+			if ispc
+				exePath = fullfile(paths.datcomSourceDir, 'datcom_win.exe');
+			elseif ismac && isfile(fullfile(paths.datcomSourceDir, 'datcom_macos'))
+				exePath = fullfile(paths.datcomSourceDir, 'datcom_macos');
+			else
+				exePath = fullfile(paths.datcomSourceDir, 'datcom_unix');
+			end
+
+			if ~isfile(exePath)
+				error("Syndrome:DATCOM:ExecutableNotFound", ...
+					"DATCOM executable not found at '%s'. Expected DATCOM assets under '%s'.", ...
+					exePath, paths.datcomSourceDir);
+			end
+
+			if ismac
+				[status, fileInfo] = system(sprintf('file "%s"', exePath));
+				if status == 0 && contains(fileInfo, 'ELF')
+					error("Syndrome:DATCOM:UnsupportedBinary", ...
+						"DATCOM executable '%s' is reported as '%s', but this machine is macOS (%s). The bundled executable is not expected to run natively on macOS. Build a macOS-compatible DATCOM binary or precompute/cache the aero data elsewhere.", ...
+						exePath, strtrim(fileInfo), computer('arch'));
+				end
+			end
+		end
+
+		function tf = isStaleLock(lockDir, staleLockSeconds)
+			tf = false;
+			if ~exist(lockDir, 'dir')
+				return;
+			end
+
+			info = dir(lockDir);
+			if isempty(info)
+				return;
+			end
+
+			lockAgeSeconds = (now - info(1).datenum) * 86400;
+			tf = lockAgeSeconds > staleLockSeconds;
+		end
+
+		function writeLockMetadata(lockMetaFile)
+			fid = fopen(lockMetaFile, 'w');
+			if fid == -1
+				return;
+			end
+
+			fprintf(fid, 'pid=%d\n', feature('getpid'));
+			hostName = getenv('HOSTNAME');
+			if isempty(hostName)
+				hostName = 'unknown';
+			end
+			fprintf(fid, 'host=%s\n', hostName);
+			fprintf(fid, 'created=%s\n', datestr(now, 31));
+			fclose(fid);
+		end
+
+		function msg = formatSystemOutput(cmdout)
+			if isempty(strtrim(cmdout))
+				msg = 'No stderr/stdout was returned by the DATCOM process.';
+			else
+				msg = strtrim(cmdout);
+			end
+		end
+
+		function [deckText, precomputedFile, cacheFile] = getAeroFileTargets(datcomFilename, precomputedAeroDir)
+			deckText = fileread(datcomFilename);
+			[precomputedFile, cacheFile] = rocketPkg.DatcomManager.getAeroTargetsFromDeckText(deckText, precomputedAeroDir);
+		end
+
+		function [precomputedFile, cacheFile] = getAeroTargetsFromDeckText(deckText, precomputedAeroDir)
+			[checksum, byteCount] = rocketPkg.DatcomManager.computeDeckSignature(deckText);
+
+			datcomPaths = rocketPkg.DatcomManager.getDatcomPaths();
+			cacheDir = fullfile(datcomPaths.cacheRoot, 'cache');
+			precomputedDir = char(precomputedAeroDir);
+			if isempty(precomputedDir)
+				precomputedDir = fullfile(datcomPaths.cacheRoot, 'precomputed');
+			end
+
+			cacheFile = fullfile(cacheDir, sprintf('aero_%08X_%d.mat', checksum, byteCount));
+			precomputedFile = fullfile(precomputedDir, sprintf('aero_%08X_%d.mat', checksum, byteCount));
+		end
+
+		function [checksum, byteCount] = computeDeckSignature(deckText)
+            deckText = char(deckText);
+			bytes = uint8(deckText);
+			checksum = uint32(0);
+			for i = 1:numel(bytes)
+				checksum = checksum + uint32(bytes(i)) * uint32(mod(i, 65535) + 1);
+			end
+			byteCount = numel(bytes);
+		end
+
+		function savePrecomputedAero(precomputedFile, aero, deckText)
+			precomputedDir = fileparts(precomputedFile);
+			if ~exist(precomputedDir, 'dir')
+				mkdir(precomputedDir);
+			end
+
+			save(precomputedFile, 'aero', 'deckText');
+		end
+
+		function removeLockPath(lockPath)
+			if exist(lockPath, 'dir')
+				rmdir(lockPath, 's');
+			elseif exist(lockPath, 'file')
+				delete(lockPath);
+			end
+		end
+
+        function deleteIfExists(pathStr)
+            if exist(pathStr, 'file')
+                delete(pathStr);
+            end
+        end
     end
 end
-

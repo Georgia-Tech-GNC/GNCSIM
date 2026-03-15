@@ -29,6 +29,9 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     try
         [log, params] = SyndromeRunOnce(kp, ki, kd, opts);
     catch ME
+        if isSetupFailure(ME)
+            rethrow(ME);
+        end
         l = opts.fail_cost;
         detail = struct('failed', true, 'stage', 'SyndromeRunOnce', ...
                         'identifier', ME.identifier, 'message', ME.message);
@@ -66,7 +69,7 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
         if isfield(opts,'debug_fail_save') && opts.debug_fail_save && exist('log','var')
             try
                 if ~isfield(opts,'debug_fail_dir') || isempty(opts.debug_fail_dir)
-                    opts.debug_fail_dir = fullfile(pwd, "tuning_out", "fail_logs");
+                    opts.debug_fail_dir = fullfile(localSrcDir(), "tuning_out", "fail_logs");
                 end
                 if ~exist(opts.debug_fail_dir, 'dir'), mkdir(opts.debug_fail_dir); end
                 fname = sprintf("fail_kp%.3e_ki%.3e_kd%.3e.mat", kp, ki, kd);
@@ -148,4 +151,14 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     detail.tau_dot = tau_dot;
 
     detail.tau_max_t = tau_max_t;
+end
+
+function tf = isSetupFailure(ME)
+    tf = startsWith(string(ME.identifier), "Syndrome:Setup:") || ...
+         startsWith(string(ME.identifier), "Syndrome:DATCOM:");
+end
+
+function srcDir = localSrcDir()
+    thisFile = mfilename('fullpath');
+    srcDir = fileparts(thisFile);
 end

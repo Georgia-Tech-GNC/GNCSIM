@@ -1,7 +1,7 @@
 {
  "rocket": {
     "longitudinal_moi": 0.615,
-    "rotational_moi": 0.0010015,
+    "rotational_moi": 0.0049,
     "cg_x": 1.32,
     "mass_wet": 2.573,
     "mass_dry": 1.823,
@@ -58,7 +58,7 @@
 
  "flight": {
     "mach_numbers": [0.2, 0.4, 0.6],
-    "altitudes_ft": [0, 5000, 10000],
+    "altitudes_m": [0, 1524, 3048],
     "alphas_deg": [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10],
     "dt_nom": 0.01,
     "tick_s": 0.001,
@@ -70,9 +70,9 @@
     "omega_w_bias": 0.0,
     "v_bus_sigma": 0.0,
     "v_bus_bias": 0.0,
-    "tau_dist_bias_x": 0.0,
-    "tau_dist_step_x": 0.0,
-    "tau_dist_step_t0_s": 0.0
+    "tau_dist_bias_x": 0.001,
+    "tau_dist_step_x": 0.002,
+    "tau_dist_step_t0_s": 0.5
  },
 
 

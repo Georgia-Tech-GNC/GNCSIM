@@ -1,5 +1,19 @@
-function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
-    paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
+function [log, params, rocketDynamics] = SyndromeRunOnce(kp, ki, kd, opts)
+    if nargin < 4 || ~isstruct(opts)
+        opts = struct();
+    end
+
+    if isfield(opts, "paramsPath") && ~isempty(opts.paramsPath)
+        paramsPath = char(opts.paramsPath);
+    else
+        paramsPath = fullfile(localSrcDir(), "+SyndromeFiles", "params.json");
+    end
+
+    if ~isfile(paramsPath)
+        error("Syndrome:Setup:ParamsFileNotFound", ...
+            "Syndrome params file not found: %s", paramsPath);
+    end
+
     params = jsondecode(fileread(paramsPath));
 
     params.controller.kp = kp;
@@ -12,8 +26,13 @@ function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
     end
 
     %% Instantiate Classes
-    rocketDynamics = setupRocket(params);
+    rocketDynamics = setupRocket(params, opts);
     rocketDynamics.computeBuildup();
+
+    if isfield(opts, "setupOnly") && opts.setupOnly
+        log = [];
+        return;
+    end
 
     useActuatorModel = true;
     controller = setupController(params, useActuatorModel);
@@ -27,7 +46,7 @@ function [log, params] = SyndromeRunOnce(kp, ki, kd, opts)
     log.trim();
 end
 
-function rocketDyn = setupRocket(params)
+function rocketDyn = setupRocket(params, opts)
     % ---- Required JSON sections ----
     mustHave(params, "rocket");
     mustHave(params, "body");
@@ -60,11 +79,20 @@ function rocketDyn = setupRocket(params)
 
     % ---- Flight conditions (DATCOM grid) ----
     mustHave(params.flight, "mach_numbers");
-    mustHave(params.flight, "altitudes_ft");
+    if ~isfield(params.flight, "altitudes_m") && ~isfield(params.flight, "altitudes_ft")
+        error("Syndrome:MissingParam", ...
+            "Missing required field 'flight.altitudes_m' (preferred) or legacy 'flight.altitudes_ft'.");
+    end
     mustHave(params.flight, "alphas_deg");
 
     flightConParams.machNumbers = params.flight.mach_numbers;
-    flightConParams.altitudes   = params.flight.altitudes_ft;
+    if isfield(params.flight, "altitudes_m")
+        flightConParams.altitudes = params.flight.altitudes_m;
+    else
+        % Legacy compatibility: accept feet and convert to meters so the
+        % flight-condition grid matches the simulated altitude units.
+        flightConParams.altitudes = 0.3048 * params.flight.altitudes_ft;
+    end
     flightConParams.alphasDeg   = params.flight.alphas_deg;
 
     % ---- Body ----
@@ -100,6 +128,21 @@ function rocketDyn = setupRocket(params)
     finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];
 
     rocketFins = rocketPkg.RocketFins(finParams, flightConParams);
+
+    aeroSourceMode = "runtime_cache";
+    if isfield(opts, "aeroSourceMode") && ~isempty(opts.aeroSourceMode)
+        aeroSourceMode = string(opts.aeroSourceMode);
+    end
+
+    precomputedAeroDir = "";
+    if isfield(opts, "precomputedAeroDir") && ~isempty(opts.precomputedAeroDir)
+        precomputedAeroDir = string(opts.precomputedAeroDir);
+    end
+
+    body.aeroSourceMode = aeroSourceMode;
+    body.precomputedAeroDir = precomputedAeroDir;
+    rocketFins.aeroSourceMode = aeroSourceMode;
+    rocketFins.precomputedAeroDir = precomputedAeroDir;
 
     % ---- Motor ----
     mustHave(params.motor, "tc");
@@ -236,6 +279,9 @@ function [flight, log] = setupFlight(params, rocketDynamics, controller, environ
     flightParams.tau_dist_bias_x    = params.flight.tau_dist_bias_x;
     flightParams.tau_dist_step_x    = params.flight.tau_dist_step_x;
     flightParams.tau_dist_step_t0_s = params.flight.tau_dist_step_t0_s;
+    flightParams.stopAtApogee = true;
+    flightParams.minApogeeStopAltitude = 50.0;
+    flightParams.minAscentVz = 5.0;
 
     % Initial state (14x1): [mass, pos(3), vel(3), quat(4), omega(3)]
     mass0 = rocketDynamics.massWet;
@@ -336,4 +382,20 @@ function params = applyScenarioOverrides(params, s)
     if isfield(s,'latency_mode')
         params.flight.latency_mode = s.latency_mode;
     end
+
+    % --- External roll disturbance torque ---
+    if isfield(s,'tau_dist_bias_x')
+        params.flight.tau_dist_bias_x = s.tau_dist_bias_x;
+    end
+    if isfield(s,'tau_dist_step_x')
+        params.flight.tau_dist_step_x = s.tau_dist_step_x;
+    end
+    if isfield(s,'tau_dist_step_t0_s')
+        params.flight.tau_dist_step_t0_s = s.tau_dist_step_t0_s;
+    end
+end
+
+function srcDir = localSrcDir()
+    thisFile = mfilename('fullpath');
+    srcDir = fileparts(thisFile);
 end
