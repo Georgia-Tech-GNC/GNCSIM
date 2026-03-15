@@ -150,7 +150,7 @@ classdef SyndromeAnalysis
         end
     end
 
-    methods (Static, Access=private)
+    methods (Static, Access=public)
         function v = getOpt(opts, field, defaultVal)
             if isstruct(opts) && isfield(opts, field)
                 v = opts.(field);
@@ -158,6 +158,9 @@ classdef SyndromeAnalysis
                 v = defaultVal;
             end
         end
+    end
+
+    methods (Static, Access=private)
 
         function vis = figVis(outDir)
             if isempty(outDir)
