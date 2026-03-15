@@ -49,8 +49,8 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
 
         % Actuator logging vector (must match Flight.m actuatorStates logging):
         % 1: omega_w_true, 2: omega_w_meas, 3: V_bus_true, 4: V_bus_meas, 5: tau_max_meas
-        omega_w_true = log.getActuatorState('omega_w_true');  %#ok<NASGU>
-        tau_max_t    = log.getActuatorState('tau_max_meas');  % Nx1, >= 0
+        omega_w_true = log.actuatorStates(1, :).';  %#ok<NASGU>
+        tau_max_t    = log.actuatorStates(5, :).';  % Nx1, >= 0
 
         if any(~isfinite(wx)) || any(~isfinite(tau_raw)) || any(~isfinite(tau_max_t))
             error('Non-finite signals');
@@ -141,10 +141,10 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     detail.Tspan = Tspan;
 
   
-    detail.omega_w_true = log.getActuatorState('omega_w_true');
-    detail.omega_w_meas = log.getActuatorState('omega_w_meas');
-    detail.V_bus_meas = log.getActuatorState('V_bus_meas');
-
+    detail.omega_w_true = log.actuatorStates(1,:).';
+    detail.omega_w_meas = log.actuatorStates(2,:).';
+    detail.V_bus_meas = log.actuatorStates(4,:).';
+    
     detail.e = e;
     detail.w_des = w_des;
     detail.wx = wx;
