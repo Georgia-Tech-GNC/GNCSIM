@@ -12,6 +12,7 @@ function results = TunePID()
 
     %% Options passed through objective -> SyndromeRunOnce
     opts = struct();
+    flag = "Failed";
     opts.paramsPath = fullfile(pwd, "+SyndromeFiles", "params.json");
     opts.fail_cost  = 1e9;
     opts.debug_fail_save = true;
@@ -71,13 +72,15 @@ function results = TunePID()
 
         % Sanity
         if ~isfinite(kp) || ~isfinite(ki) || ~isfinite(kd) || kp <= 0 || ki < 0 || kd < 0
+            combinedText = [flag, num2str(75)];
+            disp(combinedText);
             J = opts.fail_cost;
             return;
         end
 
         li = zeros(mc.N, 1);       % per-trial costs l(theta; s_i)
         failed = false(mc.N, 1);
-
+        
         parfor i = 1:mc.N
             opts_i = opts;
             opts_i.scenario = drawScenario_rollrate(); % fresh draw => stochastic objective
@@ -86,13 +89,18 @@ function results = TunePID()
                 [li(i), detail] = SyndromeObjective(kp, ki, kd, weights, opts_i);
 
                 if ~isfinite(li(i)) || li(i) < 0
+                    combinedText = [flag, num2str(92)];
+                    disp(combinedText);
                     li(i) = opts.fail_cost;
                     failed(i) = true;
                 elseif isfield(detail,'failed') && detail.failed
+                    combinedText = [flag, num2str(97)];
+                    disp(combinedText);
                     li(i) = opts.fail_cost;
                     failed(i) = true;
                 end
-            catch
+            catch ME
+                warning(ME.message)
                 li(i) = opts.fail_cost;
                 failed(i) = true;
             end
@@ -106,6 +114,8 @@ function results = TunePID()
         % Failure handling (paper: "large penalty for failed trials"):
         % already enforced by setting li(i)=fail_cost, which increases mean and P95.
         if ~isfinite(J) || J < 0
+            combinedText = [flag, num2str(117)];
+            disp(combinedText);
             J = opts.fail_cost;
         end
     end

@@ -29,6 +29,7 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     try
         [log, params] = SyndromeRunOnce(kp, ki, kd, opts);
     catch ME
+        print("Error on line 32");
         l = opts.fail_cost;
         detail = struct('failed', true, 'stage', 'SyndromeRunOnce', ...
                         'identifier', ME.identifier, 'message', ME.message);
@@ -58,6 +59,7 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
             error('Negative tau_max_t');
         end
     catch ME
+        print("Error on line 61");
         l = opts.fail_cost;
         detail = struct('failed', true, 'stage', 'ExtractSignals', ...
                         'identifier', ME.identifier, 'message', ME.message);
@@ -83,6 +85,7 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
         w_des = opts.w_des_fn(t, log, params);
         w_des = w_des(:);
         if numel(w_des) ~= numel(t) || any(~isfinite(w_des))
+            print("Error on line 88");
             l = opts.fail_cost;
             detail = struct('failed', true);
             return;
@@ -105,6 +108,7 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     % ---- Averaged quadratic metrics ----
     Tspan = t(end) - t(1);
     if ~isfinite(Tspan) || Tspan <= 0
+        print("Error on line 111");
         l = opts.fail_cost;
         detail = struct('failed', true);
         return;
@@ -115,6 +119,7 @@ function [l, detail] = SyndromeObjective(kp, ki, kd, weights, opts)
     ell_r = (1 / Tspan) * trapz(t, tau_dot.^2);
 
     if any(~isfinite([ell_e ell_u ell_r])) || any([ell_e ell_u ell_r] < 0)
+        print("NOT FINITE");
         l = opts.fail_cost;
         detail = struct('failed', true);
         return;
