@@ -260,7 +260,7 @@ classdef Flight < handle & matlab.mixin.Copyable
             switch obj.flightState
                 case FlightState.PRELAUNCH
                     % Transition to LAUNCH_RAIL once ignition time is reached
-                    if time >= obj.rocketDynamics.tIgnition
+                    if time >= obj.rocketDynamics.motor.tIgnition
                         obj.transitionTo(FlightState.LAUNCH_RAIL, time);
                     end
 
@@ -279,7 +279,7 @@ classdef Flight < handle & matlab.mixin.Copyable
 
                 case FlightState.POWERED_ASCENT
                     % Transition to COASTING_ASCENT once burnout time has passed
-                    if time > (obj.rocketDynamics.burnTime + obj.rocketDynamics.tIgnition)
+                    if time > (obj.rocketDynamics.motor.burnTime + obj.rocketDynamics.motor.tIgnition)
                         obj.transitionTo(FlightState.COASTING_ASCENT, time);
                     end
 

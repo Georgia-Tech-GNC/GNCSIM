@@ -72,11 +72,7 @@ function rocketDynamics = setupRocket(controller)
     finParams.translation = [xFinRef, bodyParams.rocketDiameter / 2, 0];  % [m]
 
     % Motor
-    motorParams.burnTime = 10.0;
-    tmp = load("+theLoraxFiles\thrust_curve_hpr_tvc.mat");
-    motorParams.thrustCurve = tmp.thrust_curve_hpr_tvc;
-    motorParams.totalImpulse = 403; % N-sec
-    motorParams.tIgnition = 1.0;
+    motor = setupMotor(rocketParams);
 
     % Create rocket dynamics object
     body = rocketPkg.RocketBody(bodyParams, flightConParams);
@@ -95,7 +91,18 @@ function rocketDynamics = setupRocket(controller)
     parachuteObjects(1) = rocketPkg.ParachuteDynamics("Main Parachute", canopyDiameter1, canopyMass1, dragCoefficient1,deployAltitude1);
     
     % Create rocketDynamics object
-    rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motorParams, controller, parachuteObjects, aerodynamics);
+    rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motor, controller, parachuteObjects, aerodynamics);
+end
+
+function motor = setupMotor(rocketParams)
+    tmp = load("+theLoraxFiles\thrust_curve_hpr_tvc.mat");
+    thrustCurve  = tmp.thrust_curve_hpr_tvc;
+    burnTime     = 10.0;
+    totalImpulse = 403; % N-sec
+    tIgnition    = 1.0;
+    motorMass    = rocketParams.massWet - rocketParams.massDry;  % [kg] propellant mass
+
+    motor = rocketPkg.Motor(thrustCurve, totalImpulse, burnTime, tIgnition, motorMass);
 end
 
 function runDATCOM(rocketDynamics)
