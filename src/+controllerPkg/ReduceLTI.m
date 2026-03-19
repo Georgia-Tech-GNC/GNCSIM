@@ -51,12 +51,12 @@ classdef ReduceLTI < handle
             
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
                 hu = @(u_in) h([0, u_in, 0].', actuatorState);
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
@@ -65,24 +65,28 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, false, false);
+                % Temporarily disable thrust for non-actuator-model linearization
+                oldUseThrust = obj.rocketDynamics.motor.useThrust;
+                obj.rocketDynamics.motor.useThrust = false;
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, false);
                 fx = @(x) f(x, [0, pitchControlInput, 0].');
                 fu = @(u_in) f(xStar, [0, u_in, 0].');
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B = Utils.numericalJacobian(fu, pitchControlInput); % (14x1)
+                obj.rocketDynamics.motor.useThrust = oldUseThrust;
             end
-            
+
 			% Project to Reduced Space (3x3)
             g = @(x) controllerPkg.ReduceLTI.pitchReduce(x);
-			
+
 			% Reduction mapping matrix (3x14)
             Jg = Utils.numericalJacobian(g, xStar);
 
 			% Pseudo-inverse for projection (14x3)
             T = pinv(Jg);
-			
+
 			% Projected System Matrix (3x3)
             A3 = Jg*A*T;
 
@@ -105,12 +109,12 @@ classdef ReduceLTI < handle
             %disturbances.wind = [0, 0, 0].';
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
                 hu = @(u_in) h([u_in, 0, 0].', actuatorState);
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
@@ -119,13 +123,16 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                oldUseThrust = obj.rocketDynamics.motor.useThrust;
+                obj.rocketDynamics.motor.useThrust = false;
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true);
                 fx = @(x) f(x, [rollControlInput, 0, 0].');
                 fu = @(u_in) f(xStar, [u_in, 0, 0].');
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B = Utils.numericalJacobian(fu, rollControlInput); % (14x1)
+                obj.rocketDynamics.motor.useThrust = oldUseThrust;
             end
             
 			% Project to Reduced Space (2x2)

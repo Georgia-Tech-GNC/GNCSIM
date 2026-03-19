@@ -5,14 +5,11 @@ classdef DecoupledLQR < controllerPkg.Controller
     % DECOUPLEDLQR Represents the controller for pitch, yaw and roll
 
     properties
-        breakPoints                             % breakpoints object holding states (type hint in Controller.m)
-        referenceAttitudes                      % Refrence attitudes in including [time, roll, pitch yaw] (type hint in Controller.m)
         Q2 (2,2) double                         % Q matrix for roll LQR control
         Q3 (3,3) double                         % Q matrix for pitch/yaw LQR control
         R2 (1,1) double                         % R matrix for roll LQR control
         R3 (1,1) double                         % R matrix for pitch/yaw LQR control
         reduceLTI controllerPkg.ReduceLTI       % object of reduceLTI class
-        useActuatorModel = false                % boolean to check if the actuator model is being used (type hint in Controller.m)
     end
 
     methods
@@ -105,8 +102,7 @@ classdef DecoupledLQR < controllerPkg.Controller
                 
                 % call reduceLTI to get ROM system
                 [A3, B3] = obj.reduceLTI.calculateROMpitch(state, controlInput(2), actuatorState, time, obj.useActuatorModel);
-                [A2, B2] = obj.reduceLTI.calculateROMroll(state, controlInput(1), actuatorState, time, obj.useActuatorModel);
-				
+
                 % This is used to clean up sytem matrix. Last column should
                 % be all zeros and [1,2] should be 1
 				A3(:,3) = [0, 0, 0].';
@@ -114,7 +110,15 @@ classdef DecoupledLQR < controllerPkg.Controller
 
                 % Compute LQR gains
                 K3 = lqr(A3, B3, obj.Q3, obj.R3);
-                K2 = lqr(A2, B2, obj.Q2, obj.R2);
+
+                % Roll: skip for TVC (no roll control authority via gimbal)
+                if obj.useActuatorModel && obj.reduceLTI.rocketDynamics.actuatorModel.harnessesMotor
+                    K2 = zeros(1, 2);  % No roll control authority for TVC
+                    A2 = zeros(2); B2 = zeros(2, 1);
+                else
+                    [A2, B2] = obj.reduceLTI.calculateROMroll(state, controlInput(1), actuatorState, time, obj.useActuatorModel);
+                    K2 = lqr(A2, B2, obj.Q2, obj.R2);
+                end
                 
                 % save gains and system
                 obj.breakPoints.stateMatrix{ii} = {A2, A3};

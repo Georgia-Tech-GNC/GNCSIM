@@ -94,9 +94,9 @@ classdef Flight < handle & matlab.mixin.Copyable
             rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, zeros(14,1), obj.currentTime, log);
 
             if obj.useActuatorModel
-                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, log);
             else
-                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, envConditions, obj.currentTime, obj.flightState, true, log);
             end
 
             log.add(obj.currentTime, 'states', rocketState);
@@ -157,7 +157,7 @@ classdef Flight < handle & matlab.mixin.Copyable
                         % Clamp Orientation to Initial Launch Orientation
                         rocketState(obj.idx.quat) = obj.rocketInitialState(obj.idx.quat);
                         
-                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);                       
+                        rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, log);
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
                         
                         log.add(obj.currentTime, 'states', rocketState);
@@ -199,12 +199,12 @@ classdef Flight < handle & matlab.mixin.Copyable
 
                         if obj.runClosedLoop
                             if obj.useActuatorModel
-                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                                rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, actuatorState, envConditions, obj.currentTime, obj.flightState, true, log);
                             else
-                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                                rocketStateDot = obj.rocketDynamics.rocketModelControlWrapper(rocketState, controlInput, envConditions, obj.currentTime, obj.flightState, true, log);
                             end
                         else
-                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                            rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, log);
                         end
 
                         rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
@@ -232,7 +232,7 @@ classdef Flight < handle & matlab.mixin.Copyable
                          rocketState(obj.idx.quat) = Utils.eulerToQuat([0, -90, 0]).';
                          rocketState(obj.idx.omega) = [0;0;0];
                          
-                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, true, log);
+                         rocketStateDot = obj.rocketDynamics.rocketModel(rocketState, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState, true, log);
                          rocketStateEstimate = obj.navigation.getStateEstimate(rocketState, rocketStateDot, obj.currentTime, log);
 
                          obj.updateFlightState(obj.currentTime, rocketState, rocketStateDot);

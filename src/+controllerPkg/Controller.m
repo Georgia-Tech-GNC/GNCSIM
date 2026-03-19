@@ -6,11 +6,11 @@
 
 classdef Controller < handle
 
-    % properties (Abstract)
-    %     breakPoints controllerPkg.BreakPoints
-    %     referenceAttitudes (:,:) double % ((1+m)xn) time and attitude (m) for every timestep (n).
-    %     useActuatorModel (1,1) logical
-    % end
+    properties
+        breakPoints                     % controllerPkg.BreakPoints (type hint omitted for flexibility)
+        referenceAttitudes (:,:) double % ((1+m)xn) time and attitude (m) for every timestep (n).
+        useActuatorModel (1,1) logical = false
+    end
 
     methods
         function u = getControl(obj, state, currentCumVelocity, currentTime) %#ok<STOUT,INUSD>

@@ -9,6 +9,7 @@ classdef Motor < handle & matlab.mixin.Copyable
         burnTime     (1,1) double {mustBeNonnegative}   % total burn time of the motor
         tIgnition    (1,1) double {mustBeNonnegative}   % time of motor ignition in the simulation
         motorMass    (1,1) double {mustBeNonnegative}   % total propellant mass (wet - dry)
+        useThrust    (1,1) logical = true                % flag to enable/disable thrust (used by linearization)
     end
 
     methods
@@ -73,15 +74,14 @@ classdef Motor < handle & matlab.mixin.Copyable
             mDot = -T * obj.motorMass / obj.totalImpulse;
         end
 
-        function fTB = computeThrust(obj, time, useThrust)
+        function fTB = computeThrust(obj, time)
             % computeThrust  Return body-frame thrust force vector [N].
             %   Thrust acts along the +x (axial) body axis.
             arguments
                 obj
                 time      (1,1) double  {mustBeNonnegative}
-                useThrust (1,1) logical = true
             end
-            fTB = [obj.getThrust(time) * useThrust; 0; 0];
+            fTB = [obj.getThrust(time) * obj.useThrust; 0; 0];
         end
     end
 end

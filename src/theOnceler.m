@@ -235,8 +235,8 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
 
-    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
-    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true, true) ); 
+    % Note on dynamics function args: rocketModelTrajOptWrapper(state, controlInput, envConditions, time, flightState, useGravity)
+    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true) );
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
     problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
     problem.func.pathCst = @(t,x,u) ( trajectoryOptimization.pathConstraintFunction(t,x,u) ); 
