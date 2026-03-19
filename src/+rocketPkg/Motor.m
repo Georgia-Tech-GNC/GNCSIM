@@ -1,8 +1,5 @@
 % Motor class encapsulating all rocket motor/propulsion properties and behavior.
 % Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
-%               David Reynolds (dreynolds45@gatech.edu)
-%               Kandarp Vadia (kvadia3@gatech.edu)
-%               Aditya Swami (aswami8@gatech.edu)
 
 classdef Motor < handle & matlab.mixin.Copyable
 
