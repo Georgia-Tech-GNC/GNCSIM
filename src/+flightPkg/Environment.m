@@ -117,6 +117,7 @@ classdef Environment < handle & matlab.mixin.Copyable
         % OUTPUT:
         %   windVec = [Wx, Wy, Wz] at the nearest altitude index
         %--------------------------------------------------------------
+        
         function windVec = getWindVector(obj, alt)
             arguments
                 obj
@@ -127,7 +128,6 @@ classdef Environment < handle & matlab.mixin.Copyable
             idx = max(min(idx, numel(obj.alts)), 1);
             windVec = obj.windVec3D(idx, :);
         end
-
 
         %--------------------------------------------------------------
         % getAtmosphere
@@ -146,6 +146,27 @@ classdef Environment < handle & matlab.mixin.Copyable
                 alt (1,1) double
             end
             [T, a, P, rho] = atmosisa(alt);
+        end
+
+
+        %--------------------------------------------------------------
+        % getAtmosphericConditions
+        % Returns an AtmosphericConditions object at a given altitude.
+        %
+        % INPUT:
+        %   alt  - altitude (m)
+        %
+        % OUTPUT:
+        %   atmoConditions - flightPkg.AtmosphericConditions object
+        %--------------------------------------------------------------
+        function atmoConditions = getAtmosphericConditions(obj, alt)
+            arguments
+                obj
+                alt (1,1) double
+            end
+            [T, a, P, rho] = obj.getAtmosphere(alt);
+            wind = obj.getWindVector(alt);
+            atmoConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
         end
 
 

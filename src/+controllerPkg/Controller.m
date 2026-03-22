@@ -7,7 +7,7 @@
 classdef Controller < handle
 
     properties
-        breakPoints                     % controllerPkg.BreakPoints (type hint omitted for flexibility)
+        breakPoints controllerPkg.BreakPoints 
         referenceAttitudes (:,:) double % ((1+m)xn) time and attitude (m) for every timestep (n).
         useActuatorModel (1,1) logical = false
     end
@@ -18,7 +18,7 @@ classdef Controller < handle
                   'getControl must be implemented in a subclass.');
         end
 
-        function populateBreakPoints(obj) 
+        function populateBreakPoints(obj)
             error('Controller:populateBreakPoints', ...
                   'populateBreakPoints must be implemented in a subclass.');
         end

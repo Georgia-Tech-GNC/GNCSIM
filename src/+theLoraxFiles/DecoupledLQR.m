@@ -2,24 +2,21 @@
 %               Karsten Caillet (kcaillet3@gatech.edu)
 
 classdef DecoupledLQR < controllerPkg.Controller
-    % DECOUPLEDLQR Represents the controller for pitch, yaw and roll
+    % DECOUPLEDLQR Represents the controller for pitch and yaw
+    % FOR THE LORAX
 
     properties
-        Q2 (2,2) double                         % Q matrix for roll LQR control
         Q3 (3,3) double                         % Q matrix for pitch/yaw LQR control
-        R2 (1,1) double                         % R matrix for roll LQR control
         R3 (1,1) double                         % R matrix for pitch/yaw LQR control
         reduceLTI controllerPkg.ReduceLTI       % object of reduceLTI class
     end
 
     methods
         % Constructor
-        function obj = DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel)
+        function obj = DecoupledLQR(breakPoints, referenceAttitudes, Q3, R3, reduceLTI, useActuatorModel)
             obj.breakPoints = breakPoints;
             obj.referenceAttitudes = referenceAttitudes;
-            obj.Q2 = Q2;
             obj.Q3 = Q3;
-            obj.R2 = R2;
             obj.R3 = R3;
             obj.reduceLTI = reduceLTI;
             obj.useActuatorModel = useActuatorModel;
@@ -33,33 +30,29 @@ classdef DecoupledLQR < controllerPkg.Controller
                 currentTime (1,1) double {mustBeNonnegative}
             end
 
-            % Get current gains for roll control (K2) and pitch control
-            % (K3)
+            % Get current gains for pitch control (K3)
             [interpolatedGains, interpolatedControlReference] = obj.breakPoints.interpolateGain(currentCumVelocity);
             
             % Extect gains from interpolateGain funcition
-            K2 = interpolatedGains{1};
             K3 = interpolatedGains{2};
             
             % Get control refrance
-            rollControlRef = interpolatedControlReference(1);
             pitchControlRef = interpolatedControlReference(2);
             yawControlRef = interpolatedControlReference(3);
             
             % Compute error 
-            [rollErr, pitchErr, yawErr] = obj.getError(state, currentTime);
+            [pitchErr, yawErr] = obj.getError(state, currentTime);
             
-            % Compute control based on refrance and error
-            rollControl = rollControlRef + K2 * rollErr;
+            % Compute control based on reference and error
             pitchControl = pitchControlRef + K3 * pitchErr;
             yawControl = yawControlRef + K3 * yawErr;
             
             % Get rocket control
-            rocketControlRad = [rollControl, pitchControl, yawControl].';  % roll, pitch, yaw
+            rocketControlRad = [pitchControl, yawControl].';  % pitch, yaw
             rocketControl = rad2deg(rocketControlRad);
         end
            
-        function [rollErr, pitchErr, yawErr] = getError(obj, rocketStateEstimate, currentTime)
+        function [pitchErr, yawErr] = getError(obj, rocketStateEstimate, currentTime)
             arguments
                 obj
                 rocketStateEstimate (:,1) double
@@ -71,19 +64,16 @@ classdef DecoupledLQR < controllerPkg.Controller
             % Get reduced state from full state
             x3Pitch = obj.reduceLTI.pitchReduce(rocketStateEstimate);
             x3Yaw = obj.reduceLTI.pitchReduce(rocketStateEstimate, true);
-            x2Roll = obj.reduceLTI.rollReduce(rocketStateEstimate);
 
             % Find the index in reference that corresponds to current time
             time_vec = obj.referenceAttitudes(1, :);
             [~, idx] = min(abs(time_vec - currentTime));
             
             % Extract reference quaternion at current time
-            rollRef = obj.referenceAttitudes(2, idx);
-            pitchRef = obj.referenceAttitudes(3, idx);
-            yawRef = obj.referenceAttitudes(4, idx);
+            pitchRef = obj.referenceAttitudes(2, idx);
+            yawRef = obj.referenceAttitudes(3, idx);
             
             % compute error based on reference Attitudes
-            rollErr = [0; rollRef] - x2Roll;
             pitchErr = [0; 0; pitchRef] - x3Pitch;
             yawErr = [0; 0; yawRef] - x3Yaw;
         end
@@ -110,20 +100,11 @@ classdef DecoupledLQR < controllerPkg.Controller
 
                 % Compute LQR gains
                 K3 = lqr(A3, B3, obj.Q3, obj.R3);
-
-                % Roll: skip for TVC (no roll control authority via gimbal)
-                if obj.useActuatorModel && obj.reduceLTI.rocketDynamics.actuatorModel.harnessesMotor
-                    K2 = zeros(1, 2);  % No roll control authority for TVC
-                    A2 = zeros(2); B2 = zeros(2, 1);
-                else
-                    [A2, B2] = obj.reduceLTI.calculateROMroll(state, controlInput(1), actuatorState, time, obj.useActuatorModel);
-                    K2 = lqr(A2, B2, obj.Q2, obj.R2);
-                end
                 
                 % save gains and system
-                obj.breakPoints.stateMatrix{ii} = {A2, A3};
-                obj.breakPoints.controlMatrix{ii} = {B2, B3};
-                obj.breakPoints.gain{ii} = {K2, K3};
+                obj.breakPoints.stateMatrix{ii} = {A3};
+                obj.breakPoints.controlMatrix{ii} = {B3};
+                obj.breakPoints.gain{ii} = {K3};
             end
         end
     end

@@ -235,7 +235,7 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
 
-    % Note on dynamics function args: rocketModelTrajOptWrapper(state, controlInput, envConditions, time, flightState, useGravity)
+    % Note on dynamics function args: rocketModelTrajOptWrapper(state, controlInput, atmoConditions, time, flightState, useGravity)
     problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true) );
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
     problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
@@ -337,13 +337,11 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     %groundAltitude = elevation(33.7490, -84.3880);
     groundAltitude = 0;
 
-    [T, a, P, rho] = environment.getAtmosphere(groundAltitude);
-    wind = environment.getWindVector(groundAltitude);
-    envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+    atmoConditions = environment.getAtmosphericConditions(groundAltitude);
 
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, environment);
 
-    controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
+    controller = theOncelerFiles.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
 end
 

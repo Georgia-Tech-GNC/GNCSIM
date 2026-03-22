@@ -5,16 +5,13 @@
 
 classdef ActuatorModel < handle
 
-    % properties (Abstract)
-    %     allocationMatrix (:,:) double % maps controls to deflections
-    % end
-
     properties
-        harnessesMotor (1,1) logical = false  % true if actuator redirects motor thrust (e.g. TVC)
+        allocationMatrix (:,:) double % maps controls to deflections
+        motor rocketPkg.Motor = rocketPkg.Motor.empty()
     end
 
     methods
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions, time) %#ok<INUSD>
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, atmoConditions, time) %#ok<INUSD>
             error('ActuatorModel:getForcesMoments', ...
                   'getForcesMoments must be implemented in a subclass.');
 

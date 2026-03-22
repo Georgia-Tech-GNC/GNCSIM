@@ -2,11 +2,11 @@
 
 classdef TheOncelerActuatorModel < controllerPkg.ActuatorModel
     properties
-        allocationMatrix % type hinting in abstract class
         rocketFins rocketPkg.RocketFins
         timeConstant (1,1) double {mustBeNonnegative}
         limits struct
     end
+    
     methods 
         % Actuator State is fin deflections in degrees
         function obj = TheOncelerActuatorModel(rocketFins, timeConstant, allocationMatrix, limits)            
@@ -17,16 +17,16 @@ classdef TheOncelerActuatorModel < controllerPkg.ActuatorModel
             obj.computeBuildup();
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions, time)
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, atmoConditions, time)
             arguments
                 obj
                 state (:,1) double
                 actuatorState (:,1) double
                 currentCg (1,1) double
-                envConditions (1,1) flightPkg.AtmosphericConditions
+                atmoConditions (1,1) flightPkg.AtmosphericConditions
                 time (1,1) double {mustBeNonnegative} = 0  % unused, for interface conformance
             end
-            [fB, mB] = obj.rocketFins.getForcesMoments(state, actuatorState, currentCg, envConditions);
+            [fB, mB] = obj.rocketFins.getForcesMoments(state, actuatorState, currentCg, atmoConditions);
         end
 
         function actuatorStateDot = actuatorDynamics(obj, controlInput, actuatorState)

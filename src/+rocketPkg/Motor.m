@@ -9,18 +9,18 @@ classdef Motor < handle & matlab.mixin.Copyable
         burnTime     (1,1) double {mustBeNonnegative}   % total burn time of the motor
         tIgnition    (1,1) double {mustBeNonnegative}   % time of motor ignition in the simulation
         motorMass    (1,1) double {mustBeNonnegative}   % total propellant mass (wet - dry)
-        useThrust    (1,1) logical = true                % flag to enable/disable thrust (used by linearization)
+        useThrust    (1,1) logical = true               % flag to enable/disable thrust 
     end
 
     methods
         function obj = Motor(thrustCurve, totalImpulse, burnTime, tIgnition, motorMass)
             % Motor  Construct a Motor from individual propulsion parameters.
             arguments
-                thrustCurve  (:,2) double
-                totalImpulse (1,1) double {mustBeNonnegative}
-                burnTime     (1,1) double {mustBeNonnegative}
-                tIgnition    (1,1) double {mustBeNonnegative}
-                motorMass    (1,1) double {mustBeNonnegative}
+                thrustCurve  
+                totalImpulse 
+                burnTime    
+                tIgnition    
+                motorMass    
             end
 
             obj.thrustCurve  = thrustCurve;
@@ -31,7 +31,7 @@ classdef Motor < handle & matlab.mixin.Copyable
         end
 
         function currentThrust = getThrust(obj, t)
-            % getThrust  Return interpolated thrust [N] at simulation time t.
+            % getThrust  Return scalar interpolated thrust [N] at simulation time t.
             arguments
                 obj
                 t (1,1) double {mustBeNonnegative}
@@ -41,16 +41,9 @@ classdef Motor < handle & matlab.mixin.Copyable
                 error('Error: Time must be numeric.')
             end
 
-            % If before ignition, thrust is zero
-            if t < obj.tIgnition
-                currentThrust = 0;
-                return
-            end
-
             timeProp = t - obj.tIgnition;
 
-            % If beyond burn time, thrust is zero
-            if timeProp > obj.burnTime
+            if ~obj.useThrust || t < obj.tIgnition || timeProp > obj.burnTime
                 currentThrust = 0;
                 return
             end
@@ -72,16 +65,6 @@ classdef Motor < handle & matlab.mixin.Copyable
             end
             T    = obj.getThrust(time);
             mDot = -T * obj.motorMass / obj.totalImpulse;
-        end
-
-        function fTB = computeThrust(obj, time)
-            % computeThrust  Return body-frame thrust force vector [N].
-            %   Thrust acts along the +x (axial) body axis.
-            arguments
-                obj
-                time      (1,1) double  {mustBeNonnegative}
-            end
-            fTB = [obj.getThrust(time) * obj.useThrust; 0; 0];
         end
     end
 end

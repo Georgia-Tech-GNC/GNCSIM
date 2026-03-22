@@ -12,14 +12,13 @@ environment = setupEnvironment();
 rocketDynamics = setupRocket();
 runDATCOM(rocketDynamics);
 
-% Controller
+% Controller   
+
 if runClosedLoop
     useActuatorModel = true;
     controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, environment);
-else
-    % Open-loop: minimal controller (Flight.runClosedLoop = false bypasses it)
+else 
     controller = controllerPkg.Controller();
-    controller.useActuatorModel = true;
 end
 
 % Setup Flight Simulation (sets up navigation too)
@@ -38,7 +37,6 @@ analysis = analysisPkg.Analysis(log);
 analysis.generateAllPlots();
 
 datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
-datcomAnalysis.drawForcesAndMoments([0, 12])
 
 %% Functions
 function rocketDynamics = setupRocket()
@@ -64,9 +62,11 @@ function rocketDynamics = setupRocket()
     % Create Fins
     finParams.numFins = 4;  % []
     finParams.rootChord = 0.1;  % [m]
-    finParams.tipChord = 0.06;  % [m]
+    finParams.tipChord = 0.06;  % [m]   
     finParams.finSpan = 0.056;  % [m]
 	finParams.sweepDeg = 35.6;  % [deg]
+    finParams.movable = false;
+    finParams.name = 'STATIC_FIN';
 
     flightConParams.machNumbers = [0.02, 0.05, 0.08];        % Array of Mach numbers to test
     flightConParams.altitudes = [0, 300, 600];       % Array of altitudes in feet
@@ -89,22 +89,20 @@ function rocketDynamics = setupRocket()
     motorPosition = totalLength;  % nozzle at aft end [m]
     allocationMatrix = [0, 1, 0; 0, 0, 1];  % 2x3: maps [roll, pitch, yaw] -> [delta_y, delta_z]
     timeConstant = 0.05;  % [s]
-    limits.maxDeflection = 5;   % deg
+    limits.maxDeflection = 10;   % deg
     limits.maxRate = 100;       % deg/s
     actuatorModel = theLoraxFiles.TheLoraxActuatorModel(motor, motorPosition, timeConstant, allocationMatrix, limits);
-
-	aerodynamics = []; % No CFD model
 
     % Set up parachutes
     % Main Parachute
     canopyDiameter1 = 0.914;           % m
     canopyMass1 = 0.0357027521 * pi* (canopyDiameter1/2)^2;              % kg
     dragCoefficient1 = 2.2;            % dimensionless
-    deployAltitude1 = 1000;        % Deploys at apogee
-    parachuteObjects = rocketPkg.ParachuteDynamics("Main Parachute", canopyDiameter1, canopyMass1, dragCoefficient1, deployAltitude1);
+    deployAltitude1 = 0;        % Deploys at apogee
+    main = rocketPkg.ParachuteDynamics("Main Parachute", canopyDiameter1, canopyMass1, dragCoefficient1, deployAltitude1);
 
     % Create rocketDynamics object
-    rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motor, actuatorModel, parachuteObjects, aerodynamics);
+    rocketDynamics = rocketPkg.RocketDynamics(body, fins, rocketParams, motor, actuatorModel, main);
 end
 
 function motor = setupMotor(rocketParams)
@@ -125,9 +123,7 @@ end
 
 function environmentObj = setupEnvironment()
     environmentObj = flightPkg.Environment();
-    environmentObj.setMaxAltitude(10000); % m
-    environmentObj.setVmMean(0.01); % m/s
-    environmentObj.setVm3Sigma(0.01); % m/s
+    environmentObj.U0 = 0;
 end
 
 function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, environment)
@@ -138,7 +134,6 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, enviro
     n = length(time);
 
     % Define Trajectories in Degrees
-    roll_deg  = zeros(1, n);
     pitch_deg = zeros(1, n);
     yaw_deg   = zeros(1, n);
 
@@ -148,13 +143,11 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, enviro
     yaw_deg(mask_step1) = 20.0;
     yaw_deg(mask_step2) = 0.0;
 
-    roll_rad  = deg2rad(roll_deg);
     pitch_rad = deg2rad(pitch_deg);
     yaw_rad   = deg2rad(yaw_deg);
 
     referenceAttitudes = [
         time;
-        roll_rad;
         pitch_rad;
         yaw_rad
     ];
@@ -167,96 +160,102 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, enviro
     breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
 
     % LQR gains
-    Q2 = diag([1 1]);
-    R2 = 20;
     Q3 = diag([1 1 1]);
     R3 = 2;
 
-    groundAltitude = 0;
-    [T, a, P, rho] = environment.getAtmosphere(groundAltitude);
-    wind = environment.getWindVector(groundAltitude);
-    envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, environment);
 
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
-
-    % Set motor.tIgnition = 0 for linearization so thrust is nonzero at breakpoint times
-    oldTIgnition = rocketDynamics.motor.tIgnition;
-    rocketDynamics.motor.tIgnition = 0;
-
-    controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
+    controller = theLoraxFiles.DecoupledLQR(breakPoints, referenceAttitudes, Q3, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
-
-    % Restore original tIgnition
-    rocketDynamics.motor.tIgnition = oldTIgnition;
 end
 
 function nav = setupNavigation(dt)
     % Navigation
-
+    % https://www.analog.com/media/en/technical-documentation/data-sheets/adis16500.pdf
+    % Page 3 Sensor Specifications for IMU
+    % https://content.u-blox.com/sites/default/files/ZED-F9P-04B_DataSheet_UBX-21044850.pdf
+    % Pagr 4-5 Sensor Specifications for GPS
+    
     % Acc
-    accParams.VRW = -1;
+    accParams.VRW = [0.033; 0.039; 0.039] * 1/60; % Which way will z-axis be mounted, assumed up, aligned with x in body
     accParams.leverArm = -1;
-    accParams.SF = -1;
-    accParams.bias = -1;
-
+    accParams.SF = [0.01; 0.01; 0.01];
+    accParams.bias = [0.05; 0.05; 0.05];
+    
     accParams.noiseCovariance = -1;
     accParams.outputRate = 100;
     accParams.outputProbability = 1;
     accParams.observationMatrix = zeros(3);
-
+    
     accelerometer = navigationPkg.Accelerometer(accParams);
 
-    % GPS
-    gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
-    gpsParams.verticalAccuracy = 1;
-    gpsParams.horizontalAccuracy = 1;
-    gpsParams.velocityAccuracy = .05;
-
-    gpsParams.noiseCovariance = [8.4 0 0;
-                                  0 4.2 0;
-                                  0 0 4.2];
-    gpsParams.outputRate = 10;
-    gpsParams.outputProbability = 1;
-    gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
-                                        0 1 0 0 0 0;
-                                        0 0 1 0 0 0];
-    gps = navigationPkg.GPS(gpsParams);
-
-    % Gyro
-    gyroParams.ARW = -1;
-    gyroParams.bias = -1;
-
+     % Gyro
+    gyroParams.ARW = [0.32; 0.29; 0.29] * pi/(180*60);
+    gyroParams.bias = [4.85e-5; 4.85e-5; 4.85e-5];
+    
     gyroParams.noiseCovariance = -1;
     gyroParams.outputRate = 100;
     gyroParams.outputProbability = 1;
     gyroParams.observationMatrix = zeros(3);
-
+    
     gyroscope = navigationPkg.Gyroscope(gyroParams);
+    
+    % GPS
+    gpsParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    gpsParams.verticalAccuracy = 8.4;
+    gpsParams.horizontalAccuracy = 4.2;
+    gpsParams.velocityAccuracy = .05;
+    
+    gpsParams.noiseCovariance = [gpsParams.verticalAccuracy 0 0;
+        0 gpsParams.horizontalAccuracy 0;
+        0 0 gpsParams.horizontalAccuracy];
+    gpsParams.outputRate = 10;
+    gpsParams.outputProbability = 0.75;
+    gpsParams.observationMatrix = @(x)[1 0 0 0 0 0;
+                                       0 1 0 0 0 0;
+                                       0 0 1 0 0 0];
+    gps = navigationPkg.GPS(gpsParams);
+    
+    % Magnetometer Params
+    magParams.outputRate = 10;
+    magParams.refLLA = [31.2732, 83.3538, 75]; % Check
+    magParams.date = '00-01-2026';
+    magnetometer = navigationPkg.Magnetometer(magParams);
 
+    % Nav Params
     navParams.dt = dt;
-    navParams.P = 0.1 * eye(6);
-
-    navParams.dfdx = @(dt) [1, 0, 0, dt, 0,  0;
-                            0, 1, 0, 0,  dt, 0;
-                            0, 0, 1, 0,  0,  dt;
-                            0, 0, 0, 1,  0,  0;
-                            0, 0, 0, 0,  1,  0;
-                            0, 0, 0, 0,  0,  1];
+    navParams.Pscale = 0.1;
+    navParams.P = navParams.Pscale * eye(6);
+    
+    navParams.dfdx = @(dt) [1, 0, 0, dt, 0,  0;  
+                            0, 1, 0, 0,  dt, 0;  
+                            0, 0, 1, 0,  0,  dt; 
+                            0, 0, 0, 1,  0,  0;  
+                            0, 0, 0, 0,  1,  0;  
+                            0, 0, 0, 0,  0,  1]; 
     sigmaA = 5;
+    navParams.sigmaA = sigmaA;
+    
+    navParams.Q = sigmaA^2 .*[(dt^4)/2, 0, 0, (dt^3)/2, 0, 0;
+                                  0, (dt^4)/4, 0, 0, dt/2, 0;
+        0, 0, (dt^4)/4, 0, 0, dt/2;
+        dt/2, 0, 0, dt^2, 0, 0;
+        0, (dt^3)/2, 0, 0, dt^2, 0;
+        0, 0, (dt^3)/2, 0, 0, dt^2];
 
-    navParams.Q = sigmaA^2 .*[(dt^4)/4, 0, 0, (dt^3)/2, 0, 0;
-                              0, (dt^4)/4, 0, 0, (dt^3)/2, 0;
-                              0, 0, (dt^4)/4, 0, 0, (dt^3)/2;
-                              (dt^3)/2, 0, 0, dt^2, 0, 0;
-                              0, (dt^3)/2, 0, 0, dt^2, 0;
-                              0, 0, (dt^3)/2, 0, 0, dt^2];
+    navParams.accBias = accParams.bias;
+    navParams.accSF = accParams.SF;
+    navParams.leverArm = accParams.leverArm;
 
-    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer);
+    navParams.gyroBias = gyroParams.bias;
+    
+    nav = navigationPkg.Navigation(navParams, gps, gyroscope, accelerometer, magnetometer);
+
 end
 
 function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     % Flight
-    flightParams.totalTime = 30;  % length of simulation [s]
+    flightParams.totalTime = 200;  % length of simulation [s]
     flightParams.endState = flightPkg.FlightState.LANDED;
     flightParams.launchRailLength = 1.5;  % launch rail length [m]
     flightParams.dt = 0.01;  % time step [s]

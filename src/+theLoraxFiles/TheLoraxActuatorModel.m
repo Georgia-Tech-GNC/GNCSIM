@@ -2,29 +2,26 @@
 
 classdef TheLoraxActuatorModel < controllerPkg.ActuatorModel
     properties
-        allocationMatrix    % 2x3: maps [roll, pitch, yaw] -> [delta_y, delta_z] gimbal angles
-        motor rocketPkg.Motor
         motorPosition (1,1) double  % nozzle/gimbal point distance from nose [m]
         timeConstant (1,1) double {mustBeNonnegative}
         limits struct
     end
     methods
         function obj = TheLoraxActuatorModel(motor, motorPosition, timeConstant, allocationMatrix, limits)
-            obj.harnessesMotor = true;
             obj.motor = motor;
             obj.motorPosition = motorPosition;
             obj.timeConstant = timeConstant;
-            obj.allocationMatrix = allocationMatrix;
+            obj.allocationMatrix = allocationMatrix; % 2x3: maps [roll, pitch, yaw] -> [delta_y, delta_z] gimbal angles
             obj.limits = limits;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions, time)
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, atmoConditions, time)
             arguments
                 obj
                 state (:,1) double
                 actuatorState (:,1) double
                 currentCg (1,1) double
-                envConditions (1,1) flightPkg.AtmosphericConditions
+                atmoConditions (1,1) flightPkg.AtmosphericConditions
                 time (1,1) double {mustBeNonnegative}
             end
             % actuatorState = [delta_y; delta_z] gimbal angles in degrees
@@ -32,7 +29,7 @@ classdef TheLoraxActuatorModel < controllerPkg.ActuatorModel
             dz = deg2rad(actuatorState(2));
 
             % Scalar thrust from motor
-            T = obj.motor.getThrust(time) * obj.motor.useThrust;
+            T = obj.motor.getThrust(time);
 
             % Rotate thrust vector by gimbal angles
             fB = T * [cos(dy)*cos(dz); sin(dz); -sin(dy)*cos(dz)];
