@@ -27,7 +27,7 @@ controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajecto
 flight.runClosedLoop = true;
 
 %% Run Flight
-runFlight = false;
+runFlight = true;
 if runFlight
     tic;
     log = flight.runSim(log);
@@ -38,7 +38,7 @@ if runFlight
 end
 
 %% MonteCarlo
-runMonteCarlo = true;
+runMonteCarlo = false;
 numWorkers = 4;
 numRuns = 10;
 
@@ -145,13 +145,7 @@ function rocketDyn = setupRocket()
     rocketFinTabs = rocketPkg.RocketFins(finParamsTabs, flightConParams);
 
     % Motor
-    motorParams.burnTime = 12.0;
-    tmp = load("+theOncelerFiles/thrust_curve_fin_tabs.mat");
-    motorParams.thrustCurve = tmp.thrust_curve_fin_tabs;
-    motorParams.mass = 0.4;  % [kg]
-    motorParams.xRef = -1;  % [m]
-    motorParams.tIgnition = 1.0;
-    motorParams.totalImpulse = 7561.0; % N-sec
+    motor = setupMotor(rocketParams);
 
     % Actuator Model - uses rocketFinTabs
 
@@ -172,7 +166,18 @@ function rocketDyn = setupRocket()
     % Set Up Parachutes (linked list)
     firstParachute = setupParachute();
 
-    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute);
+    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motor, actuatorModel, firstParachute);
+end
+
+function motor = setupMotor(rocketParams)
+    tmp = load("+theOncelerFiles/thrust_curve_fin_tabs.mat");
+    thrustCurve  = tmp.thrust_curve_fin_tabs;
+    burnTime     = 12.0;
+    tIgnition    = 1.0;
+    totalImpulse = 7561.0; % N-sec
+    motorMass    = rocketParams.massWet - rocketParams.massDry;  % [kg] propellant mass
+
+    motor = rocketPkg.Motor(thrustCurve, totalImpulse, burnTime, tIgnition, motorMass);
 end
 
 function environment = setupEnvironment()
@@ -230,8 +235,8 @@ function nominalTrajectory = setupNominalTrajectory(rocketDynamics)
     trajectoryOptimization = trajOptimizationPkg.TrajectoryOptimization(turnQuat, turnTime, maxAoA);
 
 
-    % Note on dynamics function args: rocketModel(state, actuatorState, disturbances, time, flightState, log, useGravity, useThrust)
-    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true, true) ); 
+    % Note on dynamics function args: rocketModelTrajOptWrapper(state, controlInput, atmoConditions, time, flightState, useGravity)
+    problem.func.dynamics = @(t,x,u)( rocketDynamics.rocketModelTrajOptWrapper(x, u, struct.empty, t, flightPkg.FlightState.POWERED_ASCENT, true) );
     problem.func.pathObj = @(t,x,u) ( trajectoryOptimization.pathObjectiveFunction(t,x,u) ); 
     problem.func.bndObj = @(t0,x0,tF,xF) ( trajectoryOptimization.boundaryObjectiveFunction(t0,x0,tF,xF) ); 
     problem.func.pathCst = @(t,x,u) ( trajectoryOptimization.pathConstraintFunction(t,x,u) ); 
@@ -332,13 +337,11 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     %groundAltitude = elevation(33.7490, -84.3880);
     groundAltitude = 0;
 
-    [T, a, P, rho] = environment.getAtmosphere(groundAltitude);
-    wind = environment.getWindVector(groundAltitude);
-    envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+    atmoConditions = environment.getAtmosphericConditions(groundAltitude);
 
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, environment);
 
-    controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
+    controller = theOncelerFiles.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
 end
 
@@ -558,14 +561,14 @@ function uncertaintyObj = setupUncertaintyParams(rocketDynamics, environment, fl
     uncertaintyObj.addVariable('rotationalMoiDry', rocketDynamics.moiDry(1,1), rotationalMoiDry3Sigma, DistributionType.GAUSSIAN);
 
     % Motor parameters
-    totalImpulse3Sigma = getThreeSigmaDeviation(rocketDynamics.totalImpulse, percentUncertainty);
-    uncertaintyObj.addVariable('totalImpulse', rocketDynamics.totalImpulse, totalImpulse3Sigma, DistributionType.GAUSSIAN);
+    totalImpulse3Sigma = getThreeSigmaDeviation(rocketDynamics.motor.totalImpulse, percentUncertainty);
+    uncertaintyObj.addVariable('totalImpulse', rocketDynamics.motor.totalImpulse, totalImpulse3Sigma, DistributionType.GAUSSIAN);
 
-    burnTime3Sigma = getThreeSigmaDeviation(rocketDynamics.burnTime, percentUncertainty);
-    uncertaintyObj.addVariable('burnTime', rocketDynamics.burnTime, burnTime3Sigma, DistributionType.GAUSSIAN);
+    burnTime3Sigma = getThreeSigmaDeviation(rocketDynamics.motor.burnTime, percentUncertainty);
+    uncertaintyObj.addVariable('burnTime', rocketDynamics.motor.burnTime, burnTime3Sigma, DistributionType.GAUSSIAN);
 
-    tIgnition3Sigma = getThreeSigmaDeviation(rocketDynamics.tIgnition, percentUncertainty);
-    uncertaintyObj.addVariable('tIgnition', rocketDynamics.tIgnition, tIgnition3Sigma, DistributionType.GAUSSIAN);
+    tIgnition3Sigma = getThreeSigmaDeviation(rocketDynamics.motor.tIgnition, percentUncertainty);
+    uncertaintyObj.addVariable('tIgnition', rocketDynamics.motor.tIgnition, tIgnition3Sigma, DistributionType.GAUSSIAN);
 
     % Body geometry
     noseLength3Sigma = getThreeSigmaDeviation(rocketDynamics.body.bodyParams.noseLength, percentUncertainty);

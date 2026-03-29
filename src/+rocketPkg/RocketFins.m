@@ -58,13 +58,13 @@ classdef RocketFins < rocketPkg.DatcomManager
             obj.numMovableFins = numMovableFins;
 		end
 
-        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, envConditions)
+        function [fB, mB] = getForcesMoments(obj, state, deflections, currentCg, atmoConditions)
             arguments
                 obj
                 state (:,1) double
                 deflections (:,1) double
                 currentCg (1,1) double
-                envConditions (1,1) flightPkg.AtmosphericConditions
+                atmoConditions (1,1) flightPkg.AtmosphericConditions
             end
             % Calculates the total aerodynamic forces and moments in the body frame
 			fB = [0, 0, 0].';
@@ -84,7 +84,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 % Compute the current fin forces and moments based on
                 % state, current deflection, cg location and any
                 % disterbances
-				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, envConditions);
+				[fBFin, mBFin] = fin.getForcesMoments(state, deflection, currentCg, atmoConditions);
 				fB = fB + fBFin;
 				mB = mB + mBFin;
 			end
@@ -105,7 +105,7 @@ classdef RocketFins < rocketPkg.DatcomManager
                 xcg = 0;  % Keep at zero
     
                 airfoilNaca = 'NACA 0012';
-                datcomFilename = [name, '.dat'];
+                datcomFilename = string(name) + ".dat";
     
                 % Convert angles to radians for MATLAB's trig functions
                 sweepRad = deg2rad(sweepDeg);

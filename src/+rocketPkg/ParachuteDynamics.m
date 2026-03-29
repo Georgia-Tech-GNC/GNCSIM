@@ -47,19 +47,19 @@ classdef ParachuteDynamics < handle
         end
         
         function forceAeroBody = getForcesAndMoments(obj, ...
-                velocityRocketBody, quaternionRocket, envConditions)
+                velocityRocketBody, quaternionRocket, atmoConditions)
             arguments
                 obj
                 velocityRocketBody (3,1) double
                 quaternionRocket (4,1) double
-                envConditions (1,1) flightPkg.AtmosphericConditions
+                atmoConditions (1,1) flightPkg.AtmosphericConditions
             end
             % Compute aerodynamic forces and moments from parachute
             %
             % Inputs:
             %   velocityRocketBody - Rocket velocity in body frame (m/s)
             %   quaternionRocket   - Quaternion: inertial to body frame [q0; q1; q2; q3]
-            %   envConditions      - Atmospheric conditions object
+            %   atmoConditions      - Atmospheric conditions object
             %
             % Outputs:
             %   forceAeroBody  - Total aerodynamic + weight force in body frame (N)
@@ -72,11 +72,11 @@ classdef ParachuteDynamics < handle
             velocityRocketInertial = cIB * velocityRocketBody;
             
             % Compute airspeed (velocity relative to air mass)
-            airspeedInertial = velocityRocketInertial - envConditions.WindVector;
+            airspeedInertial = velocityRocketInertial - atmoConditions.WindVector;
             airspeedMagnitude = norm(airspeedInertial);
             
             % Compute dynamic pressure
-            dynamicPressure = 0.5 * envConditions.Density * airspeedMagnitude^2;
+            dynamicPressure = 0.5 * atmoConditions.Density * airspeedMagnitude^2;
             
             % Compute drag force (opposes relative motion through air)
             if airspeedMagnitude > 1e-6

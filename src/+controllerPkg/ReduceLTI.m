@@ -5,14 +5,14 @@ classdef ReduceLTI < handle
     % for Linear Time-Invariant (LTI) flight dynamics.
     properties
         rocketDynamics rocketPkg.RocketDynamics		% Handle to the main flight/rocket physics model
-        envConditions (1,1) flightPkg.AtmosphericConditions
+        environment (1,1) flightPkg.Environment
     end
 
     methods
         % Constructor
-        function obj = ReduceLTI(rocketDynamics, envConditions)
+        function obj = ReduceLTI(rocketDynamics, environment)
             obj.rocketDynamics = rocketDynamics;
-            obj.envConditions = envConditions;
+            obj.environment = environment;
 		end
 		
         function [sysPitch, sysRoll] = generateROM(obj, xStar)
@@ -35,28 +35,30 @@ classdef ReduceLTI < handle
             sysRoll = ss(A2, B2, C, D);
 		end
 
-        function [A3, B3] = calculateROMpitch(obj, xStar, pitchControlInput, actuatorState, time, useActuatorModel)
+        function [A3, B3] = calculateROMpitch(obj, xStar, pitchControlInput, actuatorState, time, useActuatorModel, useGravity)
             arguments
                 obj
                 xStar (:,1) double
-                pitchControlInput (1,1) double
-                actuatorState (:,1) double
-                time (1,1) double {mustBeNonnegative}
-                useActuatorModel (1,1) logical
+                pitchControlInput (1,1) double = 0
+                actuatorState (:,1) double = []
+                time (1,1) double {mustBeNonnegative} = 0
+                useActuatorModel (1,1) logical = false
+                useGravity (1,1) logical = false
             end
 			% Linearizes full dynamics and projects them onto 3-state Pitch space
 			% Now uses actual actuatorState from the operating point
             
-            %disturbances= [0, 0, 0].';
+            % Get atmospheric conditions for linearization point
+            atmoConditions = obj.environment.getAtmosphericConditions(xStar(StateIndices.z));
             
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, atmoConditions, time, flightPkg.FlightState.POWERED_ASCENT, useGravity);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
                 hu = @(u_in) h([0, u_in, 0].', actuatorState);
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
@@ -65,24 +67,24 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, false, false);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, atmoConditions, time, flightPkg.FlightState.POWERED_ASCENT, useGravity);
                 fx = @(x) f(x, [0, pitchControlInput, 0].');
                 fu = @(u_in) f(xStar, [0, u_in, 0].');
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B = Utils.numericalJacobian(fu, pitchControlInput); % (14x1)
             end
-            
+
 			% Project to Reduced Space (3x3)
             g = @(x) controllerPkg.ReduceLTI.pitchReduce(x);
-			
+
 			% Reduction mapping matrix (3x14)
             Jg = Utils.numericalJacobian(g, xStar);
 
 			% Pseudo-inverse for projection (14x3)
             T = pinv(Jg);
-			
+
 			% Projected System Matrix (3x3)
             A3 = Jg*A*T;
 
@@ -90,27 +92,30 @@ classdef ReduceLTI < handle
             B3 = Jg*B;
         end
 
-        function [A2, B2] = calculateROMroll(obj, xStar, rollControlInput, actuatorState, time, useActuatorModel)
+        function [A2, B2] = calculateROMroll(obj, xStar, rollControlInput, actuatorState, time, useActuatorModel, useGravity)
             arguments
                 obj
                 xStar (:,1) double
-                rollControlInput (1,1) double
-                actuatorState (:,1) double
-                time (1,1) double {mustBeNonnegative}
-                useActuatorModel (1,1) logical
+                rollControlInput (1,1) double = 0
+                actuatorState (:,1) double = []
+                time (1,1) double {mustBeNonnegative} = 0
+                useActuatorModel (1,1) logical = false
+                useGravity (1,1) logical = false
             end
 			% Linearizes full dynamics and projects them onto 2-state Roll space
 			% Now uses actual actuatorState from the operating point
 
-            %disturbances.wind = [0, 0, 0].';
+            % Get atmospheric conditions for linearization point
+            atmoConditions = obj.environment.getAtmosphericConditions(xStar(StateIndices.z));
+            
             if useActuatorModel
 			    % Define function handles for numerical differentiation
-                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, deflection) obj.rocketDynamics.rocketModel(x, deflection, atmoConditions, time, flightPkg.FlightState.POWERED_ASCENT, useGravity);
                 h = @(u, deflection) obj.rocketDynamics.actuatorModel.actuatorDynamics(u, deflection);
                 fx = @(x) f(x, actuatorState);
                 fdel = @(del_in) f(xStar, del_in);
                 hu = @(u_in) h([u_in, 0, 0].', actuatorState);
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
@@ -119,10 +124,10 @@ classdef ReduceLTI < handle
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
-                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, obj.envConditions, time, flightPkg.FlightState.POWERED_ASCENT, true, true);
+                f = @(x, u) obj.rocketDynamics.rocketModelControlWrapper(x, u, atmoConditions, time, flightPkg.FlightState.POWERED_ASCENT, useGravity);
                 fx = @(x) f(x, [rollControlInput, 0, 0].');
                 fu = @(u_in) f(xStar, [u_in, 0, 0].');
-    
+
 			    % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B = Utils.numericalJacobian(fu, rollControlInput); % (14x1)
@@ -150,7 +155,7 @@ classdef ReduceLTI < handle
                 log analysisPkg.Log
             end
             % Compares the Linearized ROM against the full Nonlinear Simulation Log
-            % NOTE: Make sure thrust and gravity is off for fair comparison
+            % NOTE: Manual step - keep in mind thrust and gravity must be off for fair comparison
 
             % Get LTI System
             xStar = log.states(:, 1);

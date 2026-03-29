@@ -131,16 +131,16 @@ classdef DatcomManager < handle
             end
 		end
 
-		function [fC, mC] = getForcesMomentsDatcomBody(obj, state, vC, envConditions)
+		function [fC, mC] = getForcesMomentsDatcomBody(obj, state, vC, atmoConditions)
             arguments
                 obj
                 state (:,1) double
                 vC (3,1) double
-                envConditions (1,1) flightPkg.AtmosphericConditions
+                atmoConditions (1,1) flightPkg.AtmosphericConditions
             end
 			% Aerodynamic coefficients
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
-           	speedOfSound = envConditions.SpeedOfSound;
+           	speedOfSound = atmoConditions.SpeedOfSound;
            	M = vA/speedOfSound;
            	AoAz = atan2d(vC(3), vC(1));  % main AoA
 			AoAy = atan2d(vC(2), vC(1));  % AoA for y axis (very similar to sideslip)
@@ -163,7 +163,7 @@ classdef DatcomManager < handle
 	
            	S = obj.aero.sref;
            	c = obj.aero.cbar;
-			rho = envConditions.Density;
+			rho = atmoConditions.Density;
            	q = 0.5 * vA^2 * rho;
 
 			% Forces + Moments in component frame
@@ -178,17 +178,17 @@ classdef DatcomManager < handle
 			mC = Rx * mW;
 		end
 
-		function [fC, mC] = getForcesMomentsDatcom(obj, state, vC, envConditions)
+		function [fC, mC] = getForcesMomentsDatcom(obj, state, vC, atmoConditions)
             arguments
                 obj
                 state (:,1) double
                 vC (3,1) double
-                envConditions (1,1) flightPkg.AtmosphericConditions
+                atmoConditions (1,1) flightPkg.AtmosphericConditions
             end
 
 			% Aerodynamic coefficients
            	vA = sqrt(vC(1)^2+vC(2)^2+vC(3)^2);
-           	speedOfSound = envConditions.SpeedOfSound;
+           	speedOfSound = atmoConditions.SpeedOfSound;
            	M = vA/speedOfSound;
            	AoA = atan2d(vC(3),vC(1));  % main AoA
 
@@ -198,7 +198,7 @@ classdef DatcomManager < handle
 	
            	S = obj.aero.sref;
            	c = obj.aero.cbar;
-			rho = envConditions.Density;
+			rho = atmoConditions.Density;
            	q = 0.5 * vA^2 * rho;
 
            	% Forces + Moments in component frame
