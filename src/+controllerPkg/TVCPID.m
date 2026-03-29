@@ -2,11 +2,10 @@ classdef TVCPID < controllerPkg.Controller
     % TVCPID Represents the PID controller for a TVC rocket
 
     properties
-        referenceAttitudes                      % Reference attitudes [time; q0; q1; q2; q3]
+        %referenceAttitudes                      % Reference attitudes [time; q0; q1; q2; q3]
         Kp (3,1) double                         % Proportional gains [roll; pitch; yaw]
         Ki (3,1) double                         % Integral gains [roll; pitch; yaw]
         Kd (3,1) double                         % Derivative gains [roll; pitch; yaw]
-        useActuatorModel = false                % boolean to check if the actuator model is being used (type hint in Controller.m)
 
         % PID internal state
         integralError (3,1) double = zeros(3,1) % Accumulated rotation vector error
@@ -15,12 +14,13 @@ classdef TVCPID < controllerPkg.Controller
 
     methods
         % Constructor
-        function obj = TVCPID(referenceAttitudes, Kp, Ki, Kd, useActuatorModel)
+        function obj = TVCPID(referenceAttitudes, Kp, Ki, Kd, useActuatorModel, breakpoint)
             obj.referenceAttitudes = referenceAttitudes;
             obj.Kp                 = Kp;
             obj.Ki                 = Ki;
             obj.Kd                 = Kd;
             obj.useActuatorModel   = useActuatorModel;
+            obj.breakPoints        = breakpoint;
         end
 
         function rocketControl = getControl(obj, state, currentCumVelocity, currentTime)
@@ -46,6 +46,13 @@ classdef TVCPID < controllerPkg.Controller
 
             % PID control
             rocketControlRad = obj.Kp .* err + obj.Ki .* obj.integralError + obj.Kd .* omega;
+
+            % Debug Printing Screen
+            if currentTime < 12
+                fprintf('t=%.2f err=[%.3f %.3f %.3f] u=[%.3f %.3f %.3f]\n', ...
+                    currentTime, err(1), err(2), err(3), ...
+                    rocketControlRad(1), rocketControlRad(2), rocketControlRad(3));
+            end
 
             % Update internal time
             obj.lastTime = currentTime;
@@ -80,6 +87,7 @@ classdef TVCPID < controllerPkg.Controller
             end
 
             % Get error
+            vec_norm = norm(q_err(2:4));
             if vec_norm < 1e-20
                 err = zeros(3,1);
             else

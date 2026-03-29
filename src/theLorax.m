@@ -2,7 +2,7 @@
 clear; clc; close all;
 
 %% Flags
-runClosedLoop = false;
+runClosedLoop = true;
 
 %% Instantiate Classes
 % Setup Environment
@@ -15,8 +15,8 @@ runDATCOM(rocketDynamics);
 % Controller   
 
 if runClosedLoop
-    useActuatorModel = true;
-    controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, environment);
+    useActuatorModel = false;
+    controller = setupTVCPID();
 else 
     controller = controllerPkg.Controller();
 end
@@ -126,47 +126,58 @@ function environmentObj = setupEnvironment()
     environmentObj.U0 = 0;
 end
 
-function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, environment)
-    % Compute Reference Attitudes
+
+function controller = setupTVCPID()
+    useActuatorModel = false;
     dt = 0.01;
-    controlTime = 23;
-    time = linspace(dt, controlTime, controlTime/dt);
-    n = length(time);
+    burnTime = 10;  % limit to burn duration
+    controlTime = 23;  % full flight time
+    
+    % Time vector for log
+    timeBurn = linspace(dt, burnTime, burnTime/dt);
+    nBurn = length(timeBurn);
+    
+    % Time vector for reference attitudes
+    timeFull = linspace(dt, controlTime, controlTime/dt);
+    nFull = length(timeFull);
 
-    % Define Trajectories in Degrees
-    pitch_deg = zeros(1, n);
-    yaw_deg   = zeros(1, n);
+    % Reference attitude
+    q_ref = Utils.eulerToQuat([0, -90, 0]);
+    M = repmat(q_ref, 1, nFull);
+    referenceAttitudes = double([timeFull; M]);
 
-    % Apply step maneuvers
-    mask_step1 = (time >= 2.0);
-    mask_step2 = (time >= 9.0);
-    yaw_deg(mask_step1) = 20.0;
-    yaw_deg(mask_step2) = 0.0;
+    % Fake Log for breakpoints
+    stateNames         = {'x', 'y', 'z', 'vx', 'vy', 'vz', 'q0', 'q1', 'q2', 'q3', 'wx', 'wy', 'wz'};
+    controlInputNames  = {'Tx', 'Ty', 'Tz'};
+    actuatorStateNames = {'servo1', 'servo2'};
+    nominalLog = analysisPkg.Log(stateNames, controlInputNames, actuatorStateNames, nBurn);
 
-    pitch_rad = deg2rad(pitch_deg);
-    yaw_rad   = deg2rad(yaw_deg);
+    dummyState    = zeros(length(stateNames), 1);
+    dummyControl  = zeros(length(controlInputNames), 1);
+    dummyActuator = zeros(length(actuatorStateNames), 1);
 
-    referenceAttitudes = [
-        time;
-        pitch_rad;
-        yaw_rad
-    ];
+    for i = 1:nBurn
+        nominalLog.initializeTimestep(timeBurn(i));
+        nominalLog.add(timeBurn(i), 'states',         dummyState);
+        nominalLog.add(timeBurn(i), 'stateDots',      dummyState);
+        nominalLog.add(timeBurn(i), 'stateEstimates', dummyState);
+        nominalLog.add(timeBurn(i), 'controlInputs',  dummyControl);
+        nominalLog.add(timeBurn(i), 'actuatorStates', dummyActuator);
+        nominalLog.add(timeBurn(i), 'aeroForces',     zeros(3,1));
+        nominalLog.add(timeBurn(i), 'aeroMoments',    zeros(3,1));
+        nominalLog.add(timeBurn(i), 'thrust',         0);
+        nominalLog.add(timeBurn(i), 'actuatorForces', zeros(3,1));
+        nominalLog.add(timeBurn(i), 'actuatorMoments',zeros(3,1));
+    end
+    nominalLog.trim();
 
-    % Generate Breakpoints from nominal open-loop flight
-    tmp = load("+theLoraxFiles/theLoraxNominalFlightLog.mat");
-    nominalTrajLog = tmp.log;
-    numBreakPoints = 50;
-    cumVelocityInterval = 0.1; % s
-    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval);
+    % PID Gains
+    Kp = 5*[1; 1; 1];
+    Ki = [0; 0; 0];
+    Kd = [0.0; 0.0; 0.0];
 
-    % LQR gains
-    Q3 = diag([1 1 1]);
-    R3 = 2;
-
-    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, environment);
-
-    controller = theLoraxFiles.DecoupledLQR(breakPoints, referenceAttitudes, Q3, R3, reduceLTI, useActuatorModel);
-    controller.populateBreakPoints();
+    bp = controllerPkg.BreakPoints(nominalLog, 1, 0.1);
+    controller = controllerPkg.TVCPID(referenceAttitudes, Kp, Ki, Kd, useActuatorModel, bp);
 end
 
 function nav = setupNavigation(dt)
