@@ -41,21 +41,26 @@ datcomAnalysis = analysisPkg.DatcomAnalysis(rocketDynamics);
 %% Functions
 function rocketDynamics = setupRocket()
     % Vehicle Properties
-    rocketParams.longitudinalMoiWet = 0.61;  % [kg * m^2]
+    rocketParams.longitudinalMoiWet = 0.42;  % [kg * m^2]
     rocketParams.rotationalMoiWet = 0.005;  % [kg * m^2]
-	rocketParams.cgXWet = 0.71;  % [m]
-	rocketParams.massWet = 3.32; % [kg]
+	rocketParams.massWet = 4; % [kg]
+    momentArmWet = 0.311; % m thrust to cg
 
-	rocketParams.longitudinalMoiDry = 0.56;  % [kg * m^2]
+	rocketParams.longitudinalMoiDry = 0.35;  % [kg * m^2]
     rocketParams.rotationalMoiDry = 0.005;  % [kg * m^2]
-    rocketParams.cgXDry = 0.67;  % [m]
-	rocketParams.massDry = 3.12; % [kg]
+	rocketParams.massDry = 3.65; % [kg]
+    momentArmDry = 0.2924; % m thrust to cg
+
 
     % Create Body
     bodyParams.noseLength = 0.324;  % [m]
     bodyParams.bodyLength = 0.965;  % This does not include nose cone [m]
     bodyParams.rocketDiameter = 0.102;  % [m]
     totalLength = bodyParams.bodyLength + bodyParams.noseLength;
+
+    rocketParams.cgXWet = totalLength - momentArmWet;  % [m] nose to Cg
+    rocketParams.cgXDry = 0.67 - momentArmDry;  % [m] nose to Cg
+
 	bodyParams.translation = [0, 0, 0];
     bodyParams.cgXWet = rocketParams.cgXWet;
 
@@ -172,9 +177,9 @@ function controller = setupTVCPID()
     nominalLog.trim();
 
     % PID Gains
-    Kp = 5*[1; 1; 1];
-    Ki = [0; 0; 0];
-    Kd = [0.0; 0.0; 0.0];
+    Kp = 0*[1; 1; 1];
+    Ki = 0*[1; 1; 1];
+    Kd = 0*[1; 1; 1];
 
     bp = controllerPkg.BreakPoints(nominalLog, 1, 0.1);
     controller = controllerPkg.TVCPID(referenceAttitudes, Kp, Ki, Kd, useActuatorModel, bp);

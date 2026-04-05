@@ -45,7 +45,7 @@ classdef TVCPID < controllerPkg.Controller
             omega = state(12:14);
 
             % PID control
-            rocketControlRad = obj.Kp .* err + obj.Ki .* obj.integralError + obj.Kd .* omega;
+            rocketControlRad = obj.Kp .* err + obj.Ki .* obj.integralError - obj.Kd .* omega;
 
             % Debug Printing Screen
             if currentTime < 12
