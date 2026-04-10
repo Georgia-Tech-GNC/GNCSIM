@@ -1,19 +1,13 @@
 classdef TVCPID < controllerPkg.Controller
-    % TVCPID Represents the PID controller for a TVC rocket
-
     properties
-        %referenceAttitudes                      % Reference attitudes [time; q0; q1; q2; q3]
-        Kp (3,1) double                         % Proportional gains [roll; pitch; yaw]
-        Ki (3,1) double                         % Integral gains [roll; pitch; yaw]
-        Kd (3,1) double                         % Derivative gains [roll; pitch; yaw]
-
-        % PID internal state
-        integralError (3,1) double = zeros(3,1) % Accumulated rotation vector error
-        lastTime      (1,1) double = 0          % Time of last getControl
+        Kp (3,1) double
+        Ki (3,1) double
+        Kd (3,1) double
+        integralError (3,1) double = zeros(3,1)
+        lastTime      (1,1) double = 0
     end
 
     methods
-        % Constructor
         function obj = TVCPID(referenceAttitudes, Kp, Ki, Kd, useActuatorModel, breakpoint)
             obj.referenceAttitudes = referenceAttitudes;
             obj.Kp                 = Kp;
@@ -31,33 +25,26 @@ classdef TVCPID < controllerPkg.Controller
                 currentTime        (1,1) double {mustBeNonnegative}
             end
 
-            % Compute dt
             dt = currentTime - obj.lastTime;
             if dt <= 0; dt = 1e-4; end
 
-            % Compute rotation vector error from quaternion attitude error
             err = obj.getError(state, currentTime);
 
-            % Integral term
             obj.integralError = obj.integralError + err * dt;
 
-            % Derivative term
             omega = state(12:14);
 
-            % PID control
-            rocketControlRad = obj.Kp .* err + obj.Ki .* obj.integralError - obj.Kd .* omega;
+            rocketControlRad = obj.Kp .* err ...
+                             + obj.Ki .* obj.integralError ...
+                             - obj.Kd .* omega;
 
-            % Debug Printing Screen
             if currentTime < 12
                 fprintf('t=%.2f err=[%.3f %.3f %.3f] u=[%.3f %.3f %.3f]\n', ...
                     currentTime, err(1), err(2), err(3), ...
                     rocketControlRad(1), rocketControlRad(2), rocketControlRad(3));
             end
 
-            % Update internal time
             obj.lastTime = currentTime;
-
-            % Convert to degrees for actuator command
             rocketControl = rad2deg(rocketControlRad);
         end
 
@@ -68,33 +55,43 @@ classdef TVCPID < controllerPkg.Controller
                 currentTime         (1,1) double {mustBeNonnegative}
             end
 
-            % Get current quaternion
+            % Normalize Current Quaternion
             q_cur = Utils.normalizeQuat(rocketStateEstimate(8:11));
 
-            % Find the index in reference that corresponds to current time
+            % Reference quaternion at current time
             time_vec = obj.referenceAttitudes(1, :);
             [~, idx] = min(abs(time_vec - currentTime));
-
-            % Normalize reference quaternion at current time
             q_ref = Utils.normalizeQuat(obj.referenceAttitudes(2:5, idx));
 
-            % Compute quaternion error
+            % Conjugate of q_cur
             q_cur_inv = [q_cur(1); -q_cur(2); -q_cur(3); -q_cur(4)];
-            q_err = Utils.quatMult(q_cur_inv, q_ref);
 
-            if q_err(1) < 0
-                q_err = -q_err;
-            end
+            % Rotate body x axis by current and reference quaternions
+            vb = [1; 0; 0];
+            v_curr    = obj.quatRotate(q_cur(2:4), q_cur(1), vb);
+            v_desired = obj.quatRotate(q_ref(2:4), q_ref(1), vb);
 
-            % Get error
-            vec_norm = norm(q_err(2:4));
-            if vec_norm < 1e-20
-                err = zeros(3,1);
-            else
-                theta = 2 * atan2(vec_norm, q_err(1));  % rad
-                n_hat = q_err(2:4) / vec_norm;          % unit vector
-                err   = theta * n_hat;                  % rotation vector
-            end
+            % Error quaternion
+            d = dot(v_curr, v_desired);
+            a = cross(v_curr, v_desired);
+
+            q_err = [1 + d; a(1); a(2); a(3)];
+            q_err = q_err / norm(q_err);
+
+            % Rotate error vector part into body frame
+            error_body = obj.quatRotate(q_cur_inv(2:4), q_cur_inv(1), q_err(2:4));
+
+            % Scale Error
+            err = [
+                error_body(1) * 2;
+                error_body(2) * 2;
+                error_body(3) * 2
+            ];
+        end
+
+        function v_rotated = quatRotate(obj, qv, qw, v)
+            t         = 2.0 * cross(qv, v);
+            v_rotated = v + (qw * t) + cross(qv, t);
         end
     end
 end

@@ -43,12 +43,12 @@ function rocketDynamics = setupRocket()
     % Vehicle Properties
     rocketParams.longitudinalMoiWet = 0.42;  % [kg * m^2]
     rocketParams.rotationalMoiWet = 0.005;  % [kg * m^2]
-	rocketParams.massWet = 4; % [kg]
+	rocketParams.massWet = 3.3; % [kg]
     momentArmWet = 0.311; % m thrust to cg
 
 	rocketParams.longitudinalMoiDry = 0.35;  % [kg * m^2]
     rocketParams.rotationalMoiDry = 0.005;  % [kg * m^2]
-	rocketParams.massDry = 3.65; % [kg]
+	rocketParams.massDry = 3.05; % [kg]
     momentArmDry = 0.2924; % m thrust to cg
 
 
@@ -177,9 +177,9 @@ function controller = setupTVCPID()
     nominalLog.trim();
 
     % PID Gains
-    Kp = 0*[1; 1; 1];
+    Kp =  .39250*[1; 1; 1];
     Ki = 0*[1; 1; 1];
-    Kd = 0*[1; 1; 1];
+    Kd = .18550*[1; 1; 1];
 
     bp = controllerPkg.BreakPoints(nominalLog, 1, 0.1);
     controller = controllerPkg.TVCPID(referenceAttitudes, Kp, Ki, Kd, useActuatorModel, bp);

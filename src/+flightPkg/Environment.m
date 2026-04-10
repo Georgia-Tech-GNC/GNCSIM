@@ -24,7 +24,7 @@ classdef Environment < handle & matlab.mixin.Copyable
         % Shear law parameters (Power Law)
         % U(z) = U0 * (z / zRef)^alpha
         %--------------------------------------------------------------
-        U0 (1,1) double = 0                 % reference wind speed at zRef (m/s)
+        U0 (1,1) double = 3                 % reference wind speed at zRef (m/s)
         zRef (1,1) double = 10              % reference height (m)
         alpha (1,1) double = 0.14           % terrain exponent (0.1–0.3)
 
@@ -146,7 +146,6 @@ classdef Environment < handle & matlab.mixin.Copyable
                 alt (1,1) double
             end
             [T, a, P, rho] = atmosisa(alt);
-            rho = 0;
         end
 
 
