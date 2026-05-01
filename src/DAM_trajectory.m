@@ -1,6 +1,8 @@
 % Nominal Trajectory Generator
 % adapted from MPC
 
+setup_project_env(); 
+
 clc
 clear solver
 clear classes
@@ -8,7 +10,6 @@ clear mex
 fclose('all');
 pause(1)
 
-import casadi.*
 
 %-------------------------------------------------------------------------%
 %---------------------------INITIALIZE------------------------------------%

@@ -5,8 +5,6 @@ function []= display_results(data)
     xlabel('X')
     ylabel('Y')
     zlabel('Altitude (m)')
-    xlim([-.1 .1])
-    ylim([-.1 .1])
     title('3D Trajectory')
 
     figure(2); clf
@@ -35,9 +33,9 @@ function []= display_results(data)
     title('Quaternion Components')
 
     figure(6); clf
-    plot(data.t, data.roll, data.t, data.pitch, data.t, data.yaw)
+    plot(data.t(1:end-1), data.roll, data.t(1:end-1), data.pitch, data.t(1:end-1), data.yaw)
     xlabel('t (s)')
-    ylabel('Control Moment')
+    ylabel('Fin tab deflection')
     title('Optimal Controls')
 
     % figure(4); clf

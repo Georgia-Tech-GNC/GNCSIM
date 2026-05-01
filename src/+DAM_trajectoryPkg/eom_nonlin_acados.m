@@ -14,7 +14,7 @@ import casadi.*
 
     u1 = u_mom(1); u2 = u_mom(2); u3 = u_mom(3);
 
-    % constants
+    % constants &&&&&&&&&&&&&& NEED TO CHANGE FOR NEW ROCKET &&&&&&&&&&&&&&&
     g  = 9.81;
     wet_mass  = 40.912994;
     dry_mass  = 32.619994;
@@ -33,7 +33,8 @@ import casadi.*
     dryMOI = [dryRollMOI 0 0; 0 dryPitchMOI 0; 0 0 dryYawMOI];
 
     % atmosphere via altitude -z
-    rho = 0.0023769 * (1 - 6.877e-6 * -zi)^4.25588;
+    %rho = 0.0023769 * (1 - 6.877e-6 * -zi)^4.25588;
+    rho = 1.225 * (1 - 2.25577e-5 * -zi)^5.25588;
 
     % quaternion DCM 
     R = [ ...
@@ -42,7 +43,7 @@ import casadi.*
     2*(q1*q3 + q0*q2),           2*(q2*q3 - q0*q1),     q0^2 - q1^2 - q2^2 + q3^2 ...
     ];
 
-    inv_R = inv(R);
+    inv_R = R.';
 
     % mass & CG vs time: CasADi-friendly piecewise
     m_wet  = wet_mass - ((wet_mass - dry_mass)/burn_time) * t;

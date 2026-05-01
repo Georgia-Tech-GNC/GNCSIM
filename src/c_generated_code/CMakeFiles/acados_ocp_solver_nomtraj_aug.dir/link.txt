@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\acados_ocp_solver_nomtraj_aug.dir/objects.a
+C:\ProgramData\MATLAB\SupportPackages\R2024a\3P.instrset\mingw_w64.instrset\bin\ar.exe qc CMakeFiles\acados_ocp_solver_nomtraj_aug.dir/objects.a @CMakeFiles\acados_ocp_solver_nomtraj_aug.dir\objects1.rsp
+C:\ProgramData\MATLAB\SupportPackages\R2024a\3P.instrset\mingw_w64.instrset\bin\gcc.exe -fPIC -std=c99  -O2   -O3 -DNDEBUG -shared -o acados_ocp_solver_nomtraj_aug.dll -Wl,--out-implib,acados_ocp_solver_nomtraj_aug.lib -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles\acados_ocp_solver_nomtraj_aug.dir/objects.a -Wl,--no-whole-archive @CMakeFiles\acados_ocp_solver_nomtraj_aug.dir\linkLibs.rsp

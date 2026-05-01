@@ -1,0 +1,9 @@
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/model_nomtraj_aug.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/ocp_nomtraj_aug.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/acados_ocp_solver_nomtraj_aug.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/edit_cache.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/rebuild_cache.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/list_install_components.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/install.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/install/local.dir
+C:/Users/danil/OneDrive/Documents/GitHub/GNCSIM/src/c_generated_code/CMakeFiles/install/strip.dir

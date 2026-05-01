@@ -18,10 +18,14 @@ function currentThrust = getThrust(t, thrustCurve, burnTime)
                 return
             end
             % while loop that outputs values to be linearily interpolated
-            while i <= m & ~found
+            while i <= m-1 & ~found
                 if arr(i, 1) < t && arr(i + 1, 1) > t
-                    lowerBoundTime = arr(i, 1);
-                    upperBoundTime = arr(i, 2);
+                    % lowerBoundTime = arr(i, 1); 
+                    % upperBoundTime = arr(i, 2);
+                    % lowerBoundThrust = arr(i, 2);
+                    % upperBoundThrust = arr(i + 1, 2);
+                    lowerBoundTime = arr(i, 1); % GPT suggestion
+                    upperBoundTime = arr(i + 1, 1);
                     lowerBoundThrust = arr(i, 2);
                     upperBoundThrust = arr(i + 1, 2);
                     found = true;

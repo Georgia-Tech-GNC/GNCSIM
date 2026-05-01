@@ -1,4 +1,4 @@
-function ocp = build_nomtraj_solver(num_states, num_controls, Q, R, R_delta, wq, u_max, N, horizon)
+function ocp = build_Onceler_solver(num_states, num_controls, Q, R, R_delta, wq, u_max, N, horizon)
 
 % build the solver for our optimization problem
 
@@ -11,14 +11,14 @@ dt_nomtraj = horizon / N;           % timestep
 %---------------------------CASADI SYMBOLICS------------------------------%
 %-------------------------------------------------------------------------%
 
-xA = SX.sym('xA', nxA, 1);          % augmented state: [state; previous control]
-u  = SX.sym('u',  num_controls, 1); % control
+xA = casadi.SX.sym('xA', nxA, 1);          % augmented state: [state; previous control]
+beta_vec  = casadi.SX.sym('u',  num_controls, 1); % control (tab deflections)
 
 x      = xA(1:num_states);          % state
-u_prev = xA(num_states+1:end);      % previous control (to penalize jerky controls)
+beta_prev = xA(num_states+1:end);      % previous control (to penalize jerky controls)
 
 np = 1 + 1 + 1 + num_states;        % dimension of time-varying parameters
-params  = SX.sym('params', np, 1);  % time-varying parameters
+params  = casadi.SX.sym('params', np, 1);  % time-varying parameters
 
 t0    = params(1);                  % current time
 Tpar  = params(2);                  % thrust
@@ -32,16 +32,16 @@ q_ref  = x_ref(10:13);              % reference quaternion
 %---------------------------RK4 DYNAMICS----------------------------------%
 %-------------------------------------------------------------------------%
 
-f = @(x,u,t0,Tpar,aero) eom_nonlin_acados(x, u, t0, Tpar, aero); % symbolic dynamics
+f = @(x,beta_vec,t0,Tpar,aero) DAM_trajectoryPkg.Onceler_eom_acados(x, beta_vec, t0, Tpar, aero); % symbolic dynamics
 
-k1 = f(x,                  u, t0, Tpar, aero); % RK4 coefficients
-k2 = f(x + 0.5*dt_nomtraj*k1,  u, t0, Tpar, aero);
-k3 = f(x + 0.5*dt_nomtraj*k2,  u, t0, Tpar, aero);
-k4 = f(x + 1.0*dt_nomtraj*k3,  u, t0, Tpar, aero);
+k1 = f(x,                  beta_vec, t0, Tpar, aero); % RK4 coefficients
+k2 = f(x + 0.5*dt_nomtraj*k1,  beta_vec, t0, Tpar, aero);
+k3 = f(x + 0.5*dt_nomtraj*k2,  beta_vec, t0, Tpar, aero);
+k4 = f(x + 1.0*dt_nomtraj*k3,  beta_vec, t0, Tpar, aero);
 
 x_next  = x + (dt_nomtraj/6)*(k1 + 2*k2 + 2*k3 + k4); % propagated state
 
-xA_next = [x_next; u]; % attach the previous control
+xA_next = [x_next; beta_vec]; % attach the previous control
 
 % ------------------------------------------------------------------------%
 % --------------------------ACADOS MODEL----------------------------------%
@@ -51,7 +51,7 @@ model = AcadosModel();
 model.name = 'nomtraj_aug';
 
 model.x = xA;                       % the model's state
-model.u = u;                        % the model's control
+model.u = beta_vec;                        % the model's control
 model.p = params;                   % the model's parameters
 
 model.disc_dyn_expr = xA_next;      % next state in terms of current state, control, parameters
@@ -61,7 +61,7 @@ model.disc_dyn_expr = xA_next;      % next state in terms of current state, cont
 %-------------------------------------------------------------------------%
 
 x_err  = x - x_ref; % deviation from reference state
-du = u - u_prev;    % control difference
+du = beta_vec - beta_prev;    % control difference
 
 sqrtQ = diag(sqrt(diag(Q)));
 sqrtR = diag(sqrt(diag(R)));
@@ -74,17 +74,14 @@ q_curr_conj = [q_curr(1);
               -q_curr(3);
               -q_curr(4)];
 
-q_err = [ q_ref(1)*q_curr_conj(1) - q_ref(2)*q_curr_conj(2) - q_ref(3)*q_curr_conj(3) - q_ref(4)*q_curr_conj(4);
-          q_ref(1)*q_curr_conj(2) + q_ref(2)*q_curr_conj(1) + q_ref(3)*q_curr_conj(4) - q_ref(4)*q_curr_conj(3);
-          q_ref(1)*q_curr_conj(3) - q_ref(2)*q_curr_conj(4) + q_ref(3)*q_curr_conj(1) + q_ref(4)*q_curr_conj(2);
-          q_ref(1)*q_curr_conj(4) + q_ref(2)*q_curr_conj(3) - q_ref(3)*q_curr_conj(2) + q_ref(4)*q_curr_conj(1) ];
+q_err = DAM_trajectoryPkg.quatmul(q_ref,q_curr_conj);
 
 quat_vec_res = sqrt(wq)*q_err(2:4); % weighted vector part of attitude error
 
 % build stage residual, dimension = num_states + 2*num_controls + 1 + 3
 
 y = [sqrtQ * x_err;   % (...)'*(...) = x_err*Q*x_err
-     sqrtR * u;       % (...)'*(...) = u*R*u
+     sqrtR * beta_vec;       % (...)'*(...) = u*R*u
      sqrtRdelta * du; % (...)'*(...) = du*R_delta*x_du
      quat_norm_res;   % minimize scalar attitude error
      quat_vec_res];   % minimize vector attitude error
