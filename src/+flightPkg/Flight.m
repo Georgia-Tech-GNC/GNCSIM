@@ -16,6 +16,7 @@ classdef Flight < handle & matlab.mixin.Copyable
         currentTime (1,1) double {mustBeNonnegative}
         cumVelocity (1,1) double {mustBeNonnegative}
         dt (1,1) double {mustBeNonnegative}
+        prevVel (1,1) double {mustBeNonnegative}
 
         rocketInitialState (:,1) double
         actuatorInitialState (:,1) double
@@ -50,8 +51,12 @@ classdef Flight < handle & matlab.mixin.Copyable
             obj.endState = obj.flightParams.endState;
             obj.launchRailLength = obj.flightParams.launchRailLength;
 
-            obj.useActuatorModel = controller.useActuatorModel;
-            
+            if isempty(controller)
+                obj.useActuatorModel = false;
+            else
+                obj.useActuatorModel = controller.useActuatorModel;
+            end
+                        
             % Setup Ground Altitude & Launch Coordinates
             if isfield(flightParams, 'launchLat') && isfield(flightParams, 'launchLon')
                 obj.groundAltitude = 0; 
@@ -78,6 +83,7 @@ classdef Flight < handle & matlab.mixin.Copyable
             
             obj.currentTime = 0.0;
             obj.cumVelocity = 0.0;
+            obj.prevVel = 0;
             rocketState = obj.rocketInitialState(:);
             actuatorState = obj.actuatorInitialState(:);
             controlInput = obj.controlInputInitialState(:);
@@ -141,14 +147,12 @@ classdef Flight < handle & matlab.mixin.Copyable
                         
                         % Start accumulating velocity if closed loop
                         if obj.runClosedLoop
-                            % Calculate cumulated velocity every interval
-                            if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2
                                 vx = rocketState(obj.idx.vx);
                                 vy = rocketState(obj.idx.vy);
                                 vz = rocketState(obj.idx.vz);
-                                vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-                                obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
-                            end
+                                currentVel = sqrt(vx.^2 + vy.^2 + vz.^2);
+                                obj.cumVelocity = obj.cumVelocity + (1/2)*(currentVel + obj.prevVel)*obj.dt;
+                                obj.prevVel = currentVel;
                         end
                         
                         rocketDyn = @(x) obj.rocketDynamics.rocketModel(x, obj.actuatorInitialState, envConditions, obj.currentTime, obj.flightState);
@@ -171,14 +175,12 @@ classdef Flight < handle & matlab.mixin.Copyable
                         % Full Simulation Logic
                         
                         if obj.runClosedLoop
-                            % Calculate cumulated velocity every interval
-                            if mod(obj.currentTime, obj.controller.breakPoints.cumVelocityInterval) < obj.dt/2
                                 vx = rocketState(obj.idx.vx);
                                 vy = rocketState(obj.idx.vy);
                                 vz = rocketState(obj.idx.vz);
-                                vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-                                obj.cumVelocity = obj.cumVelocity + (vel * obj.controller.breakPoints.cumVelocityInterval);
-                            end
+                                currentVel = sqrt(vx.^2 + vy.^2 + vz.^2);
+                                obj.cumVelocity = obj.cumVelocity + (1/2)*(currentVel + obj.prevVel)*obj.dt;
+                                obj.prevVel = currentVel;
 
                             if obj.useActuatorModel
                                 actuatorDyn = @(x) obj.rocketDynamics.actuatorModel.actuatorDynamics(controlInput, x);

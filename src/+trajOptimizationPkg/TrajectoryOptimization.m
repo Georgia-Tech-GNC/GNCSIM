@@ -7,16 +7,20 @@ classdef TrajectoryOptimization
         idx StateIndices = StateIndices;
         turnQuaternion (4,1) double
         turnTime (1,1) double
-        maxAoA (1,1) double % radians
+        maxAoA double = [] % radians
+        noControlTime double = 3;
     end
     
     methods
-        function [obj] = TrajectoryOptimization(turnQuaternion, turnTime, maxAoA)
-            
+        function obj = TrajectoryOptimization(turnQuaternion, turnTime, maxAoA)
+            arguments
+                turnQuaternion (4,1) double = zeros(4,1) % Can pass in nothing
+                turnTime       double = 0
+                maxAoA         double = []
+            end
             obj.turnQuaternion = turnQuaternion;
             obj.turnTime = turnTime;
-            obj.maxAoA = (pi/180)*maxAoA; 
-
+            obj.maxAoA = deg2rad(maxAoA);
         end
 
         function Jp = pathObjectiveFunction(obj, t, x, u)
@@ -30,7 +34,7 @@ classdef TrajectoryOptimization
             [~,Nt] = size(x);
             Jp = zeros(1, Nt);
             for i = 1:Nt
-                Jp(i) = norm(x(obj.idx.omega, i)) + norm(u(:,i)); % TODO: state indices?
+                Jp(i) = sum(x(obj.idx.omega, i).^2) + sum(u(:,i).^2);
             end
 
         end
@@ -57,38 +61,36 @@ classdef TrajectoryOptimization
                 u (:,:) double
             end
         
-            [~, Nt] = size(x);
+            Nt = numel(t);
+            q  = x(obj.idx.quat, :);
         
-            % Preallocate constraints to assure constant size
-            Ceq   = zeros(15*Nt, 1); % 15 is the number of equality constraints
-            Cineq = zeros(Nt, 1); % 1 is the number of inequality constraints
-        
-            ceqIdx = 1;
-        
-            for i = 1:Nt
-        
-                % Always enforced
-                Ceq(ceqIdx) = norm(x(obj.idx.quat,i)) - 1; % quaternion norm
-                ceqIdx = ceqIdx + 1;
-        
-                % Turn event at t = obj.turnTime seconds
-                turnMask = round(t(i)) == obj.turnTime;
-                Ceq(ceqIdx:ceqIdx+3) = turnMask * (x(obj.idx.quat,i) - obj.turnQuaternion);
-                ceqIdx = ceqIdx + 4;
-        
-                % Constraints for early ascent
-                earlyMask = (t(i) <= 3);
-                Ceq(ceqIdx:ceqIdx+9) = earlyMask * [ x(obj.idx.vel(2:3), i);        % zero AoA
-                                                      u(1:3, i);        % zero controls
-                                                      x(obj.idx.omega, i);      % zero angular rates
-                                                      x(obj.idx.pos(1:2), i)];       % zero East-North position
-                ceqIdx = ceqIdx + 10;
-        
-                % Inequality constraints
-                Cineq(i) = sqrt(x(obj.idx.vel(2),i)^2 + x(obj.idx.vel(3),i)^2)/x(obj.idx.vel(1),i) - tan(obj.maxAoA);
-                           
+            % Turn
+            kTurn = [];
+            if obj.turnTime > t(1) && obj.turnTime < t(end)
+                [~, kTurn] = min(abs(t - obj.turnTime));
             end
-
+        
+            % Quaternion norm
+            kNorm = setdiff(2:Nt, kTurn);
+            Ceq = (vecnorm(q(:, kNorm)) - 1).';
+        
+            % Turn attitude
+            if ~isempty(kTurn)
+                Ceq = [Ceq; q(:, kTurn) - obj.turnQuaternion];
+            end
+        
+            % Early ascent
+            hold = find(t <= obj.noControlTime);
+            holdFree = hold(hold > 1);
+            lat = [obj.idx.vel(2:3), obj.idx.omega, obj.idx.pos(1:2)];
+            Ceq = [Ceq; reshape(u(:, hold), [], 1); reshape(x(lat, holdFree), [], 1)];
+        
+            % AoA limit
+            Cineq = [];
+            if ~isempty(obj.maxAoA)
+                v = x(obj.idx.vel, :);
+                Cineq = (v(2,:).^2 + v(3,:).^2 - (tan(obj.maxAoA) * v(1,:)).^2).';
+            end
         end
 
         function [Cineq, Ceq]= boundaryConstraintFunction(obj, t0, x0, tF, xF)
@@ -134,8 +136,6 @@ classdef TrajectoryOptimization
 
             actuator1 = nominalTrajectory.actuatorState(1, :);
             actuator2 = nominalTrajectory.actuatorState(2, :);
-            actuator3 = nominalTrajectory.actuatorState(3, :);
-            actuator4 = nominalTrajectory.actuatorState(4, :);
 
             figure(1); clf % Position in ENU
             plot3(pos_east, pos_north, pos_up)
@@ -193,11 +193,9 @@ classdef TrajectoryOptimization
             plot(t,actuator1)
             hold on
             plot(t,actuator2)
-            plot(t,actuator3)
-            plot(t,actuator4)
             xlabel('Time(s)', 'FontSize', 15)
             ylabel('Actuator Deflections', 'FontSize', 15)
-            legend('A1', 'A2', 'A3', 'A4', 'FontSize', 18, 'Location', 'best')
+            legend('A1', 'A2', 'FontSize', 18, 'Location', 'best')
             title('Actuator Deflections', 'FontSize', 20)
         end
     end

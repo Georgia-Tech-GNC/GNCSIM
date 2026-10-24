@@ -46,9 +46,9 @@ function rocketDynamics = setupRocket(controller)
 	rocketParams.massDry = 3.12; % [kg]
 
     % Create Body
-    bodyParams.noseLength = 0.324;  % [m]
-    bodyParams.bodyLength = 0.965;  % This does not include nose cone [m]
-    bodyParams.rocketDiameter = 0.102;  % [m]
+    bodyParams.noseLength = 0.203;  % [m]
+    bodyParams.bodyLength = 0.6858 - bodyParams.noseLength;  % This does not include nose cone [m]
+    bodyParams.rocketDiameter = 0.079;  % [m]
     totalLength = bodyParams.bodyLength + bodyParams.noseLength;
 	bodyParams.translation = [0, 0, 0];
     bodyParams.cgXWet = rocketParams.cgXWet;

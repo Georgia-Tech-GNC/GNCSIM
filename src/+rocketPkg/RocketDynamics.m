@@ -132,10 +132,10 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
         function xDot = rocketModelTrajOptWrapper(obj, state, controlInput, envConditions, time, flightState, useGravity, useThrust, log)
             arguments
                 obj
-                state (:,1) double
-                controlInput (:,1) double
+                state (:,:) double
+                controlInput (:,:) double
                 envConditions (1,1) flightPkg.AtmosphericConditions
-                time (1,1) double {mustBeNonnegative}
+                time (1,:) double {mustBeNonnegative}
                 flightState (1,1) flightPkg.FlightState = flightPkg.FlightState.POWERED_ASCENT
                 useGravity (1,1) logical = true
                 useThrust (1,1) logical = true

@@ -1,4 +1,5 @@
-% Main Authors: Karsten Caillet (kcaillet3@gatech.edu)
+% Main Authors: Karsten Caillet (kcaillet3@gatech.edu), Conor Foley
+% (mfoley40@gatech.edu)
 
 classdef BreakPoints < handle
     properties (Constant)
@@ -9,6 +10,7 @@ classdef BreakPoints < handle
         nominalTrajLog analysisPkg.Log
         numBreakPoints (1,1) double {mustBeNonnegative}
         cumVelocityInterval (1,1) double {mustBeNonnegative} % time interval to add up velocity [s]
+        tIgnition (1,1) double {mustBeNonnegative}
 
         % Breakpoint data arrays
         cumVelocity (1,:) double {mustBeNonnegative}     % 1 x numBreakPoints array
@@ -23,10 +25,11 @@ classdef BreakPoints < handle
 
     methods
 
-        function obj = BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval)
+        function obj = BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition)
             obj.nominalTrajLog = nominalTrajLog;
             obj.numBreakPoints = numBreakPoints;
             obj.cumVelocityInterval = cumVelocityInterval;
+            obj.tIgnition = tIgnition;
 
             obj.generateBreakPoints();
         end
@@ -35,38 +38,37 @@ classdef BreakPoints < handle
             timeNominal = obj.nominalTrajLog.time;
 			
             states = obj.nominalTrajLog.states;
+            stateDots = obj.nominalTrajLog.stateDots;
             controlInputs = obj.nominalTrajLog.controlInputs;
             actuatorStates = obj.nominalTrajLog.actuatorStates;
 
             % Stop at apogee
-            [~, timeNominal, states, controlInputs, actuatorStates] = obj.cropToApogee(timeNominal, states, controlInputs, actuatorStates);
+            [~, timeNominal, states, controlInputs, actuatorStates, stateDots] = obj.cropToApogee(timeNominal, states, controlInputs, actuatorStates, stateDots);
 
             % Reduce time and state to every cumVelocityInterval
-            [timeNominal, states, controlInputs, actuatorStates] = obj.reduceToInterval(timeNominal, states, controlInputs, actuatorStates);
+            % [timeNominal, states, controlInputs, actuatorStates] = obj.reduceToInterval(timeNominal, states, controlInputs, actuatorStates);
 
             % Get cumulated velocity for each time (magnitude at each time step)
             vx = states(obj.idx.vx, :);
             vy = states(obj.idx.vy, :);
             vz = states(obj.idx.vz, :);
             vel = sqrt(vx.^2 + vy.^2 + vz.^2);
-            cumVelocityFull = cumsum(vel * obj.cumVelocityInterval);
 
-            % Get breakpoint indices
-            indices = round(linspace(1, length(cumVelocityFull), obj.numBreakPoints));
+            cumVelocityFull = cumtrapz(timeNominal,vel);
 
             % Filter out breakpoints from first second of flight (no control authority)
-            tIgnore = 1.0; % seconds
-            validMask = timeNominal(indices) > tIgnore;
-            indices = indices(validMask);
-            numValidBreakPoints = length(indices);
+            tIgnore = obj.tIgnition; % seconds
+            validIdx = find(timeNominal > tIgnore);
+            cumValid = cumVelocityFull(validIdx);
 
-            fprintf('BreakPoints: Filtered out %d breakpoints from first %.1f seconds (no control authority).\n', ...
-                    obj.numBreakPoints - numValidBreakPoints, tIgnore);
-            fprintf('BreakPoints: Using %d breakpoints from t=%.2fs to t=%.2fs.\n', ...
-                    numValidBreakPoints, timeNominal(indices(1)), timeNominal(indices(end)));
+            cumTargets = linspace(cumValid(1), cumValid(end), obj.numBreakPoints);
 
-            % Update numBreakPoints to actual count
-            obj.numBreakPoints = numValidBreakPoints;
+            localIdx = interp1(cumValid, 1:numel(cumValid), cumTargets, 'nearest');
+            indices = unique(validIdx(localIdx));
+            obj.numBreakPoints = numel(indices);
+
+            fprintf('BreakPoints: %d breakpoints, evenly spaced in cumulative value, t=%.2fs to t=%.2fs.\n', ...
+                    numel(indices), timeNominal(indices(1)), timeNominal(indices(end)));
 
             % Preallocate arrays
             obj.cumVelocity = zeros(1, obj.numBreakPoints);
@@ -194,37 +196,24 @@ classdef BreakPoints < handle
 
     methods (Access = private)
 
-        function [timeOfApogee, time, states, controlInputs, actuatorStates] = cropToApogee(obj, time, states, controlInputs, actuatorStates)
+        function [timeOfApogee, time, states, controlInputs, actuatorStates, stateDots] = cropToApogee(obj, time, states, controlInputs, actuatorStates, stateDots)
             % Detect apogee and crop trajectory data to before apogee
 
             % Extract altitude and compute derivatives
-            time_derivative = time(100:end); % Ignore first 1s
-            z = states(obj.idx.z, 100:end); % Ignore first 1s
-            dz = gradient(z, time_derivative);   % Vertical velocity
-            d2z = gradient(dz, time_derivative); % Vertical acceleration
+            tStart = find(time>=obj.tIgnition,1);
+            z = states(obj.idx.z, tStart:end); % Ignore first 1s
+            [~, apogee_local] = max(z);
+            apogee_idx   = apogee_local + tStart - 1;
+            timeOfApogee = time(apogee_idx);
 
-            % Find points where vertical velocity is near zero
-            index = find(abs(dz) < 0.1);
-
-            % Filter for points with negative acceleration (true apogee)
-            valid_idx = index(d2z(index) < 0);
-
-            if ~isempty(valid_idx)
-                % Use first valid point as apogee
-                apogee_idx = valid_idx(1);
-                timeOfApogee = time(apogee_idx);
-
-                % Crop all data to before apogee
-                mask = time < timeOfApogee;
-                time = time(mask);
-                states = states(:, mask);
-                controlInputs = controlInputs(:, mask);
-                actuatorStates = actuatorStates(:, mask);
-                fprintf("BreakPoints: Apogee detected at t=%.2f - cropping nominal flight.\n", timeOfApogee)
-            else
-                timeOfApogee = 0;
-                fprintf("BreakPoints: No apogee detected - using full nominal flight.")
-            end
+            mask = time < timeOfApogee;
+            time = time(mask);
+            states = states(:, mask);
+            controlInputs = controlInputs(:, mask);
+            actuatorStates = actuatorStates(:, mask);
+            stateDots = stateDots(:, mask);
+            fprintf("BreakPoints: Apogee detected at t=%.2f s - cropping nominal flight.\n", timeOfApogee);
+        
         end    
     end
 end
