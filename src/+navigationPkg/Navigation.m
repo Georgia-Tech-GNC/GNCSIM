@@ -196,13 +196,16 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
         %% EKF Functions
 
+        % notes for self: P is predicted every prediction step, but updated only when gps data is available. 
+        % This means that the covariance matrix will grow over time if no gps data is available
+
         function obj = ekf(obj, log)
 
             % Predict Step
             obj.predictState();
             obj.P = obj.predictCovariance();
 
-            % Update Step
+            % Update Step <= only runs if obj has gpsdata
             if ~(isempty(obj.gpsRawData))
                 [K, H] = obj.kalmanGain();
                 obj.updateState(K);
@@ -255,6 +258,71 @@ obj.posHistory.time(end+1) = obj.currentTime;
             F = obj.dfdx(obj.dt);
             P_prior = F * obj.P * F' + obj.Q;
 
+        end
+
+        %% UKF Functions
+
+        % TODO: maybe separate UKF and EKF into separate classes, but for now they are together in this class.
+        function obj = ukf(obj, log)
+            % Predict Step
+            obj = obj.predictStateUKF(1e-3, 2, 0); % updates obj.x and obj.P, using alpha, beta, kappa
+            
+            % Update Step (only if gps data is available)
+            if ~(isempty(obj.gpsRawData))
+                %TODO write update step for UKF
+            end
+        end
+
+        % Input: obj.x, obj.P, alpha, beta, kappa
+        % Output: obj with updated state and covariance
+        function obj = predictStateUKF(obj, alpha, beta, kappa)
+            sigmas = sigmaPoints(obj.x, obj.P, alpha, kappa);
+            [Wm, Wc] = weights(obj.x, alpha, beta, kappa);
+            [obj.x, obj.P] = unscentedTransform(sigmas, Wm, Wc, obj.Q);
+        end
+
+        % TODO: Write function
+        function obj = updateStateUKF(obj)
+            % pseudocode:
+            %
+            %
+            %
+            %
+        end
+        % TODO: Write function
+        function [x, P] = unscentedTransform(sigmas, W_m, W_c, Q)
+
+        end
+        
+        % van der merwe scaled sigma point implementation (ref 10.11.1 in pdf)
+        function [Wc, Wm] = weights(x, alpha, beta, kappa)
+            n = numel(x);
+            lambda = alpha^2 * (n + kappa) - n;
+
+            Wc = ones(1, 2*n+1)* (1./ (2 * (n + lambda)));            
+            Wm = ones(1, 2*n+1)* (1./ (2 * (n + lambda)));
+
+            Wc(1) = lambda/(n + lambda) + (1 - alpha^2 + beta);
+            Wm(1) = lambda/(n + lambda);
+
+        end
+
+        % sigma points (ref 10.11.2 in pdf)
+        function sigmas = sigmaPoints(x, P, alpha, kappa)
+            n = numel(x);
+            lambda = alpha^2 * (n + kappa) - n;
+
+            % Calculate the square root of the covariance matrix
+            U = chol((n + lambda) * P, 'lower');
+
+            % Initialize sigma points
+            sigmas = zeros(n, 2*n + 1);
+            sigmas(:, 1) = x;  % First sigma point is the mean
+
+            for i = 1:n
+                sigmas(:, i + 1) = x + U(:, i);      % Positive direction
+                sigmas(:, i + 1 + n) = x - U(:, i);  % Negative direction
+            end
         end
 
         %% Sensor Data
