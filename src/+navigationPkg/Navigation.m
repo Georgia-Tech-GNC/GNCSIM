@@ -51,6 +51,13 @@ classdef Navigation < handle
 
     end
 
+    properties
+        % UKF tuning (Van der Merwe scaled sigma points)
+        ukfAlpha = 1e-3
+        ukfBeta  = 2
+        ukfKappa = 0
+    end
+
     methods
 
         function obj = Navigation(navParams, gps, gyroscope, accelerometer, magnetometer)
@@ -263,39 +270,102 @@ obj.posHistory.time(end+1) = obj.currentTime;
         %% UKF Functions
 
         % TODO: maybe separate UKF and EKF into separate classes, but for now they are together in this class.
+        % To use: call obj.ukf(log) in place of obj.ekf(log) in getStateEstimate.
+        % Tuning: obj.ukfAlpha, obj.ukfBeta, obj.ukfKappa (defaults 1e-3, 2, 0).
         function obj = ukf(obj, log)
             % Predict Step
-            obj = obj.predictStateUKF(1e-3, 2, 0); % updates obj.x and obj.P, using alpha, beta, kappa
+            obj = obj.predictStateUKF(obj.ukfAlpha, obj.ukfBeta, obj.ukfKappa); % updates obj.x and obj.P
             
             % Update Step (only if gps data is available)
             if ~(isempty(obj.gpsRawData))
-                %TODO write update step for UKF
+                obj = obj.updateStateUKF(obj.ukfAlpha, obj.ukfBeta, obj.ukfKappa);
             end
+
+            diagP = diag(obj.P);
+            log.add(obj.currentTime, 'ukfcovariances', diagP);
         end
 
         % Input: obj.x, obj.P, alpha, beta, kappa
         % Output: obj with updated state and covariance
         function obj = predictStateUKF(obj, alpha, beta, kappa)
-            sigmas = sigmaPoints(obj.x, obj.P, alpha, kappa);
-            [Wm, Wc] = weights(obj.x, alpha, beta, kappa);
-            [obj.x, obj.P] = unscentedTransform(sigmas, Wm, Wc, obj.Q);
+            % Accelerometer is a control input: same value for every sigma point
+            accI = obj.accBodytoInertial();
+
+            sigmas = obj.sigmaPoints(obj.x, obj.P, alpha, kappa);
+            [Wm, Wc] = obj.weights(obj.x, alpha, beta, kappa);
+
+            % Pass each sigma point through the process model f(x, u)
+            sigmasF = zeros(size(sigmas));
+            for i = 1:size(sigmas, 2)
+                sigmasF(:, i) = obj.processModelUKF(sigmas(:, i), accI);
         end
 
-        % TODO: Write function
-        function obj = updateStateUKF(obj)
-            % pseudocode:
-            %
-            %
-            %
-            %
+            % Prior mean and covariance (+ additive process noise Q)
+            [obj.x, obj.P] = obj.unscentedTransform(sigmasF, Wm, Wc, obj.Q);
         end
-        % TODO: Write function
-        function [x, P] = unscentedTransform(sigmas, W_m, W_c, Q)
 
+        % Input: prior obj.x, obj.P, GPS measurement in obj.gpsRawData
+        % Output: obj with posterior state and covariance
+        function obj = updateStateUKF(obj, alpha, beta, kappa)
+            % Redraw sigma points from the prior so they include the Q added in predict
+            sigmas = obj.sigmaPoints(obj.x, obj.P, alpha, kappa);
+            [Wm, Wc] = obj.weights(obj.x, alpha, beta, kappa);
+            nSig = size(sigmas, 2);
+
+            % Pass each sigma point through the measurement model h(x)
+            sigmasH = zeros(numel(obj.h(obj.x)), nSig);
+            for i = 1:nSig
+                sigmasH(:, i) = obj.h(sigmas(:, i));
+            end
+
+            % Predicted measurement and innovation covariance (+ measurement noise R)
+            [zPred, S] = obj.unscentedTransform(sigmasH, Wm, Wc, obj.R);
+
+            % Cross covariance between state and measurement
+            Pxz = ((sigmas - obj.x) .* Wc(:)') * (sigmasH - zPred)';
+
+            % Kalman gain, residual, and update
+            K = Pxz / S;
+            obj.z = obj.gpsRawData';
+            y = obj.z - zPred;
+            obj.x = obj.x + K * y;
+            obj.P = obj.P - K * S * K';
+            obj.P = (obj.P + obj.P') / 2;   % keep P symmetric so chol doesn't drift
+        end
+
+        % Process model for one state vector w/ same kinematics as predictState,
+        % but takes x as an input instead of modifying obj.x
+        function xNew = processModelUKF(obj, x, accI)
+            dt = obj.dt;
+            xNew = x;
+            xNew(1:3) = x(1:3) + x(4:6) * dt + accI * ((dt^2)/2);
+            xNew(4:6) = x(4:6) + accI * dt;
+        end
+
+    end
+
+    % helper methods
+    methods (Static)
+
+        % Input: sigma points (n x 2n+1), weights, additive noise covariance
+        % Output: weighted mean and covariance
+        function [xMean, P] = unscentedTransform(sigmas, Wm, Wc, noiseCov)
+            Wm = Wm(:)';
+            Wc = Wc(:)';
+
+            % Mean taken relative to the center sigma point. Same as sigmas*Wm'
+            % (since sum(Wm) = 1), but with less round-off when alpha is small and
+            % Wm(1) is a huge negative number.
+            dS = sigmas - sigmas(:, 1);
+            xMean = sigmas(:, 1) + dS * Wm';
+
+            dX = sigmas - xMean;
+            P = (dX .* Wc) * dX' + noiseCov;
+            P = (P + P') / 2;
         end
         
         % van der merwe scaled sigma point implementation (ref 10.11.1 in pdf)
-        function [Wc, Wm] = weights(x, alpha, beta, kappa)
+        function [Wm, Wc] = weights(x, alpha, beta, kappa)
             n = numel(x);
             lambda = alpha^2 * (n + kappa) - n;
 
@@ -324,6 +394,10 @@ obj.posHistory.time(end+1) = obj.currentTime;
                 sigmas(:, i + 1 + n) = x - U(:, i);  % Negative direction
             end
         end
+
+    end
+
+    methods
 
         %% Sensor Data
 
