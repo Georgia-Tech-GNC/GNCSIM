@@ -6,25 +6,25 @@ classdef Navigation < handle
         idx = StateIndices
     end
 
-    properties
-
+    properties 
+        
         dt
-        currentTime
-        x
+        currentTime 
+        x 
         P
         dfdx
-        dhdx
+        dhdx        
         Q
         R
         sigmaA
-        q
+        q 
         z
         h
 
         gpsRawData
         gyroRawData
         accRawData
-
+        
         cIBprior
         cBI
         cIB
@@ -51,13 +51,6 @@ classdef Navigation < handle
 
     end
 
-    properties
-        % UKF tuning (Van der Merwe scaled sigma points)
-        ukfAlpha = 1e-3
-        ukfBeta  = 2
-        ukfKappa = 0
-    end
-
     methods
 
         function obj = Navigation(navParams, gps, gyroscope, accelerometer, magnetometer)
@@ -68,7 +61,7 @@ classdef Navigation < handle
                 obj.Q = navParams.Q;
                 obj.sigmaA = navParams.sigmaA;
 
-
+               
 
                 obj.gps = gps;
                 obj.gyroscope = gyroscope;
@@ -88,7 +81,7 @@ classdef Navigation < handle
         function ekfState = getStateEstimate(obj, state, stateDot, currentTime, log)
             % Clean up use of cIB prior, posterior, initial state estimate
             obj.currentTime = currentTime;
-
+            
             % Initial state estimate
             if currentTime == 0
                 obj.q = Utils.eulerToQuat([0, -90, 0]);
@@ -100,7 +93,7 @@ classdef Navigation < handle
 
             obj.getRawData(state, stateDot);
 
-            obj.cIBprior = Utils.dirCosine(obj.q)';
+            obj.cIBprior = Utils.dirCosine(obj.q)'; 
             obj.qPrior = obj.q;
 
             obj.runAttitudeEstimation();
@@ -108,10 +101,10 @@ classdef Navigation < handle
             obj.cBI = Utils.dirCosine(obj.q);
             obj.cIB = obj.cBI';
 
-
+            
             obj.ekf(log);
-
-
+            
+            
             ekfState = [state(obj.idx.mass); obj.x(1:3); obj.cBI * obj.x(4:6); obj.q(:); obj.gyroRawData];
 
             % disp('State')
@@ -122,7 +115,7 @@ classdef Navigation < handle
             % disp(ekfState)
             % disp("Time")
             % disp(currentTime)
-
+           
 
 obj.posHistory.trueX(end+1) = state(2);
 obj.posHistory.trueY(end+1) = state(3);
@@ -142,14 +135,14 @@ end
 
 % ---- Time ----
 obj.posHistory.time(end+1) = obj.currentTime;
-
+            
         end
 
 
         %% Attitude Estimation
 
         function obj = runAttitudeEstimation(obj)
-
+            
             wx = obj.gyroRawData(1);
             wy = obj.gyroRawData(2);
             wz = obj.gyroRawData(3);
@@ -163,10 +156,10 @@ obj.posHistory.time(end+1) = obj.currentTime;
         function initialAttitudeQuatToBody = preFlightAttitudeEstimation(obj, state, stateDot, wMag, wAccel, Si, bhi)
             % Si is soft iron matrix found from calibration
             % bhi is hard iron vector found from calibration
-
+            
             obj.currentTime = 0;
             [magReadingBody, trueMagInertial] = obj.magnetometer.getMeasurement(state, stateDot, obj.currentTime);
-
+            
             % Remove Hard and Soft Iron Bias
             magReadingBody = Si * (magReadingBody - bhi);
 
@@ -175,7 +168,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
             gravReadingBody = obj.accelerometer.getMeasurement(state, stateDot, obj.currentTime);
             gravReadingBodyUnit = -gravReadingBody/norm(gravReadingBody);
             trueMagInertialUnit = trueMagInertial/norm(trueMagInertial);
-
+            
             trueGravInertial = [0;0;-9.8];
             trueGravInertialUnit = trueGravInertial/norm(trueGravInertial);
 
@@ -196,14 +189,14 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
             % Convert maxEigVec to unit quaternion
             initialAttitudeQuatToBody = (maxEigVec/norm(maxEigVec))';
-
+           
             obj.q = initialAttitudeQuatToBody;
 
         end
 
         %% EKF Functions
 
-        % notes for self: P is predicted every prediction step, but updated only when gps data is available.
+        % notes for self: P is predicted every prediction step, but updated only when gps data is available. 
         % This means that the covariance matrix will grow over time if no gps data is available
 
         function obj = ekf(obj, log)
@@ -270,106 +263,43 @@ obj.posHistory.time(end+1) = obj.currentTime;
         %% UKF Functions
 
         % TODO: maybe separate UKF and EKF into separate classes, but for now they are together in this class.
-        % To use: call obj.ukf(log) in place of obj.ekf(log) in getStateEstimate.
-        % Tuning: obj.ukfAlpha, obj.ukfBeta, obj.ukfKappa (defaults 1e-3, 2, 0).
         function obj = ukf(obj, log)
             % Predict Step
-            obj = obj.predictStateUKF(obj.ukfAlpha, obj.ukfBeta, obj.ukfKappa); % updates obj.x and obj.P
-
+            obj = obj.predictStateUKF(1e-3, 2, 0); % updates obj.x and obj.P, using alpha, beta, kappa
+            
             % Update Step (only if gps data is available)
             if ~(isempty(obj.gpsRawData))
-                obj = obj.updateStateUKF(obj.ukfAlpha, obj.ukfBeta, obj.ukfKappa);
+                %TODO write update step for UKF
             end
-
-            diagP = diag(obj.P);
-            log.add(obj.currentTime, 'ukfcovariances', diagP);
         end
 
         % Input: obj.x, obj.P, alpha, beta, kappa
         % Output: obj with updated state and covariance
         function obj = predictStateUKF(obj, alpha, beta, kappa)
-            % Accelerometer is a control input: same value for every sigma point
-            accI = obj.accBodytoInertial();
-
-            sigmas = obj.sigmaPoints(obj.x, obj.P, alpha, kappa);
-            [Wm, Wc] = obj.weights(obj.x, alpha, beta, kappa);
-
-            % Pass each sigma point through the process model f(x, u)
-            sigmasF = zeros(size(sigmas));
-            for i = 1:size(sigmas, 2)
-                sigmasF(:, i) = obj.processModelUKF(sigmas(:, i), accI);
-            end
-
-            % Prior mean and covariance (+ additive process noise Q)
-            [obj.x, obj.P] = obj.unscentedTransform(sigmasF, Wm, Wc, obj.Q);
+            sigmas = sigmaPoints(obj.x, obj.P, alpha, kappa);
+            [Wm, Wc] = weights(obj.x, alpha, beta, kappa);
+            [obj.x, obj.P] = unscentedTransform(sigmas, Wm, Wc, obj.Q);
         end
 
-        % Input: prior obj.x, obj.P, GPS measurement in obj.gpsRawData
-        % Output: obj with posterior state and covariance
-        function obj = updateStateUKF(obj, alpha, beta, kappa)
-            % Redraw sigma points from the prior so they include the Q added in predict
-            sigmas = obj.sigmaPoints(obj.x, obj.P, alpha, kappa);
-            [Wm, Wc] = obj.weights(obj.x, alpha, beta, kappa);
-            nSig = size(sigmas, 2);
-
-            % Pass each sigma point through the measurement model h(x)
-            sigmasH = zeros(numel(obj.h(obj.x)), nSig);
-            for i = 1:nSig
-                sigmasH(:, i) = obj.h(sigmas(:, i));
-            end
-
-            % Predicted measurement and innovation covariance (+ measurement noise R)
-            [zPred, S] = obj.unscentedTransform(sigmasH, Wm, Wc, obj.R);
-
-            % Cross covariance between state and measurement
-            Pxz = ((sigmas - obj.x) .* Wc(:)') * (sigmasH - zPred)';
-
-            % Kalman gain, residual, and update
-            K = Pxz / S;
-            obj.z = obj.gpsRawData';
-            y = obj.z - zPred;
-            obj.x = obj.x + K * y;
-            obj.P = obj.P - K * S * K';
-            obj.P = (obj.P + obj.P') / 2;   % keep P symmetric so chol doesn't drift
+        % TODO: Write function
+        function obj = updateStateUKF(obj)
+            % pseudocode:
+            %
+            %
+            %
+            %
         end
+        % TODO: Write function
+        function [x, P] = unscentedTransform(sigmas, W_m, W_c, Q)
 
-        % Process model for one state vector w/ same kinematics as predictState,
-        % but takes x as an input instead of modifying obj.x
-        function xNew = processModelUKF(obj, x, accI)
-            dt = obj.dt;
-            xNew = x;
-            xNew(1:3) = x(1:3) + x(4:6) * dt + accI * ((dt^2)/2);
-            xNew(4:6) = x(4:6) + accI * dt;
         end
-
-    end
-
-    % helper methods
-    methods (Static)
-
-        % Input: sigma points (n x 2n+1), weights, additive noise covariance
-        % Output: weighted mean and covariance
-        function [xMean, P] = unscentedTransform(sigmas, Wm, Wc, noiseCov)
-            Wm = Wm(:)';
-            Wc = Wc(:)';
-
-            % Mean taken relative to the center sigma point. Same as sigmas*Wm'
-            % (since sum(Wm) = 1), but with less round-off when alpha is small and
-            % Wm(1) is a huge negative number.
-            dS = sigmas - sigmas(:, 1);
-            xMean = sigmas(:, 1) + dS * Wm';
-
-            dX = sigmas - xMean;
-            P = (dX .* Wc) * dX' + noiseCov;
-            P = (P + P') / 2;
-        end
-
+        
         % van der merwe scaled sigma point implementation (ref 10.11.1 in pdf)
-        function [Wm, Wc] = weights(x, alpha, beta, kappa)
+        function [Wc, Wm] = weights(x, alpha, beta, kappa)
             n = numel(x);
             lambda = alpha^2 * (n + kappa) - n;
 
-            Wc = ones(1, 2*n+1)* (1./ (2 * (n + lambda)));
+            Wc = ones(1, 2*n+1)* (1./ (2 * (n + lambda)));            
             Wm = ones(1, 2*n+1)* (1./ (2 * (n + lambda)));
 
             Wc(1) = lambda/(n + lambda) + (1 - alpha^2 + beta);
@@ -394,10 +324,6 @@ obj.posHistory.time(end+1) = obj.currentTime;
                 sigmas(:, i + 1 + n) = x - U(:, i);  % Negative direction
             end
         end
-
-    end
-
-    methods
 
         %% Sensor Data
 
@@ -459,7 +385,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
             % Converts from WGS84 to ECEF
 
             WGS84_E = 0.08181;
-            WGS84_A = 6378137.0;
+            WGS84_A = 6378137.0;   
 
             % Convert latitude and longitude from degrees to radians
             phi = deg2rad(lat);
@@ -475,7 +401,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
         end
 
         function [xENU, yENU, zENU] = GPS2ENU(obj, lat, lon, alt)
-
+            
             [xECEF, yECEF, zECEF] = obj.LLA2ECEF(lat, lon, alt);
 
             [xECEFref, yECEFref, zECEFref] = obj.LLA2ECEF(obj.gps.refLLA(1), obj.gps.refLLA(2), obj.gps.refLLA(3));
@@ -502,12 +428,12 @@ obj.posHistory.time(end+1) = obj.currentTime;
 
         % Attitude/Quaternion
 
-        function [qDelt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz)
+        function [qDelt] = gyroToInstantaneousRotationQuat(obj, wx, wy, wz) 
 
             omegaVec = [wx wy wz];
 
             if norm(omegaVec) == 0
-                qDelt = [1;0;0;0];
+                qDelt = [1;0;0;0]; 
                 return
             end
 
@@ -534,7 +460,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
         end
 
         %% Plotting
-
+        
         function plotPositionHistory(obj)
             % Check if any data exists
             if isempty(obj.posHistory.time)
@@ -543,9 +469,9 @@ obj.posHistory.time(end+1) = obj.currentTime;
             end
 
             t = obj.posHistory.time;
-
+        
             figure;
-
+            
             % ---- X ----
             subplot(3,1,1)
             plot(t, obj.posHistory.trueX, 'LineWidth', 1.5); hold on;
@@ -554,7 +480,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
             title('True Position vs GPS Position');
             legend('True','GPS');
             grid on;
-
+        
             % ---- Y ----
             subplot(3,1,2)
             plot(t, obj.posHistory.trueY, 'LineWidth', 1.5); hold on;
@@ -562,7 +488,7 @@ obj.posHistory.time(end+1) = obj.currentTime;
             ylabel('Y (m)');
             legend('True','GPS');
             grid on;
-
+        
             % ---- Z ----
             subplot(3,1,3)
             plot(t, obj.posHistory.trueZ, 'LineWidth', 1.5); hold on;
