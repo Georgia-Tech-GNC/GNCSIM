@@ -58,8 +58,8 @@ classdef BreakPoints < handle
 
             cumVelocityFull = cumtrapz(timeNominal,vel);
 
-            % Filter out breakpoints from first second of flight (no control authority)
-            validIdx = find(timeNominal > obj.tIgnition & timeNominal < obj.tBurnout);
+            % Only keep breakpoints while the motor burns and the rocket is moving
+            validIdx = find(timeNominal > obj.tIgnition & timeNominal < obj.tBurnout & vel > 5);
             cumValid = cumVelocityFull(validIdx);
             
 

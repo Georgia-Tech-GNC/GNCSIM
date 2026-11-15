@@ -36,7 +36,7 @@ classdef GimbalActuatorModel < controllerPkg.ActuatorModel
 
             % Unit thrust direction in body frame (norm = 1)
             dirB = [cos(dp)*cos(dy);
-                   -cos(dp)*sin(dy);
+                    cos(dp)*sin(dy);
                     sin(dp)];
 
             fFull = thrust * dirB;

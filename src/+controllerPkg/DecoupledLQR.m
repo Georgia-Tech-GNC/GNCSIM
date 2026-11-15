@@ -58,8 +58,9 @@ classdef DecoupledLQR < controllerPkg.Controller
             yawControl = yawControlRef + K3 * yawErr;
             
             % Get rocket control
-            rocketControlRad = [rollControl, pitchControl, yawControl].';  % roll, pitch, yaw
-            rocketControl = rad2deg(rocketControlRad);
+            % rocketControlRad = [rollControl, pitchControl, yawControl].';  % roll, pitch, yaw
+            % rocketControl = rad2deg(rocketControlRad);
+            rocketControl = [rollControl, pitchControl, yawControl].';
         end
            
         function [rollErr, pitchErr, yawErr] = getError(obj, rocketStateEstimate, currentTime)
@@ -114,7 +115,12 @@ classdef DecoupledLQR < controllerPkg.Controller
 
                 % Compute LQR gains
                 K3 = lqr(A3, B3, obj.Q3, obj.R3);
-                K2 = lqr(A2, B2, obj.Q2, obj.R2);
+                if any(B2(:))
+                    K2 = lqr(A2, B2, obj.Q2, obj.R2);
+                else
+                    % No roll authority
+                    K2 = zeros(size(B2, 2), size(A2, 1));
+                end
                 
                 % save gains and system
                 obj.breakPoints.stateMatrix{ii} = {A2, A3};

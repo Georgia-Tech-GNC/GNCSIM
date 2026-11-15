@@ -25,7 +25,7 @@ controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajecto
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
-flight.runClosedLoop = false;
+flight.runClosedLoop = true;
 
 %% Run Flight
 runFlight = true;
@@ -370,7 +370,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
-    %controller.populateBreakPoints();
+    controller.populateBreakPoints();
 end
 
 function nav = setupNavigation(dt)
