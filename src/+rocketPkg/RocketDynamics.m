@@ -222,9 +222,14 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.LAUNCH_RAIL
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
+<<<<<<< Updated upstream
                     [fBAero, ~] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, obj.getThrust(time) * useThrust);
 
+=======
+                    [fBAero, ~] = obj.computeAero(state, currentCg, envConditions);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, time, useThrust);
+>>>>>>> Stashed changes
                     fTotal = fGBody + fTB + fBAero + fBActuator;
                     fB = [fTotal(1); 0; 0];
                     mB = [0; 0; 0];
@@ -239,9 +244,14 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.POWERED_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
+<<<<<<< Updated upstream
                     [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, obj.getThrust(time) * useThrust);
 
+=======
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, time, useThrust);
+>>>>>>> Stashed changes
                     fB = fGBody + fTB + fBAero + fBActuator;
                     mB = mBAero + mBActuator;
 
@@ -255,9 +265,14 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
 
                 case FlightState.COASTING_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
+<<<<<<< Updated upstream
                     [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, obj.getThrust(time) * useThrust);
 
+=======
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions);
+                    [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, time, useThrust);
+>>>>>>> Stashed changes
                     fB = fGBody + fBAero + fBActuator;
                     mB = mBAero + mBActuator;
 
@@ -322,6 +337,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             arguments
                 obj
             end
+<<<<<<< Updated upstream
             % % Main Author: David Reynolds
             % obj.body.computeBuildup()
             % obj.rocketFins.computeBuildup()
@@ -334,6 +350,19 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             %     obj.rocketFins.fins(ii).scaleFactor = 1.97;
             % end
             obj.aeroSource.computeBuildup()
+=======
+            % Main Author: David Reynolds
+            obj.body.computeBuildup()
+            obj.rocketFins.computeBuildup()
+
+			% Added scale factors in order to line up with open rocket
+            obj.body.scaleFactor = 1.51;
+            obj.body.momentScaleFactor = 0.0;
+            [~, numFins] = size(obj.rocketFins.fins);
+            for ii = 1:numFins
+                obj.rocketFins.fins(ii).scaleFactor = 1.97;
+            end
+>>>>>>> Stashed changes
         end
 
 		function draw(obj)
@@ -442,8 +471,18 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             [fBAero, mBAero] = obj.aeroSource.getForcesMoments(state, currentCg, envConditions, powerOn);
         end
 
+<<<<<<< Updated upstream
         function [fBActuator, mBActuator] = computeActuator(obj, state, actuatorState, currentCg, envConditions, thrust)
             [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, envConditions, thrust);
+=======
+        function [fBActuator, mBActuator] = computeActuator(obj, state, actuatorState, currentCg, envConditions, time, useThrust)
+            if isa(obj.actuatorModel, 'theGimbalTVC.GimbalActuatorModel')
+                thrust = obj.getThrust(time) * useThrust;
+                [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, envConditions, thrust);
+            else
+                [fBActuator, mBActuator] = obj.actuatorModel.getForcesMoments(state, actuatorState, currentCg, envConditions);
+            end
+>>>>>>> Stashed changes
         end
 
         function fBParachute = computeParachute(obj, state, rocketQuat, envConditions, time)
