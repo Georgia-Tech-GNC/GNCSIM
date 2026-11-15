@@ -1,4 +1,4 @@
-function [fB, mB, hingeMoments] = getAeroForcesAndMoments(result, model, dyn, rAreftoCG)
+function [fB, mB, hingeMoments] = getAeroResult(result, model, dyn, rAreftoCG)
 
     arguments
         result  (1,1) struct

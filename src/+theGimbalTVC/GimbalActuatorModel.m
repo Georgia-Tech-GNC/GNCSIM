@@ -21,7 +21,7 @@ classdef GimbalActuatorModel < controllerPkg.ActuatorModel
             obj.limits = limits;
         end
 
-        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions, thrust) %#ok<INUSL>
+        function [fB, mB] = getForcesMoments(obj, state, actuatorState, currentCg, envConditions, thrust) 
             arguments
                 obj
                 state (:,1) double

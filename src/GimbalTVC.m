@@ -4,6 +4,7 @@ clear; clc; close all;
 %% Instantiate Classes
 
 % Rocket Dynamics
+
 rocketDynamics = setupRocket();
 rocketDynamics.computeBuildup()
 
@@ -24,7 +25,7 @@ controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajecto
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
-flight.runClosedLoop = true;
+flight.runClosedLoop = false;
 
 %% Run Flight
 runFlight = true;
@@ -92,12 +93,12 @@ function rocketDyn = setupRocket()
     rocketParams.longitudinalMoiWet = 0.025;  % [kg * m^2]
     rocketParams.rotationalMoiWet = 7.43e-4;  % [kg * m^2]
     rocketParams.cgXWet = 0.47;  % [m]
-    rocketParams.massWet = 1.047; % [kg]
+    rocketParams.massWet = 0.998; % [kg]
     
     rocketParams.longitudinalMoiDry = 0.0231;  % [kg * m^2]
     rocketParams.rotationalMoiDry = 7.34e-4;  % [kg * m^2]
     rocketParams.cgXDry = 0.458;  % [m]
-    rocketParams.massDry = 0.965; % [kg]
+    rocketParams.massDry = 0.916; % [kg]
     
     % Create Body
     bodyParams.noseLength = 0.203;  % [m]
@@ -106,9 +107,9 @@ function rocketDyn = setupRocket()
 	bodyParams.translation = [0, 0, 0];
 	bodyParams.cgXWet = rocketParams.cgXWet;
 
-    flightConParams.machNumbers = [0.02, 0.05, 0.08];        % Array of Mach numbers to test
-    flightConParams.altitudes = [0, 300, 600];       % Array of altitudes in feet
-    flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % Array of angles of attack in degrees
+    flightConParams.machNumbers = [0.02, 0.05, 0.08]; % Array of Mach numbers to test
+    flightConParams.altitudes = [0, 300, 600]; % Array of altitudes in feet
+    flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % double check % Array of angles of attack in degrees
 
     body = rocketPkg.RocketBody(bodyParams, flightConParams);
     rocketFinStatic = rocketPkg.RocketFins(struct([]), flightConParams);
@@ -117,7 +118,7 @@ function rocketDyn = setupRocket()
     motorParams.burnTime = 12.6;
     tmp = load("+theGimbalTVC/thrust_curve_g12st.mat");
     motorParams.thrustCurve = tmp.thrust_curve_g12st;
-    motorParams.mass = 0.4;  % [kg]
+    motorParams.mass = 0.150;  % [kg]
     motorParams.xRef = -1;  % [m]
     motorParams.tIgnition = 1.0;
     motorParams.totalImpulse = 145.8; % N-sec
@@ -137,21 +138,30 @@ function rocketDyn = setupRocket()
     limits.maxRate = 300;       % deg/s
     xPivot = 0.603;
     actuatorModel = theGimbalTVC.GimbalActuatorModel(xPivot, timeConstant, allocationMatrix, limits);
-    
-    aeroSource = "datcom";   % "datcom" | "cfd"
 
-    tabParams.sHat      = [0 0  0  0;
-                           1 0 -1  0;
-                           0 1  0 -1];   % outward span of tab i, body frame
-    tabParams.deltaSign = +1;            % +delta right-handed about outward span
+    % tabParams.sHat = [0 0  0  0;
+    %                   1 0 -1  0;
+    %                   0 1  0 -1]; % outward span of tab i, body frame
+    % tabParams.deltaSign = +1;  % +delta right-handed about outward span
 
-    aeroRef.Sref         = 0.019289796;  % [m^2] 
-    aeroRef.Lref         = 0.156718;     % [m]   
-    aeroRef.xRefFromAft = 0.938;        % [m]
-    % Set Up Parachutes (linked list)
+    % aeroRef.Sref = 0.019289796; % m^2
+    % aeroRef.Lref  = 0.156718; % m  
+    % aeroRef.xRefFromAft = 0.938; % m
+
     firstParachute = setupParachute();
 
-    rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute);
+    aeroSource = "rasaero";   % "datcom" or "rasaero" or "cfd"
+    switch aeroSource
+        case "datcom"
+            aero = aeroPkg.DatcomAeroSource(body, rocketFinStatic);
+        case "rasaero"
+            aero = aeroPkg.CoeffAeroSource(aeroPkg.RasaeroAeroModel("+theGimbalTVC/rasaero_aero.mat"));
+        case "cfd"
+            xAeroRef = 0.6858 + 0.0798;
+            aero = aeroPkg.CoeffAeroSource(aeroPkg.CfdAeroModel("+theGimbalTVC/cfd_aero.mat"), xAeroRef);
+end
+
+rocketDyn = rocketPkg.RocketDynamics(body, rocketFinStatic, rocketParams, motorParams, actuatorModel, firstParachute, aero);
 end
 
 function environment = setupEnvironment()
@@ -340,8 +350,9 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     nominalTrajLog = tmp.log;
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
-    tIgnition = 1;
-    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition);
+    tIgnition = rocketDynamics.tIgnition;
+    tBurnout = rocketDynamics.tIgnition + rocketDynamics.burnTime - 0.2;
+    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition, tBurnout);
 
     % Get controller
 	Q2 = diag([1 1]);       
@@ -359,7 +370,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
-    controller.populateBreakPoints();
+    %controller.populateBreakPoints();
 end
 
 function nav = setupNavigation(dt)
@@ -452,7 +463,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     flightParams.endState = flightPkg.FlightState.LANDED; % State to stop simulation
 
     % Flight state parameters
-    flightParams.launchRailLength = 5.0;  % launch rail length [m]
+    flightParams.launchRailLength = 1.524;  % launch rail length [m]
 
     flightParams.dt = 0.01;  % time step [s]
 

@@ -26,11 +26,11 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
         cgDry (1,1) double
 
         actuatorModel controllerPkg.ActuatorModel = controllerPkg.ActuatorModel.empty
-        aerodynamicsCFD rocketPkg.AerodynamicsCFD = rocketPkg.AerodynamicsCFD.empty
+        aeroSource
     end
 
     methods
-        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, firstParachute, aerodynamicsCFD)
+        function obj = RocketDynamics(body, rocketFins, rocketParams, motorParams, actuatorModel, firstParachute, aeroSource)
             arguments
                 body                % DATCOM
                 rocketFins          % DATCOM
@@ -38,7 +38,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 motorParams
                 actuatorModel = controllerPkg.ActuatorModel.empty 
                 firstParachute = rocketPkg.ParachuteDynamics.empty     % Head of parachute linked list
-                aerodynamicsCFD = rocketPkg.AerodynamicsCFD.empty   % defaults to empty
+                aeroSource = []
             end
 
             obj.body = body;
@@ -60,7 +60,10 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
 
             obj.actuatorModel = actuatorModel;
 
-            obj.aerodynamicsCFD = aerodynamicsCFD;
+            if isempty(aeroSource)
+                aeroSource = aeroPkg.DatcomAeroSource(body, rocketFins);
+            end
+            obj.aeroSource = aeroSource;
 
             obj.activeParachute = firstParachute;
         end
@@ -219,7 +222,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.LAUNCH_RAIL
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
-                    [fBAero, ~] = obj.computeAero(state, currentCg, envConditions);
+                    [fBAero, ~] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions);
 
                     fTotal = fGBody + fTB + fBAero + fBActuator;
@@ -236,7 +239,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.POWERED_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
-                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions);
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions);
 
                     fB = fGBody + fTB + fBAero + fBActuator;
@@ -252,7 +255,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
 
                 case FlightState.COASTING_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
-                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions);
+                    [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions);
 
                     fB = fGBody + fBAero + fBActuator;
@@ -319,17 +322,18 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             arguments
                 obj
             end
-            % Main Author: David Reynolds
-            obj.body.computeBuildup()
-            obj.rocketFins.computeBuildup()
-
-			% Added scale factors in order to line up with open rocket
-            obj.body.scaleFactor = 1.51;
-            obj.body.momentScaleFactor = 0.21;
-            [~, numFins] = size(obj.rocketFins.fins);
-            for ii = 1:numFins
-                obj.rocketFins.fins(ii).scaleFactor = 1.97;
-            end
+            % % Main Author: David Reynolds
+            % obj.body.computeBuildup()
+            % obj.rocketFins.computeBuildup()
+            % 
+			% % Added scale factors in order to line up with open rocket
+            % obj.body.scaleFactor = 1.51;
+            % obj.body.momentScaleFactor = 0.21;
+            % [~, numFins] = size(obj.rocketFins.fins);
+            % for ii = 1:numFins
+            %     obj.rocketFins.fins(ii).scaleFactor = 1.97;
+            % end
+            obj.aeroSource.computeBuildup()
         end
 
 		function draw(obj)
@@ -418,7 +422,10 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             cp.rocketFins = rocketPkg.RocketDynamics.copyHandleProperty(obj.rocketFins, "rocketFins");
             cp.activeParachute = rocketPkg.RocketDynamics.copyHandleProperty(obj.activeParachute, "activeParachute");
             cp.actuatorModel = rocketPkg.RocketDynamics.copyHandleProperty(obj.actuatorModel, "actuatorModel");
-            cp.aerodynamicsCFD = rocketPkg.RocketDynamics.copyHandleProperty(obj.aerodynamicsCFD, "aerodynamicsCFD");
+            cp.aeroSource = rocketPkg.RocketDynamics.copyHandleProperty(obj.aeroSource, "aeroSource");
+            if ~isempty(cp.aeroSource)
+                cp.aeroSource.relink(cp.body, cp.rocketFins);
+            end
         end
     end
 
@@ -431,15 +438,8 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
             fTB = [obj.getThrust(time) * useThrust; 0; 0];
         end
 
-        function [fBAero, mBAero] = computeAero(obj, state, currentCg, envConditions)
-            if isempty(obj.aerodynamicsCFD)
-                [fBFins, mBFins] = obj.rocketFins.getForcesMoments(state, [], currentCg, envConditions);
-                [fBBody, mBBody] = obj.body.getForcesMoments(state, envConditions);
-                fBAero = fBFins + fBBody;
-                mBAero = mBFins + mBBody;
-            else
-                [fBAero, mBAero] = obj.aerodynamicsCFD.getForcesMoments(state, envConditions, currentCg);
-            end
+        function [fBAero, mBAero] = computeAero(obj, state, currentCg, envConditions, powerOn)
+            [fBAero, mBAero] = obj.aeroSource.getForcesMoments(state, currentCg, envConditions, powerOn);
         end
 
         function [fBActuator, mBActuator] = computeActuator(obj, state, actuatorState, currentCg, envConditions)

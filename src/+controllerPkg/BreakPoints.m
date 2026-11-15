@@ -11,6 +11,7 @@ classdef BreakPoints < handle
         numBreakPoints (1,1) double {mustBeNonnegative}
         cumVelocityInterval (1,1) double {mustBeNonnegative} % time interval to add up velocity [s]
         tIgnition (1,1) double {mustBeNonnegative}
+        tBurnout (1,1) double {mustBeNonnegative}
 
         % Breakpoint data arrays
         cumVelocity (1,:) double {mustBeNonnegative}     % 1 x numBreakPoints array
@@ -25,11 +26,12 @@ classdef BreakPoints < handle
 
     methods
 
-        function obj = BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition)
+        function obj = BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition, tBurnout)
             obj.nominalTrajLog = nominalTrajLog;
             obj.numBreakPoints = numBreakPoints;
             obj.cumVelocityInterval = cumVelocityInterval;
             obj.tIgnition = tIgnition;
+            obj.tBurnout = tBurnout;
 
             obj.generateBreakPoints();
         end
@@ -57,9 +59,9 @@ classdef BreakPoints < handle
             cumVelocityFull = cumtrapz(timeNominal,vel);
 
             % Filter out breakpoints from first second of flight (no control authority)
-            tIgnore = obj.tIgnition; % seconds
-            validIdx = find(timeNominal > tIgnore);
+            validIdx = find(timeNominal > obj.tIgnition & timeNominal < obj.tBurnout);
             cumValid = cumVelocityFull(validIdx);
+            
 
             cumTargets = linspace(cumValid(1), cumValid(end), obj.numBreakPoints);
 
