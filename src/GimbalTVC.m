@@ -21,11 +21,59 @@ end
 
 % Setup Controller
 useActuatorModel = true;
-controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory, environment);
+% controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nominalTrajectory, environment);
+controller = setupMuSynthesis(rocketDynamics, useActuatorModel, environment);
 
 % Setup Flight Simulation (sets up navigation too)
 [flight, log] = setupFlight(rocketDynamics, controller, environment);
 flight.runClosedLoop = true;
+
+function controller = setupMuSynthesis(rocketDynamics, useActuatorModel, environment)
+    % Reference attitude: straight up, as a quaternion [time; q0..q3]
+    dt = 0.01;
+    controlTime = 23;
+    time = linspace(dt, controlTime, controlTime/dt);
+    q_ref = Utils.eulerToQuat([0, -90, 0]);
+    referenceAttitudes = double([time; repmat(q_ref(:), 1, numel(time))]);
+
+    % Breakpoints: same log and call as the LQR setup, fewer breakpoints for the first run
+    tmp = load("+theGimbalTVC/theGimbalTVCNominalFlightLog.mat");
+    nominalTrajLog = tmp.log;
+    numBreakPoints = 8;
+    cumVelocityInterval = 0.1; % s
+    tIgnition = 1;
+    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition);
+
+    % ROM provider: same as the LQR setup
+    groundAltitude = 0;
+    [T, a, P, rho] = environment.getAtmosphere(groundAltitude);
+    wind = environment.getWindVector(groundAltitude);
+    envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
+
+    controller = controllerPkg.MuSynthesisController(breakPoints, referenceAttitudes, reduceLTI, ...
+        'useActuatorModel', useActuatorModel);
+    controller.populateBreakPoints();
+    controller.report();
+
+%% Debug
+    bp = controller.breakPoints;  x = bp.state{3};  t = bp.time(3);
+    env = controller.linearizer.envConditions;
+    fs  = flightPkg.FlightState.POWERED_ASCENT;
+    rd  = rocketDynamics;
+    
+    d0 = rd.rocketModelControlWrapper(x, [0;0;0], env, t, fs, true, true);
+    disp(d0(5:7).')       % body accel: expect about +T/m - g along x (roughly 0 to +10 m/s^2), not 0 or NaN
+    disp(d0(1))           % mass flow: nonzero during burn means thrust is on
+    
+    % bypass the wrapper and drive the actuator model directly
+    dels = zeros(2,1); dels(2) = 1;      % check the real size of actuatorState in your model
+    dA = rd.rocketModel(x, [0;0], env, t, fs, true, true);
+    dB = rd.rocketModel(x, [0;deg2rad(5)], env, t, fs, true, true);  % try deg too if this is zero
+    disp((dB - dA).')
+    disp(rd.actuatorModel.actuatorDynamics([0;1;0], [0;0]).')
+
+end
 
 %% Run Flight
 runFlight = true;
@@ -133,9 +181,9 @@ function rocketDyn = setupRocket()
 
     allocationMatrix = [0 1 0;
                         0 0 1];
-    timeConstant = 0.05; % [s]
+    timeConstant = 0.01; % [s]
     limits.maxDeflection = 10;        % deg
-    limits.maxRate = 300;       % deg/s
+    limits.maxRate = 600;       % deg/s
     xPivot = 0.603;
     actuatorModel = theGimbalTVC.GimbalActuatorModel(xPivot, timeConstant, allocationMatrix, limits);
 
@@ -475,7 +523,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0]; % pos0 is added to the default altitude given coordinates
     vel0 = [1, 0, 0];
-	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
+	initAngle = Utils.eulerToQuat([15, 10, 0]).'; % yaw, pitch, roll
 	quatRot = Utils.eulerToQuat([0, -90, 0]).';
     orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];

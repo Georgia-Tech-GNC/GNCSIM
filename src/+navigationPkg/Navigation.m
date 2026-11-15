@@ -84,9 +84,10 @@ classdef Navigation < handle
             
             % Initial state estimate
             if currentTime == 0
-                obj.q = Utils.eulerToQuat([0, -90, 0]);
+                obj.q = state(obj.idx.quat);
+                obj.q = obj.q(:);
                 obj.x = [state(2:7)];
-
+            
                 ekfState = state;
                 return
             end
