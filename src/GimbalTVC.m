@@ -141,12 +141,12 @@ function rocketDyn = setupRocket()
     rocketParams.longitudinalMoiWet = 0.025;  % [kg * m^2]
     rocketParams.rotationalMoiWet = 7.43e-4;  % [kg * m^2]
     rocketParams.cgXWet = 0.47;  % [m]
-    rocketParams.massWet = 0.998; % [kg]
+    rocketParams.massWet = 1.09; % [kg]
     
     rocketParams.longitudinalMoiDry = 0.0231;  % [kg * m^2]
     rocketParams.rotationalMoiDry = 7.34e-4;  % [kg * m^2]
     rocketParams.cgXDry = 0.458;  % [m]
-    rocketParams.massDry = 0.916; % [kg]
+    rocketParams.massDry = 0.941; % [kg]
     
     % Create Body
     bodyParams.noseLength = 0.203;  % [m]
@@ -155,9 +155,9 @@ function rocketDyn = setupRocket()
 	bodyParams.translation = [0, 0, 0];
 	bodyParams.cgXWet = rocketParams.cgXWet;
 
-    flightConParams.machNumbers = [0.02, 0.05, 0.08]; % Array of Mach numbers to test
+    flightConParams.machNumbers = [0.02, 0.05, 0.08, 0.10]; % Array of Mach numbers to test
     flightConParams.altitudes = [0, 300, 600]; % Array of altitudes in feet
-    flightConParams.alphasDeg   = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]; % double check % Array of angles of attack in degrees
+    flightConParams.alphasDeg   = [-16, -15, -12, -10, -8, -6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 6, 8, 10, 12, 15, 16]; % double check % Array of angles of attack in degrees
 
     body = rocketPkg.RocketBody(bodyParams, flightConParams);
     rocketFinStatic = rocketPkg.RocketFins(struct([]), flightConParams);
@@ -405,8 +405,8 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
     % Get controller
 	Q2 = diag([1 1]);       
 	R2 = 20;   	
-	Q3 = diag([1 1 1]);
-	R3 = 2; 
+	Q3 = diag([1/deg2rad(90)^2, 1/deg2rad(30)^2, 1/deg2rad(2)^2]);   % alpha (barely weighted), rate 30 deg/s, attitude 2 deg
+	R3 = 1/10^2;                                                     % gimbal 10 deg
     
     %groundAltitude = elevation(33.7490, -84.3880);
     groundAltitude = 0;
