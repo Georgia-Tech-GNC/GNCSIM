@@ -6,7 +6,7 @@ classdef DatcomAeroSource < aeroPkg.AeroSource
 
         % Added scale factors in order to line up with open rocket
         bodyScaleFactor (1,1) double = 1.51
-        bodyMomentScaleFactor (1,1) double = 0.21
+        bodyMomentScaleFactor (1,1) double = 0
         finScaleFactor (1,1) double = 1.97
     end
 

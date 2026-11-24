@@ -39,10 +39,11 @@ function controller = setupMuSynthesis(rocketDynamics, useActuatorModel, environ
     % Breakpoints: same log and call as the LQR setup, fewer breakpoints for the first run
     tmp = load("+theGimbalTVC/theGimbalTVCNominalFlightLog.mat");
     nominalTrajLog = tmp.log;
-    numBreakPoints = 8;
+    numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
-    tIgnition = 1;
-    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition);
+    tIgnition = rocketDynamics.tIgnition;
+    tBurnout = rocketDynamics.tIgnition + rocketDynamics.burnTime - 0.2;
+    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition, tBurnout);
 
     % ROM provider: same as the LQR setup
     groundAltitude = 0;
@@ -523,7 +524,7 @@ function [flight, log] = setupFlight(rocketDynamics, controller, environment)
     mass0 = rocketDynamics.massWet;
     pos0 = [0, 0, 0]; % pos0 is added to the default altitude given coordinates
     vel0 = [1, 0, 0];
-	initAngle = Utils.eulerToQuat([15, 10, 0]).'; % yaw, pitch, roll
+	initAngle = Utils.eulerToQuat([0, 0, 0]).'; % yaw, pitch, roll
 	quatRot = Utils.eulerToQuat([0, -90, 0]).';
     orientationLaunchRail = Utils.quatMult(initAngle, quatRot).';
     omega0 = [0, 0, 0];

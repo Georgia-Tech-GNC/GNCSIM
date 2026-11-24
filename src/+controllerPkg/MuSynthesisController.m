@@ -91,7 +91,7 @@ classdef MuSynthesisController < controllerPkg.Controller
 
             u = zeros(3, 1); % [roll; pitch; yaw] in rad
             u(2) = g(1) * err(2) - g(3) * omega(2); % pitch
-            u(3) = g(1) * err(3) - g(3) * omega(3); % yaw uses the pitch gains
+            u(3) = -(g(1) * err(3) - g(3) * omega(3)); % yaw uses the pitch gains
             rocketControl = rad2deg(u);
             obj.lastTime = currentTime;
         end

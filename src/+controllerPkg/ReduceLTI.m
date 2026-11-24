@@ -61,12 +61,8 @@ classdef ReduceLTI < handle
                 % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
-<<<<<<< Updated upstream
                 %B_actuator = Utils.numericalJacobian(hu, pitchControlInput); % (4x1)
                 B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 2); % no actuator lag
-=======
-                B_actuator = Utils.numericalJacobian(hu, pitchControlInput); % (4x1)
->>>>>>> Stashed changes
                 B = B_aero * B_actuator; % (14x1)
             else
                 % FIX: thrust and gravity ON (was false, false). With thrust off a gimbal
@@ -119,12 +115,8 @@ classdef ReduceLTI < handle
                 % Calculate Full Jacobians
                 A = Utils.numericalJacobian(fx, xStar); % (14x14)
                 B_aero = Utils.numericalJacobian(fdel, actuatorState); % (14x4)
-<<<<<<< Updated upstream
                 % B_actuator = Utils.numericalJacobian(hu, rollControlInput); % (4x1)
                 B_actuator = obj.rocketDynamics.actuatorModel.allocationMatrix(:, 1);
-=======
-                B_actuator = Utils.numericalJacobian(hu, rollControlInput); % (4x1)
->>>>>>> Stashed changes
                 B = B_aero * B_actuator; % (14x1)
             else
                 % Define function handles for numerical differentiation
