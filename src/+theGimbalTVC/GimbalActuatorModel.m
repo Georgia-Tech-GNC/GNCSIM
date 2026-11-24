@@ -1,7 +1,10 @@
 % Gimbal TVC actuator model
 % Actuator state = [gimbal pitch; gimbal yaw] in degrees.
 % Sign convention: positive gimbal pitch -> positive body pitch moment (+My),
-%                  positive gimbal yaw   -> positive body yaw moment   (+Mz).
+%                  positive gimbal yaw   -> NEGATIVE body yaw moment   (-Mz).
+%   (Pivot is aft of the CG, so +y thrust at the tail swings the nose to -y.
+%    Controllers must flip the yaw sign: MuSynthesisController negates u(3),
+%    DecoupledLQR handles it via pitchReduce(..., yaw=true).)
 % Returns only the CHANGE from axial thrust, because RocketDynamics.computeThrust
 % already applies [T; 0; 0].
 

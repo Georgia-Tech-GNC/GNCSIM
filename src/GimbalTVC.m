@@ -16,7 +16,7 @@ generateNominalTrajectory = false;
 if generateNominalTrajectory
     nominalTrajectory = setupNominalTrajectory(rocketDynamics, environment);
 else
-    nominalTrajectory.useThisTraj = false;
+    nominalTrajectory.useThisTraj = true;
 end
 
 % Setup Controller
@@ -139,15 +139,15 @@ end
 
 function rocketDyn = setupRocket()
     % Vehicle Properties
-    rocketParams.longitudinalMoiWet = 0.025;  % [kg * m^2]
-    rocketParams.rotationalMoiWet = 7.43e-4;  % [kg * m^2]
-    rocketParams.cgXWet = 0.47;  % [m]
-    rocketParams.massWet = 1.09; % [kg]
+    rocketParams.longitudinalMoiWet = 0.02563;  % [kg * m^2]
+    rocketParams.rotationalMoiWet = 8.53e-4;  % [kg * m^2]
+    rocketParams.cgXWet = 0.4654;  % [m]
+    rocketParams.massWet = 1.0915; % [kg]
     
-    rocketParams.longitudinalMoiDry = 0.0231;  % [kg * m^2]
-    rocketParams.rotationalMoiDry = 7.34e-4;  % [kg * m^2]
-    rocketParams.cgXDry = 0.458;  % [m]
-    rocketParams.massDry = 0.941; % [kg]
+    rocketParams.longitudinalMoiDry = 0.0211;  % [kg * m^2]
+    rocketParams.rotationalMoiDry = 8.45e-4;  % [kg * m^2]
+    rocketParams.cgXDry = 0.447;  % [m]
+    rocketParams.massDry = 1.0095; % [kg]
     
     % Create Body
     bodyParams.noseLength = 0.203;  % [m]
@@ -395,7 +395,7 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 
     % Generate Breakpoints
 
-    tmp = load("+theGimbalTVC/theGimbalTVCNominalFlightLog.mat");
+    tmp = load("+theGimbalTVC/theGimbalTVCNominalTrajectory.mat");
     nominalTrajLog = tmp.log;
     numBreakPoints = 50;
     cumVelocityInterval = 0.1; % s
@@ -420,6 +420,54 @@ function controller = setupDecoupledLQR(rocketDynamics, useActuatorModel, nomina
 
     controller = controllerPkg.DecoupledLQR(breakPoints, referenceAttitudes, Q2, Q3, R2, R3, reduceLTI, useActuatorModel);
     controller.populateBreakPoints();
+end
+
+function controller = setupMuSynthesis(rocketDynamics, useActuatorModel, environment)
+    % Reference attitude: straight up, as a quaternion [time; q0..q3]
+    dt = 0.01;
+    controlTime = 23;
+    time = linspace(dt, controlTime, controlTime/dt);
+    q_ref = Utils.eulerToQuat([0, -90, 0]);
+    referenceAttitudes = double([time; repmat(q_ref(:), 1, numel(time))]);
+
+    % Breakpoints: same log and call as the LQR setup, fewer breakpoints for the first run
+    tmp = load("+theGimbalTVC/theGimbalTVCNominalFlightLog.mat");
+    nominalTrajLog = tmp.log;
+    numBreakPoints = 8;
+    cumVelocityInterval = 0.1; % s
+    tIgnition = rocketDynamics.tIgnition;
+    tBurnout = rocketDynamics.tIgnition + rocketDynamics.burnTime - 0.2;
+    breakPoints = controllerPkg.BreakPoints(nominalTrajLog, numBreakPoints, cumVelocityInterval, tIgnition, tBurnout);
+
+    % ROM provider: same as the LQR setup
+    groundAltitude = 0;
+    [T, a, P, rho] = environment.getAtmosphere(groundAltitude);
+    wind = environment.getWindVector(groundAltitude);
+    envConditions = flightPkg.AtmosphericConditions(rho, a, P, T, wind.');
+    reduceLTI = controllerPkg.ReduceLTI(rocketDynamics, envConditions);
+
+    controller = controllerPkg.MuSynthesisController(breakPoints, referenceAttitudes, reduceLTI, ...
+        'useActuatorModel', useActuatorModel);
+    controller.populateBreakPoints();
+    controller.report();
+
+% %% Debug
+%     bp = controller.breakPoints;  x = bp.state{3};  t = bp.time(3);
+%     env = controller.linearizer.envConditions;
+%     fs  = flightPkg.FlightState.POWERED_ASCENT;
+%     rd  = rocketDynamics;
+% 
+%     d0 = rd.rocketModelControlWrapper(x, [0;0;0], env, t, fs, true, true);
+%     disp(d0(5:7).')       % body accel: expect about +T/m - g along x (roughly 0 to +10 m/s^2), not 0 or NaN
+%     disp(d0(1))           % mass flow: nonzero during burn means thrust is on
+% 
+%     % bypass the wrapper and drive the actuator model directly
+%     dels = zeros(2,1); dels(2) = 1;      % check the real size of actuatorState in your model
+%     dA = rd.rocketModel(x, [0;0], env, t, fs, true, true);
+%     dB = rd.rocketModel(x, [0;deg2rad(5)], env, t, fs, true, true);  % try deg too if this is zero
+%     disp((dB - dA).')
+%     disp(rd.actuatorModel.actuatorDynamics([0;1;0], [0;0]).')
+
 end
 
 function nav = setupNavigation(dt)

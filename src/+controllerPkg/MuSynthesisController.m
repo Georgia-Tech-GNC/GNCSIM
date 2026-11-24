@@ -82,16 +82,17 @@ classdef MuSynthesisController < controllerPkg.Controller
                 currentCumVelocity (1,1) double {mustBeNonnegative}
                 currentTime (1,1) double {mustBeNonnegative}
             end
-            gains = obj.breakPoints.interpolateGain(currentCumVelocity);
+            [gains, controlRef] = obj.breakPoints.interpolateGain(currentCumVelocity);
             g = gains{1}; % [Kp Ki Kd]
+            ref = deg2rad(controlRef);
 
             [qRef, omegaRef] = obj.getReference(currentTime);
             err = obj.getError(state, currentTime, qRef);
             omega = state(obj.omegaIdx) - omegaRef;
 
             u = zeros(3, 1); % [roll; pitch; yaw] in rad
-            u(2) = g(1) * err(2) - g(3) * omega(2); % pitch
-            u(3) = -(g(1) * err(3) - g(3) * omega(3)); % yaw uses the pitch gains
+            u(2) = ref(2) + g(1)*err(2) - g(3)*omega(2); % pitch
+            u(3) = ref(3) - (g(1)*err(3) - g(3)*omega(3)); % yaw uses the pitch gains
             rocketControl = rad2deg(u);
             obj.lastTime = currentTime;
         end

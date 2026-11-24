@@ -116,14 +116,14 @@ classdef BreakPoints < handle
                 error("NaN currentCumVelocity")
             end
             
-            % Handle edge cases
+            % edge cases
             if currentCumVelocity <= obj.cumVelocity(1)
-                % Below first breakpoint - return first values
+                
                 interpolatedGains = obj.gain{1};
                 interpolatedControlReference = obj.controlInput{1};
                 return;
             elseif currentCumVelocity >= obj.cumVelocity(end)
-                % Above last breakpoint - return last values
+                
                 interpolatedGains = obj.gain{end};
                 interpolatedControlReference = obj.controlInput{end};
                 return;
@@ -134,35 +134,32 @@ classdef BreakPoints < handle
             lowerIdx = find(obj.cumVelocity <= currentCumVelocity, 1, 'last');
             upperIdx = lowerIdx + 1;
 
-            % Get bracketing values
+            % Get upper, lower BP values
             cumVel_lower = obj.cumVelocity(lowerIdx);
             cumVel_upper = obj.cumVelocity(upperIdx);
 
-            % Compute interpolation weight (0 at lower, 1 at upper)
+            % Compute weight 0 -> lower 1 -> upper
             lambda = (currentCumVelocity - cumVel_lower) / (cumVel_upper - cumVel_lower);
 
-            % Get gain cell arrays and control inputs from both breakpoints
+            % Get gain cell arrays and control from both BPs
             gains_lower = obj.gain{lowerIdx};
             gains_upper = obj.gain{upperIdx};
 
             controlInput_lower = obj.controlInput{lowerIdx};
             controlInput_upper = obj.controlInput{upperIdx};
 
-            % Number of gains (should be same for all breakpoints)
+            % # gains 
             n_gains = length(gains_lower);
 
-            % Preallocate output cell array
             interpolatedGains = cell(1, n_gains);
 
-            % Interpolate each gain matrix
+            % Interpolate gain matrix
             for j = 1:n_gains
-                interpolatedGains{j} = (1 - lambda) * gains_lower{j} + ...
-                                        lambda * gains_upper{j};
+                interpolatedGains{j} = (1 - lambda) * gains_lower{j} + lambda * gains_upper{j};
             end
 
-            % Interpolate reference control input
-            interpolatedControlReference = (1 - lambda) * controlInput_lower + ...
-                                            lambda * controlInput_upper;
+            % Interpolate ref control input
+            interpolatedControlReference = (1 - lambda) * controlInput_lower + lambda * controlInput_upper;
         end
 
         function [time, states, controlInputs, actuatorStates] = reduceToInterval(obj, time, states, controlInputs, actuatorStates)

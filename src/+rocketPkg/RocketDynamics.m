@@ -224,6 +224,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                     fTB = obj.computeThrust(time, useThrust);
                     [fBAero, ~] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, obj.getThrust(time) * useThrust);
+
                     fTotal = fGBody + fTB + fBAero + fBActuator;
                     fB = [fTotal(1); 0; 0];
                     mB = [0; 0; 0];
@@ -238,8 +239,10 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                 case FlightState.POWERED_ASCENT
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     fTB = obj.computeThrust(time, useThrust);
+
                     [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, obj.getThrust(time) * useThrust);
+
                     fB = fGBody + fTB + fBAero + fBActuator;
                     mB = mBAero + mBActuator;
 
@@ -255,6 +258,7 @@ classdef RocketDynamics < handle & matlab.mixin.Copyable
                     fGBody = obj.computeGravity(cBI, useGravity, mass);
                     [fBAero, mBAero] = obj.computeAero(state, currentCg, envConditions, true);
                     [fBActuator, mBActuator] = obj.computeActuator(state, actuatorState, currentCg, envConditions, obj.getThrust(time) * useThrust);
+
                     fB = fGBody + fBAero + fBActuator;
                     mB = mBAero + mBActuator;
 
